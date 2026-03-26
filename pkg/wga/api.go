@@ -36,6 +36,19 @@ func Init(ctx context.Context, configPath string) error {
 	return nil
 }
 
+// GetAgentToolCategories 获取智能体及其子智能体的工具类别配置（扁平合并）。
+func GetAgentToolCategories(id string) ([]wga_option.ToolCategoryInfo, error) {
+	agent, err := getAgent(id)
+	if err != nil {
+		return nil, err
+	}
+	categories := wga_option.CollectToolCategories(agent)
+	if len(categories) == 0 {
+		return []wga_option.ToolCategoryInfo{}, nil
+	}
+	return categories, nil
+}
+
 // CheckOptions 检查智能体运行条件是否满足。
 func CheckOptions(_ context.Context, id string, opts ...option.Option) (*wga_option.CheckResult, error) {
 	agentCfg, err := getAgent(id)
