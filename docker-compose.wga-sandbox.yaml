@@ -11,10 +11,15 @@ services:
     # ports:
     #   - 4096:4096
     #   - 8080:8080
+    #   - 4097:4097
     # volumes:
     #   - ./configs/microservice/bff-service/configs/agent-skills/anthropics:/home/root/.claude/skills
     environment:
       USER: root
+      COZELOOP_ENABLED: ${COZELOOP_ENABLED}
+      COZELOOP_WORKSPACE_ID: ${COZELOOP_WORKSPACE_ID}
+      COZELOOP_API_TOKEN: ${COZELOOP_API_TOKEN}
+      COZELOOP_API_BASE_URL: ${COZELOOP_API_BASE_URL}
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "8080"]
       interval: 15s

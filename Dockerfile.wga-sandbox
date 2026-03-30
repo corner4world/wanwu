@@ -1,3 +1,29 @@
+# ----------------------
+# 构建阶段：编译 eino-agent
+# ----------------------
+FROM golang:1.24.13-alpine AS builder
+
+ENV GOPROXY=https://goproxy.cn,direct \
+    GOSUMDB=sum.golang.google.cn
+
+WORKDIR /build
+
+COPY go.mod go.sum ./
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    set -x && \
+    echo "=== 开始下载依赖 $(date) ===" && \
+    go mod download -x && \
+    echo "=== 下载完成 $(date) ===" && \
+    go mod verify
+
+COPY pkg/ ./pkg/
+
+# 编译 eino-agent 二进制
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux GOARCH=$WANWU_ARCH go build -ldflags="-s -w" -o eino-agent ./pkg/wga-sandbox/internal/runner/eino/agent
+
 FROM crpi-6pj79y7ddzdpexs8.cn-hangzhou.personal.cr.aliyuncs.com/wanwulite/wga-sandbox-base:1.0.0.152-opencode1.1.65
 
 USER root
@@ -18,6 +44,22 @@ RUN git clone https://github.com/colagold/openapi-to-skills.git /tmp/openapi-to-
     npm install -g openapi-to-skills-*.tgz && \
     cd ~ && \
     rm -rf /tmp/openapi-to-skills
+
+# eino-agent 安装
+COPY --from=builder /build/eino-agent /usr/local/bin/eino-agent
+RUN chmod 755 /usr/local/bin/eino-agent
+
+# eino-agent HTTP 服务配置
+RUN printf '[program:eino-agent]\n\
+command=/usr/local/bin/eino-agent serve\n\
+environment=PORT="4097"\n\
+autorestart=true\n\
+priority=801\n\
+user=root\n\
+stdout_logfile=%%(ENV_LOG_DIR)s/eino-agent.log\n\
+stdout_logfile_maxbytes=10MB\n\
+stdout_logfile_backups=5\n\
+redirect_stderr=true\n' > /opt/gem/supervisord/eino-agent.conf
 
 # 若不需要 AIO 里的服务，可进行删除，例如 Code Server
 ## 删除 Code Server 进程和路由

@@ -10,8 +10,10 @@ require (
 	github.com/ag-ui-protocol/ag-ui/sdks/community/go v0.0.0-20260313163727-d5d9573cef5b
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/cloudwego/eino v0.7.37
+	github.com/cloudwego/eino-ext/callbacks/cozeloop v0.1.8
 	github.com/cloudwego/eino-ext/components/model/openai v0.1.4
 	github.com/cloudwego/eino-ext/components/tool/mcp v0.0.6
+	github.com/coze-dev/cozeloop-go v0.1.22
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/disintegration/imaging v1.6.2
 	github.com/elastic/go-elasticsearch/v8 v8.18.0
@@ -29,6 +31,7 @@ require (
 	github.com/gromitlee/go-async v1.0.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/hashicorp/go-version v1.8.0
+	github.com/joho/godotenv v1.5.1
 	github.com/mark3labs/mcp-go v0.43.0
 	github.com/meguminnnnnnnnn/go-openai v0.1.0
 	github.com/minio/minio-go/v7 v7.0.88
@@ -52,21 +55,24 @@ require (
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/bluele/gcache v0.0.2 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/cloudwego/eino-ext/libs/acl/openai v0.1.1 // indirect
+	github.com/coze-dev/cozeloop-go/spec v0.1.8 // indirect
 	github.com/eino-contrib/jsonschema v1.0.3 // indirect
 	github.com/evanphx/json-patch v0.5.2 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/goph/emperror v0.17.2 // indirect
 	github.com/invopop/jsonschema v0.13.0 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/nikolalohinski/gonja v1.5.3 // indirect
+	github.com/nikolalohinski/gonja/v2 v2.3.1 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
-	github.com/onsi/gomega v1.27.8 // indirect
-	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/slongfield/pyfmt v0.0.0-20220222012616-ea85ff4c361f // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/yargevad/filepathx v1.0.0 // indirect
 	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0 // indirect

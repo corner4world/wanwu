@@ -23,12 +23,14 @@ const (
 )
 
 const (
-	RunnerTypeOpencode RunnerType = "opencode" // opencode 智能体（默认）
+	RunnerTypeOpencode      RunnerType = "opencode"        // opencode 智能体（默认）
+	RunnerTypeEinoChatModel RunnerType = "eino-chat-model" // eino-agent ChatModel 智能体
 )
 
 const (
 	sandboxAPIPort  = 8080 // sandbox API 端口
 	opencodeAPIPort = 4096 // opencode API 端口
+	einoAPIPort     = 4097 // eino-agent API 端口
 )
 
 // ============================================================================
@@ -100,6 +102,10 @@ func (c SandboxConfig) APIEndpoint() string {
 
 func (c SandboxConfig) OpencodeEndpoint() string {
 	return fmt.Sprintf("http://%s:%d", c.host, opencodeAPIPort)
+}
+
+func (c SandboxConfig) EinoEndpoint() string {
+	return fmt.Sprintf("http://%s:%d", c.host, einoAPIPort)
 }
 
 // ============================================================================

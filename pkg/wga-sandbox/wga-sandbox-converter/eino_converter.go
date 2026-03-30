@@ -11,6 +11,8 @@ type EinoConverter interface {
 
 func NewEinoConverter(runnerType wga_sandbox_option.RunnerType) EinoConverter {
 	switch runnerType {
+	case wga_sandbox_option.RunnerTypeEinoChatModel:
+		return newEinoChatModelConverter()
 	default:
 		return newOpencodeConverter()
 	}

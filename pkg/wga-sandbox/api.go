@@ -9,6 +9,7 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/runner"
+	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/runner/eino"
 	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/runner/opencode"
 	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/sandbox"
 	wga_sandbox_option "github.com/UnicomAI/wanwu/pkg/wga-sandbox/wga-sandbox-option"
@@ -48,7 +49,11 @@ func Run(ctx context.Context, opts ...wga_sandbox_option.Option) (wga_sandbox_op
 	if err != nil {
 		return wga_sandbox_option.RunSession{}, nil, fmt.Errorf("get sandbox failed: %w", err)
 	}
-	r := createRunner(opt.RunnerType, sb, opt)
+	r, err := createRunner(opt.RunnerType, sb, opt)
+	if err != nil {
+		return wga_sandbox_option.RunSession{}, nil, fmt.Errorf("create runner failed: %w", err)
+	}
+	log.Infof("%s using runner: %s", logPrefix, getRunnerName(opt.RunnerType))
 
 	outputCh := make(chan string, 1024)
 
@@ -113,9 +118,24 @@ func sendErrorEvent(ch chan<- string, message string) {
 	}
 }
 
-func createRunner(t wga_sandbox_option.RunnerType, sb sandbox.Sandbox, opt wga_sandbox_option.RunOption) runner.Runner {
+func createRunner(t wga_sandbox_option.RunnerType, sb sandbox.Sandbox, opt wga_sandbox_option.RunOption) (runner.Runner, error) {
 	switch t {
+	case wga_sandbox_option.RunnerTypeEinoChatModel:
+		return eino.NewRunner(sb, opt, "chat-model"), nil
+	case wga_sandbox_option.RunnerTypeOpencode:
+		return opencode.NewRunner(sb, opt), nil
 	default:
-		return opencode.NewRunner(sb, opt)
+		return nil, fmt.Errorf("unknown runner type: %s", t)
+	}
+}
+
+func getRunnerName(t wga_sandbox_option.RunnerType) string {
+	switch t {
+	case wga_sandbox_option.RunnerTypeEinoChatModel:
+		return "eino-chat-model (pkg/wga-sandbox/internal/runner/eino)"
+	case wga_sandbox_option.RunnerTypeOpencode:
+		return "opencode (pkg/wga-sandbox/internal/runner/opencode)"
+	default:
+		return "unknown runner"
 	}
 }
