@@ -6,6 +6,23 @@ import { i18n } from '@/lang';
  */
 export const menuList = [
   {
+    name: i18n.t('menu.generalAgent'),
+    index: 'generalAgent',
+    icon: 'aiAssistant',
+    children: [
+      {
+        name: i18n.t('menu.wga'),
+        index: 'wga',
+        path: '/wga',
+      },
+      {
+        name: i18n.t('menu.aiAssistant'),
+        index: 'aiAssistant',
+        path: '/aiAssistant',
+      },
+    ],
+  },
+  {
     name: i18n.t('menu.modelService'),
     index: 'modelService',
     icon: 'modelService',
@@ -18,12 +35,6 @@ export const menuList = [
         perm: PERMS.MODEL_MANAGE,
       },
     ],
-  },
-  {
-    name: i18n.t('menu.aiAssistant'),
-    index: 'aiAssistant',
-    icon: 'aiAssistant',
-    path: '/aiAssistant',
   },
   {
     name: i18n.t('menu.resource'),
