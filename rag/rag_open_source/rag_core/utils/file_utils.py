@@ -13,7 +13,7 @@ from chains.local_doc_qa import load_file, ChineseTextSplitter
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from utils import ocr_utils
-from utils.constant import MAX_SENTENCE_SIZE, MIN_SENTENCE_SIZE
+from utils.constant import MAX_SENTENCE_SIZE, MIN_SENTENCE_SIZE, MIN_EMBEDDING_SIZE
 from utils import model_parser_utils
 from utils import asr_utils
 from utils import keyframe_extract
@@ -281,14 +281,14 @@ def split_short_doc(file_path, download_link, chunks, sentence_size):
                 "meta_data": copy.deepcopy(chunk['meta_data'])
             }
             sub_doc.append(chunk_dict)
-            if chunk_type == "table":
-                # 仅对pdf不走自定义例如走ocr解析的表格再按换行做一次切分(注意：此种切分方式会引入embedding_content为空的情况)
-                if len(embedding_chunks) == 0 and file_name.lower().endswith(".pdf") and text.count("\n") >= 2:
-                    embedding_chunks = text.split("\n")
+            # if chunk_type == "table":
+            #     # 仅对pdf不走自定义例如走ocr解析的表格再按换行做一次切分(注意：此种切分方式会引入embedding_content为空的情况)
+            #     if len(embedding_chunks) == 0 and file_name.lower().endswith(".pdf") and text.count("\n") >= 2:
+            #         embedding_chunks = text.split("\n")
             # 若有定制化构建的embedding_chunks则将此作为语义索引
             for item in embedding_chunks:
                 embedding_content = item
-                if len(embedding_content.strip()) > 0 and len(embedding_content) < MAX_SENTENCE_SIZE:
+                if len(embedding_content.strip()) > MIN_EMBEDDING_SIZE and len(embedding_content) < MAX_SENTENCE_SIZE:
                     embed_chunk_dict = {
                         "content": text,
                         "embedding_content": embedding_content,
@@ -309,7 +309,7 @@ def split_short_doc(file_path, download_link, chunks, sentence_size):
                 sub_list = textsplitter.split_text1(text)
                 if len(sub_list) == 1:continue
                 for short_text in sub_list:
-                    if len(short_text.strip()) > 0 and len(short_text) < MAX_SENTENCE_SIZE and len(chunk["text"]) < MAX_SENTENCE_SIZE:
+                    if len(short_text.strip()) > MIN_EMBEDDING_SIZE and len(short_text) < MAX_SENTENCE_SIZE and len(chunk["text"]) < MAX_SENTENCE_SIZE:
                         chunk_dict = {
                             "content": text,
                             "embedding_content": short_text,

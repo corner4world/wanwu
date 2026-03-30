@@ -100,6 +100,8 @@ CHUNK_SIZE = 300
 MAX_SENTENCE_SIZE = 4048
 # chunk中的text级联切分的最小长度，len(text)小于此长度的chunk不会被级联切分
 MIN_SENTENCE_SIZE = 100
+# embedding 最小长度
+MIN_EMBEDDING_SIZE = 10
 
 OCR_MAX_WORKERS = 1
 #模型解析服务

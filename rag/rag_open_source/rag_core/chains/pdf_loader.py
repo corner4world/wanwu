@@ -22,6 +22,7 @@ import logging
 from utils import minio_utils
 from utils import ocr_utils
 from settings import IMAGE_MINIMUM_WIDTH, IMAGE_MINIMUM_HEIGHT
+from utils.constant import MIN_EMBEDDING_SIZE
 logger = logging.getLogger(__name__)
 
 
@@ -544,13 +545,13 @@ class PDFLoader(TextLoader):
                     html += f"<td>{cell}</td>"
                     row_text += f"<td>{cell}</td>"
                 # 把除首行外的前两列的内容所谓embedding索引
-                if row_idx > 0 and col_idx < 2 and str(cell).strip() != '':
-                    # 对于表格中没有行分割线的表：通过 换行符切割索引
-                    if len(table) <= 2 and "\n" in str(cell):
-                        cell_list = str(cell).split("\n")
-                        embedding_content.extend(cell_list)
-                    else:
-                        embedding_content.append(cell)
+                # if row_idx > 0 and col_idx < 2 and str(cell).strip() != '':
+                #     # 对于表格中没有行分割线的表：通过 换行符切割索引
+                #     if len(table) <= 2 and "\n" in str(cell):
+                #         cell_list = str(cell).split("\n")
+                #         embedding_content.extend(cell_list)
+                #     else:
+                #         embedding_content.append(cell)
                 # 标记已经处理过的单元格
                 for i in range(rowspan):
                     for j in range(colspan):
@@ -560,8 +561,8 @@ class PDFLoader(TextLoader):
 
             html += "</tr>\n"
             row_text += "</tr>"
-            if row_idx > 0:
-                embedding_content.append(row_text)
+            # if row_idx > 0:
+            #     embedding_content.append(row_text)
 
         html += "</table>\n"
         # print(json.dumps(embedding_content,ensure_ascii=False))
@@ -599,7 +600,7 @@ class PDFLoader(TextLoader):
                 if first_cleaned_row[i].strip() != "" and len(table_title_list) > i:
                     new_cell = "%s%s" % (table_title_list[i], first_cleaned_row[i])
                     new_row_text = new_row_text + new_cell
-            if new_row_text:
+            if new_row_text and len(new_row_text.strip()) >= MIN_EMBEDDING_SIZE:
                 embedding_content.append(new_row_text)
         else:
             # 第一行非表头且不能复用上一个表头,正常拼接行
@@ -614,7 +615,7 @@ class PDFLoader(TextLoader):
                 if row[i].strip() != "" and len(table_title_list) > i:
                     new_cell = "%s%s" % (table_title_list[i], row[i])
                     new_row_text = new_row_text + new_cell
-            if new_row_text:
+            if new_row_text and len(new_row_text.strip()) >= MIN_EMBEDDING_SIZE:
                 embedding_content.append(new_row_text)
 
             table_string += ('|' + '|'.join(row) + '|' + '\n')
