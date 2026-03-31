@@ -67,13 +67,29 @@ func NewApp(ctx context.Context, cfg shared.AppConfig) (*App, error) {
 		return msgs, nil
 	}
 
+	// 纯净调用限制兜底：强制清空 assistant 消息中伴随 ToolCall 的 Content 文本
+	cleanContentMiddleware := adk.AgentMiddleware{
+		AfterChatModel: func(ctx context.Context, state *adk.ChatModelAgentState) error {
+			msgs := state.Messages
+			if len(msgs) == 0 {
+				return nil
+			}
+			lastMsg := msgs[len(msgs)-1]
+			if lastMsg.Role == schema.Assistant && len(lastMsg.ToolCalls) > 0 && lastMsg.Content != "" {
+				log.Printf("[CleanContent] cleared content (len=%d) with %d tool_calls", len(lastMsg.Content), len(lastMsg.ToolCalls))
+				lastMsg.Content = ""
+			}
+			return nil
+		},
+	}
+
 	agent, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
 		Model:         chatModel,
 		Name:          "ChatModelAgent",
 		Description:   "一个带有skills的智能体助手",
 		Instruction:   instrBuf.String(),
 		GenModelInput: genModelInput,
-		Middlewares:   []adk.AgentMiddleware{skillMiddleware},
+		Middlewares:   []adk.AgentMiddleware{cleanContentMiddleware, skillMiddleware},
 		MaxIterations: 100,
 	})
 	if err != nil {
