@@ -147,8 +147,9 @@ func MergeFile(ctx *gin.Context, r *request.MergeFileReq) (*response.MergeFileRe
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_file_upload_file_merge", fmt.Sprintf("merge file but get minio file err: %v", err))
 	}
 	return &response.MergeFileResp{
-		FileName: fileName,
-		FilePath: filePath,
+		OriginalFileName: r.FileName,
+		FileName:         fileName,
+		FilePath:         filePath,
 	}, nil
 }
 

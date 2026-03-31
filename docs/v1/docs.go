@@ -25943,11 +25943,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "fileName": {
-                    "description": "合并后文件名",
+                    "description": "合并后文件名(在minio中的文件名)",
                     "type": "string"
                 },
                 "filePath": {
                     "description": "minio文件的完整路径",
+                    "type": "string"
+                },
+                "originalFileName": {
+                    "description": "原始文件名",
                     "type": "string"
                 }
             }

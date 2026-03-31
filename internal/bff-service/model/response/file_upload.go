@@ -9,8 +9,9 @@ type UploadFileResp struct {
 }
 
 type MergeFileResp struct {
-	FileName string `json:"fileName"` //合并后文件名
-	FilePath string `json:"filePath"` //minio文件的完整路径
+	OriginalFileName string `json:"originalFileName"` //原始文件名
+	FileName         string `json:"fileName"`         //合并后文件名(在minio中的文件名)
+	FilePath         string `json:"filePath"`         //minio文件的完整路径
 }
 
 type CleanFileResp struct {
