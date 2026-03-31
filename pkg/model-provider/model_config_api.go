@@ -164,6 +164,12 @@ func ToModelTags(provider, modelType, cfg string) ([]mp_common.Tag, error) {
 				return nil, fmt.Errorf("unmarshal model config err: %v", err)
 			}
 			tags = text2Image.Tags()
+		case ModelTypeMultiEmbedding:
+			embedding := &mp_yuanjing.MultiModalEmbedding{}
+			if err := json.Unmarshal([]byte(cfg), embedding); err != nil {
+				return nil, fmt.Errorf("unmarshal model config err: %v", err)
+			}
+			tags = embedding.Tags()
 		default:
 			return nil, fmt.Errorf("ToModelTags:invalid provider %v model type %v", provider, modelType)
 		}
@@ -381,6 +387,13 @@ func ToModelConfig(provider, modelType, cfg string) (interface{}, error) {
 			}
 		case ModelTypeText2Image:
 			ret = &mp_yuanjing.Text2Image{}
+		case ModelTypeMultiEmbedding:
+			ret = &mp_yuanjing.MultiModalEmbedding{
+				MaxTextLength:    &maxTextLength,
+				MaxImageSize:     &maxImageSize,
+				MaxVideoClipSize: &maxVideoClipSize,
+				SupportFileTypes: []string{"image"},
+			}
 
 		default:
 			return nil, fmt.Errorf("ToModelConfig:invalid provider %v model type %v", provider, modelType)

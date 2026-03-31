@@ -43,10 +43,7 @@ func MinioUrlToBase64(ctx context.Context, minioUrl string) (base64Str string, b
 	if err != nil {
 		return "", "", err
 	}
-	// 解析文件后缀用于拼接Base64前缀
-	_, _, fileName := SplitMinioPath(minioUrl)
-	ext := filepath.Ext(fileName)
-	base64Str, base64StrWithPrefix, err = util.FileData2Base64(fileData, "data:"+strings.TrimPrefix(ext, ".")+";base64")
+	base64Str, base64StrWithPrefix, err = util.FileData2Base64(fileData, "")
 	if err != nil {
 		return "", "", err
 	}

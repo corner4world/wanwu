@@ -181,28 +181,28 @@ func ModelMultiModalEmbeddings(ctx *gin.Context) {
 	for i := range data.Input {
 		item := &data.Input[i]
 		if item.Image != "" {
-			pureBase64Str, _, err := minio_util.MinioUrlToBase64(ctx, item.Image)
+			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, item.Image)
 			if err != nil {
 				gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v image to base64 err: %v", data.Model, err)))
 				return
 			}
-			item.Image = pureBase64Str
+			item.Image = base64StrWithPrefix
 		}
 		if item.Audio != "" {
-			pureBase64Str, _, err := minio_util.MinioUrlToBase64(ctx, item.Image)
+			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, item.Image)
 			if err != nil {
 				gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v audio to base64 err: %v", data.Model, err)))
 				return
 			}
-			item.Audio = pureBase64Str
+			item.Audio = base64StrWithPrefix
 		}
 		if item.Video != "" {
-			pureBase64Str, _, err := minio_util.MinioUrlToBase64(ctx, item.Image)
+			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, item.Image)
 			if err != nil {
 				gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v video to base64 err: %v", data.Model, err)))
 				return
 			}
-			item.Video = pureBase64Str
+			item.Video = base64StrWithPrefix
 		}
 	}
 	service.ModelMultiModalEmbeddings(ctx, ctx.Param("modelId"), &data)

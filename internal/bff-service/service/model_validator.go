@@ -246,7 +246,7 @@ func ValidateMultiEmbeddingModel(ctx *gin.Context, modelInfo *model_service.Mode
 	if !ok {
 		return fmt.Errorf("invalid provider")
 	}
-	base64Str, _, err := util.File2Base64(config.Cfg().Model.PngTestFilePath, "")
+	_, base64StrWithPrefix, err := util.File2Base64(config.Cfg().Model.PngTestFilePath, "")
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func ValidateMultiEmbeddingModel(ctx *gin.Context, modelInfo *model_service.Mode
 				Text: "你好",
 			},
 			{
-				Image: base64Str,
+				Image: base64StrWithPrefix,
 			},
 		},
 	}

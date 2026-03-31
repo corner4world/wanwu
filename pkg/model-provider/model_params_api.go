@@ -141,6 +141,19 @@ func ToModelParams(provider, modelType, cfg string) (interface{}, map[string]int
 		default:
 			return nil, nil, fmt.Errorf("invalid model type: %v", modelType)
 		}
+	case ProviderZhipu:
+		switch modelType {
+		case ModelTypeLLM:
+			llm := &mp_common.LLMParams{}
+			if err = json.Unmarshal([]byte(cfg), llm); err == nil {
+				ret = llm
+				params = llm.GetParams()
+			}
+		case ModelTypeTextRerank:
+		case ModelTypeTextEmbedding:
+		default:
+			return nil, nil, fmt.Errorf("invalid model type: %v", modelType)
+		}
 	default:
 		return nil, nil, fmt.Errorf("invalid provider: %v", modelType)
 	}

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/minio"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
-	mp_jina "github.com/UnicomAI/wanwu/pkg/model-provider/mp-jina"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
 )
@@ -679,15 +679,24 @@ func getEmbImageSize(ctx *gin.Context, userId, orgId, embModelId string) (int, e
 	if modelInfo.ModelType != mp.ModelTypeMultiEmbedding {
 		return 0, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "modelType mismatch")
 	}
-	// 模型配置断言
-	modelConfig, ok := modelInfo.Config.(*mp_jina.MultiModalEmbedding)
+	// 模型配置断言，通过 JSON 序列化转换为 map
+	configBytes, err := json.Marshal(modelInfo.Config)
+	if err != nil {
+		return 0, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "embedding模型配置错误")
+	}
+	var modelConfig map[string]interface{}
+	if err = json.Unmarshal(configBytes, &modelConfig); err != nil {
+		return 0, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "embedding模型配置错误")
+	}
+	maxImageSizeVal, ok := modelConfig["maxImageSize"]
+	if !ok || maxImageSizeVal == nil {
+		return 0, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "embedding模型配置错误")
+	}
+	size, ok := maxImageSizeVal.(float64)
 	if !ok {
 		return 0, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "embedding模型配置错误")
 	}
-	if modelConfig == nil || modelConfig.MaxImageSize == nil {
-		return 0, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "embedding模型配置错误")
-	}
-	return int(*(modelConfig.MaxImageSize)), nil
+	return int(int64(size)), nil
 }
 
 func buildDocUploadLimitResp(imageSize int, docUploadLimitResp *knowledgebase_doc_service.DocUploadLimitResp) *response.DocUploadLimitResp {
