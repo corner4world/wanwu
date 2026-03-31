@@ -40,6 +40,7 @@ func buildSkillCreatorOptions(modelConfig wga_sandbox_option.ModelConfig, runId,
 		wga_sandbox_option.WithOutputDir(outputDir),
 		wga_sandbox_option.WithMessages(messages),
 		wga_sandbox_option.WithEnableThinking(skillCreatorCfg.EnableThinking),
+		wga_sandbox_option.WithRunnerType(wga_sandbox_option.RunnerTypeOpencode),
 	}
 
 	if inputDir != "" {
