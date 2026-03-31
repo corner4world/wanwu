@@ -11,7 +11,7 @@
         <span
           class="index-badge"
           data-citation-type="sub"
-          :data-pid="conversion.id"
+          :data-sub-id="conversion.id"
           :data-parents-index="parentsIndex"
         >
           {{ knowledgeIndex + 1 }}

@@ -733,7 +733,7 @@ export default {
                     activeResponse: '',
                     isOpen:
                       data.eventType ===
-                      AGENT_MESSAGE_CONFIG.MAIN_THINK.EVENT_TYPE, // agentThink 默认展开，其他默认收起
+                      AGENT_MESSAGE_CONFIG.AGENT_THINK.EVENT_TYPE, // agentThink 默认展开，其他默认收起
                     searchList: data.search_list || [], // 初始化 searchList
                     citationsTagList: [], // 已引用的出处索引
                     conversationType: this.convertConversionType(
@@ -763,7 +763,7 @@ export default {
                   if (
                     (status === 3 || status === 4) &&
                     data.eventType ===
-                      AGENT_MESSAGE_CONFIG.MAIN_THINK.EVENT_TYPE &&
+                      AGENT_MESSAGE_CONFIG.AGENT_THINK.EVENT_TYPE &&
                     !subConversion.userToggled // 仅在用户未手动操作过时自动折叠
                   ) {
                     subConversion.isOpen = false;

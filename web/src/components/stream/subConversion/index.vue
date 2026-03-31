@@ -2,7 +2,7 @@
   <!-- 子会话渲染列表 -->
   <div
     class="sub-conversion-item"
-    :data-pid="conversion.id"
+    :data-sub-id="conversion.id"
     :data-conversationType="conversion.conversationType"
   >
     <div class="sub-conversion-header">
@@ -53,7 +53,7 @@
       <Knowlege
         v-if="
           conversion.conversationType ===
-          AGENT_MESSAGE_CONFIG.MAIN_KNOWLEDGE.CONVERSATION_TYPE
+          AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE
         "
         :conversion="conversion"
         :parents-index="parentsIndex"
@@ -64,7 +64,7 @@
         :class="{
           'is-think':
             conversion.conversationType ===
-            AGENT_MESSAGE_CONFIG.MAIN_THINK.CONVERSATION_TYPE,
+            AGENT_MESSAGE_CONFIG.AGENT_THINK.CONVERSATION_TYPE,
         }"
       >
         <template>

@@ -207,10 +207,10 @@ export default {
           value: AGENT_TOOL_TYPE.WORKFLOW,
           name: this.$t('appSpace.workflow'),
         },
-        // {
-        //   value: AGENT_TOOL_TYPE.SKILL,
-        //   name: 'Skills',
-        // },
+        {
+          value: AGENT_TOOL_TYPE.SKILL,
+          name: 'Skills',
+        },
       ],
     };
   },

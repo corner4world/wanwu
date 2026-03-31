@@ -922,8 +922,11 @@ export default {
 
       const subConversionItem = citationTarget.closest('.sub-conversion-item');
 
+      console.log('++++++');
+      console.log(citationTarget);
+
       if (subConversionItem && citationTarget.dataset.pid) {
-        // 子会话引用点击处理
+        // 子会话引用点击处理(思考子会话等)
         const pid = citationTarget.dataset.pid;
         const parentsIndex = Number(citationTarget.dataset.parentsIndex);
         const citationIndex = Number(citationTarget.textContent);
@@ -961,6 +964,9 @@ export default {
       }
 
       // Agent 主会话引用（无 data-pid，来自顶层回答）跳转到对应的知识库子会话
+      console.log('----------------');
+
+      console.log(citationTarget);
 
       if (this.chatType === 'agent' && !citationTarget.dataset.pid) {
         const index = Number(citationTarget.textContent);
@@ -971,14 +977,14 @@ export default {
           const knowledgeSub = historyItem.subConversions.find(
             a =>
               a.conversationType ===
-              AGENT_MESSAGE_CONFIG.MAIN_KNOWLEDGE.CONVERSATION_TYPE,
+              AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE,
           );
 
           if (knowledgeSub) {
             this.$set(knowledgeSub, 'isOpen', true);
             this.$nextTick(() => {
               const container = document.querySelector(
-                `.sub-conversion-item[data-pid="${knowledgeSub.id}"]`,
+                `.sub-conversion-item[data-sub-id="${knowledgeSub.id}"]`,
               );
               if (container) {
                 const targetSearchItem = container.querySelector(
@@ -1462,7 +1468,7 @@ export default {
         n.subConversions.forEach(sub => {
           if (
             sub.conversationType ===
-            AGENT_MESSAGE_CONFIG.MAIN_KNOWLEDGE.CONVERSATION_TYPE
+            AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE
           ) {
             this.$set(sub, 'isOpen', true);
           }
