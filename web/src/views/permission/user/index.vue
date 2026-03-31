@@ -8,17 +8,26 @@
           ref="searchInput"
           @handleSearch="getTableData"
         />
-        <el-button
-          v-if="!isSystem && isAdmin"
-          style="margin-left: 13px"
-          class="add-bt"
-          size="mini"
-          type="primary"
-          @click="preInsert"
-        >
-          <img src="@/assets/imgs/addUser.png" alt="" />
-          <span>{{ $t('user.button.create') }}</span>
-        </el-button>
+        <el-dropdown v-if="!isSystem && isAdmin" @command="handleCommand">
+          <el-button
+            style="margin-left: 13px; margin-bottom: 0"
+            class="add-bt"
+            size="mini"
+            type="primary"
+          >
+            <img src="@/assets/imgs/addUser.png" alt="" />
+            {{ $t('user.button.create') }}
+            <i class="el-icon-arrow-down"></i>
+          </el-button>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item command="onceAdd">
+              {{ $t('user.button.onceAdd') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="batchAdd">
+              {{ $t('user.button.batchAdd') }}
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
         <el-button
           v-if="!isSystem && isAdmin"
           class="add-bt invite-bt"
@@ -300,6 +309,7 @@
       </span>
     </el-dialog>
     <reset-pwd ref="resetPwd" />
+    <BatchAddDialog ref="batchAdd" @reloadData="searchData" />
   </div>
 </template>
 
@@ -322,8 +332,10 @@ import {
 import { mapActions } from 'vuex';
 import { checkPerm } from '@/router/permission';
 import { PERMS } from '@/router/constants';
+import BatchAddDialog from './batchAddDialog.vue';
+
 export default {
-  components: { Pagination, resetPwd, SearchInput },
+  components: { Pagination, resetPwd, SearchInput, BatchAddDialog },
   data() {
     const checkPassword = (rule, value, callback) => {
       let reg =
@@ -454,14 +466,31 @@ export default {
   },
   methods: {
     ...mapActions('user', ['getPermissionInfo']),
+    handleCommand(command) {
+      switch (command) {
+        case 'onceAdd':
+          this.preInsert();
+          break;
+        case 'batchAdd':
+          this.showBatchAddDialog();
+          break;
+      }
+    },
+    showBatchAddDialog() {
+      this.$refs.batchAdd.openDialog();
+    },
     async getRoleList() {
       const { data } = await fetchRoleList();
       this.roleList = data.select || [];
     },
-    async getTableData() {
+    searchData() {
+      this.getTableData({ pageNo: 1 });
+    },
+    async getTableData(params) {
       const searchInput = this.$refs.searchInput;
       const searchInfo = {
         ...(searchInput.value && { name: searchInput.value }),
+        ...params,
       };
       this.loading = true;
       try {

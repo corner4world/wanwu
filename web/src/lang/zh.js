@@ -370,6 +370,13 @@ export default {
       create: '新增用户',
       invite: '邀请用户',
       edit: '编辑用户',
+      onceAdd: '单条新增',
+      batchAdd: '批量新增',
+    },
+    upload: {
+      upload: '上传文件',
+      hint: '文件格式：json文件',
+      downloadTemp: '下载模板',
     },
     form: {
       user: '用户名搜索',

@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-dialog
-      :title="title || $t('uploadDialog.title')"
+      :title="$t('user.button.batchAdd')"
       :visible.sync="dialogVisible"
       append-to-body
       :close-on-click-modal="false"
@@ -13,26 +13,28 @@
         :rules="rules"
         ref="uploadForm"
       >
-        <el-form-item :label="$t('uploadDialog.file')" prop="file">
+        <el-form-item :label="$t('user.upload.upload')" prop="file">
           <el-upload
             class="avatar-uploader"
-            :action="basePath + '/service/api/v1/inferpub/upload'"
+            action=""
             name="file"
-            :headers="headers"
             :show-file-list="false"
             :http-request="handleUpload"
             :on-error="handleAvatarError"
-            accept=".json"
+            accept=".xlsx"
           >
             <i
               style="font-size: 26px; margin-right: 16px; margin-top: 5px"
               class="el-icon-upload"
             />
-            <span>{{ $t('uploadDialog.hint') }}</span>
+            <span>{{ $t('user.upload.hint') }}</span>
             <div style="text-align: left; line-height: normal">
               {{ uploadForm.file ? uploadForm.file.name : '' }}
             </div>
           </el-upload>
+          <el-button type="text" @click="downloadTemp">
+            {{ $t('user.upload.downloadTemp') }}
+          </el-button>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -49,24 +51,12 @@
 
 <script>
 import Pagination from '@/components/pagination.vue';
-import { importWorkflow } from '@/api/workflow';
+import { batchCreateUser } from '@/api/permission/user';
 export default {
-  props: {
-    title: '',
-    appType: '',
-  },
   components: { Pagination },
   data() {
-    const user = this.$store.state.user || {};
-    const { uid, orgId } = user.userInfo || {};
     return {
-      basePath: this.$basePath,
       dialogVisible: false,
-      headers: {
-        Authorization: 'Bearer ' + user.token,
-        'x-user-id': uid,
-        'x-org-id': orgId,
-      },
       uploadForm: {
         file: '',
       },
@@ -85,6 +75,9 @@ export default {
   methods: {
     openDialog() {
       this.dialogVisible = true;
+    },
+    downloadTemp() {
+      window.open('/user/api/v1/static/docs/users.xlsx');
     },
     handleUpload(res) {
       if (res.file) {
@@ -111,7 +104,7 @@ export default {
             formData.append(key, this.uploadForm[key]);
           }
           this.uploading = true;
-          importWorkflow(formData, config, this.appType)
+          batchCreateUser(formData, config)
             .then(() => {
               this.uploading = false;
               this.$message.success(this.$t('common.message.success'));
@@ -128,6 +121,7 @@ export default {
 
 <style lang="scss" scoped>
 .avatar-uploader {
+  margin-bottom: -12px;
   ::v-deep .el-upload:focus {
     border-color: #606266 !important;
     color: #606266 !important;
