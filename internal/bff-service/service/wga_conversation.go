@@ -67,25 +67,36 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 
 	runID := uuid.NewString()
 
-	// 获取 WGA 配置
-	wgaConfigResp, err := assistant.GetWgaConfig(ctx.Request.Context(), &assistant_service.GetWgaConfigReq{
+	// 获取 WGA Conversation 配置
+	wgaConversationConfigResp, err := assistant.GetWgaConversationConfig(ctx.Request.Context(), &assistant_service.GetWgaConversationConfigReq{
 		ThreadId: req.ThreadID,
 		Identity: &assistant_service.Identity{
 			UserId: userId,
 			OrgId:  orgId,
 		},
 	})
+
+	// 获取 WGA 配置
+	wgaConfigResp, err := assistant.GetWgaConfig(ctx.Request.Context(), &assistant_service.GetWgaConfigReq{
+		Identity: &assistant_service.Identity{
+			UserId: userId,
+			OrgId:  orgId,
+		},
+	})
+
 	//if err != nil {
 	//	return err
 	//}
 	//wgaUserConfig := wgaConfigResp.Config
 
 	// TODO测试用
-	var wgaUserConfig *assistant_service.WgaConfig
+	var wgaConversationConfig *assistant_service.WgaConversationConfig
+	var wgaConfig *assistant_service.WgaConfig
 	if err != nil {
 		log.Warnf("get WGA config failed: %v", err)
 	} else {
-		wgaUserConfig = wgaConfigResp.Config
+		wgaConversationConfig = wgaConversationConfigResp.Config
+		wgaConfig = wgaConfigResp.Config
 	}
 
 	// 获取最后一条用户提问，并预处理 content
@@ -117,7 +128,7 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 
 	// ---- 用户配置 ---
 	// 构建 WGA 选项
-	opts, err := buildWgaOptionsFromUserConfig(ctx, wgaUserConfig, req.ThreadID, runID, filteredMessages, currentUserMessage)
+	opts, err := buildWgaOptionsFromUserConfig(ctx, wgaConversationConfig, wgaConfig, req.ThreadID, runID, filteredMessages, currentUserMessage)
 	if err != nil {
 		log.Errorf("[GeneralAgentConversationChat] threadId=%s, runId=%s, buildWgaOptionsFromUserConfig error: %v", req.ThreadID, runID, err)
 		return err
@@ -240,7 +251,7 @@ func buildWgaOptions(ctx *gin.Context, cfg *config.WgaConfig, threadID, runID st
 	return opts
 }
 
-func buildWgaOptionsFromUserConfig(ctx *gin.Context, wgaUserConfig *assistant_service.WgaConfig, threadID, runID string, messages []request.GeneralAgentConversationMessage, currentUserMessage *request.GeneralAgentConversationMessage) ([]wga_option.Option, error) {
+func buildWgaOptionsFromUserConfig(ctx *gin.Context, wgaConversationConfig *assistant_service.WgaConversationConfig, wgaConfig *assistant_service.WgaConfig, threadID, runID string, messages []request.GeneralAgentConversationMessage, currentUserMessage *request.GeneralAgentConversationMessage) ([]wga_option.Option, error) {
 	opts := []wga_option.Option{
 		wga_option.WithRunSession(wga_option.RunSession{
 			ThreadID: threadID,
@@ -248,12 +259,12 @@ func buildWgaOptionsFromUserConfig(ctx *gin.Context, wgaUserConfig *assistant_se
 		}),
 	}
 
-	if wgaUserConfig != nil && wgaUserConfig.ModelConfig != nil && wgaUserConfig.ModelConfig.ModelId != "" {
-		modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: wgaUserConfig.ModelConfig.ModelId})
+	if wgaConversationConfig != nil && wgaConversationConfig.ModelConfig != nil && wgaConversationConfig.ModelConfig.ModelId != "" {
+		modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: wgaConversationConfig.ModelConfig.ModelId})
 		if err != nil {
 			return nil, err
 		}
-		endpoint := mp.ToModelEndpoint(wgaUserConfig.ModelConfig.ModelId, wgaUserConfig.ModelConfig.Model)
+		endpoint := mp.ToModelEndpoint(wgaConversationConfig.ModelConfig.ModelId, wgaConversationConfig.ModelConfig.Model)
 		modelURL, _ := endpoint["model_url"].(string)
 		var APIKey string
 		modelConfig, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
@@ -268,22 +279,22 @@ func buildWgaOptionsFromUserConfig(ctx *gin.Context, wgaUserConfig *assistant_se
 			}
 		}
 		var modelParams *mp_common.LLMParams
-		if wgaUserConfig.ModelConfig.Config != "" {
-			llmParams, _, err := mp.ToModelParams(wgaUserConfig.ModelConfig.Provider, wgaUserConfig.ModelConfig.ModelType, wgaUserConfig.ModelConfig.Config)
+		if wgaConversationConfig.ModelConfig.Config != "" {
+			llmParams, _, err := mp.ToModelParams(wgaConversationConfig.ModelConfig.Provider, wgaConversationConfig.ModelConfig.ModelType, wgaConversationConfig.ModelConfig.Config)
 			if err == nil && llmParams != nil {
 				modelParams = llmParams.(*mp_common.LLMParams)
 			}
 		}
 		opts = append(opts, wga_option.WithModelConfig(wga_option.ModelConfig{
-			Provider:     wgaUserConfig.ModelConfig.Provider,
-			ProviderName: wgaUserConfig.ModelConfig.Provider,
+			Provider:     wgaConversationConfig.ModelConfig.Provider,
+			ProviderName: wgaConversationConfig.ModelConfig.Provider,
 			BaseURL:      modelURL,
 			APIKey:       APIKey,
-			Model:        wgaUserConfig.ModelConfig.Model,
-			ModelName:    wgaUserConfig.ModelConfig.Model,
+			Model:        wgaConversationConfig.ModelConfig.Model,
+			ModelName:    wgaConversationConfig.ModelConfig.Model,
 			Params:       modelParams,
 		}))
-		log.Infof("[modelConfig] modelConfig=%v,modelURL=%s,apiKey=%s,modelParams=%v", wgaUserConfig.ModelConfig, modelURL, APIKey, modelParams)
+		log.Infof("[modelConfig] modelConfig=%v,modelURL=%s,apiKey=%s,modelParams=%v", wgaConversationConfig.ModelConfig, modelURL, APIKey, modelParams)
 	} else {
 		opts = []wga_option.Option{
 			wga_option.WithModelConfig(wga_option.ModelConfig{
@@ -365,14 +376,14 @@ func buildWgaOptionsFromUserConfig(ctx *gin.Context, wgaUserConfig *assistant_se
 	}
 
 	// 工具信息
-	//for _, tool := range wgaUserConfig.ToolList {
+	//for _, tool := range wgaConfig.ToolList {
 	//	switch tool.ToolType {
 	//	case constant.ToolTypeBuiltIn:
 	//		toolResp, err := mcp.GetSquareTool(ctx.Request.Context(), &mcp_service.GetSquareToolReq{
 	//			ToolSquareId: tool.ToolId,
 	//			Identity: &mcp_service.Identity{
-	//				UserId: wgaUserConfig.UserId,
-	//				OrgId:  wgaUserConfig.OrgId,
+	//				UserId: wgaConfig.UserId,
+	//				OrgId:  wgaConfig.OrgId,
 	//			},
 	//		})
 	//		if err != nil {

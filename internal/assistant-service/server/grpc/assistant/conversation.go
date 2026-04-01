@@ -352,9 +352,10 @@ func buildSubConversation(detail *model.SubConversationDetail, index int, oldDat
 
 // WgaConversationCreate 创建WGA对话
 func (s *Service) WgaConversationCreate(ctx context.Context, req *assistant_service.WgaConversationCreateReq) (*assistant_service.WgaConversationCreateResp, error) {
-	uuid := util.GenUUID()
+	// 创建对话
+	threadId := util.GenUUID()
 	conversation := &model.WgaConversation{
-		ThreadId:         uuid,
+		ThreadId:         threadId,
 		Title:            req.Prompt,
 		ConversationType: req.ConversationType,
 		UserId:           req.Identity.UserId,
@@ -365,14 +366,24 @@ func (s *Service) WgaConversationCreate(ctx context.Context, req *assistant_serv
 		return nil, errStatus(errs.Code_AssistantConversationErr, status)
 	}
 
+	// 创建对话配置
+	_, err := s.UpdateWgaConversationConfig(ctx, &assistant_service.UpdateWgaConversationConfigReq{
+		ThreadId:    threadId,
+		ModelConfig: req.ModelConfig,
+		Identity:    req.Identity,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &assistant_service.WgaConversationCreateResp{
-		Uuid: uuid,
+		ThreadId: threadId,
 	}, nil
 }
 
 // WgaConversationDelete 删除WGA对话
 func (s *Service) WgaConversationDelete(ctx context.Context, req *assistant_service.WgaConversationDeleteReq) (*emptypb.Empty, error) {
-	if status := s.cli.DeleteWgaConversation(ctx, req.Uuid); status != nil {
+	if status := s.cli.DeleteWgaConversation(ctx, req.ThreadId); status != nil {
 		return nil, errStatus(errs.Code_AssistantConversationErr, status)
 	}
 	return &emptypb.Empty{}, nil
@@ -390,7 +401,7 @@ func (s *Service) WgaConversationList(ctx context.Context, req *assistant_servic
 	var conversationInfos []*assistant_service.WgaConversationInfo
 	for _, conversation := range conversations {
 		conversationInfos = append(conversationInfos, &assistant_service.WgaConversationInfo{
-			Uuid:      conversation.ThreadId,
+			ThreadId:  conversation.ThreadId,
 			Title:     conversation.Title,
 			CreatedAt: conversation.CreatedAt.UnixMilli(),
 		})

@@ -69,6 +69,8 @@ service AssistantService {
   rpc MultiAssistantConversionStream(MultiAssistantConversionStreamReq) returns (stream AssistantConversionStreamResp) {}
 
   // --- wga config ---
+  rpc GetWgaConversationConfig(GetWgaConversationConfigReq) returns (GetWgaConversationConfigResp) {}
+  rpc UpdateWgaConversationConfig(UpdateWgaConversationConfigReq) returns (google.protobuf.Empty) {}
   rpc GetWgaConfig(GetWgaConfigReq) returns (GetWgaConfigResp) {}
   rpc UpdateWgaConfig(UpdateWgaConfigReq) returns (google.protobuf.Empty) {}
 
@@ -867,15 +869,16 @@ message SkillConversationItem {
 message WgaConversationCreateReq {
   string prompt = 1;
   string conversationType = 2;
-  Identity identity = 3;
+  WgaModelConfig modelConfig = 3;
+  Identity identity = 4;
 }
 
 message WgaConversationCreateResp {
-  string uuid = 1;
+  string threadId = 1;
 }
 
 message WgaConversationDeleteReq {
-  string uuid = 1;
+  string threadId = 1;
   Identity identity = 2;
 }
 
@@ -894,7 +897,7 @@ message WgaConversationListResp {
 }
 
 message WgaConversationInfo {
-  string uuid = 1;
+  string threadId = 1;
   string title = 2;
   int64 createdAt = 3;
 }
@@ -927,20 +930,41 @@ message WgaModelConfig {
   string config = 5;
 }
 
-message WgaConfig {
+message WgaConversationConfig {
   string threadId = 1;
   WgaModelConfig modelConfig = 2;
-  repeated WgaConfigAssistant assistantList = 3;
-  repeated WgaConfigTool toolList = 4;
   string userId = 5;
   string orgId = 6;
   int64 createdAt = 7;
   int64 updatedAt = 8;
 }
 
-message GetWgaConfigReq {
+message WgaConfig{
+  repeated WgaConfigTool toolList = 1;
+  repeated WgaConfigAssistant assistantList = 2;
+  string userId = 3;
+  string orgId = 4;
+  int64 createdAt = 5;
+  int64 updatedAt = 6;
+}
+
+message GetWgaConversationConfigReq {
   string threadId = 1;
   Identity identity = 2;
+}
+
+message GetWgaConversationConfigResp {
+  WgaConversationConfig config = 1;
+}
+
+message UpdateWgaConversationConfigReq {
+  string threadId = 1;
+  WgaModelConfig modelConfig = 2;
+  Identity identity = 3;
+}
+
+message GetWgaConfigReq {
+  Identity identity = 1;
 }
 
 message GetWgaConfigResp {
@@ -948,9 +972,7 @@ message GetWgaConfigResp {
 }
 
 message UpdateWgaConfigReq {
-  string threadId = 1;
-  WgaModelConfig modelConfig = 2;
-  repeated WgaConfigAssistant assistantList = 3;
-  repeated WgaConfigTool toolList = 4;
-  Identity identity = 5;
+  repeated WgaConfigTool toolList = 1;
+  repeated WgaConfigAssistant assistantList = 2;
+  Identity identity = 3;
 }

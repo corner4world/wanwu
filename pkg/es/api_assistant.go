@@ -241,45 +241,9 @@ func InitWgaChatHistoryIndexTemplate(ctx context.Context) error {
 						"type": "keyword",
 						"index": true
 					},
-					"messageType": {
+					"messages": {
 						"type": "keyword",
 						"index": true
-					},
-					"messageId": {
-						"type": "keyword",
-						"index": true
-					},
-					"role": {
-						"type": "keyword",
-						"index": true
-					},
-					"content": {
-						"type": "text",
-						"index": false
-					},
-					"toolCallId": {
-						"type": "keyword",
-						"index": true
-					},
-					"toolName": {
-						"type": "keyword",
-						"index": true
-					},
-					"toolArguments": {
-						"type": "text",
-						"index": false
-					},
-					"activityId": {
-						"type": "keyword",
-						"index": true
-					},
-					"activityType": {
-						"type": "keyword",
-						"index": true
-					},
-					"activityContent": {
-						"type": "object",
-						"enabled": false
 					},
 					"createdAt": {
 						"type": "long"

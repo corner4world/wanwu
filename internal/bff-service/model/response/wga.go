@@ -5,9 +5,14 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 )
 
-type GetGeneralAgentToolConfigResp struct {
-	ToolList      []request.ToolSelected      `json:"toolList"`      // 工具ID
-	AssistantList []request.AssistantSelected `json:"assistantList"` // 智能体ID
+type GetGeneralAgentConfigResp struct {
+	ToolList      []request.ToolSelected      `json:"toolList"`      // 工具列表
+	AssistantList []request.AssistantSelected `json:"assistantList"` // 智能体列表
+}
+
+type GetGeneralAgentConversationConfigResp struct {
+	ThreadID    string                 `json:"threadId"`    // 对话ID
+	ModelConfig request.AppModelConfig `json:"modelConfig"` // 模型
 }
 
 type CreateGeneralAgentConversationResp struct {
@@ -33,13 +38,6 @@ type GetGeneralAgentToolSelectResp struct {
 type GeneralAgentToolInfoResp struct {
 	Actions []*protocol.Tool `json:"actions"` // action列表
 	ToolInfo
-}
-
-type GetGeneralAgentConfigResp struct {
-	ThreadID      string                 `json:"threadId"`      // 对话ID
-	ModelConfig   request.AppModelConfig `json:"modelConfig"`   // 模型
-	AssistantList []*AssistantAgentInfo  `json:"assistantList"` // 能体列表
-	ToolList      []*AssistantToolInfo   `json:"toolList"`      // 工具列表
 }
 
 type GeneralAgentConfigCheckResponse struct {

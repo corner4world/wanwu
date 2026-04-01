@@ -89,7 +89,9 @@ type IClient interface {
 	GetSkillConversationList(ctx context.Context, userId, orgId string, pageNo, pageSize int) ([]*model.SkillConversation, int64, *err_code.Status)
 
 	//=================WgaConfig================
-	GetWgaConfig(ctx context.Context, threadId string, userId, orgId string) (*model.WgaConfig, *err_code.Status)
+	GetWgaConversationConfig(ctx context.Context, threadId string, userId, orgId string) (*model.WgaConversationConfig, *err_code.Status)
+	UpdateWgaConversationConfig(ctx context.Context, config *model.WgaConversationConfig) *err_code.Status
+	GetWgaConfig(ctx context.Context, userId, orgId string) (*model.WgaConfig, *err_code.Status)
 	UpdateWgaConfig(ctx context.Context, config *model.WgaConfig) *err_code.Status
 
 	//=================WgaConversation================

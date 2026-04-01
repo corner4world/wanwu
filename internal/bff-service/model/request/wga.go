@@ -1,14 +1,21 @@
 package request
 
-type UpdateGeneralAgentToolConfigReq struct {
+type UpdateGeneralAgentConfigReq struct {
 	ToolList      []ToolSelected      `json:"toolList"`      // 工具ID
 	AssistantList []AssistantSelected `json:"assistantList"` // 智能体ID
 }
 
-func (c *UpdateGeneralAgentToolConfigReq) Check() error { return nil }
+func (c *UpdateGeneralAgentConfigReq) Check() error { return nil }
+
+type GetGeneralAgentConversationConfigReq struct {
+	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
+}
+
+func (c *GetGeneralAgentConversationConfigReq) Check() error { return nil }
 
 type CreateGeneralAgentConversationReq struct {
-	Title string `json:"title" validate:"required"` // 标题
+	Title       string          `json:"title" validate:"required"` // 标题
+	ModelConfig *AppModelConfig `json:"modelConfig"`               // 模型
 }
 
 func (c *CreateGeneralAgentConversationReq) Check() error { return nil }
@@ -34,23 +41,15 @@ type GetGeneralAgentConversationDetailReq struct {
 
 func (c *GetGeneralAgentConversationDetailReq) Check() error { return nil }
 
-type GetGeneralAgentConfigReq struct {
-	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
-}
-
-func (c *GetGeneralAgentConfigReq) Check() error { return nil }
-
 type GeneralAgentConfigCheckRequest struct {
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
 }
 
 func (c *GeneralAgentConfigCheckRequest) Check() error { return nil }
 
-type UpdateGeneralAgentConfigReq struct {
-	ThreadID      string              `json:"threadId" validate:"required"`    // 对话ID
-	ModelConfig   *AppModelConfig     `json:"modelConfig" validate:"required"` // 模型
-	ToolList      []ToolSelected      `json:"toolList"`                        // 工具ID
-	AssistantList []AssistantSelected `json:"assistantList"`                   // 智能体ID
+type UpdateGeneralAgentConversationConfigReq struct {
+	ThreadID    string          `json:"threadId" validate:"required"`    // 对话ID
+	ModelConfig *AppModelConfig `json:"modelConfig" validate:"required"` // 模型
 }
 
 type ToolSelected struct {
@@ -63,7 +62,7 @@ type AssistantSelected struct {
 	AssistantType string `json:"assistantType" validate:"required"` // 智能体类型
 }
 
-func (c *UpdateGeneralAgentConfigReq) Check() error { return nil }
+func (c *UpdateGeneralAgentConversationConfigReq) Check() error { return nil }
 
 type GeneralAgentConversationChatReq struct {
 	ThreadID string                            `json:"threadId" validate:"required"` // 对话ID

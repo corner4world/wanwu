@@ -1849,10 +1849,15 @@ definitions:
     type: object
   request.CreateGeneralAgentConversationReq:
     properties:
+      modelConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppModelConfig'
+        description: 模型
       title:
         description: 标题
         type: string
     required:
+    - modelConfig
     - title
     type: object
   request.CreateKeywordsReq:
@@ -3980,11 +3985,6 @@ definitions:
     type: object
   request.UpdateGeneralAgentConfigReq:
     properties:
-      assistantList:
-        description: 智能体ID
-        items:
-          $ref: '#/definitions/request.AssistantSelected'
-        type: array
       modelConfig:
         allOf:
         - $ref: '#/definitions/request.AppModelConfig'
@@ -3992,14 +3992,22 @@ definitions:
       threadId:
         description: 对话ID
         type: string
+    required:
+    - modelConfig
+    - threadId
+    type: object
+  request.UpdateGeneralAgentToolConfigReq:
+    properties:
+      assistantList:
+        description: 智能体ID
+        items:
+          $ref: '#/definitions/request.AssistantSelected'
+        type: array
       toolList:
         description: 工具ID
         items:
           $ref: '#/definitions/request.ToolSelected'
         type: array
-    required:
-    - modelConfig
-    - threadId
     type: object
   request.UpdateKeywordsReq:
     properties:
@@ -6129,11 +6137,6 @@ definitions:
     type: object
   response.GetGeneralAgentConfigResp:
     properties:
-      assistantList:
-        description: 能体列表
-        items:
-          $ref: '#/definitions/response.AssistantAgentInfo'
-        type: array
       modelConfig:
         allOf:
         - $ref: '#/definitions/request.AppModelConfig'
@@ -6141,10 +6144,18 @@ definitions:
       threadId:
         description: 对话ID
         type: string
-      toolList:
-        description: 工具列表
+    type: object
+  response.GetGeneralAgentToolConfigResp:
+    properties:
+      assistantList:
+        description: 智能体ID
         items:
-          $ref: '#/definitions/response.AssistantToolInfo'
+          $ref: '#/definitions/request.AssistantSelected'
+        type: array
+      toolList:
+        description: 工具ID
+        items:
+          $ref: '#/definitions/request.ToolSelected'
         type: array
     type: object
   response.GetGeneralAgentToolSelectResp:
@@ -11695,7 +11706,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取通用智能体智能体选择
+      description: 获取通用智能体智能体选择，只返回单智能体
       parameters:
       - description: 智能体名称
         in: query
@@ -11722,7 +11733,7 @@ paths:
               type: object
       security:
       - JWT: []
-      summary: 通用智能体智能体选择
+      summary: 通用智能体智能体选择，只返回单智能体
       tags:
       - wga
   /general/agent/conversation:
@@ -12079,6 +12090,51 @@ paths:
       security:
       - JWT: []
       summary: 通用智能体CopilotRuntime协议端点
+      tags:
+      - wga
+  /general/agent/tool/config:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体工具配置
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GetGeneralAgentToolConfigResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取通用智能体工具配置
+      tags:
+      - wga
+    put:
+      consumes:
+      - application/json
+      description: 更新通用智能体工具配置
+      parameters:
+      - description: 更新通用智能体工具配置请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateGeneralAgentToolConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 更新通用智能体工具配置
       tags:
       - wga
   /general/agent/tool/info:

@@ -12,18 +12,66 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (s *Service) GetWgaConfig(ctx context.Context, req *assistant_service.GetWgaConfigReq) (*assistant_service.GetWgaConfigResp, error) {
+func (s *Service) GetWgaConversationConfig(ctx context.Context, req *assistant_service.GetWgaConversationConfigReq) (*assistant_service.GetWgaConversationConfigResp, error) {
 	if req.ThreadId == "" {
-		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigGetErr, "thread_id is required")
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConversationGetErr, "thread_id is required")
 	}
+	if req.Identity == nil {
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConversationGetErr, "identity is required")
+	}
+
+	config, status := s.cli.GetWgaConversationConfig(ctx, req.ThreadId, req.Identity.UserId, req.Identity.OrgId)
+	if status != nil {
+		log.Errorf("获取WGA对话配置失败，conversationId: %s, error: %v", req.ThreadId, status)
+		return nil, errStatus(errs.Code_WgaConversationGetErr, status)
+	}
+
+	return &assistant_service.GetWgaConversationConfigResp{
+		Config: toProtoWgaConversationConfig(config),
+	}, nil
+}
+
+func (s *Service) UpdateWgaConversationConfig(ctx context.Context, req *assistant_service.UpdateWgaConversationConfigReq) (*emptypb.Empty, error) {
+	if req.ThreadId == "" {
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConversationUpdateErr, "thread_id is required")
+	}
+	if req.Identity == nil {
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConversationUpdateErr, "identity is required")
+	}
+
+	var modelConfigJSON string
+	if req.ModelConfig != nil {
+		modelConfigBytes, _ := json.Marshal(req.ModelConfig)
+		modelConfigJSON = string(modelConfigBytes)
+	} else {
+		modelConfigJSON = "null"
+	}
+
+	config := &model.WgaConversationConfig{
+		ThreadID:    req.ThreadId,
+		UserID:      req.Identity.UserId,
+		OrgID:       req.Identity.OrgId,
+		ModelConfig: modelConfigJSON,
+	}
+
+	status := s.cli.UpdateWgaConversationConfig(ctx, config)
+	if status != nil {
+		log.Errorf("更新WGA对话配置失败，conversationId: %s, error: %v", req.ThreadId, status)
+		return nil, errStatus(errs.Code_WgaConversationUpdateErr, status)
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (s *Service) GetWgaConfig(ctx context.Context, req *assistant_service.GetWgaConfigReq) (*assistant_service.GetWgaConfigResp, error) {
 	if req.Identity == nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigGetErr, "identity is required")
 	}
 
-	config, status := s.cli.GetWgaConfig(ctx, req.ThreadId, req.Identity.UserId, req.Identity.OrgId)
+	config, status := s.cli.GetWgaConfig(ctx, req.Identity.UserId, req.Identity.OrgId)
 	if status != nil {
-		log.Errorf("获取WGA配置失败，conversationId: %s, error: %v", req.ThreadId, status)
-		return nil, errStatus(errs.Code_AssistantConversationErr, status)
+		log.Errorf("获取WGA配置失败，userId: %s, orgId: %s, error: %v", req.Identity.UserId, req.Identity.OrgId, status)
+		return nil, errStatus(errs.Code_WgaConfigGetErr, status)
 	}
 
 	return &assistant_service.GetWgaConfigResp{
@@ -32,9 +80,6 @@ func (s *Service) GetWgaConfig(ctx context.Context, req *assistant_service.GetWg
 }
 
 func (s *Service) UpdateWgaConfig(ctx context.Context, req *assistant_service.UpdateWgaConfigReq) (*emptypb.Empty, error) {
-	if req.ThreadId == "" {
-		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigUpdateErr, "thread_id is required")
-	}
 	if req.Identity == nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigUpdateErr, "identity is required")
 	}
@@ -42,32 +87,24 @@ func (s *Service) UpdateWgaConfig(ctx context.Context, req *assistant_service.Up
 	toolListJSON, _ := json.Marshal(req.ToolList)
 	assistantListJSON, _ := json.Marshal(req.AssistantList)
 
-	var modelConfigJSON string
-	if req.ModelConfig != nil {
-		modelConfigBytes, _ := json.Marshal(req.ModelConfig)
-		modelConfigJSON = string(modelConfigBytes)
-	}
-
 	config := &model.WgaConfig{
-		ThreadID:      req.ThreadId,
 		UserID:        req.Identity.UserId,
 		OrgID:         req.Identity.OrgId,
-		ModelConfig:   modelConfigJSON,
 		AssistantList: string(assistantListJSON),
 		ToolList:      string(toolListJSON),
 	}
 
 	status := s.cli.UpdateWgaConfig(ctx, config)
 	if status != nil {
-		log.Errorf("更新WGA配置失败，conversationId: %s, error: %v", req.ThreadId, status)
-		return nil, errStatus(errs.Code_AssistantConversationErr, status)
+		log.Errorf("更新WGA配置失败，userId: %s, orgId: %s, error: %v", req.Identity.UserId, req.Identity.OrgId, status)
+		return nil, errStatus(errs.Code_WgaConfigUpdateErr, status)
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
-func toProtoWgaConfig(m *model.WgaConfig) *assistant_service.WgaConfig {
-	config := &assistant_service.WgaConfig{
+func toProtoWgaConversationConfig(m *model.WgaConversationConfig) *assistant_service.WgaConversationConfig {
+	config := &assistant_service.WgaConversationConfig{
 		ThreadId:  m.ThreadID,
 		UserId:    m.UserID,
 		OrgId:     m.OrgID,
@@ -80,6 +117,17 @@ func toProtoWgaConfig(m *model.WgaConfig) *assistant_service.WgaConfig {
 		if err := json.Unmarshal([]byte(m.ModelConfig), &modelConfig); err == nil {
 			config.ModelConfig = &modelConfig
 		}
+	}
+
+	return config
+}
+
+func toProtoWgaConfig(m *model.WgaConfig) *assistant_service.WgaConfig {
+	config := &assistant_service.WgaConfig{
+		UserId:    m.UserID,
+		OrgId:     m.OrgID,
+		CreatedAt: m.CreatedAt,
+		UpdatedAt: m.UpdatedAt,
 	}
 
 	if m.ToolList != "" {

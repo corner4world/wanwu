@@ -13,8 +13,8 @@ import (
 // GetGeneralAgentAssistantSelect
 //
 //	@Tags			wga
-//	@Summary		通用智能体智能体选择
-//	@Description	获取通用智能体智能体选择
+//	@Summary		通用智能体智能体选择，只返回单智能体
+//	@Description	获取通用智能体智能体选择，只返回单智能体
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
@@ -58,38 +58,38 @@ func GetGeneralAgentToolInfo(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
-// UpdateGeneralAgentToolConfig
+// UpdateGeneralAgentConfig
 //
 //	@Tags			wga
-//	@Summary		更新通用智能体工具配置
+//	@Summary		修改通用智能体配置
 //	@Description	更新通用智能体工具配置
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			data	body		request.UpdateGeneralAgentToolConfigReq	true	"更新通用智能体工具配置请求参数"
+//	@Param			data	body		request.UpdateGeneralAgentConfigReq	true	"更新通用智能体配置请求参数"
 //	@Success		200		{object}	response.Response
-//	@Router			/general/agent/tool/config [put]
-func UpdateGeneralAgentToolConfig(ctx *gin.Context) {
-	var req request.UpdateGeneralAgentToolConfigReq
+//	@Router			/general/agent/config [put]
+func UpdateGeneralAgentConfig(ctx *gin.Context) {
+	var req request.UpdateGeneralAgentConfigReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.UpdateGeneralAgentToolConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
+	err := service.UpdateGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
 	gin_util.Response(ctx, nil, err)
 }
 
-// GetGeneralAgentToolConfig
+// GetGeneralAgentConfig
 //
 //	@Tags			wga
-//	@Summary		获取通用智能体工具配置
-//	@Description	获取通用智能体工具配置
+//	@Summary		获取通用智能体配置
+//	@Description	获取通用智能体配置
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.GetGeneralAgentToolConfigResp}
-//	@Router			/general/agent/tool/config [get]
-func GetGeneralAgentToolConfig(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentToolConfig(ctx, getUserID(ctx), getOrgID(ctx))
+//	@Success		200	{object}	response.Response{data=response.GetGeneralAgentConfigResp}
+//	@Router			/general/agent/config [get]
+func GetGeneralAgentConfig(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -175,43 +175,43 @@ func GetGeneralAgentConversationDetail(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
-// GetGeneralAgentConfig
+// GetGeneralAgentConversationConfig
 //
 //	@Tags			wga
-//	@Summary		通用智能体配置选择
-//	@Description	获取指定会话的配置信息，包括模型、工具
+//	@Summary		通用智能体对话配置
+//	@Description	获取指定会话的对话配置信息
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
 //	@Param			threadId	query		string	true	"会话ID"
-//	@Success		200			{object}	response.Response{data=response.GetGeneralAgentConfigResp}
+//	@Success		200			{object}	response.Response{data=response.GetGeneralAgentConversationConfigResp}
 //	@Router			/general/agent/conversation/config [get]
-func GetGeneralAgentConfig(ctx *gin.Context) {
-	var req request.GetGeneralAgentConfigReq
+func GetGeneralAgentConversationConfig(ctx *gin.Context) {
+	var req request.GetGeneralAgentConversationConfigReq
 	if !gin_util.BindQuery(ctx, &req) {
 		return
 	}
-	resp, err := service.GetGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
+	resp, err := service.GetGeneralAgentConversationConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
 	gin_util.Response(ctx, resp, err)
 }
 
-// UpdateGeneralAgentConfig
+// UpdateGeneralAgentConversationConfig
 //
 //	@Tags			wga
-//	@Summary		修改通用智能体配置
-//	@Description	修改通用智能体配置
+//	@Summary		修改通用智能体对话配置
+//	@Description	修改通用智能体对话配置
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			data	body		request.UpdateGeneralAgentConfigReq	true	"修改通用智能体配置请求参数"
+//	@Param			data	body		request.UpdateGeneralAgentConversationConfigReq	true	"修改通用智能体对话配置请求参数"
 //	@Success		200		{object}	response.Response
 //	@Router			/general/agent/conversation/config [put]
-func UpdateGeneralAgentConfig(ctx *gin.Context) {
-	var req request.UpdateGeneralAgentConfigReq
+func UpdateGeneralAgentConversationConfig(ctx *gin.Context) {
+	var req request.UpdateGeneralAgentConversationConfigReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.UpdateGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
+	err := service.UpdateGeneralAgentConversationConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
 	gin_util.Response(ctx, nil, err)
 }
 
