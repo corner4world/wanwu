@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/UnicomAI/wanwu/pkg/log"
@@ -109,9 +110,19 @@ func (r *Runner) Run(ctx context.Context) (<-chan string, error) {
 // AfterRun 执行后处理：
 // 复制输出文件到本地（如果指定了 OutputDir）
 func (r *Runner) AfterRun(ctx context.Context) error {
+	log.Infof("%s AfterRun start, OutputDir: %s", r.logPrefix, r.req.OutputDir)
+
 	if r.req.OutputDir != "" {
-		return r.copyOutput(ctx)
+		err := r.copyOutput(ctx)
+		if err != nil {
+			log.Errorf("%s AfterRun failed: %v", r.logPrefix, err)
+			return err
+		}
+		log.Infof("%s AfterRun completed", r.logPrefix)
+		return nil
 	}
+
+	log.Infof("%s AfterRun skipped (no OutputDir)", r.logPrefix)
 	return nil
 }
 
@@ -138,25 +149,88 @@ func (r *Runner) setupEnv(ctx context.Context) error {
 
 // 复制输出文件到本地，并移除隐藏文件
 func (r *Runner) copyOutput(ctx context.Context) error {
+	log.Infof("%s copyOutput start", r.logPrefix)
+
+	// 从沙箱复制输出文件
 	if err := r.sb.CopyFromSandbox(ctx, r.req.OutputDir); err != nil {
+		log.Errorf("%s copyOutput CopyFromSandbox failed: %v", r.logPrefix, err)
 		return fmt.Errorf("failed to copy output from workspace: %w", err)
 	}
 
-	// 移除隐藏文件
+	// 读取 outputDir 内容
 	entries, err := os.ReadDir(r.req.OutputDir)
 	if err != nil {
+		log.Errorf("%s copyOutput ReadDir failed: %v", r.logPrefix, err)
 		return fmt.Errorf("failed to read output directory: %w", err)
 	}
 
+	// 处理每个条目
 	for _, entry := range entries {
+		entryPath := filepath.Join(r.req.OutputDir, entry.Name())
+
+		// 删除隐藏文件
 		if strings.HasPrefix(entry.Name(), ".") {
-			removePath := r.req.OutputDir + "/" + entry.Name()
-			if err := os.RemoveAll(removePath); err != nil {
+			log.Infof("%s copyOutput removing hidden file: %s", r.logPrefix, entry.Name())
+			if err := os.RemoveAll(entryPath); err != nil {
+				log.Errorf("%s copyOutput remove hidden file failed: %s, err: %v", r.logPrefix, entry.Name(), err)
 				return fmt.Errorf("failed to remove hidden file %s: %w", entry.Name(), err)
 			}
+			continue
+		}
+
+		// 删除 skills 目录
+		if entry.Name() == "skills" && entry.IsDir() {
+			log.Infof("%s copyOutput removing skills dir", r.logPrefix)
+			if err := os.RemoveAll(entryPath); err != nil {
+				log.Errorf("%s copyOutput remove skills dir failed: %v", r.logPrefix, err)
+				return fmt.Errorf("failed to remove skills directory: %w", err)
+			}
+			continue
+		}
+
+		// 将 output 子目录内容提升到 outputDir 根目录
+		if entry.Name() == "output" && entry.IsDir() {
+			log.Infof("%s copyOutput flattening output subdir", r.logPrefix)
+			if err := flattenDir(entryPath, r.req.OutputDir); err != nil {
+				log.Errorf("%s copyOutput flatten failed: %v", r.logPrefix, err)
+				return fmt.Errorf("failed to flatten output directory: %w", err)
+			}
+			continue
 		}
 	}
 
+	log.Infof("%s copyOutput completed", r.logPrefix)
+	return nil
+}
+
+// flattenDir 将 src 目录中的所有内容移动到 dst 目录，然后删除空的 src 目录
+func flattenDir(src, dst string) error {
+	log.Infof("[flattenDir] start, src: %s, dst: %s", src, dst)
+
+	subEntries, err := os.ReadDir(src)
+	if err != nil {
+		log.Errorf("[flattenDir] ReadDir failed: %v", err)
+		return fmt.Errorf("failed to read dir %s: %w", src, err)
+	}
+
+	log.Infof("[flattenDir] moving %d items", len(subEntries))
+
+	for _, sub := range subEntries {
+		srcPath := filepath.Join(src, sub.Name())
+		dstPath := filepath.Join(dst, sub.Name())
+
+		if err := os.Rename(srcPath, dstPath); err != nil {
+			log.Errorf("[flattenDir] move failed: %s, err: %v", sub.Name(), err)
+			return fmt.Errorf("failed to move %s: %w", sub.Name(), err)
+		}
+	}
+
+	if err := os.Remove(src); err != nil {
+		log.Errorf("[flattenDir] remove src dir failed: %v", err)
+		return err
+	}
+
+	log.Infof("[flattenDir] completed")
 	return nil
 }
 
