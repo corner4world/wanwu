@@ -30,8 +30,8 @@ func (c *einoChatModelConverter) Convert(line string) ([]*schema.Message, error)
 		return nil, nil
 	}
 	msg := event.Output.MessageOutput.Message
-	if msg.Content == "" && len(msg.ToolCalls) == 0 {
-		return nil, nil
+	if msg.Role == schema.Assistant && len(msg.ToolCalls) > 0 && msg.Content != "" {
+		msg.Content = ""
 	}
 	return []*schema.Message{msg}, nil
 }
