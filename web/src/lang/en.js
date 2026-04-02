@@ -62,8 +62,10 @@ export default {
     connecting: 'Connecting to service...',
   },
   menu: {
+    generalAgent: 'General Agent',
     aiAssistant: 'AI Assistant',
-    modelService: '模型服务',
+    wanwuAgent: 'Wanwu Agent',
+    modelService: 'Model Service',
     resource: '资源库',
     square: '探索广场',
     explore: '应用广场',

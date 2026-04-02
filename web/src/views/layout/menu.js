@@ -37,6 +37,26 @@ export const menuList = [
     ],
   },
   {
+    name: i18n.t('menu.generalAgent'),
+    index: 'generalAgent',
+    icon: 'generalAgent',
+    perm: [PERMS.AGENT],
+    children: [
+      {
+        name: i18n.t('menu.aiAssistant'),
+        index: 'generalAgent-aiAssistant',
+        path: '/aiAssistant',
+        perm: PERMS.AGENT,
+      },
+      {
+        name: i18n.t('menu.wanwuAgent'),
+        index: 'generalAgent-wanwuAgent',
+        path: '/generalAgent',
+        perm: PERMS.AGENT,
+      },
+    ],
+  },
+  {
     name: i18n.t('menu.resource'),
     index: 'resource',
     icon: 'resource',
