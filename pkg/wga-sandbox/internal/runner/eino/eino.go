@@ -86,6 +86,10 @@ func (r *Runner) BeforeRun(ctx context.Context) error {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
+	if _, err := r.sb.ExecuteSync(ctx, "mkdir", "-p", "tmp"); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+
 	return nil
 }
 
@@ -184,6 +188,26 @@ func (r *Runner) copyOutput(ctx context.Context) error {
 			if err := os.RemoveAll(entryPath); err != nil {
 				log.Errorf("%s copyOutput remove skills dir failed: %v", r.logPrefix, err)
 				return fmt.Errorf("failed to remove skills directory: %w", err)
+			}
+			continue
+		}
+
+		// 删除 input 目录
+		if entry.Name() == "input" && entry.IsDir() {
+			log.Infof("%s copyOutput removing input dir", r.logPrefix)
+			if err := os.RemoveAll(entryPath); err != nil {
+				log.Errorf("%s copyOutput remove input dir failed: %v", r.logPrefix, err)
+				return fmt.Errorf("failed to remove input directory: %w", err)
+			}
+			continue
+		}
+
+		// 删除 tmp 目录
+		if entry.Name() == "tmp" && entry.IsDir() {
+			log.Infof("%s copyOutput removing tmp dir", r.logPrefix)
+			if err := os.RemoveAll(entryPath); err != nil {
+				log.Errorf("%s copyOutput remove tmp dir failed: %v", r.logPrefix, err)
+				return fmt.Errorf("failed to remove tmp directory: %w", err)
 			}
 			continue
 		}
