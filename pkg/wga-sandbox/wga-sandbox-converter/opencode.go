@@ -133,11 +133,13 @@ func parseToolUsePart(part json.RawMessage) (messageContent, error) {
 
 	switch p.State.Status {
 	case "completed":
-		if p.State.Output != "" {
-			result.toolResult = &toolResult{
-				callID:  p.CallID,
-				content: p.State.Output,
-			}
+		output := p.State.Output
+		if output == "" {
+			output = "success"
+		}
+		result.toolResult = &toolResult{
+			callID:  p.CallID,
+			content: output,
 		}
 	case "error":
 		if p.State.Error != "" {
