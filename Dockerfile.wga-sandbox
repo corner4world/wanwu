@@ -3,10 +3,53 @@ FROM crpi-6pj79y7ddzdpexs8.cn-hangzhou.personal.cr.aliyuncs.com/wanwulite/wga-sa
 USER root
 
 # ----------------------
+# 安装中文字体（用于PDF渲染）
+# ----------------------
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        fonts-noto-cjk \
+        fonts-wqy-zenhei \
+        fonts-wqy-microhei \
+        fontconfig \
+        --no-install-recommends; \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*;
+
+# ----------------------
+# 安装Python PDF处理依赖（用于kimi-pdf skill）
+# ----------------------
+RUN pip install --no-cache-dir \
+    pikepdf==9.7.0 \
+    pdfplumber==0.11.6 \
+    pypdf \
+    --break-system-packages
+
+# ----------------------
+# 安装.NET SDK 8.0（用于minimax-docx skill的C# OpenXML SDK）
+# ----------------------
+RUN curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && \
+    chmod +x /tmp/dotnet-install.sh && \
+    /tmp/dotnet-install.sh --channel 8.0 --install-dir /root/.dotnet && \
+    rm /tmp/dotnet-install.sh && \
+    ln -sf /root/.dotnet/dotnet /usr/local/bin/dotnet
+
+ENV DOTNET_ROOT=/root/.dotnet
+ENV PATH="${PATH}:/root/.dotnet:/root/.dotnet/tools"
+
+# 安装dotnet-script工具（用于运行C#脚本）
+RUN dotnet tool install -g dotnet-script
+
+# ----------------------
 # npm 安装（若有）
 #
 # ----------------------
 # RUN npm i -g ${your_npm_package}
+#PPT
+RUN npm install -g pptxgenjs
+
+# Playwright + Chromium（用于PDF渲染）
+RUN npm install -g playwright && npx playwright install chromium
 
 # openapi-to-skills
 # 克隆源码、安装依赖、构建、全局链接

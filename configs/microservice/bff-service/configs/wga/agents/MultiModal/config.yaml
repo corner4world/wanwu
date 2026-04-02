@@ -1,0 +1,48 @@
+id: Multi-Modal Agent
+type: sandbox
+name: 多模态智能体
+description: |
+  多模态智能体，提供以下能力：
+  - 文生图：根据文字描述生成图片
+  - 图生图：根据参考图片生成新图片
+  - 文生视频：根据文字描述生成视频
+  - 图生视频：根据参考图片生成视频
+
+configure:
+  enable_thinking: true
+  sandbox:
+    type: reuse
+    host: localhost
+
+prompt_relative_path: ./prompt.md
+
+tool_categories:
+  - category: wga_tool_category_multimodal
+    condition: optional
+    tools:
+      - path: configs/microservice/mcp-service/configs/tool/tongyiqwen/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: qwen_image_max
+          - operation_id: qwen_image_edit_max
+      - path: configs/microservice/mcp-service/configs/tool/tongyiwan/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: wan26_t2i
+          - operation_id: wan26_image
+          - operation_id: wan26_i2v_flash
+          - operation_id: wan22_kf2v_flash
+          - operation_id: wan26_t2v
+      - path: configs/microservice/mcp-service/configs/tool/bochasearch/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: bocha_comprehensive_search
+      - path: configs/microservice/mcp-service/configs/tool/tavilysearch/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: tavily_basic_search
+          
+
+skills:
+
+sub_agents:

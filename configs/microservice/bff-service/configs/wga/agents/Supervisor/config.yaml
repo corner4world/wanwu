@@ -1,0 +1,45 @@
+id: Supervisor Agent
+type: supervisor
+name: 万悟智能体
+description: |
+  通用智能体入口，负责理解用户需求并选择合适的处理方式：
+  - 直接回答：回答简单问题、常识性问题、基本交流；任何不确定的回答直接协调对应子智能体处理
+  - 深度调研：协调 Deep Research Agent 执行多阶段调研
+  - 多模态处理：协调 Multi-Modal Agent 处理多媒体任务
+  - 其他通用任务：协调 General Agent 处理非以上范围中的问题
+
+configure:
+  max_iterations: 200
+  enable_thinking: true
+  sandbox:
+    type: reuse
+    host: localhost
+
+prompt_relative_path: ./prompt.md
+
+tool_categories:
+  - category: wga_tool_category_search
+    condition: optional
+    tools:
+      - path: configs/microservice/mcp-service/configs/tool/bochasearch/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: bocha_comprehensive_search
+          - operation_id: bocha_web_search_only
+          - operation_id: bocha_search_structured
+          - operation_id: bocha_search_day
+          - operation_id: bocha_search_last_week
+      - path: configs/microservice/mcp-service/configs/tool/tavilysearch/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: tavily_basic_search
+          - operation_id: tavily_deep_search
+          - operation_id: tavily_day_search
+          - operation_id: tavily_week_search
+          - operation_id: tavily_image_search
+          - operation_id: tavily_date_search
+
+sub_agents:
+  - relative_path: ../DeepResearch/config.yaml
+  - relative_path: ../MultiModal/config.yaml
+  - relative_path: ../General/config.yaml

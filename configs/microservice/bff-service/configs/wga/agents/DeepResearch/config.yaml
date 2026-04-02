@@ -1,0 +1,9 @@
+id: Deep Research Agent
+type: sequential
+name: 深度调研智能体
+description: 顺序执行计划、研究、报告三个阶段，完成深度调研任务
+
+sub_agents:
+  - relative_path: ./PlanAgent/config.yaml
+  - relative_path: ./ResearchAgent/config.yaml
+  - relative_path: ./ReportAgent/config.yaml

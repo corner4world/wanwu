@@ -1,0 +1,37 @@
+id: Research Agent
+type: sandbox
+name: 深度研究智能体
+description: 你是一个专业的研究分析师。根据调研计划执行深度信息收集和分析
+
+configure:
+  enable_thinking: true
+  sandbox:
+    type: reuse
+    host: localhost
+
+prompt_relative_path: ./prompt.md
+
+tool_categories:
+  - category: wga_tool_category_search
+    condition: optional
+    tools:
+      - path: configs/microservice/mcp-service/configs/tool/bochasearch/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: bocha_comprehensive_search
+          - operation_id: bocha_web_search_only
+          - operation_id: bocha_search_structured
+          - operation_id: bocha_search_day
+          - operation_id: bocha_search_last_week
+      - path: configs/microservice/mcp-service/configs/tool/tavilysearch/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: tavily_basic_search
+          - operation_id: tavily_deep_search
+          - operation_id: tavily_day_search
+          - operation_id: tavily_week_search
+          - operation_id: tavily_image_search
+          - operation_id: tavily_date_search
+
+skills:
+  # - dir: configs/microservice/bff-service/configs/agent-skills/anthropics

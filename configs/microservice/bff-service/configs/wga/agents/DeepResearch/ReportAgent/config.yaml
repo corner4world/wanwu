@@ -1,0 +1,27 @@
+id: Report Agent
+type: sandbox
+name: 报告撰写智能体
+description: 你是一个专业的调研报告撰写专家。将调研内容整合成图文并茂的调研报告
+
+configure:
+  enable_thinking: true
+  sandbox:
+    type: reuse
+    host: localhost
+
+prompt_relative_path: ./prompt.md
+
+tool_categories:
+  - category: wga_tool_category_search
+    condition: optional
+    tools:
+      - path: configs/microservice/mcp-service/configs/tool/tavilysearch/openapi.json
+        auth_required: true
+        operations:
+          - operation_id: tavily_image_search
+
+skills:
+  # - dir: configs/microservice/bff-service/configs/agent-skills/kimi/kimi-pdf
+  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/minimax-docx
+  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/pptx-generator
+  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/frontend-dev

@@ -1,0 +1,61 @@
+agentId: Supervisor Agent
+configPath: configs/microservice/bff-service/configs/wga/config.yaml
+
+agents:
+  - relative_path: ./agents/Supervisor/config.yaml
+  - relative_path: ./agents/DeepResearch/config.yaml
+  - relative_path: ./agents/MultiModal/config.yaml
+  - relative_path: ./agents/General/config.yaml
+
+server:
+  host: "0.0.0.0"
+  port: 18080
+
+model:
+  provider: yuanjing
+  provider_name: YuanJing
+  base_url: https://maas-api.ai-yuanjing.com/openapi/compatible-mode/v1
+  api_key: sk-xxx
+  model: minimax-m2.5
+  model_name: minimax-m2.5
+  # model: glm-5
+  # model_name: glm-5
+  # model: kimi-k2.5
+  # model_name: kimi-k2.5
+
+persistent:
+  enabled: true
+  base_dir: /shared/data/wga/bff/versioned
+  mode: versioned
+
+tools:
+  # - title: 博查AI搜索
+  #   apiAuth:
+  #     authType: api_key_header
+  #     apiKeyHeaderPrefix: bearer
+  #     apiKeyHeader: Authorization
+  #     apiKeyValue: sk-xxx
+  - title: Bocha Search API
+    apiAuth:
+      authType: api_key_header
+      apiKeyHeaderPrefix: bearer
+      apiKeyHeader: Authorization
+      apiKeyValue: sk-xxx
+  - title: Tavily News Search API
+    apiAuth:
+      authType: api_key_header
+      apiKeyHeaderPrefix: bearer
+      apiKeyHeader: Authorization
+      apiKeyValue: tvly-dev-xxx
+  - title: 通义千问 (Qwen) 多模态工具
+    apiAuth:
+      authType: api_key_header
+      apiKeyHeaderPrefix: bearer
+      apiKeyHeader: Authorization
+      apiKeyValue: sk-xxx
+  - title: 通义万相 (Wan) 多模态工具
+    apiAuth:
+      authType: api_key_header
+      apiKeyHeaderPrefix: bearer
+      apiKeyHeader: Authorization
+      apiKeyValue: sk-xxx
