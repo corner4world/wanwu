@@ -55,14 +55,16 @@ export default {
     version: '版本',
   },
   aiAssistant: {
-    serviceUnavailable: '机器人助手服务暂不可用',
+    serviceUnavailable: 'OpenClaw服务暂不可用',
     refreshMessage: '请部署OpenClaw客户端并开启服务后刷新界面',
     hintText: '具体流程详见',
     helpDoc: '“帮助文档”',
     connecting: '正在连接服务...',
   },
   menu: {
-    aiAssistant: '机器人助手',
+    generalAgent: '通用智能体',
+    wga: 'WanwuBot',
+    aiAssistant: 'OpenClaw',
     modelService: '模型服务',
     resource: '资源库',
     square: '探索广场',

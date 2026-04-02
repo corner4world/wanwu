@@ -126,6 +126,11 @@ const constantRoutes = [
         meta: { perm: [PERMS.SKILL] },
       },
       {
+        path: '/wga',
+        component: resolve => require(['@/views/generalAgent'], resolve),
+        meta: { perm: [PERMS.SKILL] },
+      },
+      {
         path: '/tool',
         component: resolve => require(['@/views/tool'], resolve),
         meta: { perm: [PERMS.TOOL], routeType: TOOL },
