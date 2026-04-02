@@ -94,6 +94,11 @@ recommend_models:
     embedding:
       - model: "text-embedding-v4"
         display_name: "text-embedding-v4"
+    multimodal-embedding:
+      - model: "qwen3-vl-embedding"
+        display_name: "qwen3-vl-embedding"
+      - model: "tongyi-embedding-vision-plus"
+        display_name: "tongyi-embedding-vision-plus"
     sync-asr:
       - model: "qwen3-asr-flash"
         display_name: "qwen3-asr-flash"
@@ -140,6 +145,27 @@ recommend_models:
     embedding:
       - model: "embedding-v1"
         display_name: "embedding-v1"
+
+  - provider: "ZhiPu"
+    llm:
+      - model: "glm-5"
+        display_name: "glm-5"
+        tags: [ "深度思考开关", "工具调用" ]
+      - model: "glm-4.7"
+        display_name: "glm-4.7"
+        tags: [ "深度思考开关", "工具调用" ]
+      - model: "glm-4.5"
+        display_name: "glm-4.5"
+        tags: [ "深度思考开关", "工具调用" ]
+      - model: "glm-4.6v"
+        display_name: "glm-4.6v"
+        tags: [ "图文问答","深度思考开关", "工具调用" ]
+    rerank:
+      - model: "rerank"
+        display_name: "智谱 rerank"
+    embedding:
+      - model: "embedding-3"
+        display_name: "embedding-3"
 
   - provider: "DeepSeek"
     llm:

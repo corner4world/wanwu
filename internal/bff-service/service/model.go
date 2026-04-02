@@ -417,14 +417,45 @@ func convertRecommendModelsLLM(items []config.RecommendModelItemLLM) []response.
 	result := make([]response.RecommendModel, 0, len(items))
 	for _, item := range items {
 		tags := make([]response.ModelTagItem, 0, len(item.Tags))
+		hasVision := false
+		hasToolCall := false
+		hasThinking := false
+
 		for _, t := range item.Tags {
 			tags = append(tags, response.ModelTagItem{Text: t})
+			if t == mp_common.TagVisionSupport {
+				hasVision = true
+			}
+			if t == mp_common.TagToolCall {
+				hasToolCall = true
+			}
+			if t == mp_common.TagThinkingSupport {
+				hasThinking = true
+			}
 		}
+
 		result = append(result, response.RecommendModel{
-			Model:       item.Model,
-			DisplayName: item.DisplayName,
-			Tags:        tags,
+			Model:           item.Model,
+			DisplayName:     item.DisplayName,
+			Tags:            tags,
+			VisionSupport:   mapSupport(hasVision),
+			FunctionCalling: mapToolCall(hasToolCall),
+			ThinkingSupport: mapSupport(hasThinking),
 		})
 	}
 	return result
+}
+
+func mapSupport(has bool) string {
+	if has {
+		return "support"
+	}
+	return "noSupport"
+}
+
+func mapToolCall(has bool) string {
+	if has {
+		return "toolCall"
+	}
+	return "noSupport"
 }

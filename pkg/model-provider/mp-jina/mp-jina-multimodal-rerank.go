@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	"github.com/UnicomAI/wanwu/pkg/util"
 )
 
 type MultiModalRerank struct {
@@ -46,6 +47,15 @@ func (cfg *MultiModalRerank) NewReq(req *mp_common.MultiModalRerankReq) (mp_comm
 		}
 	default:
 		return nil, fmt.Errorf("不支持的query类型: %T，仅支持字符串或{text:string}格式对象", q)
+	}
+	if docs, ok := m["documents"].([]interface{}); ok {
+		for i := range docs {
+			if doc, ok := docs[i].(map[string]interface{}); ok {
+				if img, ok := doc["image"].(string); ok && img != "" {
+					doc["image"], _ = util.CheckAndRemoveBase64Prefix(img)
+				}
+			}
+		}
 	}
 	return mp_common.NewRerankReq(m), nil
 }

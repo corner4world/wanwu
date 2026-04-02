@@ -36,6 +36,7 @@ const (
 	TagText2Image          string = "文生图"
 	TagVisionSupport       string = "图文问答"
 	TagToolCall            string = "工具调用"
+	TagThinkingSupport     string = "深度思考开关"
 	TagScopeTypePrivate    string = "个人"
 	TagScopeTypePublic     string = "全局公开"
 	TagScopeTypeOrg        string = "组织公开"

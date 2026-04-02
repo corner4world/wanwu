@@ -34,7 +34,10 @@ type ModelTagItem struct {
 }
 
 type RecommendModel struct {
-	Model       string         `json:"model"`
-	DisplayName string         `json:"displayName"`
-	Tags        []ModelTagItem `json:"tags"`
+	Model           string         `json:"model"`
+	DisplayName     string         `json:"displayName"`
+	Tags            []ModelTagItem `json:"tags"`
+	VisionSupport   string         `json:"visionSupport"`
+	FunctionCalling string         `json:"functionCalling"`
+	ThinkingSupport string         `json:"thinkingSupport"`
 }

@@ -15,6 +15,7 @@ import (
 	mp_qianfan "github.com/UnicomAI/wanwu/pkg/model-provider/mp-qianfan"
 	mp_qwen "github.com/UnicomAI/wanwu/pkg/model-provider/mp-qwen"
 	mp_yuanjing "github.com/UnicomAI/wanwu/pkg/model-provider/mp-yuanjing"
+	mp_zhipu "github.com/UnicomAI/wanwu/pkg/model-provider/mp-zhipu"
 	"github.com/gin-gonic/gin"
 )
 
@@ -216,6 +217,12 @@ func ToModelTags(provider, modelType, cfg string) ([]mp_common.Tag, error) {
 				return nil, fmt.Errorf("unmarshal model config err: %v", err)
 			}
 			tags = embedding.Tags()
+		case ModelTypeMultiEmbedding:
+			embedding := &mp_qwen.MultiModalEmbedding{}
+			if err := json.Unmarshal([]byte(cfg), embedding); err != nil {
+				return nil, fmt.Errorf("unmarshal model config err: %v", err)
+			}
+			tags = embedding.Tags()
 		case ModelTypeSyncAsr:
 			asr := &mp_qwen.SyncAsr{}
 			if err := json.Unmarshal([]byte(cfg), asr); err != nil {
@@ -328,6 +335,29 @@ func ToModelTags(provider, modelType, cfg string) ([]mp_common.Tag, error) {
 		default:
 			return nil, fmt.Errorf("ToModelTags:invalid provider %v model type %v", provider, modelType)
 		}
+	case ProviderZhipu:
+		switch modelType {
+		case ModelTypeLLM:
+			llm := &mp_zhipu.LLM{}
+			if err := json.Unmarshal([]byte(cfg), llm); err != nil {
+				return nil, fmt.Errorf("unmarshal model config err: %v", err)
+			}
+			tags = llm.Tags()
+		case ModelTypeTextRerank:
+			rerank := &mp_zhipu.Rerank{}
+			if err := json.Unmarshal([]byte(cfg), rerank); err != nil {
+				return nil, fmt.Errorf("unmarshal model config err: %v", err)
+			}
+			tags = rerank.Tags()
+		case ModelTypeTextEmbedding:
+			embedding := &mp_zhipu.Embedding{}
+			if err := json.Unmarshal([]byte(cfg), embedding); err != nil {
+				return nil, fmt.Errorf("unmarshal model config err: %v", err)
+			}
+			tags = embedding.Tags()
+		default:
+			return nil, fmt.Errorf("ToModelTags:invalid provider %v model type %v", provider, modelType)
+		}
 	default:
 		return nil, fmt.Errorf("ToModelTags:invalid provider: %v", provider)
 	}
@@ -417,6 +447,13 @@ func ToModelConfig(provider, modelType, cfg string) (interface{}, error) {
 			ret = &mp_qwen.Rerank{}
 		case ModelTypeTextEmbedding:
 			ret = &mp_qwen.Embedding{}
+		case ModelTypeMultiEmbedding:
+			ret = &mp_qwen.MultiModalEmbedding{
+				MaxTextLength:    &maxTextLength,
+				MaxImageSize:     &maxImageSize,
+				MaxVideoClipSize: &maxVideoClipSize,
+				SupportFileTypes: []string{"image"},
+			}
 		case ModelTypeSyncAsr:
 			ret = &mp_qwen.SyncAsr{}
 		default:
@@ -483,6 +520,17 @@ func ToModelConfig(provider, modelType, cfg string) (interface{}, error) {
 		default:
 			return nil, fmt.Errorf("ToModelConfig:invalid provider %v model type %v", provider, modelType)
 		}
+	case ProviderZhipu:
+		switch modelType {
+		case ModelTypeLLM:
+			ret = &mp_zhipu.LLM{}
+		case ModelTypeTextRerank:
+			ret = &mp_zhipu.Rerank{}
+		case ModelTypeTextEmbedding:
+			ret = &mp_zhipu.Embedding{}
+		default:
+			return nil, fmt.Errorf("ToModelConfig:invalid provider %v model type %v", provider, modelType)
+		}
 	default:
 		return nil, fmt.Errorf("ToModelConfig:invalid provider: %v", provider)
 	}
@@ -502,6 +550,7 @@ type ProviderModelConfig struct {
 	ProviderInfini           ProviderModelByInfini           `json:"providerInfini"`
 	ProviderQianFan          ProviderModelByQianFan          `json:"providerQianFan"`
 	ProviderDeepSeek         ProviderModelByDeepSeek         `json:"providerDeepSeek"`
+	ProviderZhipu            ProviderModelByZhipu            `json:"providerZhipu"`
 }
 
 type ProviderModelByOpenAICompatible struct {
@@ -525,9 +574,10 @@ type ProviderModelByHuoShan struct {
 }
 
 type ProviderModelByQwen struct {
-	Llm       mp_qwen.LLM       `json:"llm"`
-	Rerank    mp_qwen.Rerank    `json:"rerank"`
-	Embedding mp_qwen.Embedding `json:"embedding"`
+	Llm                 mp_qwen.LLM                 `json:"llm"`
+	Rerank              mp_qwen.Rerank              `json:"rerank"`
+	Embedding           mp_qwen.Embedding           `json:"embedding"`
+	MultiModalEmbedding mp_qwen.MultiModalEmbedding `json:"multiModalEmbedding"`
 }
 
 type ProviderModelByOllama struct {
@@ -549,4 +599,10 @@ type ProviderModelByQianFan struct {
 
 type ProviderModelByDeepSeek struct {
 	Llm mp_deepseek.LLM `json:"llm"`
+}
+
+type ProviderModelByZhipu struct {
+	Llm       mp_zhipu.LLM       `json:"llm"`
+	Rerank    mp_zhipu.Rerank    `json:"rerank"`
+	Embedding mp_zhipu.Embedding `json:"embedding"`
 }

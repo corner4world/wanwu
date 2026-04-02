@@ -19,6 +19,7 @@ type MultiModalEmbeddingReq struct {
 	Input          []MultiInput `json:"input" validate:"required"`
 	EncodingFormat string       `json:"encoding_format,omitempty"`
 	Dimensions     *int         `json:"dimensions,omitempty"`
+	Parameters     interface{}  `json:"parameters,omitempty"`
 }
 type MultiInput struct {
 	Text  string `json:"text,omitempty"`

@@ -11,7 +11,6 @@ import (
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
-	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -35,14 +34,6 @@ func ModelMultiModalRerank(ctx *gin.Context, modelID string, req *mp_common.Mult
 		}
 	}
 
-	// jina 传参为不带前缀base64
-	if modelInfo.Provider == mp.ProviderJina {
-		for i := range req.Documents {
-			if req.Documents[i].Image != "" {
-				req.Documents[i].Image, _ = util.CheckAndRemoveBase64Prefix(req.Documents[i].Image)
-			}
-		}
-	}
 	// multiModalRerank config
 	multiModalRerank, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
 	if err != nil {
