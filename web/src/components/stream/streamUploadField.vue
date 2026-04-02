@@ -367,9 +367,9 @@ export default {
         this.fileInfo = [];
       }
       this.lastFileType = this.fileType;
-
       this.fileInfo.push({
         fileName,
+        oldFileName,
         fileSize: this.fileList[this.fileIndex]['size'],
         fileUrl: fiePath,
       });
