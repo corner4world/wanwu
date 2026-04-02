@@ -121,6 +121,15 @@ type EmailLoginInfo struct {
 	LastUpdatePasswordAt int64
 }
 
+type UsersInfo struct {
+	UserName string
+	Phone    string
+	Company  string
+	Remark   string
+	Password string
+	RoleName string
+}
+
 func toErrStatus(key string, args ...string) *err_code.Status {
 	return &err_code.Status{
 		TextKey: key,

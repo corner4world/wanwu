@@ -78,6 +78,13 @@ func (s *Service) CreateUser(ctx context.Context, req *iam_service.CreateUserReq
 	return &iam_service.IDName{Id: strconv.Itoa(int(userID)), Name: req.UserName}, nil
 }
 
+func (s *Service) CreateUsers(ctx context.Context, req *iam_service.CreateUsersReq) (*emptypb.Empty, error) {
+	if err := s.cli.CreateUsers(ctx, toUsersInfo(req.Users), util.MustU32(req.CreatorId), util.MustU32(req.OrgId)); err != nil {
+		return nil, errStatus(errs.Code_IAMUser, err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (s *Service) UpdateUser(ctx context.Context, req *iam_service.UpdateUserReq) (*emptypb.Empty, error) {
 	var roleIDs []uint32
 	for _, roleID := range req.RoleIds {
@@ -192,4 +199,19 @@ func toPerm(perm orm.Perm) *iam_service.Perm {
 	return &iam_service.Perm{
 		Perm: perm.Perm,
 	}
+}
+
+func toUsersInfo(req []*iam_service.CreateUsersInfo) []*orm.UsersInfo {
+	ret := make([]*orm.UsersInfo, 0, len(req))
+	for _, user := range req {
+		ret = append(ret, &orm.UsersInfo{
+			UserName: user.UserName,
+			Phone:    user.Phone,
+			Company:  user.Company,
+			Remark:   user.Remark,
+			Password: user.Password,
+			RoleName: user.RoleName,
+		})
+	}
+	return ret
 }

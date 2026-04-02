@@ -16760,6 +16760,29 @@ paths:
       summary: 编辑用户头像
       tags:
       - common
+  /user/batch:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 通过Excel文件批量导入用户
+      parameters:
+      - description: 用户Excel文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 批量导入用户
+      tags:
+      - permission.user
   /user/info:
     get:
       consumes:

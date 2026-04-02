@@ -15051,6 +15051,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/batch": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "通过Excel文件批量导入用户",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permission.user"
+                ],
+                "summary": "批量导入用户",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "用户Excel文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/user/info": {
             "get": {
                 "security": [

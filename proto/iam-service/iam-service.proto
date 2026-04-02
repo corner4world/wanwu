@@ -21,6 +21,8 @@ service IAMService {
   rpc GetUserInfo(GetUserInfoReq) returns (UserInfo) {}
   // 创建用户
   rpc CreateUser(CreateUserReq) returns (IDName) {}
+  // 批量导入用户
+  rpc CreateUsers(CreateUsersReq) returns (google.protobuf.Empty) {}
   // 编辑用户
   rpc UpdateUser(UpdateUserReq) returns (google.protobuf.Empty) {}
   // 删除用户
@@ -202,6 +204,21 @@ message CreateUserReq {
   string remark = 8;
   string password = 9;
   repeated string roleIds = 10;
+}
+
+message CreateUsersInfo {
+  string userName = 1;
+  string phone = 2;
+  string company = 3;
+  string remark = 4;
+  string password = 5;
+  string roleName = 6;
+}
+
+message CreateUsersReq {
+  string creatorId = 1;
+  string orgId = 2;
+  repeated CreateUsersInfo users = 3;
 }
 
 message UpdateUserReq {

@@ -11,6 +11,7 @@ import (
 func registerPermission(apiV1 *gin.RouterGroup) {
 	// permission.user
 	mid.Sub("permission.user").Reg(apiV1, "/user", http.MethodPost, v1.CreateUser, "创建用户")
+	mid.Sub("permission.user").Reg(apiV1, "/user/batch", http.MethodPost, v1.CreateUserByFile, "批量导入用户")
 	mid.Sub("permission.user").Reg(apiV1, "/user", http.MethodPut, v1.ChangeUser, "编辑用户")
 	mid.Sub("permission.user").Reg(apiV1, "/user", http.MethodDelete, v1.DeleteUser, "删除用户")
 	mid.Sub("permission.user").Reg(apiV1, "/user/list", http.MethodGet, v1.GetUserList, "获取用户列表")

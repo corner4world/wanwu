@@ -3,15 +3,38 @@ package service
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/url"
+	"regexp"
 
+	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
+	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
+
+// --- user excel import constants ---
+const (
+	ExcelHeaderUserName = "用户名"
+	ExcelHeaderPassword = "密码"
+	ExcelHeaderCompany  = "单位"
+	ExcelHeaderPhone    = "电话"
+	ExcelHeaderRole     = "角色"
+	ExcelHeaderRemark   = "备注"
+)
+
+var requiredUserExcelHeaders = []string{
+	ExcelHeaderUserName,
+	ExcelHeaderPassword,
+	ExcelHeaderCompany,
+	ExcelHeaderPhone,
+	ExcelHeaderRole,
+	ExcelHeaderRemark,
+}
 
 func CreateUser(ctx *gin.Context, creatorID, orgID string, userCreate *request.UserCreate) (*response.UserID, error) {
 	password, err := decryptPD(userCreate.Password)
@@ -172,6 +195,153 @@ func UpdateUserAvatar(ctx *gin.Context, userID, key string) error {
 		AvatarPath: key,
 	})
 	return err
+}
+
+func CreateUserByFile(ctx *gin.Context, creatorID, orgID string) error {
+	fileHeader, err := ctx.FormFile("file")
+	if err != nil {
+		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("get file err: %v", err))
+	}
+	file, err := fileHeader.Open()
+	if err != nil {
+		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("open file err: %v", err))
+	}
+	defer func() { _ = file.Close() }()
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("read file err: %v", err))
+	}
+
+	users, err := parseUserExcel(fileBytes)
+	if err != nil {
+		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("parse excel err: %v", err))
+	}
+
+	for _, user := range users {
+		if err := validateUsername(user.UserName); err != nil {
+			return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("username %s: %v", user.UserName, err))
+		}
+		if err := validatePassword(user.Password); err != nil {
+			return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("username %s: %v", user.UserName, err))
+		}
+		if user.Phone != "" {
+			if err := validatePhone(user.Phone); err != nil {
+				return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("phone %s: %v", user.Phone, err))
+			}
+		}
+		if user.Company == "" {
+			return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("username %s: company is empty", user.UserName))
+		}
+	}
+
+	_, err = iam.CreateUsers(ctx.Request.Context(), &iam_service.CreateUsersReq{
+		CreatorId: creatorID,
+		OrgId:     orgID,
+		Users:     users,
+	})
+	return err
+}
+
+func parseUserExcel(fileData []byte) ([]*iam_service.CreateUsersInfo, error) {
+	wb, err := util.OpenWorkbookFromBytes(fileData)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = wb.Close() }()
+
+	f := wb.F()
+	sheets := f.GetSheetList()
+	if len(sheets) == 0 {
+		return nil, fmt.Errorf("excel has no sheets")
+	}
+	sheetName := sheets[0]
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		return nil, fmt.Errorf("invalid excel data")
+	}
+
+	headerMap := util.GetExcelHeaderColIndexes(rows, 0, requiredUserExcelHeaders)
+	for _, col := range requiredUserExcelHeaders {
+		if headerMap[col] == -1 {
+			return nil, fmt.Errorf("excel header invalid: missing %s", col)
+		}
+	}
+
+	records, err := wb.ReadWithHeaderMapping(util.ReadWithHeaderMappingOptions{
+		Sheet:     sheetName,
+		HeaderRow: 0,
+		HeaderMapping: map[string]string{
+			ExcelHeaderUserName: "userName",
+			ExcelHeaderPassword: "password",
+			ExcelHeaderCompany:  "company",
+			ExcelHeaderPhone:    "phone",
+			ExcelHeaderRole:     "roleName",
+			ExcelHeaderRemark:   "remark",
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var users []*iam_service.CreateUsersInfo
+	for _, record := range records {
+		if record["userName"] == "" {
+			continue
+		}
+		users = append(users, &iam_service.CreateUsersInfo{
+			UserName: record["userName"],
+			Password: record["password"],
+			Company:  record["company"],
+			Phone:    record["phone"],
+			RoleName: record["roleName"],
+			Remark:   record["remark"],
+		})
+	}
+	if len(users) == 0 {
+		return nil, fmt.Errorf("no valid user data")
+	}
+	return users, nil
+}
+
+var (
+	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9\x{4e00}-\x{9fa5}_().]+$`)
+	phoneRegex    = regexp.MustCompile(`^1[3-9]\d{9}$`)
+)
+
+func validateUsername(username string) error {
+	if len(username) < 2 || len(username) > 20 {
+		return fmt.Errorf("用户名长度需为2-20个字符")
+	}
+	if username[0] == '_' {
+		return fmt.Errorf("用户名不能以下划线开头")
+	}
+	if !usernameRegex.MatchString(username) {
+		return fmt.Errorf("用户名只能包含中英文、数字、下划线、括号")
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if password == "" {
+		return fmt.Errorf("请输入密码")
+	}
+	if len(password) < 8 || len(password) > 20 {
+		return fmt.Errorf("密码长度需为8-20个字符")
+	}
+	hasLetter := regexp.MustCompile(`[a-zA-Z]`).MatchString(password)
+	hasNumber := regexp.MustCompile(`\d`).MatchString(password)
+	hasSpecial := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`).MatchString(password)
+	if !hasLetter || !hasNumber || !hasSpecial {
+		return fmt.Errorf("密码需包含字母、数字、特殊字符")
+	}
+	return nil
+}
+
+func validatePhone(phone string) error {
+	if !phoneRegex.MatchString(phone) {
+		return fmt.Errorf("电话号码格式不正确")
+	}
+	return nil
 }
 
 // --- internal ---

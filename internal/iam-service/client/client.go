@@ -22,6 +22,7 @@ type IClient interface {
 	SelectUsersByUserIDs(ctx context.Context, userIDs []uint32) ([]orm.IDName, *errs.Status)
 
 	CreateUser(ctx context.Context, user *model.User, orgID uint32, roleIDs []uint32) (uint32, *errs.Status)
+	CreateUsers(ctx context.Context, users []*orm.UsersInfo, creatorID, orgID uint32) *errs.Status
 	UpdateUser(ctx context.Context, user *model.User, orgID uint32, roleIDs []uint32) *errs.Status
 	DeleteUser(ctx context.Context, userID uint32) *errs.Status
 	UpdateUserAvatar(ctx context.Context, userID uint32, key string) *errs.Status

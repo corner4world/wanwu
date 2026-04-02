@@ -229,3 +229,23 @@ func AddOrgUser(ctx *gin.Context) {
 	err := service.AddOrgUser(ctx, getOrgID(ctx), req.UserID.UserID, req.RoleID)
 	gin_util.Response(ctx, nil, err)
 }
+
+// CreateUserByFile
+//
+//	@Tags			permission.user
+//	@Summary		批量导入用户
+//	@Description	通过Excel文件批量导入用户
+//	@Security		JWT
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			file	formData	file	true	"用户Excel文件"
+//	@Success		200		{object}	response.Response
+//	@Router			/user/batch [post]
+func CreateUserByFile(ctx *gin.Context) {
+	if !isAdmin(ctx) {
+		gin_util.Response(ctx, nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFGeneral, "bff_user_cannot_batch_import"))
+		return
+	}
+	err := service.CreateUserByFile(ctx, getUserID(ctx), getOrgID(ctx))
+	gin_util.Response(ctx, nil, err)
+}

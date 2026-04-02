@@ -2,8 +2,9 @@ package mp_yuanjing
 
 import (
 	"context"
-	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
 	"net/url"
+
+	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
 )
 
 type MultiModalEmbedding struct {

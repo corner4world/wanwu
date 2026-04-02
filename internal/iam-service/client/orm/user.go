@@ -130,6 +130,101 @@ func (c *Client) CreateUser(ctx context.Context, user *model.User, orgID uint32,
 	})
 }
 
+func (c *Client) CreateUsers(ctx context.Context, users []*UsersInfo, creatorID, orgID uint32) *errs.Status {
+	return createUsersTx(c.db.WithContext(ctx), users, creatorID, orgID)
+}
+
+func createUsersTx(tx *gorm.DB, users []*UsersInfo, creatorID, orgID uint32) *errs.Status {
+	if err := sqlopt.WithID(orgID).Apply(tx).First(&model.Org{}).Error; err != nil {
+		return toErrStatus("iam_user_batch_create", err.Error())
+	}
+	if creatorID != 0 {
+		if err := sqlopt.WithID(creatorID).Apply(tx).First(&model.User{}).Error; err != nil {
+			return toErrStatus("iam_user_batch_create", err.Error())
+		}
+	}
+	var orgRoles []*model.OrgRole
+	if err := sqlopt.WithOrgID(orgID).Apply(tx).Find(&orgRoles).Error; err != nil {
+		return toErrStatus("iam_roles_get", util.Int2Str(orgID), err.Error())
+	}
+	roleNameMap := make(map[string]*model.OrgRole)
+	for i := range orgRoles {
+		roleNameMap[orgRoles[i].Name] = orgRoles[i]
+	}
+
+	for i, userInfo := range users {
+		var existingUser model.User
+		nameExists := sqlopt.WithName(userInfo.UserName).Apply(tx).First(&existingUser).Error == nil
+		phoneExists := false
+		var existingPhoneUser model.User
+		if userInfo.Phone != "" {
+			phoneExists = sqlopt.WithPhone(userInfo.Phone).Apply(tx).First(&existingPhoneUser).Error == nil
+		}
+		if nameExists && phoneExists {
+			continue
+		}
+		if nameExists {
+			return toErrStatus("iam_user_batch_create_name", userInfo.UserName)
+		}
+		if phoneExists {
+			return toErrStatus("iam_user_batch_create_phone", userInfo.UserName, userInfo.Phone)
+		}
+
+		var roleID uint32
+		var isAdmin bool
+		if userInfo.RoleName != "" {
+			orgRole, ok := roleNameMap[userInfo.RoleName]
+			if ok {
+				roleID = orgRole.RoleID
+				isAdmin = orgRole.IsAdmin
+			}
+		}
+
+		savePoint := fmt.Sprintf("user_create_%d", i)
+		if err := tx.SavePoint(savePoint).Error; err != nil {
+			return toErrStatus("iam_user_batch_create", err.Error())
+		}
+
+		user := &model.User{
+			CreatorID: creatorID,
+			Name:      userInfo.UserName,
+			Phone:     userInfo.Phone,
+			Company:   userInfo.Company,
+			Remark:    userInfo.Remark,
+			Password:  util.SHA256(userInfo.Password),
+			Status:    true,
+		}
+		if err := tx.Create(user).Error; err != nil {
+			tx.RollbackTo(savePoint)
+			return toErrStatus("iam_user_batch_create", err.Error())
+		}
+		orgUsers := []*model.OrgUser{
+			{OrgID: orgID, UserID: user.ID},
+		}
+		if orgID != config.TopOrgID() {
+			orgUsers = append(orgUsers, &model.OrgUser{OrgID: config.TopOrgID(), UserID: user.ID})
+		}
+		if err := tx.Create(orgUsers).Error; err != nil {
+			tx.RollbackTo(savePoint)
+			return toErrStatus("iam_user_batch_create", err.Error())
+		}
+		if roleID != 0 {
+			userRole := &model.UserRole{
+				OrgID:   orgID,
+				UserID:  user.ID,
+				RoleID:  roleID,
+				IsAdmin: isAdmin,
+			}
+			if err := tx.Create(userRole).Error; err != nil {
+				tx.RollbackTo(savePoint)
+				return toErrStatus("iam_user_batch_create", err.Error())
+			}
+		}
+
+	}
+	return nil
+}
+
 func createUserTx(tx *gorm.DB, user *model.User, orgID uint32, roleIDs []uint32) *errs.Status {
 	// check org
 	var adminRoles, nonAdminRoles []uint32

@@ -25,6 +25,7 @@ const (
 	IAMService_GetUserList_FullMethodName                 = "/iam_service.IAMService/GetUserList"
 	IAMService_GetUserInfo_FullMethodName                 = "/iam_service.IAMService/GetUserInfo"
 	IAMService_CreateUser_FullMethodName                  = "/iam_service.IAMService/CreateUser"
+	IAMService_CreateUsers_FullMethodName                 = "/iam_service.IAMService/CreateUsers"
 	IAMService_UpdateUser_FullMethodName                  = "/iam_service.IAMService/UpdateUser"
 	IAMService_DeleteUser_FullMethodName                  = "/iam_service.IAMService/DeleteUser"
 	IAMService_ChangeUserStatus_FullMethodName            = "/iam_service.IAMService/ChangeUserStatus"
@@ -84,6 +85,8 @@ type IAMServiceClient interface {
 	GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*UserInfo, error)
 	// 创建用户
 	CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*IDName, error)
+	// 批量导入用户
+	CreateUsers(ctx context.Context, in *CreateUsersReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 编辑用户
 	UpdateUser(ctx context.Context, in *UpdateUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 删除用户
@@ -227,6 +230,16 @@ func (c *iAMServiceClient) CreateUser(ctx context.Context, in *CreateUserReq, op
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IDName)
 	err := c.cc.Invoke(ctx, IAMService_CreateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iAMServiceClient) CreateUsers(ctx context.Context, in *CreateUsersReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, IAMService_CreateUsers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -677,6 +690,8 @@ type IAMServiceServer interface {
 	GetUserInfo(context.Context, *GetUserInfoReq) (*UserInfo, error)
 	// 创建用户
 	CreateUser(context.Context, *CreateUserReq) (*IDName, error)
+	// 批量导入用户
+	CreateUsers(context.Context, *CreateUsersReq) (*emptypb.Empty, error)
 	// 编辑用户
 	UpdateUser(context.Context, *UpdateUserReq) (*emptypb.Empty, error)
 	// 删除用户
@@ -790,6 +805,9 @@ func (UnimplementedIAMServiceServer) GetUserInfo(context.Context, *GetUserInfoRe
 }
 func (UnimplementedIAMServiceServer) CreateUser(context.Context, *CreateUserReq) (*IDName, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
+}
+func (UnimplementedIAMServiceServer) CreateUsers(context.Context, *CreateUsersReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateUsers not implemented")
 }
 func (UnimplementedIAMServiceServer) UpdateUser(context.Context, *UpdateUserReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
@@ -1027,6 +1045,24 @@ func _IAMService_CreateUser_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IAMServiceServer).CreateUser(ctx, req.(*CreateUserReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IAMService_CreateUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUsersReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IAMServiceServer).CreateUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IAMService_CreateUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IAMServiceServer).CreateUsers(ctx, req.(*CreateUsersReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1831,6 +1867,10 @@ var IAMService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateUser",
 			Handler:    _IAMService_CreateUser_Handler,
+		},
+		{
+			MethodName: "CreateUsers",
+			Handler:    _IAMService_CreateUsers_Handler,
 		},
 		{
 			MethodName: "UpdateUser",
