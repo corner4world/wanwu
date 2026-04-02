@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/UnicomAI/wanwu/pkg/log"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -30,7 +30,7 @@ type openAPITool struct {
 // Info 返回工具的元信息
 func (t *openAPITool) Info(ctx context.Context) (*schema.ToolInfo, error) {
 	marshal, _ := json.Marshal(t.info)
-	log.Printf("openAPITool %v", string(marshal))
+	log.Infof("openAPITool %v", string(marshal))
 	return t.info, nil
 }
 
@@ -57,7 +57,7 @@ func GetToolsFromOpenAPISchema(ctx context.Context, pluginToolList []*request.Pl
 		loader.IsExternalRefsAllowed = true
 
 		if err := wrapper.APISchema.Validate(ctx, openapi3.EnableExamplesValidation()); err != nil {
-			log.Printf("Warning: OpenAPI schema validation failed: %v", err)
+			log.Errorf("Warning: OpenAPI schema validation failed: %v", err)
 		}
 
 		info := wrapper.APISchema.Info
@@ -122,6 +122,43 @@ func GetToolsFromOpenAPISchema(ctx context.Context, pluginToolList []*request.Pl
 	return allTools, nil
 }
 
+func GetEnioToolsFromOpenAPISchema(ctx context.Context, pluginTool *request.PluginToolInfo) ([]*schema.ToolInfo, error) {
+	var allTools []*schema.ToolInfo
+
+	if pluginTool.APISchema == nil {
+		log.Errorf("GetEnioToolsFromOpenAPISchema is nil")
+		return nil, nil
+	}
+
+	loader := openapi3.NewLoader()
+	loader.IsExternalRefsAllowed = true
+
+	if err := pluginTool.APISchema.Validate(ctx, openapi3.EnableExamplesValidation()); err != nil {
+		log.Errorf("Warning: OpenAPI schema validation failed: %v", err)
+	}
+
+	for _, pathItem := range pluginTool.APISchema.Paths {
+		operations := map[string]*openapi3.Operation{
+			"get":    pathItem.Get,
+			"post":   pathItem.Post,
+			"put":    pathItem.Put,
+			"delete": pathItem.Delete,
+			"patch":  pathItem.Patch,
+		}
+
+		for _, operation := range operations {
+			if operation == nil {
+				continue
+			}
+
+			einoTool := openapi3_util.Operation2EinoTool(operation)
+			allTools = append(allTools, einoTool)
+		}
+	}
+
+	return allTools, nil
+}
+
 func getRequestContentType(operation *openapi3.Operation) string {
 	if operation.RequestBody != nil && operation.RequestBody.Value != nil {
 		for contentType := range operation.RequestBody.Value.Content {
@@ -163,7 +200,7 @@ func createHTTPHandler(serverURL, path, method string, auth *openapi3_util.Auth,
 			// 添加业务查询参数
 			for key, value := range params {
 				if queryValues.Has(key) {
-					log.Printf("requestURL %s query parameter %s already exists, overwriting with value %v", requestURL, key, value)
+					log.Infof("requestURL %s query parameter %s already exists, overwriting with value %v", requestURL, key, value)
 					continue
 				}
 				queryValues.Set(key, fmt.Sprintf("%v", value))
@@ -252,7 +289,7 @@ func buildResult(resp *http.Response, err error) (string, error) {
 	defer func(Body io.ReadCloser) {
 		err1 := Body.Close()
 		if err1 != nil {
-			log.Printf("failed to close response body: %v", err1)
+			log.Infof("failed to close response body: %v", err1)
 		}
 	}(resp.Body) // 确保关闭响应体
 

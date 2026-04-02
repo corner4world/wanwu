@@ -46,4 +46,6 @@ func Register(callbackAPI *gin.RouterGroup) {
 	mid.Sub("callback").Reg(callbackAPI, "/wga/sandbox/cleanup", http.MethodPost, callback.WgaSandboxCleanup, "WGA沙箱清理")
 	// app record
 	mid.Sub("callback").Reg(callbackAPI, "/app/record", http.MethodPost, callback.AppRecord, "应用使用记录")
+	//skill
+	mid.Sub("callback").Reg(callbackAPI, "/skill/builtin/list", http.MethodPost, callback.SearchBuiltInSkillList, "内置工具详情列表")
 }

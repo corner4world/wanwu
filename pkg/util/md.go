@@ -34,3 +34,7 @@ func Md2html(markdown []byte) (string, error) {
 func MdImageUrl(fileName, fileUrl string) string {
 	return fmt.Sprintf("![%s](%s)", fileName, fileUrl)
 }
+
+func MdImageFile(fileName, fileUrl string) string {
+	return fmt.Sprintf("[%s](%s)", fileName, fileUrl)
+}

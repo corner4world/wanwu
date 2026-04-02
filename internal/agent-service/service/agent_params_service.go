@@ -14,12 +14,14 @@ import (
 // BuildMultiAgentParams 构建多智能体问答请求
 func BuildMultiAgentParams(multiAgentChatParams *request.MultiAgentChatParams, multiAgentConfig *assistant_service.MultiAssistantDetailResp) *request.MultiAgentChatReq {
 	return &request.MultiAgentChatReq{
-		Input:           multiAgentChatParams.Input,
-		UploadFile:      multiAgentChatParams.UploadFile,
-		Stream:          multiAgentChatParams.Stream,
-		ModelParams:     buildModelParams(multiAgentConfig.MultiAgent.ModelParams),
-		AgentBaseParams: buildAgentBaseParams(multiAgentConfig.MultiAgent),
-		AgentList:       buildSubAgentParamsList(multiAgentConfig.SubAgents),
+		Input:      multiAgentChatParams.Input,
+		UploadFile: multiAgentChatParams.UploadFile,
+		Stream:     multiAgentChatParams.Stream,
+		AgentChatBaseParams: &request.AgentChatBaseParams{
+			ModelParams:     buildModelParams(multiAgentConfig.MultiAgent.ModelParams),
+			AgentBaseParams: buildAgentBaseParams(multiAgentConfig.MultiAgent),
+		},
+		AgentList: buildSubAgentParamsList(multiAgentConfig.SubAgents),
 	}
 }
 
@@ -31,7 +33,6 @@ func buildAgentBaseParams(assistantDetail *assistant_service.AgentDetail) *reque
 		Instruction: baseParams.Instruction,
 		Name:        baseParams.Name,
 		Avatar:      baseParams.Avatar,
-		CallDetail:  true,
 	}
 }
 
@@ -49,6 +50,7 @@ func BuildAgentParams(req *request.AgentChatReq, assistantDetail *assistant_serv
 		Stream:              req.Stream,
 		UploadFile:          req.UploadFile,
 		NewStyle:            newStyle,
+		OriginNewStyle:      newStyle,
 	}
 }
 
@@ -61,7 +63,7 @@ func buildAgentChatBaseParams(assistantDetail *assistant_service.AgentDetail) *r
 		},
 		KnowledgeParams: buildKnowledgeParams(assistantDetail.KnowledgeParams),
 		ModelParams:     buildModelParams(assistantDetail.ModelParams),
-		ToolParams:      buildToolParams(assistantDetail.ToolParams),
+		ToolParams:      buildToolParams(assistantDetail.ToolParams, assistantDetail.SkillParams),
 	}
 }
 
@@ -121,10 +123,11 @@ func buildModelParams(req *assistant_service.ModelParams) *request.ModelParams {
 	return output
 }
 
-func buildToolParams(toolParams *assistant_service.ToolParams) *request.ToolParams {
+func buildToolParams(toolParams *assistant_service.ToolParams, skillParams *assistant_service.SkillParams) *request.ToolParams {
 	return &request.ToolParams{
 		McpToolList:    buildMCPToolList(toolParams.McpToolList),
 		PluginToolList: buildPluginToolList(toolParams.PluginToolList),
+		SkillToolList:  buildSkillToolList(skillParams),
 	}
 }
 func buildMCPToolList(mcpToolList []*assistant_service.MCPToolInfo) []*request.MCPToolInfo {
@@ -175,6 +178,21 @@ func buildPluginToolList(pluginTool []*assistant_service.PluginToolInfo) []*requ
 	return pluginToolList
 }
 
+func buildSkillToolList(skillParams *assistant_service.SkillParams) []*request.SkillToolInfo {
+	if skillParams == nil || len(skillParams.SkillList) == 0 {
+		return nil
+	}
+	return lo.Map(skillParams.SkillList, func(item *assistant_service.SkillInfo, index int) *request.SkillToolInfo {
+		return &request.SkillToolInfo{
+			Avatar:     item.Avatar,
+			Desc:       item.Desc,
+			Name:       item.Name,
+			ObjectPath: item.ObjectPath,
+			SkillId:    item.SkillId,
+			SkillType:  request.SkillType(item.SkillType),
+		}
+	})
+}
 func buildHistory(history []*assistant_service.ConversionHistory) []request.AssistantConversionHistory {
 	if len(history) == 0 {
 		return nil

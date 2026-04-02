@@ -110,7 +110,7 @@ func ragKnowledgeHit(ctx context.Context, knowledgeHitParams *request.KnowledgeP
 
 // sendKnowledgeMessage 发送知识库消息
 func sendKnowledgeMessage(generator *adk.AsyncGenerator[*adk.AgentEvent], finish bool, hitData *model.KnowledgeHitData, toolId string, newStyle bool) {
-	if generator != nil {
+	if generator != nil && newStyle {
 		message := buildKnowledgeMessage(finish, hitData, toolId)
 		generator.Send(&adk.AgentEvent{
 			Output: &adk.AgentOutput{

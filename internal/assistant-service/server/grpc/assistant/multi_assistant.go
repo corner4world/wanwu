@@ -103,6 +103,7 @@ func buildSubAgentParams(ctx context.Context, cli client.IClient, agentSnapshot 
 		ModelParams().
 		KnowledgeParams().
 		ToolParams().
+		SkillParams().
 		Build()
 }
 
@@ -148,7 +149,7 @@ func buildMultiAgentSendRequest(req *assistant_service.MultiAssistantConversionS
 		}
 		params := &http_client.HttpRequestParams{
 			Body:       paramsBytes,
-			Timeout:    5 * time.Minute,
+			Timeout:    15 * time.Minute,
 			Url:        assistantConfig.MultiAgentChatUrl,
 			MonitorKey: monitorKey,
 			LogLevel:   http_client.LogAll,

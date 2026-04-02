@@ -2,13 +2,18 @@ package response
 
 import "github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 
+type SkillDetailListResp struct {
+	SkillList []*SkillDetail `json:"skillList"`
+}
+
 type SkillDetail struct {
-	SkillId       string         `json:"skillId"`       // 模板ID
-	Name          string         `json:"name"`          // 模板名称
-	Avatar        request.Avatar `json:"avatar"`        // 模板头像
-	Author        string         `json:"author"`        // 作者
-	Desc          string         `json:"desc"`          // 模板描述
-	SkillMarkdown string         `json:"skillMarkdown"` // 模板markdown预览
+	SkillId       string         `json:"skillId"`             // 模板ID
+	Name          string         `json:"name"`                // 模板名称
+	Avatar        request.Avatar `json:"avatar"`              // 模板头像
+	Author        string         `json:"author"`              // 作者
+	Desc          string         `json:"desc"`                // 模板描述
+	SkillMarkdown string         `json:"skillMarkdown"`       // 模板markdown预览
+	SkillPath     string         `json:"skillPath,omitempty"` // markdown地址，内部使用，不要对外
 }
 
 type SkillInfo struct {

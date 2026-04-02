@@ -18,17 +18,7 @@ const (
 type AgentMessageBuilder interface {
 	MessageType() MessageType //消息类型
 	FilterMessage(respContext *response.AgentChatRespContext, chatMessage *schema.Message) bool
-	BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]*AgentMessageContent, error)
-}
-
-type AgentMessageContent struct {
-	ContentList  []string
-	SubEventData *response.SubEventData
-	NotStop      bool
-}
-
-func (t AgentMessageContent) Empty() bool {
-	return len(t.ContentList) == 0 && t.SubEventData == nil
+	BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message, changeStyle *bool) ([]*response.AgentMessageContent, error)
 }
 
 func BuildChatMessage(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]string, error) {
@@ -39,7 +29,7 @@ func BuildChatMessage(req *request.AgentChatContext, respContext *response.Agent
 		return make([]string, 0), nil
 	}
 	//构造内容
-	contentList, err := builder.BuildContent(req, respContext, chatMessage)
+	contentList, err := builder.BuildContent(req, respContext, chatMessage, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +63,7 @@ func filterMessage(respContext *response.AgentChatRespContext, chatMessage *sche
 	if string(chatMessage.Role) == "" && chatMessage.Content == "" {
 		return true
 	}
-	messageTool := CreateMessageTool(chatMessage, respContext)
+	messageTool := response.CreateMessageTool(chatMessage, respContext)
 	if messageTool.ToolStart() && !messageTool.ToolEnd() && !messageTool.ToolParamsEnd() {
 		//在工具输出内，但是此消息没有同时包含参数输出结束和工具调用结束
 		//此时，如果content 也还是空，则完全不需要处理
@@ -86,12 +76,12 @@ func filterMessage(respContext *response.AgentChatRespContext, chatMessage *sche
 	return false
 }
 
-func buildSkipMessage() []*AgentMessageContent {
-	return []*AgentMessageContent{}
+func buildSkipMessage() []*response.AgentMessageContent {
+	return []*response.AgentMessageContent{}
 }
 
-func buildMessageContent(contentList []string, subEventData *response.SubEventData) []*AgentMessageContent {
-	return []*AgentMessageContent{{
+func buildMessageContent(contentList []string, subEventData *response.SubEventData) []*response.AgentMessageContent {
+	return []*response.AgentMessageContent{{
 		ContentList:  contentList,
 		SubEventData: subEventData,
 	}}

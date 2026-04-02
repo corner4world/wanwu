@@ -90,3 +90,7 @@ mcp:
 workflow:
   endpoint: http://workflow-wanwu:8999
   list_schema_uri: /v1/workflow/list_schema_by_wanwu
+
+skill:
+  endpoint: http://bff-service:6668
+  builtin_skill_list_uri: /callback/v1/skill/builtin/list

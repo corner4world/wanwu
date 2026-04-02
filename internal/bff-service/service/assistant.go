@@ -957,6 +957,7 @@ func buildSubConversationList(conversationList []*assistant_service.SubConversat
 			Status:           conversation.Status,
 			ConversationType: conversation.ConversationType,
 			Order:            conversation.Order,
+			ParentId:         conversation.ParentId,
 		})
 	}
 	return subConversationList

@@ -6,12 +6,11 @@ type MultiAgentChatParams struct {
 }
 
 type MultiAgentChatReq struct {
-	Input           string                 `json:"input"`
-	UploadFile      []string               `json:"uploadFile"`
-	Stream          bool                   `json:"stream"`
-	ModelParams     *ModelParams           `json:"modelParams"`                         // 模型参数
-	AgentBaseParams *AgentBaseParams       `json:"agentBaseParams" validate:"required"` // 智能体基础参数
-	AgentList       []*AgentChatBaseParams `json:"agentList"`
+	Input               string                 `json:"input"`
+	UploadFile          []string               `json:"uploadFile"`
+	Stream              bool                   `json:"stream"`
+	AgentChatBaseParams *AgentChatBaseParams   `json:"agentChatBaseParams"` // 模型参数
+	AgentList           []*AgentChatBaseParams `json:"agentList"`
 }
 
 func (c *MultiAgentChatParams) Check() error {

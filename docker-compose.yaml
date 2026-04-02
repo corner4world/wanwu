@@ -20,7 +20,7 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_bin
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -u root -p$$MYSQL_ROOT_PASSWORD | grep 'mysqld is alive'"]
+      test: [ "CMD-SHELL", "mysqladmin ping -u root -p$$MYSQL_ROOT_PASSWORD | grep 'mysqld is alive'" ]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -53,7 +53,7 @@ services:
       - wanwu_redis_data:/data
     command: "redis-server --requirepass ${WANWU_REDIS_PASSWORD}"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -536,10 +536,12 @@ services:
     #   - 8990:8990
     volumes:
       - ${WANWU_PROJECT_DIR}/agent-service/log:/app/log
+      - ${WANWU_PROJECT_DIR}/agent-service/tmp:/app/tmp
     environment:
       MINIO_ENDPOINT: ${WANWU_MINIO_ENDPOINT}
       MINIO_USER: ${WANWU_MINIO_USER}
       MINIO_PASSWORD: ${WANWU_MINIO_PASSWORD}
+      MINIO_DOWNLOAD_URL: ${WANWU_WEB_BASE_URL}/minio/download/api
     working_dir: /app
     command: ./bin/agent-service
     healthcheck:
@@ -643,7 +645,7 @@ services:
       REDIS_PASSWORD: ${WANWU_REDIS_PASSWORD}
       URL_RAG_DOC_PARSER: http://rag-wanwu:8681/rag/doc_parser
       URL_MINIO_DOWNLOAD: ${WANWU_WEB_BASE_URL}/minio/download/api
-      WANWU_CALLBACK_URL_TO_BASE64: http://bff-service:6668/callback/v1/file/url/base64  
+      WANWU_CALLBACK_URL_TO_BASE64: http://bff-service:6668/callback/v1/file/url/base64
       GUNICORN_WORKERS: 2
       GUNICORN_TIMEOUT: 600
       GUNICORN_THREADS: 4

@@ -19,6 +19,7 @@ type AgentPreprocess struct {
 	GinContext        *gin.Context
 }
 
+// AgentPreProcess 预处理
 func AgentPreProcess(agentPreprocess *AgentPreprocess, agentInput *adk.AgentInput, req *request.AgentChatParams) (*adk.AgentInput, *response.AgentChatRespContext) {
 	ctx := agentPreprocess.GinContext
 	iter, generator := adk.NewAsyncIteratorPair[*adk.AgentEvent]()
@@ -27,17 +28,13 @@ func AgentPreProcess(agentPreprocess *AgentPreprocess, agentInput *adk.AgentInpu
 			generator.Close()
 		}()
 		var err error
-		if agentPreprocess.CallDetail { //是否输出调用详情
-			agentInput, err = agentPreprocess.LocalAgentService.BuildAgentInput(ctx, req, agentPreprocess.AgentChatInfo, agentInput, generator)
-		} else {
-			agentInput, err = agentPreprocess.LocalAgentService.BuildAgentInput(ctx, req, agentPreprocess.AgentChatInfo, agentInput, nil)
-		}
+		agentInput, err = agentPreprocess.LocalAgentService.BuildAgentInput(ctx, req, agentPreprocess.AgentChatInfo, agentInput, generator)
 		if err != nil {
 			log.Errorf("failed to build agent input: %v", err)
 			generator.Send(&adk.AgentEvent{Err: err})
 		}
 	})
-
+	//此处阻塞读iter
 	chatRespContext, _ := agent_message_processor.AgentMessage(ctx, iter, &request.AgentChatContext{AgentChatReq: req})
 	return agentInput, chatRespContext
 }

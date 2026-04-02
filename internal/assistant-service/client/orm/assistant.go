@@ -171,7 +171,7 @@ func (c *Client) CheckSameAssistantName(ctx context.Context, userID, orgID, name
 	})
 }
 
-func (c *Client) CopyAssistant(ctx context.Context, assistant *model.Assistant, workflows []*model.AssistantWorkflow, mcps []*model.AssistantMCP, customTools []*model.AssistantTool, subAgents []*model.MultiAgentRelation) (uint32, *err_code.Status) {
+func (c *Client) CopyAssistant(ctx context.Context, assistant *model.Assistant, workflows []*model.AssistantWorkflow, mcps []*model.AssistantMCP, customTools []*model.AssistantTool, subAgents []*model.MultiAgentRelation, skills []*model.AssistantSkill) (uint32, *err_code.Status) {
 	// 智能体名称前缀
 	prefix := assistant.Name + "_"
 
@@ -246,6 +246,15 @@ func (c *Client) CopyAssistant(ctx context.Context, assistant *model.Assistant, 
 			relation.MultiAgentId = newAssistantId
 			if err = tx.Create(&relation).Error; err != nil {
 				return toErrStatus("assistant_multi_agent_create", err.Error())
+			}
+		}
+
+		// 复制并保存新智能体skills
+		for _, skill := range skills {
+			skill.ID = 0
+			skill.AssistantId = newAssistantId
+			if err = tx.Create(&skill).Error; err != nil {
+				return toErrStatus("assistant_skill_create", err.Error())
 			}
 		}
 		return nil

@@ -18,7 +18,7 @@ type IClient interface {
 	GetAssistantByUuid(ctx context.Context, uuid string) (*model.Assistant, *err_code.Status)
 	GetAssistantList(ctx context.Context, userID, orgID string, name string) ([]*model.Assistant, int64, *err_code.Status)
 	CheckSameAssistantName(ctx context.Context, userID, orgID, name, assistantID string) *err_code.Status
-	CopyAssistant(ctx context.Context, assistant *model.Assistant, workflows []*model.AssistantWorkflow, mcps []*model.AssistantMCP, customTools []*model.AssistantTool, subAgents []*model.MultiAgentRelation) (uint32, *err_code.Status)
+	CopyAssistant(ctx context.Context, assistant *model.Assistant, workflows []*model.AssistantWorkflow, mcps []*model.AssistantMCP, customTools []*model.AssistantTool, subAgents []*model.MultiAgentRelation, skills []*model.AssistantSkill) (uint32, *err_code.Status)
 
 	//================AssistantSnapshot================
 	CreateAssistantSnapshot(ctx context.Context, assistantSnapshot *model.AssistantSnapshot) (uint32, *err_code.Status)

@@ -291,7 +291,7 @@ func buildAgentSendRequest(req *assistant_service.AssistantConversionStreamReq) 
 		}
 		params := &http_client.HttpRequestParams{
 			Body:       paramsBytes,
-			Timeout:    5 * time.Minute,
+			Timeout:    15 * time.Minute,
 			Url:        assistantConfig.NewSseUrl,
 			MonitorKey: monitorKey,
 			LogLevel:   http_client.LogAll,
@@ -339,6 +339,7 @@ func buildSubConversation(detail *model.SubConversationDetail, index int, oldDat
 	return &assistant_service.SubConversation{
 		Response:         detail.Content,
 		SearchList:       detail.SearchList,
+		ParentId:         data.ParentId,
 		Id:               data.Id,
 		Name:             data.Name,
 		Profile:          data.Profile,

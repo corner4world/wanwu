@@ -795,8 +795,10 @@ message SkillParams {
 message SkillInfo {
   string skillId = 1;
   string skillType = 2;
-  string skillDetail = 3;
-  string objectPath = 4;
+  string name = 3;
+  string desc = 4;
+  string avatar = 5;
+  string objectPath = 6;
 }
 
 

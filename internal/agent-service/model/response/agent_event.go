@@ -5,6 +5,7 @@ import (
 	agent_util "github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/cloudwego/eino/schema"
+	"strings"
 )
 
 type AgentEventType int
@@ -25,6 +26,16 @@ const (
 	EventFailStatus    SubEventStatus = 4 //子智能体失败
 )
 
+type AgentMessageContent struct {
+	ContentList  []string
+	SubEventData *SubEventData
+	NotStop      bool
+}
+
+func (t *AgentMessageContent) Empty() bool {
+	return len(t.ContentList) == 0 && t.SubEventData == nil
+}
+
 type SubEventData struct {
 	Status    SubEventStatus `json:"status"`
 	Id        string         `json:"id"`
@@ -40,6 +51,8 @@ func BuildEventTypeByTool(agentTool *AgentTool) int {
 	var eventType int
 	if agentTool.ToolName == agent_util.AgentSearchKnowledgeName {
 		eventType = KnowledgeEventType
+	} else if strings.HasPrefix(agentTool.ToolName, agent_util.AgentSkillPrefix) {
+		eventType = SkillEventType
 	} else {
 		eventType = ToolEventType
 	}
@@ -47,15 +60,15 @@ func BuildEventTypeByTool(agentTool *AgentTool) int {
 }
 
 func BuildStartSubAgent(respContext *AgentChatRespContext) *SubEventData {
-	return StartSubAgent(respContext.CurrentAgent, respContext.Order, 0)
+	return StartSubAgent(respContext.MultiAgentContext.PeekAgent(), respContext.Order, 0)
 }
 
 func BuildProcessSubAgent(respContext *AgentChatRespContext) *SubEventData {
-	return ProcessSubAgent(respContext.CurrentAgent, respContext.Order, 0)
+	return ProcessSubAgent(respContext.MultiAgentContext.PeekAgent(), respContext.Order, 0)
 }
 
 func BuildEndSubAgent(respContext *AgentChatRespContext, timeCost string) *SubEventData {
-	return EndSubAgent(respContext.CurrentAgent, timeCost, respContext.Order, 0)
+	return EndSubAgent(respContext.MultiAgentContext.PeekAgent(), timeCost, respContext.Order, 0)
 }
 
 func BuildStartTool(agentTool *AgentTool) *SubEventData {

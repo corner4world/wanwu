@@ -54,16 +54,18 @@ func (c Config) Stop() error {
 // 全局配置变量
 
 type Config struct {
-	Server          *Server           `mapstructure:"server" json:"server"`
-	Log             LogConfig         `mapstructure:"log" json:"log"`
-	AccessLog       LogConfig         `mapstructure:"access-log" json:"access-log" yaml:"access-log"`
-	RpcLog          LogConfig         `mapstructure:"rpc-log" json:"rpc-log" yaml:"rpc-log"`
-	RagServer       *RagServerConfig  `mapstructure:"rag-server" json:"rag-server"`
-	BffServer       *BffServerConfig  `mapstructure:"bff-server" json:"bff-server"`
-	ToolServer      *ToolServerConfig `mapstructure:"tool-server" json:"tool-server"`
-	Minio           *MinioConfig      `mapstructure:"minio" json:"minio"`
-	AgentFileConfig *AgentFileConfig  `mapstructure:"agent-file-config" json:"agent-file-config"`
-	Microservices   Microservices     `mapstructure:"microservices" json:"microservices"`
+	Server               *Server                `mapstructure:"server" json:"server"`
+	Log                  LogConfig              `mapstructure:"log" json:"log"`
+	AccessLog            LogConfig              `mapstructure:"access-log" json:"access-log" yaml:"access-log"`
+	RpcLog               LogConfig              `mapstructure:"rpc-log" json:"rpc-log" yaml:"rpc-log"`
+	RagServer            *RagServerConfig       `mapstructure:"rag-server" json:"rag-server"`
+	BffServer            *BffServerConfig       `mapstructure:"bff-server" json:"bff-server"`
+	ToolServer           *ToolServerConfig      `mapstructure:"tool-server" json:"tool-server"`
+	Minio                *MinioConfig           `mapstructure:"minio" json:"minio"`
+	AgentFileConfig      *AgentFileConfig       `mapstructure:"agent-file-config" json:"agent-file-config"`
+	Microservices        Microservices          `mapstructure:"microservices" json:"microservices"`
+	WgaSandbox           WgaSandboxConfig       `mapstructure:"wga-sandbox" json:"wga-sandbox"`
+	ToolTemplateConfig   *ToolTemplateConfigData `mapstructure:"tool-template" json:"tool-template" yaml:"tool-template"`
 }
 
 type Microservices struct {
@@ -95,6 +97,7 @@ type LogConfig struct {
 
 type MinioConfig struct {
 	EndPoint     string `json:"endpoint" mapstructure:"endpoint"`
+	DownloadUrl  string `json:"download-url" mapstructure:"download-url"`
 	KnowledgeDir string `mapstructure:"knowledge-dir" json:"knowledge-dir"`
 	User         string `mapstructure:"user" json:"user"`
 	Password     string `mapstructure:"password" json:"password"`
@@ -149,4 +152,14 @@ type BffServerConfig struct {
 	Endpoint       string `mapstructure:"endpoint" json:"endpoint"`
 	SearchModelUri string `mapstructure:"search-model-uri" json:"search-model-uri"`
 	Timeout        int64  `mapstructure:"timeout" json:"timeout"`
+}
+
+type WgaSandboxConfig struct {
+	Sandbox WgaSandboxSandboxConfig `json:"sandbox" mapstructure:"sandbox"`
+}
+
+type WgaSandboxSandboxConfig struct {
+	Type      string `json:"type" mapstructure:"type"`
+	Host      string `json:"host" mapstructure:"host"`
+	ImageName string `json:"image-name" mapstructure:"image-name"`
 }

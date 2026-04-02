@@ -1,0 +1,66 @@
+{
+  "api_schema": {
+    "info": {
+      "description": "技能工具，支持通过URL数组传入文件内容进行文档解析",
+      "title": "skill",
+      "version": "1.0.0"
+    },
+    "openapi": "3.0.0",
+    "paths": {
+      "/v1/skill": {
+        "post": {
+          "description": "skill工具",
+          "summary": "解析文档返回内容",
+          "operationId": "skill",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "uploadFileUrl": {
+                      "description": "如果上下文中有下载链接则放到此数组中",
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [],
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "解析成功",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "properties": {
+                      "code": {
+                        "type": "integer"
+                      },
+                      "data": {
+                        "type": "string"
+                      },
+                      "msg": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "%s"
+      }
+    ]
+  }
+}

@@ -23,6 +23,7 @@ type Config struct {
 	Knowledge Knowledge    `mapstructure:"knowledge" json:"knowledge" yaml:"knowledge"`
 	MCP       Mcp          `mapstructure:"mcp" json:"mcp"`
 	Workflow  Workflow     `mapstructure:"workflow" json:"workflow"`
+	Skill     Skill        `mapstructure:"skill" json:"skill"`
 }
 
 type Knowledge struct {
@@ -36,6 +37,11 @@ type Mcp struct {
 type Workflow struct {
 	Endpoint      string `mapstructure:"endpoint" json:"endpoint" yaml:"endpoint"`
 	ListSchemaUri string `mapstructure:"list_schema_uri" json:"list_schema_uri" yaml:"list_schema_uri"`
+}
+
+type Skill struct {
+	Endpoint            string `mapstructure:"endpoint" json:"endpoint" yaml:"endpoint"`
+	BuiltInSkillListUri string `mapstructure:"builtin_skill_list_uri" json:"builtin_skill_list_uri" yaml:"builtin_skill_list_uri"`
 }
 
 type ServerConfig struct {

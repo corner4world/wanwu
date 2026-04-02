@@ -556,13 +556,21 @@ func (s *Service) AssistantCopy(ctx context.Context, req *assistant_service.Assi
 	if status != nil {
 		return nil, errStatus(errs.Code_AssistantErr, status)
 	}
+
 	// 获取关联的多智能体配置
 	subAgents, status := s.cli.FetchMultiAssistantRelationList(ctx, assistantId, "", true)
 	if status != nil {
 		return nil, errStatus(errs.Code_AssistantErr, status)
 	}
+
+	// 获取关联的 skills
+	skills, status := s.cli.GetAssistantSkillList(ctx, assistantId)
+	if status != nil {
+		return nil, errStatus(errs.Code_AssistantErr, status)
+	}
+
 	// 复制智能体
-	assistantID, status := s.cli.CopyAssistant(ctx, parentAssistant, workflows, mcps, tools, subAgents)
+	assistantID, status := s.cli.CopyAssistant(ctx, parentAssistant, workflows, mcps, tools, subAgents, skills)
 	if status != nil {
 		return nil, errStatus(errs.Code_AssistantErr, status)
 	}
@@ -631,6 +639,7 @@ func buildAgentParams(ctx context.Context, cli client.IClient, agent *model.Assi
 		ModelParams().
 		KnowledgeParams().
 		ToolParams().
+		SkillParams().
 		Build()
 }
 

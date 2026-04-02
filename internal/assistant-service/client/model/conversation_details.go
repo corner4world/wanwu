@@ -8,6 +8,8 @@ const (
 	AgentKnowledge    ConversationType = "agentKnowledge"    //主智能体知识库
 	AgentThink        ConversationType = "agentThink"        //主智能体思考
 	SubAgent          ConversationType = "subAgent"          //子智能体
+	AgentSkill        ConversationType = "agentSkill"        //子智能体
+	AgentSkillText    ConversationType = "agentSkillText"    //智能体skill内容
 	SubAgentTool      ConversationType = "subAgentTool"      //子智能体工具
 	SubAgentKnowledge ConversationType = "subAgentKnowledge" //子智能体只是库
 
@@ -31,6 +33,18 @@ type SubEventData struct {
 	Profile  string         `json:"profile"`
 	TimeCost string         `json:"timeCost"`
 	Order    int            `json:"order"`
+}
+
+func (s *SubEventData) Copy() *SubEventData {
+	return &SubEventData{
+		Status:   s.Status,
+		Id:       s.Id,
+		ParentId: s.ParentId,
+		Name:     s.Name,
+		Profile:  s.Profile,
+		TimeCost: s.TimeCost,
+		Order:    s.Order,
+	}
 }
 
 type SubConversationDetail struct {

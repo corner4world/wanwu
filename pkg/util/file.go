@@ -156,6 +156,14 @@ func MergeFile(filePathList []string, mergeFilePath string) (*FileMergeResult, e
 	}, nil
 }
 
+func MkDir(fileDir string) error {
+	err := os.MkdirAll(fileDir, 0755)
+	if err != nil {
+		return fmt.Errorf("mkdir (%v) err: %v", fileDir, err)
+	}
+	return nil
+}
+
 func DeleteDir(fileDir string) error {
 	err := os.RemoveAll(fileDir)
 	if err != nil {

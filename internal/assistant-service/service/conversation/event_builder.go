@@ -18,7 +18,9 @@ const (
 	SkillEventType        = 4 //技能事件
 	SubAgentToolEventType = 5 //子智能体工具事件
 	ThinkingEventType     = 6 //智能体思考事件
-	terminationMessage    = "本次回答已被终止"
+
+	SkillTextEventType = 20 //技能内容事件
+	terminationMessage = "本次回答已被终止"
 )
 
 var builderMap = make(map[int]EventBuilder)

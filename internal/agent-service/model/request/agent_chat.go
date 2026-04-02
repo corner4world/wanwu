@@ -8,6 +8,14 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
+// skill type
+const (
+	SkillTypeBuiltIn SkillType = "builtin" // 内置技能
+	SkillTypeCustom  SkillType = "custom"  // 自定义技能
+)
+
+type SkillType string
+
 type AgentChatContext struct {
 	AgentChatReq     *AgentChatParams
 	AgentChatInfo    *service_model.AgentChatInfo
@@ -46,6 +54,7 @@ type AgentChatParams struct {
 	Stream           bool            `json:"stream"`
 	MultiAgent       bool            //是否多智能体
 	NewStyle         bool            //是否使用新样式
+	OriginNewStyle   bool            //是否使用新样式
 	SubAgentInfoList []*SubAgentInfo //子智能体
 	AgentChatBaseParams
 }
@@ -56,8 +65,6 @@ type AgentBaseParams struct {
 	Description string `json:"description"`
 	Instruction string `json:"instruction"`
 	Avatar      string `json:"avatar"`
-	CallDetail  bool   `json:"callDetail"` //是否展示调用详情
-
 }
 
 type ModelParams struct {
@@ -111,6 +118,7 @@ type CustomModelInfo struct {
 type ToolParams struct {
 	PluginToolList []*PluginToolInfo `json:"pluginTool,omitempty"`
 	McpToolList    []*MCPToolInfo    `json:"mcpToolList,omitempty"`
+	SkillToolList  []*SkillToolInfo  `json:"skillToolList,omitempty"`
 }
 
 type NetSearchParams struct {
@@ -137,6 +145,15 @@ type MCPToolInfo struct {
 	Transport    string   `json:"transport"`
 	ToolNameList []string `json:"toolNameList"` // MCP工具方法列表,会根据此方法名的列表进行mcp方法的过滤，如果此列为空，则标识不进行过滤
 	Avatar       string   `json:"avatar"`
+}
+
+type SkillToolInfo struct {
+	SkillId    string    `json:"skillId"`
+	SkillType  SkillType `json:"skillType"`
+	Name       string    `json:"name"`
+	Desc       string    `json:"desc"`
+	Avatar     string    `json:"avatar"`
+	ObjectPath string    `json:"objectPath"`
 }
 
 type MetadataFilterParam struct {

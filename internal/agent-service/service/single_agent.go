@@ -36,6 +36,8 @@ func SingleAgentChat(ctx *gin.Context, req *request.AgentChatReq) error {
 
 // SingleAgentChatDirect 单智能体问答
 func SingleAgentChatDirect(ctx *gin.Context, agentChatParams *request.AgentChatParams) error {
+	agentChatParams.OriginNewStyle = true
+	agentChatParams.NewStyle = true
 	agent, err := CreateSingleAgent(ctx, agentChatParams)
 	if err != nil {
 		return err
@@ -61,7 +63,7 @@ func CreateSingleAgent(ctx *gin.Context, req *request.AgentChatParams) (*SingleA
 		return nil, err
 	}
 	//2.创建智能体
-	agent, err := createAgent(ctx, req, chatModel)
+	agent, err := createAgent(ctx, req, chatModel, chatInfo)
 	if err != nil {
 		log.Errorf("failed to create agent: %v", err)
 		return nil, err
@@ -154,9 +156,9 @@ func searchSingleAgent(ctx *gin.Context, req *request.AgentChatReq) (*assistant_
 }
 
 // 创建对应智能体
-func createAgent(ctx *gin.Context, req *request.AgentChatParams, chatModel model.ToolCallingChatModel) (*adk.ChatModelAgent, error) {
+func createAgent(ctx *gin.Context, req *request.AgentChatParams, chatModel model.ToolCallingChatModel, chatInfo *service_model.AgentChatInfo) (*adk.ChatModelAgent, error) {
 	baseParams := req.AgentBaseParams
-	toolsConfig, err := BuildAgentToolsConfig(ctx, req)
+	toolsConfig, err := BuildAgentToolsConfig(ctx, req, chatInfo)
 	if err != nil {
 		return nil, err
 	}

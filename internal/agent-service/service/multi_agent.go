@@ -116,6 +116,7 @@ func buildAgentChatParams(multiAgentChatReq *request.MultiAgentChatReq) *request
 			})
 		}
 	}
+	baseParams := multiAgentChatReq.AgentChatBaseParams
 	return &request.AgentChatParams{
 		MultiAgent:       true,
 		SubAgentInfoList: subAgentInfoList,
@@ -123,8 +124,8 @@ func buildAgentChatParams(multiAgentChatReq *request.MultiAgentChatReq) *request
 		UploadFile:       multiAgentChatReq.UploadFile,
 		Stream:           multiAgentChatReq.Stream,
 		AgentChatBaseParams: request.AgentChatBaseParams{
-			ModelParams:     multiAgentChatReq.ModelParams,
-			AgentBaseParams: multiAgentChatReq.AgentBaseParams,
+			ModelParams:     baseParams.ModelParams,
+			AgentBaseParams: baseParams.AgentBaseParams,
 		},
 	}
 }
@@ -150,5 +151,40 @@ func buildMultiSubAgent(ctx *gin.Context, multiAgentChatReq *request.MultiAgentC
 			AgentChatContext: subAgent.ChatContext, //如果同一智能体不出现并发没问题，如果可能触发同一智能体并发调用，就会有bug
 		}
 	}
+	//处理skill包装成子智能体
+	agentChatBaseParams := multiAgentChatReq.AgentChatBaseParams
+	if agentChatBaseParams.ToolParams != nil && len(agentChatBaseParams.ToolParams.SkillToolList) != 0 {
+		for _, skill := range agentChatBaseParams.ToolParams.SkillToolList {
+			subAgent, err := skillToSingleAgent(ctx, multiAgentChatReq, skill)
+			if err != nil {
+				return nil, nil, err
+			}
+			subAgents = append(subAgents, subAgent)
+			baseParams := subAgent.ChatContext.AgentChatReq.AgentBaseParams
+			subAgentMap[baseParams.Name] = &request.AgentConfig{
+				AgentId:          baseParams.AgentId,
+				AgentName:        baseParams.Name,
+				AgentAvatar:      baseParams.Avatar,
+				AgentChatContext: subAgent.ChatContext, //如果同一智能体不出现并发没问题，如果可能触发同一智能体并发调用，就会有bug
+			}
+		}
+	}
 	return subAgents, subAgentMap, nil
+}
+
+// skillToSingleAgent 将一个skill包装成单智能体
+func skillToSingleAgent(ctx *gin.Context, multiAgentChatReq *request.MultiAgentChatReq, skill *request.SkillToolInfo) (*SingleAgent, error) {
+	agentChatBaseParams := multiAgentChatReq.AgentChatBaseParams
+	return CreateSingleAgent(ctx, &request.AgentChatParams{
+		AgentChatBaseParams: request.AgentChatBaseParams{
+			AgentBaseParams: &request.AgentBaseParams{
+				Name:        skill.Name,
+				Description: skill.Desc,
+			},
+			ModelParams: agentChatBaseParams.ModelParams,
+			ToolParams:  agentChatBaseParams.ToolParams,
+		},
+		Stream:     multiAgentChatReq.Stream,
+		UploadFile: multiAgentChatReq.UploadFile,
+	})
 }

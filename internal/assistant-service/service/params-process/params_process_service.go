@@ -86,7 +86,8 @@ type AgentPrepareParams struct {
 	McpServerList        []*mcp_service.MCPServerInfo
 	McpToolMap           map[string][]string
 	ConversionDetailList []*model.ConversationDetails
-	SkillList            []*assistant_service.SkillInfo
+	builtinSkillList     []*SkillDetail
+	CustomSkillList      []*mcp_service.CustomSkill
 	Err                  error
 }
 

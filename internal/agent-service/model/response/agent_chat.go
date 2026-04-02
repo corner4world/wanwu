@@ -3,13 +3,11 @@ package response
 import (
 	"bytes"
 	"encoding/json"
-	"strings"
-	"time"
-
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
+	"strings"
 )
 
 const (
@@ -17,31 +15,13 @@ const (
 	agentFailCode    = 1
 	finish           = 1
 	notFinish        = 0
-
-	ToolNameStep         ToolStep = 0 //输出工具名阶段
-	ToolParamStartStep   ToolStep = 1 //输出工具参数 开始阶段
-	ToolParamStep        ToolStep = 2 //输出工具参数阶段
-	ToolParamFinishStep  ToolStep = 3 //输出工具参数完成阶段
-	ToolResultFinishStep ToolStep = 4 //输出工具结果完成阶段
 )
-
-type ToolStep int
-
-type AgentTool struct {
-	ToolId    string
-	ToolIndex *int
-	ToolName  string
-	ToolType  int
-	Avatar    string
-	ToolStep  ToolStep //工具阶段
-	Order     int      //工具顺序
-	StartTime int64
-}
 
 type AgentInfo struct {
 	Id     string //id
 	Name   string //名称
 	Avatar string //头像
+	Order  int
 }
 
 func CreateAgentInfo(name, avatar string) *AgentInfo {
@@ -49,43 +29,23 @@ func CreateAgentInfo(name, avatar string) *AgentInfo {
 }
 
 type AgentChatRespContext struct {
-	Order            int    //消息的order，每切换一次智能体，order+1
-	MainAgentName    string //主智能体名称
-	MultiAgent       bool   //多智能体
-	AgentStart       bool   //智能体开始
-	AgentStartTime   int64
-	AgentTempMessage strings.Builder
-	CurrentAgent     *AgentInfo //当前智能体
-	ExitTool         bool       //退出工具开始
+	Order             int                //消息的order，每切换一次智能体，order+1
+	MultiAgent        bool               //多智能体
+	MultiAgentContext *MultiAgentContext //多智能体上下文
+	AgentToolContext  *AgentToolContext  //智能体工具上下文
+	SkillChatContext  *SkillChatContext  //智能体skill上下文
+	ThinkChatContext  *ThinkChatContext  //智能体思考上下文
+	DownloadContext   *DownloadContext   //智能体文件下载上下文
 
-	//上面为多智能体相关参数
-	CurrentToolId      string //当前toolId
-	ToolMap            map[string]*AgentTool
 	ReplaceContent     strings.Builder // 替换内容，如果出现相同内则则进行替换
 	ReplaceContentStr  string          // 替换内容，如果出现相同内则则进行替换
 	ReplaceContentDone bool            //替换内容准备完成
 
-	ContentOutput bool       //上个事件是否是输出内容
-	Thinking      bool       // 思考中
-	ThinkingTool  *AgentTool // 思考工具
-}
-
-func (c *AgentChatRespContext) AgentParamsStart(toolId string) {
-	c.AgentStart = true
-	c.AgentStartTime = time.Now().UnixMilli()
-	c.ResetTool()
-	c.AgentTempMessage.Reset()
-	c.CurrentToolId = toolId
-}
-
-func (c *AgentChatRespContext) AgentParamsFinish() {
-	c.AgentStart = false
-	c.AgentTempMessage.Reset()
+	ContentOutput bool //上个事件是否是输出内容
 }
 
 func (c *AgentChatRespContext) ResetTool() {
-	c.CurrentToolId = ""
-	c.ToolMap = make(map[string]*AgentTool)
+	c.AgentToolContext.Reset()
 	c.ReplaceContent = strings.Builder{}
 	c.ReplaceContentStr = ""
 	c.ReplaceContentDone = false
@@ -97,10 +57,13 @@ func (c *AgentChatRespContext) IncreaseOrder() {
 
 func NewAgentChatRespContext(multiAgent bool, mainAgentName string, order int) *AgentChatRespContext {
 	return &AgentChatRespContext{
-		MainAgentName: mainAgentName,
-		ToolMap:       make(map[string]*AgentTool),
-		MultiAgent:    multiAgent,
-		Order:         order,
+		MultiAgent:        multiAgent,
+		Order:             order,
+		AgentToolContext:  NewToolContext(),
+		MultiAgentContext: NewMultiAgentContext(mainAgentName),
+		SkillChatContext:  NewSkillChatContext(),
+		ThinkChatContext:  NewThinkChatContext(),
+		DownloadContext:   NewDownloadContext(),
 	}
 }
 

@@ -209,6 +209,11 @@ func buildConversationType(eventType int) model.ConversationType {
 		return model.AgentTool
 	case conversation.ThinkingEventType:
 		return model.AgentThink
+	case conversation.SkillEventType:
+		return model.AgentSkill
+	case conversation.SkillTextEventType:
+		return model.AgentSkillText
+
 	default:
 		return model.SubAgent
 	}

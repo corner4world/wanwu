@@ -34,6 +34,20 @@ func GetAgentSkillDetail(ctx *gin.Context, skillId string) (*response.SkillDetai
 	return buildSkillTempDetail(skillsCfg, true), nil
 }
 
+func GetAgentSkillListDetail(ctx *gin.Context, skillIdList []string) (*response.SkillDetailListResp, error) {
+	var skillDetailList []*response.SkillDetail
+	for _, skillId := range skillIdList {
+		skillsCfg, exist := config.Cfg().AgentSkill(skillId)
+		if !exist {
+			continue
+		}
+		detail := buildSkillTempDetail(skillsCfg, false)
+		detail.SkillPath = skillsCfg.SkillPath
+		skillDetailList = append(skillDetailList, detail)
+	}
+	return &response.SkillDetailListResp{SkillList: skillDetailList}, nil
+}
+
 func DownloadAgentSkill(ctx *gin.Context, skillId string) ([]byte, error) {
 	// 需要把SkConfigDir+templateId路径下的所有文件在内存打成一个压缩包
 	sf, exist := config.Cfg().AgentSkill(skillId)

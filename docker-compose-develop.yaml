@@ -256,11 +256,13 @@ services:
       - ./bin/${WANWU_ARCH}/agent-service:/app/bin/agent-service
       - ./configs/microservice/agent-service/configs:/app/configs/microservice/agent-service/configs
       - ./configs/microservice/agent-service/tool-template:/app/configs/microservice/agent-service/tool-template
+      - ./configs/microservice/bff-service/configs:/app/configs/microservice/bff-service/configs
       - ${WANWU_PROJECT_DIR}/agent-service/log:/app/log
     environment:
       MINIO_ENDPOINT: ${WANWU_MINIO_ENDPOINT}
       MINIO_USER: ${WANWU_MINIO_USER}
       MINIO_PASSWORD: ${WANWU_MINIO_PASSWORD}
+      MINIO_DOWNLOAD_URL: ${WANWU_WEB_BASE_URL}/minio/download/api
     working_dir: /app
     command: ./bin/agent-service
 

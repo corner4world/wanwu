@@ -62,7 +62,26 @@ minio:
   user: root
   password: Wanwu123456
   bucket: file-upload
+  download-url: http://localhost:9000/minio/download/api
 
 microservices:
   assistant:
     host: assistant-service:8890
+
+wga-sandbox:
+  sandbox:
+    type: reuse
+    host: wga-sandbox-wanwu
+    image-name: ""
+
+# tool-template 配置
+tool-template:
+  tools:
+    - id: doc_parser
+      file-path: configs/microservice/agent-service/tool-template/doc_parser.json
+      tool-name: 文档解析工具
+      avatar: ""
+    - id: skill_tool
+      file-path: configs/microservice/agent-service/tool-template/skill_tool.json
+      tool-name: 技能工具
+      avatar: ""

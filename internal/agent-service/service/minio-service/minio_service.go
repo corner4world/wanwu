@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/config"
 	"io"
 	"net/http"
 	"net/url"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	agent_http_client "github.com/UnicomAI/wanwu/internal/agent-service/pkg/http"
-	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/config"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/util"
 	http_client "github.com/UnicomAI/wanwu/pkg/http-client"
 	"github.com/UnicomAI/wanwu/pkg/log"
@@ -62,7 +62,7 @@ func DeleteFile(ctx context.Context, minioFilePath string) error {
 }
 
 // UploadLocalFile 根据文件路径上传文件
-func UploadLocalFile(ctx context.Context, minioDir string, minioFileName string, srcFilePath string) (string, string, int64, error) {
+func UploadLocalFile(ctx context.Context, minioDir string, minioFileName string, srcFilePath string, open bool) (string, string, int64, error) {
 	srcFile, err := os.Open(srcFilePath)
 	if err != nil {
 		log.Errorf("UploadLocalFile open file error :%s", err)
@@ -79,7 +79,7 @@ func UploadLocalFile(ctx context.Context, minioDir string, minioFileName string,
 	if err == nil {
 		fileUploadSize = fileInfo.Size()
 	}
-	filePath, fileSize, err := UploadFile(ctx, minioDir, minioFileName, srcFile, fileUploadSize)
+	filePath, fileSize, err := UploadFile(ctx, minioDir, minioFileName, srcFile, fileUploadSize, open)
 	return minioFileName, filePath, fileSize, err
 }
 
@@ -128,7 +128,7 @@ func getContentType(uri string) (contentType string) {
 	return ""
 }
 
-func UploadFile(ctx context.Context, dir string, fileName string, reader io.Reader, objectSize int64) (string, int64, error) {
+func UploadFile(ctx context.Context, dir string, fileName string, reader io.Reader, objectSize int64, open bool) (string, int64, error) {
 	bucketName := config.GetConfig().Minio.Bucket
 	// 上传文件。
 	//milli := time.Now().UnixMilli()
@@ -146,11 +146,13 @@ func UploadFile(ctx context.Context, dir string, fileName string, reader io.Read
 		//log-config.Fatalln(err)
 		return "", 0, err
 	}
-	if len(uploadInfo.Location) == 0 {
-		configInfo := config.GetConfig()
-		return "http://" + configInfo.Minio.EndPoint + "/" + bucketName + "/" + objectName, uploadInfo.Size, nil
+	configInfo := config.GetConfig()
+	var minioUrl = "http://" + configInfo.Minio.EndPoint
+	if open {
+		minioUrl = configInfo.Minio.DownloadUrl
 	}
-	return uploadInfo.Location, uploadInfo.Size, nil
+	return minioUrl + "/" + bucketName + "/" + objectName, uploadInfo.Size, nil
+	//return uploadInfo.Location, uploadInfo.Size, nil
 }
 
 func DownloadFileToLocal(ctx context.Context, minioFilePath string, localPath string) error {

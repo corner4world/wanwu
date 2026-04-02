@@ -105,6 +105,14 @@ func (a *AgentChatParamsBuilder) ToolParams() *AgentChatParamsBuilder {
 	return a
 }
 
+func (a *AgentChatParamsBuilder) SkillParams() *AgentChatParamsBuilder {
+	if a.err != nil {
+		return a
+	}
+	a.postProcessList = append(a.postProcessList, params_process.SkillType)
+	return a
+}
+
 func (a *AgentChatParamsBuilder) Build() (detail *assistant_service.AgentDetail, err error) {
 	if a.err != nil {
 		return nil, a.err

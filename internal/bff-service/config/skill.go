@@ -21,6 +21,7 @@ type SkillsConfig struct {
 	Desc          string `json:"desc" mapstructure:"desc"`
 	MdPath        string `json:"mdPath" mapstructure:"mdPath"`
 	SkillMarkdown []byte `json:"-" mapstructure:"-"`
+	SkillPath     string `json:"-" mapstructure:"-"`
 }
 
 type SkillCreatorConfig struct {
@@ -81,5 +82,6 @@ func (stf *SkillsConfig) load() error {
 
 	// 处理 front matter 格式
 	stf.SkillMarkdown = []byte(FixFrontMatterFormat(string(b)))
+	stf.SkillPath = filepath.Join(builtinSkillsConfigDir, stf.SkillId)
 	return nil
 }

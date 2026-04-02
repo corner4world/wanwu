@@ -1,0 +1,74 @@
+package util
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/url"
+	"path/filepath"
+	"reflect"
+)
+
+var urlKeys = []string{
+	"output", "url", "fileUrl", "file_url", "downloadUrl", "download_url", "path", "uri",
+	"link", "file", "address", "src", "callbackUrl", "callback_url", "resource",
+}
+
+var imageExt = map[string]bool{
+	".jpg":  true,
+	".jpeg": true,
+	".png":  true,
+	".gif":  true,
+	".bmp":  true,
+	".webp": true,
+	".svg":  true,
+	".tiff": true,
+}
+
+// ExtractURLFromJSON 通用URL提取工具
+func ExtractURLFromJSON(jsonStr string) (string, error) {
+	// 1. 把JSON解析为通用map
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
+		return "", fmt.Errorf("JSON解析失败: %v", err)
+	}
+
+	// 2. 优先从常用key中查找URL
+	for _, key := range urlKeys {
+		if val, ok := data[key]; ok {
+			if str, ok := val.(string); ok && isValidURL(str) {
+				if !imageExt[filepath.Ext(str)] {
+					return str, nil
+				}
+			}
+		}
+	}
+
+	// 3. 兜底：遍历所有key，找到第一个符合URL格式的字符串
+	for _, val := range data {
+		if str, ok := val.(string); ok && isValidURL(str) {
+			if !imageExt[filepath.Ext(str)] {
+				return str, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("未找到有效的URL")
+}
+
+// 判断字符串是否为有效URL（宽松匹配，兼容内网IP、中文文件名）
+func isValidURL(s string) bool {
+	// 先尝试标准URL解析
+	if _, err := url.Parse(s); err == nil {
+		return true
+	}
+	// 额外支持：内网地址、本地文件地址、带中文的下载链接
+	// 匹配 http/https 开头 + 包含路径格式
+	matched := false
+	reflect.ValueOf(&matched)
+	return len(s) > 10 && (startsWith(s, "http://") || startsWith(s, "https://"))
+}
+
+// 字符串前缀判断
+func startsWith(s, prefix string) bool {
+	return len(s) >= len(prefix) && s[:len(prefix)] == prefix
+}

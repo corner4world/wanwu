@@ -80,13 +80,14 @@ func fillInternalToolConfig(req *request.AgentChatParams, agentChatInfo *service
 	//但是目前只支持一个文件，具体处理逻在node_prompt_variables.go
 	if !agentChatInfo.VisionSupport {
 		templateConfig := config.GetToolTemplateConfig()
-		if len(templateConfig.ConfigPluginToolList) > 0 && agentChatInfo.UploadUrl {
+		chatDoc, _ := templateConfig.GetToolByID(config.DocParser)
+		if chatDoc != nil && agentChatInfo.UploadUrl {
 			params := req.ToolParams
 			if params != nil {
-				params.PluginToolList = append(params.PluginToolList, templateConfig.ConfigPluginToolList...)
+				params.PluginToolList = append(params.PluginToolList, chatDoc)
 			} else {
 				params = &request.ToolParams{
-					PluginToolList: templateConfig.ConfigPluginToolList,
+					PluginToolList: []*request.PluginToolInfo{chatDoc},
 				}
 			}
 			req.ToolParams = params

@@ -448,6 +448,11 @@
 {"code":160010,"key":"skill_conversation_update","langs":{"zh":"对话更新失败：%v"}}
 {"code":160011,"key":"skill_conversation_delete","langs":{"zh":"对话删除失败：%v"}}
 {"code":160012,"key":"skill_conversation_get_list","langs":{"zh":"对话获取失败：%v"}}
+{"code":160015,"key":"assistant_skill_create","langs":{"zh":"创建skill错误: %v"}}
+{"code":160015,"key":"assistant_skill_delete","langs":{"zh":"删除skill错误: %v"}}
+{"code":160015,"key":"assistant_skill_get","langs":{"zh":"获取skill错误: %v"}}
+{"code":160015,"key":"assistant_skill_update","langs":{"zh":"更新skill错误: %v"}}
+{"code":160015,"key":"assistant_skill_get_list","langs":{"zh":"获取skills列表错误: %v"}}
 {"code":300000,"key":"app_config_delete","langs":{"zh":"删除应用配置错误:%v"}}
 {"code":300001,"key":"app_api_keys_get","langs":{"zh":"获取AppKey列表错误:%v"}}
 {"code":300001,"key":"app_api_key_delete","langs":{"zh":"删除AppKey错误:%v"}}
