@@ -17,22 +17,32 @@
             />
           </div>
           <div class="basicInfo-desc">
-            <span class="basicInfo-title">
-              {{
-                (editForm.name || $t('agent.form.noInfo')).length > 12
-                  ? (editForm.name || $t('agent.form.noInfo')).substring(
-                      0,
-                      12,
-                    ) + '...'
-                  : editForm.name || $t('agent.form.noInfo')
-              }}
-            </span>
-            <span
-              class="el-icon-edit-outline editIcon"
-              @click="editAgent"
-            ></span>
-            <LinkIcon type="agent" />
-            <p>{{ editForm.desc || $t('agent.form.noInfo') }}</p>
+            <div class="title-line">
+              <span class="basicInfo-title">
+                {{
+                  (editForm.name || $t('agent.form.noInfo')).length > 12
+                    ? (editForm.name || $t('agent.form.noInfo')).substring(
+                        0,
+                        12,
+                      ) + '...'
+                    : editForm.name || $t('agent.form.noInfo')
+                }}
+              </span>
+              <span
+                class="el-icon-edit-outline editIcon"
+                @click="editAgent"
+              ></span>
+              <LinkIcon type="agent" />
+            </div>
+            <el-tooltip
+              effect="dark"
+              :content="editForm.desc || $t('agent.form.noInfo')"
+              placement="top"
+            >
+              <p class="desc-text">
+                {{ editForm.desc || $t('agent.form.noInfo') }}
+              </p>
+            </el-tooltip>
             <p>
               uuid: {{ this.editForm.uuid }}
               <copyIcon
@@ -1695,6 +1705,26 @@ $gap-scale: (
   .gap-#{$key} {
     gap: $value;
   }
+}
+
+.basicInfo-desc {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 15px;
+
+  .title-line {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.desc-text {
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .agent_form {
