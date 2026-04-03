@@ -253,18 +253,14 @@ export default {
     },
     // 跳转至知识库|问答库
     handleKnowledgeLink(category, id) {
-      const targetRouterName =
+      const targetRouterPath =
         category === 1
           ? `/knowledge/qa/docList/${id}`
           : `/knowledge/doclist/${id}`;
-      const routeData = this.$router.resolve({
-        name: targetRouterName,
+      const targetRoute = this.$router.resolve({
+        path: targetRouterPath,
       });
-      const baseUrl = routeData.href;
-      const locationName = routeData.location.name;
-      const combinedUrl = baseUrl + locationName;
-      const fullUrl = combinedUrl.replace(/\/+/g, '/');
-      window.open(fullUrl, '_blank');
+      window.open(targetRoute.href, '_blank');
     },
   },
 };

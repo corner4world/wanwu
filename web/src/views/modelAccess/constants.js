@@ -36,17 +36,19 @@ export const INFINI = 'Infini';
 export const DEEPSEEK = 'DeepSeek';
 export const QIANFAN = 'QianFan';
 export const JINA = 'Jina';
+export const ZHIPU = 'ZhiPu';
 
 export const PROVIDER_OBJ = {
   [OPENAI_API]: 'OpenAI-API-compatible',
-  [YUAN_JING]: i18n.t('modelAccess.type.yuanjing'),
   [OLLAMA]: 'Ollama',
+  [YUAN_JING]: i18n.t('modelAccess.type.yuanjing'),
   [QWEN]: i18n.t('modelAccess.type.qwen'),
   [HUOSHAN]: i18n.t('modelAccess.type.huoshan'),
   [INFINI]: i18n.t('modelAccess.type.infini'),
-  [DEEPSEEK]: 'DeepSeek',
   [QIANFAN]: i18n.t('modelAccess.type.qianfan'),
   [JINA]: 'Jina',
+  [DEEPSEEK]: 'DeepSeek',
+  [ZHIPU]: i18n.t('modelAccess.type.zhipu'),
 };
 
 export const PROVIDER_IMG_OBJ = {
@@ -59,6 +61,7 @@ export const PROVIDER_IMG_OBJ = {
   [DEEPSEEK]: require('@/assets/imgs/deepseek.png'),
   [QIANFAN]: require('@/assets/imgs/qianfan.png'),
   [JINA]: require('@/assets/imgs/jina.png'),
+  [ZHIPU]: require('@/assets/imgs/zhipuAi.png'),
 };
 
 const COMMON_MODEL_KEY = [LLM, RERANK, EMBEDDING];
@@ -68,19 +71,20 @@ export const PROVIDER_MODEL_KEY = {
   [OPENAI_API]: COMMON_MODEL_KEY,
   [YUAN_JING]: [
     ...COMMON_MODEL_KEY,
-    MULTIMODAL_RERANK,
+    ...MULTIMODAL_KEY,
     OCR,
     GUI,
     PDF_PARSER,
     ASR,
-  ], // ...MULTIMODAL_KEY
+  ],
   [OLLAMA]: OLL_MODEL_KEY,
-  [QWEN]: [...COMMON_MODEL_KEY, ASR],
+  [QWEN]: [...COMMON_MODEL_KEY, MULTIMODAL_EMBEDDING, ASR],
   [HUOSHAN]: [...OLL_MODEL_KEY, ASR],
   [INFINI]: COMMON_MODEL_KEY,
   [DEEPSEEK]: [LLM],
   [QIANFAN]: COMMON_MODEL_KEY,
   [JINA]: [RERANK, EMBEDDING, ...MULTIMODAL_KEY],
+  [ZHIPU]: COMMON_MODEL_KEY,
 };
 
 export const PROVIDER_TYPE = Object.keys(PROVIDER_OBJ).map(key => {
@@ -119,12 +123,16 @@ export const TYPE_OBJ = {
     [DEEPSEEK]: 'sk-14082***********************5e95',
     [QIANFAN]: 'bce-v3/ALTAK******82d1',
     [JINA]: 'jina_c08*********wMm',
+    [ZHIPU]: 'ca7d6a3***************wg0Fxc',
   },
   inferUrl: {
+    [`${MULTIMODAL_EMBEDDING}_${QWEN}`]:
+      'https://dashscope.aliyuncs.com/api/v1/services/embeddings/multimodal-embedding/multimodal-embedding',
     [`${ASR}_${QWEN}`]: 'https://dashscope.aliyuncs.com/api/v1',
     [`${ASR}_${HUOSHAN}`]:
       'https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash',
-    [`${MULTIMODAL_EMBEDDING}_${YUAN_JING}`]: i18n.t('modelAccess.noInferUrl'),
+    [`${MULTIMODAL_EMBEDDING}_${YUAN_JING}`]:
+      'https://maas-api.ai-yuanjing.com/openapi/compatible-mode/v1',
     [`${MULTIMODAL_RERANK}_${YUAN_JING}`]:
       'https://maas-api.ai-yuanjing.com/openapi/v1/yuanjing/reranker',
     [`${ASR}_${YUAN_JING}`]:
@@ -142,12 +150,23 @@ export const TYPE_OBJ = {
     [DEEPSEEK]: 'https://api.deepseek.com/v1',
     [QIANFAN]: 'https://qianfan.baidubce.com/v2',
     [JINA]: 'https://api.jina.ai/v1',
+    [ZHIPU]: 'https://open.bigmodel.cn/api/paas/v4',
   },
 };
 
+export const SHOW_VISION_LIST = [
+  YUAN_JING,
+  QWEN,
+  QIANFAN,
+  HUOSHAN,
+  INFINI,
+  OPENAI_API,
+];
+
+export const CUSTOM_MODEL_ID = 'custom';
 export const DEFAULT_MODEL_ITEM = {
   displayName: i18n.t('modelAccess.custom'),
-  model: 'custom',
+  model: CUSTOM_MODEL_ID,
   tags: [
     {
       text: i18n.t('modelAccess.custom'),

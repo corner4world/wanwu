@@ -353,6 +353,16 @@
   }
 }
 
+.reset-dialog-margin {
+  .el-dialog {  
+    margin-top: 24px !important;
+    margin-bottom: 24px !important;
+    .el-dialog__body {
+      padding: 10px 0 15px 0 !important;
+    }
+  }
+}
+
 .el-popper {
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.15);
 

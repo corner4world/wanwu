@@ -249,6 +249,7 @@
                     <sub-conversion
                       :conversion="findSubData(n, item.id)"
                       :parents-index="i"
+                      :all-sub-conversions="n.subConversions"
                       @toggle-conversion="toggleSubConversion"
                       @collapse-click="collapseClick"
                     ></sub-conversion>
@@ -337,14 +338,13 @@
                   v-if="n.subConversions && n.subConversions.length"
                   class="sub-conversion-box"
                 >
-                  <sub-conversion
-                    v-for="(conversion, idx) in n.subConversions"
-                    :key="idx"
-                    :conversion="conversion"
+                  <sub-conversion-list
+                    parent-id=""
+                    :all-sub-conversions="n.subConversions"
                     :parents-index="i"
                     @toggle-conversion="toggleSubConversion"
                     @collapse-click="collapseClick"
-                  ></sub-conversion>
+                  ></sub-conversion-list>
                 </div>
 
                 <!-- 主会话-->
@@ -657,28 +657,13 @@
 <script>
 import smoothscroll from 'smoothscroll-polyfill';
 import { md } from '@/mixins/markdown-it';
-import { marked } from 'marked';
-var highlight = require('highlight.js');
 import 'highlight.js/styles/atom-one-dark.css';
 import commonMixin from '@/mixins/common';
 import { mapGetters, mapState } from 'vuex';
 import { avatarSrc } from '@/utils/util';
 import SubConversion from './subConversion/index.vue';
+import SubConversionList from './subConversion/SubConversionList.vue';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
-
-marked.setOptions({
-  renderer: new marked.Renderer(),
-  gfm: true,
-  tables: true,
-  breaks: false,
-  pedantic: false,
-  sanitize: false,
-  smartLists: true,
-  smartypants: false,
-  highlight: function (code) {
-    return highlight.highlightAuto(code).value;
-  },
-});
 
 export default {
   mixins: [commonMixin],
@@ -709,6 +694,7 @@ export default {
   },
   components: {
     SubConversion,
+    SubConversionList,
   },
   data() {
     return {
@@ -716,7 +702,6 @@ export default {
       autoScroll: true,
       scrollTimeout: null,
       loading: false,
-      marked: marked,
       session_data: {
         tool: '',
         searchList: [],
@@ -922,8 +907,11 @@ export default {
 
       const subConversionItem = citationTarget.closest('.sub-conversion-item');
 
+      console.log('++++++');
+      console.log(citationTarget);
+
       if (subConversionItem && citationTarget.dataset.pid) {
-        // 子会话引用点击处理
+        // 子会话引用点击处理(思考子会话等)
         const pid = citationTarget.dataset.pid;
         const parentsIndex = Number(citationTarget.dataset.parentsIndex);
         const citationIndex = Number(citationTarget.textContent);
@@ -961,6 +949,9 @@ export default {
       }
 
       // Agent 主会话引用（无 data-pid，来自顶层回答）跳转到对应的知识库子会话
+      console.log('----------------');
+
+      console.log(citationTarget);
 
       if (this.chatType === 'agent' && !citationTarget.dataset.pid) {
         const index = Number(citationTarget.textContent);
@@ -971,14 +962,14 @@ export default {
           const knowledgeSub = historyItem.subConversions.find(
             a =>
               a.conversationType ===
-              AGENT_MESSAGE_CONFIG.MAIN_KNOWLEDGE.CONVERSATION_TYPE,
+              AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE,
           );
 
           if (knowledgeSub) {
             this.$set(knowledgeSub, 'isOpen', true);
             this.$nextTick(() => {
               const container = document.querySelector(
-                `.sub-conversion-item[data-pid="${knowledgeSub.id}"]`,
+                `.sub-conversion-item[data-sub-id="${knowledgeSub.id}"]`,
               );
               if (container) {
                 const targetSearchItem = container.querySelector(
@@ -1462,7 +1453,7 @@ export default {
         n.subConversions.forEach(sub => {
           if (
             sub.conversationType ===
-            AGENT_MESSAGE_CONFIG.MAIN_KNOWLEDGE.CONVERSATION_TYPE
+            AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE
           ) {
             this.$set(sub, 'isOpen', true);
           }
@@ -1525,13 +1516,19 @@ export default {
     white-space: pre-wrap !important;
     min-height: 50px;
     word-wrap: break-word;
-    resize: vertical;
+    padding: 0;
+    background: none;
+    &.hljs {
+      resize: vertical;
+    }
     .hljs {
       max-height: 300px !important;
       white-space: pre-wrap !important;
       min-height: 50px;
       word-wrap: break-word;
       resize: vertical;
+      color: #abb2bf;
+      background: #282c34;
     }
     code {
       display: block;

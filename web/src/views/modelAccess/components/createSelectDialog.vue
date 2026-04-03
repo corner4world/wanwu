@@ -1,8 +1,9 @@
 <template>
   <div class="createDialog">
     <el-dialog
+      class="reset-dialog-margin"
       :visible.sync="dialogVisible"
-      width="720px"
+      width="800px"
       append-to-body
       :close-on-click-modal="false"
       :before-close="handleClose"
@@ -13,7 +14,7 @@
           <LinkIcon type="model" />
         </div>
       </template>
-      <div>
+      <div class="provider-card-wrapper">
         <div
           :class="[
             'provider-card-item',
@@ -23,26 +24,35 @@
           :key="item.key"
           @click="showCreate(item)"
         >
-          <img
-            class="provider-card-img"
-            :src="providerImgObj[item.key]"
-            alt=""
-          />
-          <div>
-            <div class="provider-card-name">{{ item.name }}</div>
-            <div>
-              <span
-                class="provider-card-tag"
-                v-for="it in item.children"
-                :key="it.key"
-              >
-                {{ it.name }}
-              </span>
+          <div class="provider-card-top">
+            <div class="provider-card-top-left">
+              <img
+                class="provider-card-img"
+                :src="providerImgObj[item.key]"
+                alt=""
+              />
+              <div class="provider-card-name">{{ item.name }}</div>
             </div>
+            <div class="provider-check-icon" v-if="item.key === currentObj.key">
+              <i class="el-icon-check"></i>
+            </div>
+          </div>
+          <div style="margin-top: 10px">
+            <span
+              class="provider-card-tag"
+              v-for="it in item.children"
+              :key="it.key"
+            >
+              {{ it.name }}
+            </span>
           </div>
         </div>
       </div>
-      <span slot="footer" class="dialog-footer">
+      <span
+        slot="footer"
+        class="dialog-footer"
+        style="padding-top: 0; margin-top: -10px"
+      >
         <el-button @click="handleClose">
           {{ $t('common.button.cancel') }}
         </el-button>
@@ -87,16 +97,36 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.provider-card-wrapper {
+  padding-left: 24px;
+  padding-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  height: calc(100vh - 205px);
+  overflow-y: auto;
+}
 .provider-card-item {
+  width: calc(50% - 20px);
   margin-bottom: 20px;
   margin-right: 20px;
   border-radius: 8px;
-  border: 1px solid #d9d9d9;
-  padding: 15px 20px;
+  padding: 15px 10px 15px 20px;
   cursor: pointer;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: flex-start;
+  box-shadow: 0px 8px 10px 4px rgba(80, 98, 161, 0.07);
+  .provider-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .provider-card-top-left {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
   .provider-card-img {
     width: 50px;
     height: 50px;
@@ -107,6 +137,21 @@ export default {
     border-radius: 8px;
     border: 0 solid #d9d9d9;
     margin-right: 16px;
+  }
+  .provider-check-icon {
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    border-radius: 50%;
+    background-color: #fff;
+    text-align: center;
+    box-shadow: 0px 2px 8px 0px rgba(15, 17, 20, 0.1);
+    margin-top: -5px;
+    margin-right: 14px;
+    i {
+      color: $color;
+      font-size: 13px;
+    }
   }
   .provider-card-name {
     font-size: 16px;
@@ -121,17 +166,14 @@ export default {
     font-size: 12px;
     border-radius: 4px;
     padding: 2px 8px;
-    background: #eceefe;
-    color: #6977f9;
+    background: #f7f8fa;
+    color: #55575f;
   }
 }
 .provider-card-item:hover,
 .provider-card-item.is-active {
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.15);
-  border: 1px solid $color;
-  .provider-card-name {
-    color: $color;
-  }
+  border: 1px solid #d8d8d8;
 }
 .dialog-title-wrapper {
   display: flex;

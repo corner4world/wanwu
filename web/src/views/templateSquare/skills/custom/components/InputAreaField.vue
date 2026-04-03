@@ -391,6 +391,7 @@ export default {
       this.fileLoading = false;
       this.fileIdList.push({
         fileName,
+        oldFileName,
         fileSize: this.fileList[this.fileIndex]['size'],
         fileUrl: fiePath,
       });

@@ -68,7 +68,6 @@
           <div
             style="
               width: 100%;
-              display: inline-block;
               float: right;
               text-align: right;
               margin-top: -30px;

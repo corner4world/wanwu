@@ -2,7 +2,8 @@
   <!-- 子会话渲染列表 -->
   <div
     class="sub-conversion-item"
-    :data-pid="conversion.id"
+    :data-sub-id="conversion.id"
+    :data-parent-id="conversion.parentId"
     :data-conversationType="conversion.conversationType"
   >
     <div class="sub-conversion-header">
@@ -53,18 +54,80 @@
       <Knowlege
         v-if="
           conversion.conversationType ===
-          AGENT_MESSAGE_CONFIG.MAIN_KNOWLEDGE.CONVERSATION_TYPE
+          AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE
         "
         :conversion="conversion"
         :parents-index="parentsIndex"
       />
+      <!-- 分段/嵌套内容序列化渲染渲染 -->
+      <template
+        v-if="conversion.messageSequence && conversion.messageSequence.length"
+      >
+        <template v-for="(item, idx) in conversion.messageSequence">
+          <!-- 正文片段渲染 (与主消息区打字机逻辑一致) -->
+          <div
+            v-if="item.type === 'main'"
+            :key="'main-' + idx"
+            class="sub-conversion-content"
+            :data-sub-id="item.id || conversion.id"
+            :data-parent-id="conversion.id"
+            :class="{
+              'is-think':
+                conversion.conversationType ===
+                AGENT_MESSAGE_CONFIG.AGENT_THINK.CONVERSATION_TYPE,
+            }"
+          >
+            <template
+              v-if="
+                (item.stableChunks && item.stableChunks.length) ||
+                item.activeResponse
+              "
+            >
+              <div
+                v-for="(chunk, cIdx) in item.stableChunks"
+                :key="'stable-' + cIdx"
+                class="chunk_stable"
+                v-html="chunk"
+              ></div>
+              <div
+                v-if="item.activeResponse"
+                class="chunk_active"
+                v-html="item.activeResponse"
+              ></div>
+            </template>
+            <div
+              v-else
+              class="markdown-body"
+              v-html="item.renderedContent || md.render(item.response || '')"
+            ></div>
+          </div>
+
+          <!-- 嵌套子会话渲染 (递归调用自身) -->
+          <sub-conversion
+            v-else-if="item.type === 'sub' && findSubById(item.id)"
+            :key="'sub-' + item.id + idx"
+            style="margin: 10px 0"
+            :conversion="findSubById(item.id)"
+            :all-sub-conversions="allSubConversions"
+            :parents-index="parentsIndex"
+            @toggle-conversion="$emit('toggle-conversion', $event)"
+            @collapse-click="
+              $emit('collapse-click', arguments[0], arguments[1], arguments[2])
+            "
+          />
+        </template>
+      </template>
+
+      <!-- 兜底渲染 (兼容旧版数据或无序列数据) -->
       <div
-        v-if="conversion.response"
+        v-else-if="conversion.response"
         class="sub-conversion-content"
+        :data-sub-id="conversion.id"
+        :data-parent-id="conversion.parentId"
         :class="{
           'is-think':
             conversion.conversationType ===
-            AGENT_MESSAGE_CONFIG.MAIN_THINK.CONVERSATION_TYPE,
+            AGENT_MESSAGE_CONFIG.AGENT_THINK.CONVERSATION_TYPE,
         }"
       >
         <template>
@@ -93,6 +156,7 @@
           ></div>
         </template>
       </div>
+
       <!-- 子会话出处 -->
       <div
         v-if="conversion.searchList && conversion.searchList.length"
@@ -172,6 +236,7 @@ export default {
   name: 'SubConversion',
   components: {
     Knowlege,
+    SubConversionList: () => import('./SubConversionList.vue'),
   },
   props: {
     /**
@@ -191,6 +256,11 @@ export default {
       type: Object,
       required: true,
     },
+    // 全量子会话列表，用于递归
+    allSubConversions: {
+      type: Array,
+      default: () => [],
+    },
     // 父会话索引
     parentsIndex: {
       type: Number,
@@ -198,6 +268,13 @@ export default {
     },
   },
   emits: ['toggle-conversion', 'collapse-click'],
+  computed: {
+    hasChildren() {
+      return (this.allSubConversions || []).some(
+        item => item.parentId === this.conversion.id,
+      );
+    },
+  },
   data() {
     return {
       AGENT_MESSAGE_CONFIG,
@@ -212,6 +289,10 @@ export default {
     collapseClick(searchItem, index) {
       this.$emit('collapse-click', this.conversion, searchItem, index);
     },
+    // 根据 ID 从全量子会话列表中查找数据
+    findSubById(id) {
+      return (this.allSubConversions || []).find(item => item.id === id);
+    },
   },
 };
 </script>
@@ -221,6 +302,11 @@ export default {
   background: #f2f3f8;
   border-radius: 8px;
   border: 1px solid #eef0f5;
+  &[data-parent-id]:not([data-parent-id='']) {
+    .sub-conversion-content-wrapper {
+      border: 4px solid #f2f3f8;
+    }
+  }
 
   .logo {
     width: 18px;
@@ -294,25 +380,12 @@ export default {
     }
   }
 
-  ::v-deep .sub-conversion-content-wrapper {
+  .sub-conversion-content-wrapper {
     padding: 10px 12px;
     background: #edeef5;
-    p:has(img) {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    img {
-      align-self: center;
-      max-width: 100%;
-      max-height: 50vh;
-      min-height: 50px;
-      background: #ccc;
-      object-fit: contain;
-    }
   }
 
-  .sub-conversion-content {
+  ::v-deep .sub-conversion-content {
     font-size: 14px;
     color: #666;
     line-height: 1.5;
@@ -339,11 +412,11 @@ export default {
       object-fit: contain;
     }
 
-    ::v-deep p {
+    p {
       margin: 0;
     }
 
-    ::v-deep .citation {
+    .citation {
       display: inline-flex;
       color: $color;
       border-radius: 50%;

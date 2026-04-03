@@ -51,7 +51,7 @@
         <el-form-item :label="$t('modelAccess.table.model')" prop="model">
           <el-select
             v-if="!isEdit"
-            v-model="modelId"
+            v-model="modelObjStr"
             :placeholder="$t('common.select.placeholder')"
             style="width: 100%"
             @change="handleModelChange"
@@ -61,7 +61,7 @@
               v-if="item.displayName"
               :key="item.model"
               :label="item.displayName"
-              :value="item.model"
+              :value="JSON.stringify(item)"
             >
               <div class="model-option-content">
                 <div class="model-option-content-left">
@@ -86,7 +86,7 @@
             </el-option>
           </el-select>
           <el-input
-            v-if="modelId === 'custom' || isEdit"
+            v-if="currentModelId === customModelId || isEdit"
             :disabled="isEdit"
             v-model="createForm.model"
             :placeholder="$t('common.input.placeholder')"
@@ -407,12 +407,12 @@ import {
   MULTIMODAL_EMBEDDING,
   MULTIMODAL_RERANK,
   ASR,
+  OPENAI_API,
   OLLAMA,
   YUAN_JING,
-  QWEN,
-  QIANFAN,
   HUOSHAN,
-  INFINI,
+  SHOW_VISION_LIST,
+  CUSTOM_MODEL_ID,
   DEFAULT_MODEL_ITEM,
   SUPPORT_FILE_TYPE_OBJ,
   IMAGE,
@@ -454,7 +454,7 @@ export default {
       embedding: EMBEDDING,
       ollama: OLLAMA,
       yuanjing: YUAN_JING,
-      showVisionList: [YUAN_JING, QWEN, QIANFAN, HUOSHAN, INFINI],
+      showVisionList: SHOW_VISION_LIST,
       showContextSizeList: [
         LLM,
         EMBEDDING,
@@ -463,8 +463,10 @@ export default {
         MULTIMODAL_EMBEDDING,
         ASR,
       ],
+      customModelId: CUSTOM_MODEL_ID,
       modelIdList: [DEFAULT_MODEL_ITEM],
-      modelId: '',
+      currentModelId: '',
+      modelObjStr: '',
       createForm: {
         model: '',
         displayName: '',
@@ -589,6 +591,7 @@ export default {
         this.$refs.createForm && this.$refs.createForm.clearValidate();
         if (!this.isEdit) {
           this.setDefaultInferUrl();
+          this.clearSelectModelId();
           this.getModelIdList();
         }
       },
@@ -650,8 +653,20 @@ export default {
         this.modelIdList = [...list, DEFAULT_MODEL_ITEM];
       });
     },
-    handleModelChange(modelId) {
-      this.createForm.model = modelId !== 'custom' ? modelId : '';
+    handleModelChange(modelObjStr) {
+      const modelObj = modelObjStr ? JSON.parse(modelObjStr) : {};
+      const modelId = modelObj.model || '';
+      // currentModelId 用于判断是否展示出自定义的模型 ID
+      this.currentModelId = modelId;
+      // 根据选择的 model 配置显示
+      this.createForm = {
+        ...this.createForm,
+        model: modelId !== CUSTOM_MODEL_ID ? modelId : '',
+        functionCalling: modelObj.functionCalling || DEFAULT_CALLING,
+        visionSupport: modelObj.visionSupport || DEFAULT_SUPPORT,
+        thinkingSupport: modelObj.thinkingSupport || DEFAULT_SUPPORT,
+      };
+      this.$refs.createForm.clearValidate('model');
     },
     uploadAvatar(file, key) {
       const formData = new FormData();
@@ -681,7 +696,9 @@ export default {
           `${this.createForm.modelType}_${this.provider.key}`
         ] || this.typeObj.inferUrl[this.provider.key];
       if (defaultUrl) {
-        this.createForm.endpointUrl = defaultUrl;
+        // OpenAI-API-compatible 供应商不自动设置推理 URL
+        this.createForm.endpointUrl =
+          this.provider.key === OPENAI_API ? '' : defaultUrl;
       }
     },
     openDialog(title, row) {
@@ -708,9 +725,14 @@ export default {
         this.formatValue(row);
       }
     },
+    clearSelectModelId() {
+      this.createForm.model = '';
+      this.modelObjStr = '';
+      this.currentModelId = '';
+    },
     handleClose() {
       this.dialogVisible = false;
-      this.modelId = '';
+      this.clearSelectModelId();
       this.formatValue({
         modelType: LLM,
         functionCalling: DEFAULT_CALLING,

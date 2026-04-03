@@ -25,6 +25,15 @@ export const createUser = data => {
     data,
   });
 };
+// 批量新增
+export const batchCreateUser = (data, config) => {
+  return service({
+    url: `${USER_API}/user/batch`,
+    method: 'post',
+    data,
+    config,
+  });
+};
 // 编辑用户
 export const editUser = data => {
   return service({

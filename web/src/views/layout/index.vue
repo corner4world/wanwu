@@ -10,20 +10,19 @@
         ]"
       >
         <div class="left-header-container">
-          <div
-            style="padding-top: 10px; text-align: center"
-            v-if="homeLogoPath"
-          >
-            <img
-              v-if="!isCollapse"
-              style="height: 46px"
-              :src="avatarSrc(homeLogoPath)"
-            />
-            <img
-              v-else
-              style="width: 50%; margin-top: 10px"
-              src="@/assets/imgs/wanwu.png"
-            />
+          <div style="padding-top: 10px; text-align: center; height: 46px">
+            <div v-if="homeLogoPath">
+              <img
+                v-if="!isCollapse"
+                style="height: 46px"
+                :src="avatarSrc(homeLogoPath)"
+              />
+              <img
+                v-else
+                style="width: 50%; margin-top: 10px"
+                src="@/assets/imgs/wanwu.png"
+              />
+            </div>
           </div>
           <!-- 组织切换 -->
           <div class="menu-org-select-wrapper" v-if="!isCollapse">
@@ -619,7 +618,7 @@ export default {
       .menu-org-select-wrapper ::v-deep {
         display: flex;
         align-items: center;
-        margin: 8px 14px 0;
+        margin: 18px 14px 0;
         border: 1px solid #dcdfe6;
         border-radius: 4px;
         padding-left: 12px;

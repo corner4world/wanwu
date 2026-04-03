@@ -54,6 +54,7 @@ export default {
       sessionComRef: null,
       _subConversionsMap: null, // 子会话存储 Map
       _subConversionProcessors: null, // 子会话处理器 Map
+      _subMainProcessorsMap: null, // 子会话内部正文片段处理器 Map (Key: subId_order)
       responseFiles: [], // 用于存储 SSE 返回的附件文件列表
 
       // ---- 推理内容（reasoning_content）流处理相关 ----
@@ -645,7 +646,8 @@ export default {
       }
 
       this._subConversionsMap = new Map(); // 子会话数据Map
-      this._subConversionProcessors = new Map(); // 每个 order 的子处理器
+      this._subConversionProcessors = new Map(); // 子会话处理器
+      this._subMainProcessorsMap = new Map(); // 子会话内部正文片段处理器 (Key: subId_order)
       this._mainProcessors = new Map(); // 每个 order 的主处理器
 
       this.eventSource = this.fetchEventSource(this.sseApi, data, {
@@ -716,6 +718,7 @@ export default {
                   timeCost,
                   profile,
                   order: innerOrder,
+                  parentId,
                 } = data.eventData;
                 let subConversion = this._subConversionsMap.get(id);
                 let subProcessor = this._subConversionProcessors.get(id);
@@ -725,6 +728,7 @@ export default {
                     id,
                     name,
                     status, // 1开始、2输出中、3结束、4处理失败
+                    parentId: parentId || '', // 核心：关联父级ID
                     timeCost,
                     profile, //头像
                     innerOrder: innerOrder, // 内部排序序号
@@ -733,12 +737,13 @@ export default {
                     activeResponse: '',
                     isOpen:
                       data.eventType ===
-                      AGENT_MESSAGE_CONFIG.MAIN_THINK.EVENT_TYPE, // agentThink 默认展开，其他默认收起
+                      AGENT_MESSAGE_CONFIG.AGENT_THINK.EVENT_TYPE, // agentThink 默认展开，其他默认收起
                     searchList: data.search_list || [], // 初始化 searchList
                     citationsTagList: [], // 已引用的出处索引
                     conversationType: this.convertConversionType(
                       data.eventType,
                     ),
+                    messageSequence: [], // 支持子会话内部穿插序列
                     userToggled: false, // 标记用户是否手动操作过
                   };
                   this._subConversionsMap.set(id, subConversion);
@@ -763,7 +768,7 @@ export default {
                   if (
                     (status === 3 || status === 4) &&
                     data.eventType ===
-                      AGENT_MESSAGE_CONFIG.MAIN_THINK.EVENT_TYPE &&
+                      AGENT_MESSAGE_CONFIG.AGENT_THINK.EVENT_TYPE &&
                     !subConversion.userToggled // 仅在用户未手动操作过时自动折叠
                   ) {
                     subConversion.isOpen = false;
@@ -778,24 +783,130 @@ export default {
                   }
                 }
 
-                // 累加回复内容并处理流
+                // 累加回复内容并处理流 (针对子会话容器内部进行穿插序列化分段)
                 if (data.response) {
-                  // 处理转义换行符
+                  const innerOrderKey = `${id}_${data.order}`;
+                  let chunkProcessor =
+                    this._subMainProcessorsMap.get(innerOrderKey);
                   let processedResponse = data.response.replace(/\\n/g, '\n');
-                  subConversion.response += processedResponse;
-                  subProcessor.append(processedResponse);
-                  const renderResult = subProcessor.getRenderResult();
-                  subConversion.stableChunks = renderResult.stableChunks;
-                  subConversion.activeResponse = renderResult.activeResponse;
-                  // StreamProcessor 增量维护的引文列表
+
+                  // 1. 在子会话容器内寻找当前 order 对应的文本片段 (type: 'main')
+                  let currentMainChunk = subConversion.messageSequence.find(
+                    item => item.type === 'main' && item.order === data.order,
+                  );
+
+                  if (!currentMainChunk) {
+                    currentMainChunk = {
+                      type: 'main',
+                      order: data.order,
+                      stableChunks: [],
+                      activeResponse: '',
+                      response: '',
+                    };
+                    subConversion.messageSequence.push(currentMainChunk);
+                    // 按 order 排序，确保输出顺序
+                    subConversion.messageSequence.sort(
+                      (a, b) => (a.order || 0) - (b.order || 0),
+                    );
+
+                    // 为该片段创建专属打字机处理器
+                    chunkProcessor = new StreamProcessor({
+                      lastIndex,
+                      md,
+                      parseSub: (text, index, searchList) =>
+                        parseSubConversation(text, index, searchList, id),
+                      convertLatexSyntax,
+                      searchList: subConversion.searchList,
+                    });
+                    this._subMainProcessorsMap.set(
+                      innerOrderKey,
+                      chunkProcessor,
+                    );
+                  }
+
+                  // 写入并更新渲染块
+                  currentMainChunk.response += processedResponse;
+                  chunkProcessor.append(processedResponse);
+                  const renderResult = chunkProcessor.getRenderResult();
+
+                  // 应对同一 order 下的多包连续推流
+                  this.$set(
+                    currentMainChunk,
+                    'stableChunks',
+                    renderResult.stableChunks,
+                  );
+                  this.$set(
+                    currentMainChunk,
+                    'activeResponse',
+                    renderResult.activeResponse,
+                  );
+
+                  // 把打字机状态同步提升到外层 subConversion
+                  // 当作为文本分段被父级“吸收”时，外层模板将直接读取 subConversion 的这两个属性进行打字
+                  this.$set(
+                    subConversion,
+                    'stableChunks',
+                    renderResult.stableChunks,
+                  );
+                  this.$set(
+                    subConversion,
+                    'activeResponse',
+                    renderResult.activeResponse,
+                  );
+
+                  // 物理累加（兼容旧逻辑，但不作为新版嵌套渲染的主数据源）
+                  subConversion.response = subConversion.messageSequence
+                    .filter(i => i.type === 'main')
+                    .map(i => i.response)
+                    .join('');
                   subConversion.citationsTagList = renderResult.citations || [];
+                }
+
+                // 处理子会话递归嵌套：将此节点及其 order 注册进父级序列
+                if (parentId) {
+                  const parentSub = this._subConversionsMap.get(parentId);
+                  if (parentSub) {
+                    const hasInParent = parentSub.messageSequence.some(
+                      item =>
+                        (item.type === 'sub' || item.type === 'main') &&
+                        item.id === id,
+                    );
+                    if (!hasInParent) {
+                      const isTextChunk =
+                        data.eventType ===
+                        AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.EVENT_TYPE;
+
+                      // 若为正文片段，直接强转类型，并将其整体obj放入父序列
+                      if (isTextChunk) {
+                        subConversion.type = 'main';
+                        subConversion.order = data.order;
+                        parentSub.messageSequence.push(subConversion);
+                      } else {
+                        // 常规情况：只是放一个引用卡片标志过去
+                        parentSub.messageSequence.push({
+                          type: 'sub',
+                          id: id,
+                          order: data.order,
+                        });
+                      }
+
+                      parentSub.messageSequence.sort(
+                        (a, b) => (a.order || 0) - (b.order || 0),
+                      );
+                    }
+                  }
                 }
 
                 // 更新消息序列
                 let sequence =
                   sessionCom.getSessionData()['history'][lastIndex]
                     ?.messageSequence || [];
-                if (data.order !== undefined && data.order !== null) {
+                // 仅将顶层子会话加入主消息的平铺序列区，孙级由递归负责渲染
+                if (
+                  data.order !== undefined &&
+                  data.order !== null &&
+                  !parentId
+                ) {
                   let currentSubItem = sequence.find(
                     item => item.type === 'sub' && item.id === id,
                   );
@@ -1429,7 +1540,7 @@ export default {
       }
 
       this._subConversionsMap = new Map(); // 子会话数据Map
-      this._subConversionProcessors = new Map(); // 每个 order 的子处理器
+      this._subConversionProcessors = new Map(); // 子会话处理器
       this._mainProcessors = new Map(); // 每个 order 的主处理器
 
       function transformSkillData(rawData) {

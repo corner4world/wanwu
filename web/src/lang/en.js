@@ -354,6 +354,13 @@ export default {
       create: '新增用户',
       invite: '邀请用户',
       edit: '编辑用户',
+      onceAdd: '单条新增',
+      batchAdd: '批量新增',
+    },
+    upload: {
+      upload: '上传文件',
+      hint: '文件格式：.xlsx文件',
+      downloadTemp: '下载模板',
     },
     form: {
       user: '用户名搜索',
@@ -527,6 +534,7 @@ export default {
       qianfan: '百度千帆',
       pdfParser: '文档解析服务',
       asr: '语音识别模型',
+      zhipu: '智谱',
     },
     table: {
       scopeType: '公开范围',
@@ -1514,6 +1522,9 @@ export default {
       builtinTools: '内置工具',
       customTools: '自定义工具',
       addSkill: '创建Skill',
+      addSkillSuccess: 'Skill添加成功',
+      firstAddSkillTips:
+        '您已勾选skills，配置智能体模型时，请选择一款擅长工具选择与参数生成的模型，如GLM-5或MiniMax等，以确保使用效果',
     },
     agentDetail: {
       workFlowInstruction: '工作流配置说明',
