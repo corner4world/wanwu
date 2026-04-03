@@ -249,6 +249,7 @@
                     <sub-conversion
                       :conversion="findSubData(n, item.id)"
                       :parents-index="i"
+                      :all-sub-conversions="n.subConversions"
                       @toggle-conversion="toggleSubConversion"
                       @collapse-click="collapseClick"
                     ></sub-conversion>
@@ -337,14 +338,13 @@
                   v-if="n.subConversions && n.subConversions.length"
                   class="sub-conversion-box"
                 >
-                  <sub-conversion
-                    v-for="(conversion, idx) in n.subConversions"
-                    :key="idx"
-                    :conversion="conversion"
+                  <sub-conversion-list
+                    parent-id=""
+                    :all-sub-conversions="n.subConversions"
                     :parents-index="i"
                     @toggle-conversion="toggleSubConversion"
                     @collapse-click="collapseClick"
-                  ></sub-conversion>
+                  ></sub-conversion-list>
                 </div>
 
                 <!-- 主会话-->
@@ -657,28 +657,13 @@
 <script>
 import smoothscroll from 'smoothscroll-polyfill';
 import { md } from '@/mixins/markdown-it';
-import { marked } from 'marked';
-var highlight = require('highlight.js');
 import 'highlight.js/styles/atom-one-dark.css';
 import commonMixin from '@/mixins/common';
 import { mapGetters, mapState } from 'vuex';
 import { avatarSrc } from '@/utils/util';
 import SubConversion from './subConversion/index.vue';
+import SubConversionList from './subConversion/SubConversionList.vue';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
-
-marked.setOptions({
-  renderer: new marked.Renderer(),
-  gfm: true,
-  tables: true,
-  breaks: false,
-  pedantic: false,
-  sanitize: false,
-  smartLists: true,
-  smartypants: false,
-  highlight: function (code) {
-    return highlight.highlightAuto(code).value;
-  },
-});
 
 export default {
   mixins: [commonMixin],
@@ -709,6 +694,7 @@ export default {
   },
   components: {
     SubConversion,
+    SubConversionList,
   },
   data() {
     return {
@@ -716,7 +702,6 @@ export default {
       autoScroll: true,
       scrollTimeout: null,
       loading: false,
-      marked: marked,
       session_data: {
         tool: '',
         searchList: [],
@@ -1531,13 +1516,19 @@ export default {
     white-space: pre-wrap !important;
     min-height: 50px;
     word-wrap: break-word;
-    resize: vertical;
+    padding: 0;
+    background: none;
+    &.hljs {
+      resize: vertical;
+    }
     .hljs {
       max-height: 300px !important;
       white-space: pre-wrap !important;
       min-height: 50px;
       word-wrap: break-word;
       resize: vertical;
+      color: #abb2bf;
+      background: #282c34;
     }
     code {
       display: block;

@@ -396,10 +396,17 @@ export default {
         skillType: n.skillType,
       }).then(res => {
         if (res.code === 0) {
+          const isFirst = this.skillCount === 0;
           this.$set(n, 'checked', true);
           this.skillCount++;
           this.$forceUpdate();
-          this.$message.success(this.$t('agent.toolDialog.addSuccess'));
+          if (isFirst) {
+            this.$message.success(
+              this.$t('agent.toolDialog.firstAddSkillTips'),
+            );
+          } else {
+            this.$message.success(this.$t('agent.toolDialog.addSkillSuccess'));
+          }
           this.$emit('updateDetail');
         }
       });

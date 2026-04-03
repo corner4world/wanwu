@@ -200,19 +200,14 @@
 
     .name {
       min-height: 22px;
-      font-weight: bold;
-      color: $create_card_text_color;
-      font-size: 16px;
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
       overflow: hidden;
+      white-space: nowrap;
       text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
+      color: $create_card_text_color;
       line-height: 1;
-      line-clamp: 1;
-      -webkit-line-clamp: 1;
-      position: relative;
-      word-break: break-all;
-      float: left;
     }
 
     label {

@@ -106,6 +106,7 @@ import sseMethod from '@/mixins/sseMethod';
 import { md } from '@/mixins/markdown-it';
 import { mapGetters, mapState } from 'vuex';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
+import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
 
 export default {
   inject: {
@@ -334,8 +335,18 @@ export default {
       return true;
     },
     setParams() {
-      const fileInfo = this.$refs['editable'].getFileIdList();
-      let fileId = !fileInfo.length ? this.fileId : fileInfo;
+      const fileInfo = JSON.parse(
+        JSON.stringify(this.$refs['editable'].getFileIdList()),
+      );
+      let fileId = !fileInfo.length
+        ? this.fileId
+        : fileInfo.map(file => {
+            return {
+              fileName: file.oldFileName || file.fileName,
+              fileSize: file.fileSize,
+              fileUrl: file.fileUrl,
+            };
+          });
       // this.useSearch = this.$refs['editable'].sendUseSearch();
       this.setSseParams({
         conversationId: this.conversationId,
@@ -603,16 +614,38 @@ export default {
               fullResponse = n.response;
             }
 
-            // 处理子会话片段 (subConversationList)
+            // --- 处理子会话片段 (subConversationList) ---
             const subConversions = n.subConversationList
               ? n.subConversationList.map(m => {
                   const citationsTagList = (
                     (m.response || '').match(/\【([0-9]{0,2})\^\】/g) || []
                   ).map(item => Number(item.match(/\【([0-9]{0,2})\^\】/)[1]));
 
-                  const processedSub = {
+                  // 初始化内部穿插序列
+                  const messageSequence = [];
+                  if (m.response) {
+                    messageSequence.push({
+                      type: 'main',
+                      order: m.order,
+                      response: m.response,
+                      // 此处预渲染 Markdown 供子组件展示
+                      renderedContent: md.render(
+                        parseSubConversation(
+                          convertLatexSyntax(m.response || ''),
+                          index,
+                          typeof m.searchList === 'string'
+                            ? JSON.parse(m.searchList || '[]')
+                            : m.searchList || [],
+                          m.id,
+                        ),
+                      ),
+                    });
+                  }
+
+                  return {
                     ...m,
                     citationsTagList,
+                    messageSequence, // 下发嵌套序列容器
                     searchList:
                       typeof m.searchList === 'string'
                         ? JSON.parse(m.searchList || '[]')
@@ -626,16 +659,60 @@ export default {
                       ),
                     ),
                   };
-
-                  sequence.push({
-                    type: 'sub',
-                    id: m.id,
-                    order: m.order,
-                  });
-
-                  return processedSub;
                 })
               : [];
+
+            // --- 建立三元嵌套/父子级序列关系 (重建 Tree) ---
+            subConversions.forEach(m => {
+              if (m.parentId) {
+                // 如果有父级ID，则寻找父级子会话，并将自己登记进父级的内部序列
+                const parent = subConversions.find(p => p.id === m.parentId);
+                if (parent) {
+                  // 如果是文本片段扩展，则将其吸收为父容器内的正文，不作为独立卡片显示
+                  if (
+                    m.conversationType ===
+                    AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.CONVERSATION_TYPE
+                  ) {
+                    parent.messageSequence.push({
+                      type: 'main',
+                      order: m.order,
+                      response: m.response,
+                      renderedContent: m.response
+                        ? md.render(
+                            parseSubConversation(
+                              convertLatexSyntax(m.response || ''),
+                              index,
+                              m.searchList,
+                              m.id,
+                            ),
+                          )
+                        : '',
+                    });
+                  } else {
+                    // 常规子会话卡片项
+                    parent.messageSequence.push({
+                      type: 'sub',
+                      id: m.id,
+                      order: m.order,
+                    });
+                  }
+                  // 内部局部排序，确保穿插顺序
+                  parent.messageSequence.sort(
+                    (a, b) => (a.order || 0) - (b.order || 0),
+                  );
+                }
+              } else if (
+                m.conversationType !==
+                AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.CONVERSATION_TYPE
+              ) {
+                // 顶级项且不是文本分段时，才登记入主序列
+                sequence.push({
+                  type: 'sub',
+                  id: m.id,
+                  order: m.order,
+                });
+              }
+            });
 
             // 根据 order 排序
             sequence.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -685,6 +762,7 @@ export default {
       } catch (error) {
         this.$refs['session-com'].stopLoading();
         this.echo = true;
+        throw error;
       }
     },
     // 清空会话

@@ -305,8 +305,18 @@ export default {
       }
     },
     setParams(modelConfig) {
-      const fileInfo = this.$refs['editable'].getFileIdList();
-      let fileId = !fileInfo.length ? this.fileId : fileInfo;
+      const fileInfo = JSON.parse(
+        JSON.stringify(this.$refs['editable'].getFileIdList()),
+      );
+      let fileId = !fileInfo.length
+        ? this.fileId
+        : fileInfo.map(file => {
+            return {
+              fileName: file.oldFileName || file.fileName,
+              fileSize: file.fileSize,
+              fileUrl: file.fileUrl,
+            };
+          });
       this.setSseParams({
         conversationId: this.conversationId,
         fileInfo: fileId,

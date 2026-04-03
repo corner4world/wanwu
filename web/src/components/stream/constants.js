@@ -29,6 +29,11 @@ export const AGENT_MESSAGE_CONFIG = {
     EVENT_TYPE: 6,
     CONVERSATION_TYPE: 'agentThink',
   },
+  // 智能体-skill文本分段
+  AGENT_SKILL_TEXT: {
+    EVENT_TYPE: 20,
+    CONVERSATION_TYPE: 'agentSkillText',
+  },
 };
 
 export const AGENT_SSE_EVENT_TYPES = Object.fromEntries(

@@ -1657,6 +1657,9 @@ export default {
       builtinTools: '内置工具',
       customTools: '自定义工具',
       addSkill: '创建Skill',
+      addSkillSuccess: 'Skill添加成功',
+      firstAddSkillTips:
+        '您已勾选skills，配置智能体模型时，请选择一款擅长工具选择与参数生成的模型，如GLM-5或MiniMax等，以确保使用效果',
     },
     agentDetail: {
       workFlowInstruction: '工作流配置说明',
