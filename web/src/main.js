@@ -7,6 +7,18 @@ import { i18n } from './lang';
 import './router/permission';
 import './assets/icons';
 
+// Vue 2 需要安装 composition-api 插件以支持 vue-office 组件
+import VueCompositionAPI from '@vue/composition-api';
+Vue.use(VueCompositionAPI);
+
+// gxd-file-preview 文件预览插件
+import vueFilePreview from 'gxd-file-preview';
+Vue.use(vueFilePreview, {
+  pdf: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.0.288/build/pdf.min.js',
+  worker:
+    'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.0.288/build/pdf.worker.min.js',
+});
+
 import ElementUi from 'element-ui';
 import moment from 'moment';
 import 'element-ui/lib/theme-chalk/index.css';

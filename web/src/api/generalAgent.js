@@ -1,6 +1,7 @@
 import service from '@/utils/request';
 import { SERVICE_API } from '@/utils/requestConstants';
 import { store } from '@/store/index';
+import { USER_API } from '@/utils/requestConstants';
 
 // 基础路径
 const BASE_URL = `${SERVICE_API}/general/agent`;
@@ -322,6 +323,7 @@ export const chatGeneralAgentConversation = async ({
  * 获取 Workspace 目录树
  * @param {string} threadId - 对话ID
  * @param {string} runId - 运行ID
+ * @param {string} path - 目录路径（可选，用于递归浏览）
  */
 export const getGeneralAgentWorkspace = params => {
   return service({
@@ -374,5 +376,32 @@ export const generalAgentCopilotRuntime = data => {
     url: `${BASE_URL}/copilotkit`,
     method: 'post',
     data,
+  });
+};
+
+/**
+ * 上传文件到通用智能体（直接上传）
+ * @param {File} file - 文件对象
+ * @param {function} onProgress - 进度回调 (percent) => {}
+ * @returns {Promise<{code: number, data: {files: Array}, msg: string}>}
+ */
+export const uploadGeneralAgentFile = (file, onProgress) => {
+  const formData = new FormData();
+  formData.append('files', file);
+  return service({
+    url: `${SERVICE_API}/file/upload/direct`,
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress: progressEvent => {
+      if (onProgress && progressEvent.total) {
+        const percent = Math.round(
+          (progressEvent.loaded / progressEvent.total) * 100,
+        );
+        onProgress(percent);
+      }
+    },
   });
 };

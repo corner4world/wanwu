@@ -308,7 +308,8 @@ const constantRoutes = [
       },
       {
         path: '/generalAgent',
-        component: resolve => require(['@/views/generalAgent'], resolve),
+        component: resolve =>
+          require(['@/views/generalAgent/index.vue'], resolve),
         meta: { perm: [PERMS.AGENT] },
       },
       {

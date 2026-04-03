@@ -45,15 +45,6 @@
 
       <!-- 消息主体 -->
       <div class="message-body">
-        <!-- 阶段进度指示器 -->
-        <progress-indicator
-          v-if="message.isStreaming && showProgress"
-          :current-stage="currentStage"
-          :thinking-duration="thinkingDuration"
-          :tool-duration="toolDuration"
-          :is-streaming="message.isStreaming"
-        />
-
         <!-- 按片段顺序展示 -->
         <template v-if="hasFragments">
           <div v-for="(fragment, index) in messageFragments" :key="index">
@@ -72,6 +63,15 @@
               :result="fragment.toolCall.result"
               :execution-time="fragment.toolCall.executionTime || ''"
               :default-expanded="false"
+            />
+            <!-- Workspace活动片段 -->
+            <workspace-activity
+              v-else-if="fragment.type === 'workspace'"
+              :workspace-info="fragment.workspaceInfo"
+              :thread-id="threadId"
+              :run-id="fragment.runId"
+              @view-workspace="$emit('view-workspace', $event)"
+              @download-all="$emit('download-all', $event)"
             />
             <!-- 文字片段 -->
             <div
@@ -156,7 +156,7 @@ import ThinkingBlock from './ThinkingBlock.vue';
 import ToolCallBlock from './ToolCallBlock.vue';
 import MarkdownRenderer from './MarkdownRenderer.vue';
 import TypingCursor from './TypingCursor.vue';
-import ProgressIndicator from './ProgressIndicator.vue';
+import WorkspaceActivity from './WorkspaceActivity.vue';
 
 export default {
   name: 'MessageItem',
@@ -166,7 +166,7 @@ export default {
     ToolCallBlock,
     MarkdownRenderer,
     TypingCursor,
-    ProgressIndicator,
+    WorkspaceActivity,
   },
   props: {
     message: {
@@ -180,6 +180,10 @@ export default {
     isLastMessage: {
       type: Boolean,
       default: false,
+    },
+    threadId: {
+      type: String,
+      default: '',
     },
   },
   data() {
@@ -211,7 +215,8 @@ export default {
       const hasFragmentsContent =
         this.message.fragments &&
         this.message.fragments.some(
-          f => f.content || (f.toolCall && f.toolCall.result),
+          f =>
+            f.content || (f.toolCall && f.toolCall.result) || f.workspaceInfo,
         );
       return hasText || hasReasoning || hasToolCalls || hasFragmentsContent;
     },
@@ -220,42 +225,6 @@ export default {
         return [];
       }
       return this.message.toolCalls;
-    },
-    showProgress() {
-      return (
-        this.message.reasoning ||
-        (this.message.toolCalls && this.message.toolCalls.length > 0)
-      );
-    },
-    currentStage() {
-      if (this.message.toolCalls && this.message.toolCalls.length > 0) {
-        const runningTool = this.message.toolCalls.find(
-          t => t.status === 'running',
-        );
-        if (runningTool) {
-          return 'tool_calling';
-        }
-        if (this.message.content) {
-          return 'generating';
-        }
-        return 'tool_calling';
-      }
-      if (this.message.reasoning) {
-        return 'thinking';
-      }
-      if (this.message.content) {
-        return 'generating';
-      }
-      return 'understanding';
-    },
-    thinkingDuration() {
-      return this.message.reasoningDuration || '';
-    },
-    toolDuration() {
-      if (!this.message.toolCalls || this.message.toolCalls.length === 0) {
-        return '';
-      }
-      return this.message.toolDuration || '';
     },
     // 获取完整的可复制内容
     fullContent() {

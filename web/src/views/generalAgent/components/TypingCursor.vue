@@ -1,5 +1,9 @@
 <template>
-  <span class="typing-cursor"></span>
+  <span class="typing-indicator">
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  </span>
 </template>
 
 <script>
@@ -9,26 +13,43 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.typing-cursor {
-  display: inline-block;
-  width: 2px;
-  height: 1.2em;
-  background: #10a37f;
-  margin-left: 2px;
-  vertical-align: text-bottom;
-  animation: blink 1s infinite;
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  padding: 2px 0;
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    background: #10a37f;
+    border-radius: 50%;
+    animation: typing-bounce 1.4s ease-in-out infinite;
+
+    &:nth-child(1) {
+      animation-delay: 0s;
+    }
+
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+  }
 }
 
-@keyframes blink {
+@keyframes typing-bounce {
   0%,
-  45% {
-    opacity: 1;
-  }
-  50%,
-  95% {
-    opacity: 0;
-  }
+  60%,
   100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-6px);
     opacity: 1;
   }
 }

@@ -60,147 +60,339 @@
     </div>
 
     <!-- 主内容区 -->
-    <div class="agent-main-content">
-      <!-- 顶部标题栏 -->
-      <div class="header">
-        <div class="header-title">{{ currentTitle }}</div>
-      </div>
-
-      <!-- 消息区域 - 独立滚动 -->
-      <div class="message-area" ref="messageArea">
-        <!-- 空状态 -->
-        <div
-          v-if="messageList.length === 0 && !isStreaming"
-          class="empty-state"
-        >
-          <div class="empty-icon">
-            <i class="el-icon-chat-dot-round"></i>
+    <div
+      class="agent-main-content"
+      :class="{ 'has-workspace': panelVisible && activeWorkspace }"
+    >
+      <!-- 主消息区域 -->
+      <div class="main-content-body">
+        <!-- 顶部标题栏 -->
+        <div class="header">
+          <div class="header-left">
+            <button
+              v-if="!sidebarCollapsed"
+              class="sidebar-toggle-btn"
+              @click="toggleSidebar"
+            >
+              <i class="el-icon-s-fold"></i>
+            </button>
+            <div class="header-title">{{ currentTitle }}</div>
           </div>
-          <div class="empty-title">开始新对话</div>
-          <div class="empty-tips">输入您的问题，开始与智能体对话</div>
         </div>
 
-        <!-- 消息列表 -->
-        <div v-else class="message-list">
-          <message-item
-            v-for="(msg, index) in messageList"
-            :key="msg.id || index"
-            :message="msg"
-            :tool-results="getToolResultsForMessage(msg)"
-            :is-last-message="index === messageList.length - 1"
-            @regenerate="handleRegenerate"
-          />
+        <!-- 消息区域 - 独立滚动 -->
+        <div class="message-area" ref="messageArea">
+          <!-- 空状态 -->
           <div
-            v-if="isStreaming && !hasAssistantContent"
-            class="typing-indicator"
+            v-if="messageList.length === 0 && !isStreaming"
+            class="empty-state"
           >
-            <span></span>
-            <span></span>
-            <span></span>
-            <span class="typing-text">思考中...</span>
-          </div>
-        </div>
-
-        <div ref="scrollAnchor"></div>
-      </div>
-
-      <!-- 底部输入区 - 固定底部 -->
-      <div class="input-area">
-        <div class="input-container">
-          <!-- 模型选择 -->
-          <div class="model-selector">
-            <el-select
-              v-model="selectedModel"
-              size="small"
-              placeholder="选择模型"
-              @change="handleModelChange"
-            >
-              <el-option
-                v-for="model in modelList"
-                :key="model.modelId"
-                :label="model.modelName"
-                :value="model.modelId"
-              />
-            </el-select>
-          </div>
-
-          <!-- 文件预览 -->
-          <div v-if="uploadedFiles.length > 0" class="file-preview">
-            <div
-              v-for="(file, index) in uploadedFiles"
-              :key="index"
-              class="file-item"
-            >
-              <img
-                v-if="file.type.startsWith('image/')"
-                :src="file.url"
-                class="file-thumb"
-              />
-              <div v-else class="file-icon">
-                <i class="el-icon-document"></i>
-              </div>
-              <i
-                class="el-icon-close file-remove"
-                @click="removeFile(index)"
-              ></i>
+            <div class="empty-icon">
+              <i class="el-icon-chat-dot-round"></i>
             </div>
+            <div class="empty-title">开始新对话</div>
+            <div class="empty-tips">输入您的问题，开始与智能体对话</div>
           </div>
 
-          <!-- 输入框 -->
-          <div class="input-wrapper">
-            <el-input
-              v-model="inputMessage"
-              type="textarea"
-              :rows="1"
-              :autosize="{ minRows: 1, maxRows: 6 }"
-              placeholder="输入问题，按 Enter 发送，Shift+Enter 换行"
-              @keydown.enter.native="handleKeyDown"
-              :disabled="isStreaming"
+          <!-- 消息列表 -->
+          <div v-else class="message-list">
+            <message-item
+              v-for="(msg, index) in messageList"
+              :key="msg.id || index"
+              :message="msg"
+              :tool-results="getToolResultsForMessage(msg)"
+              :is-last-message="index === messageList.length - 1"
+              :thread-id="currentThreadId"
+              @regenerate="handleRegenerate"
+              @view-workspace="handleViewWorkspace"
             />
-            <div class="input-actions">
-              <el-upload
-                action="#"
-                :auto-upload="false"
-                :show-file-list="false"
-                :on-change="handleFileChange"
-                multiple
+            <div
+              v-if="isStreaming && !hasAssistantContent"
+              class="typing-indicator"
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+              <span class="typing-text">思考中...</span>
+            </div>
+          </div>
+
+          <div ref="scrollAnchor"></div>
+        </div>
+
+        <!-- 底部输入区 - 固定底部 -->
+        <div class="input-area">
+          <div class="input-container">
+            <!-- 模型选择和配置 -->
+            <div class="model-config-row">
+              <div class="model-selector">
+                <el-select
+                  v-model="selectedModel"
+                  size="small"
+                  placeholder="选择模型"
+                  filterable
+                  :filter-method="filterModel"
+                  @change="handleModelChange"
+                >
+                  <el-option
+                    v-for="model in filteredModelList"
+                    :key="model.modelId"
+                    :label="model.modelName"
+                    :value="model.modelId"
+                  >
+                    <div class="model-option">
+                      <span class="model-name">{{ model.modelName }}</span>
+                      <span v-if="model.provider" class="model-provider">
+                        {{ model.provider }}
+                      </span>
+                    </div>
+                  </el-option>
+                </el-select>
+              </div>
+
+              <!-- 配置按钮 -->
+              <div
+                class="config-btn"
+                :class="{ 'has-selection': selectedTools.length > 0 }"
+                @click="showConfigDrawer = true"
               >
-                <el-tooltip content="上传文件" placement="top">
-                  <i class="el-icon-paperclip action-icon"></i>
-                </el-tooltip>
-              </el-upload>
-              <el-button
-                type="primary"
-                size="small"
-                circle
-                :loading="isStreaming"
-                :disabled="!canSend"
-                @click="sendMessage"
+                <i class="el-icon-setting"></i>
+                <span>配置</span>
+                <el-badge
+                  v-if="selectedTools.length > 0"
+                  :value="selectedTools.length"
+                  type="primary"
+                />
+              </div>
+            </div>
+
+            <!-- 文件预览 -->
+            <div v-if="uploadedFiles.length > 0" class="file-preview">
+              <div
+                v-for="(file, index) in uploadedFiles"
+                :key="index"
+                class="file-item"
+                :class="{ 'is-uploading': file.uploading }"
               >
-                <i v-if="!isStreaming" class="el-icon-top"></i>
-              </el-button>
-              <el-button
-                v-if="isStreaming"
-                type="danger"
-                size="small"
-                circle
-                @click="stopStreaming"
-              >
-                <i class="el-icon-video-pause"></i>
-              </el-button>
+                <img
+                  v-if="file.type.startsWith('image/')"
+                  :src="file.displayUrl || file.url"
+                  class="file-thumb"
+                />
+                <div v-else class="file-icon">
+                  <i class="el-icon-document"></i>
+                </div>
+                <!-- 上传进度遮罩 -->
+                <div v-if="file.uploading" class="upload-overlay">
+                  <div class="upload-progress-bar">
+                    <svg viewBox="0 0 36 36" width="36" height="36">
+                      <circle class="progress-bg" cx="18" cy="18" r="15" />
+                      <circle
+                        class="progress-fill"
+                        cx="18"
+                        cy="18"
+                        r="15"
+                        :stroke-dasharray="94.2"
+                        :stroke-dashoffset="
+                          94.2 - (94.2 * (file.uploadProgress || 0)) / 100
+                        "
+                      />
+                    </svg>
+                    <span class="progress-text">
+                      {{ file.uploadProgress || 0 }}
+                    </span>
+                  </div>
+                </div>
+                <i
+                  class="el-icon-close file-remove"
+                  @click="removeFile(index)"
+                ></i>
+              </div>
+            </div>
+
+            <!-- 输入框 -->
+            <div class="input-wrapper">
+              <el-input
+                v-model="inputMessage"
+                type="textarea"
+                :rows="1"
+                :autosize="{ minRows: 1, maxRows: 6 }"
+                placeholder="输入问题，按 Enter 发送，Shift+Enter 换行"
+                @keydown.enter.native="handleKeyDown"
+                :disabled="isStreaming"
+              />
+              <div class="input-actions">
+                <el-upload
+                  action="#"
+                  :auto-upload="false"
+                  :show-file-list="false"
+                  :on-change="handleFileChange"
+                  multiple
+                >
+                  <el-tooltip content="上传文件" placement="top">
+                    <i class="el-icon-paperclip action-icon"></i>
+                  </el-tooltip>
+                </el-upload>
+                <el-button
+                  type="primary"
+                  size="small"
+                  circle
+                  :loading="isStreaming"
+                  :disabled="!canSend"
+                  @click="sendMessage"
+                >
+                  <i v-if="!isStreaming" class="el-icon-top"></i>
+                </el-button>
+                <el-button
+                  v-if="isStreaming"
+                  type="danger"
+                  size="small"
+                  circle
+                  @click="stopStreaming"
+                >
+                  <i class="el-icon-video-pause"></i>
+                </el-button>
+              </div>
+            </div>
+          </div>
+          <div class="input-footer">
+            <span>通用智能体 · 内容由 AI 生成，仅供参考</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workspace 面板 -->
+      <transition name="workspace-slide">
+        <workspace-panel
+          v-if="panelVisible && activeWorkspace"
+          :thread-id="activeWorkspace.threadId"
+          :run-id="activeWorkspace.runId"
+          :initial-data="currentWorkspaceTree"
+          @close="hidePanel"
+        />
+      </transition>
+
+      <!-- 配置抽屉 -->
+      <el-drawer
+        :visible.sync="showConfigDrawer"
+        direction="rtl"
+        size="400px"
+        :with-header="false"
+        custom-class="config-drawer"
+      >
+        <div class="drawer-content">
+          <div class="drawer-header">
+            <h3>对话配置</h3>
+            <i class="el-icon-close" @click="showConfigDrawer = false"></i>
+          </div>
+
+          <div class="drawer-body">
+            <!-- 工具选择 -->
+            <div class="drawer-section">
+              <div class="section-header">
+                <i class="el-icon-setting"></i>
+                <span>工具选择</span>
+                <el-tag size="mini" type="info">
+                  {{ selectedTools.length }} 已选
+                </el-tag>
+              </div>
+
+              <!-- 搜索框 -->
+              <div class="tool-search">
+                <el-input
+                  v-model="toolSearchKeyword"
+                  size="small"
+                  placeholder="搜索工具..."
+                  prefix-icon="el-icon-search"
+                  clearable
+                />
+              </div>
+
+              <div class="section-body">
+                <div v-if="loadingTools" class="config-loading">
+                  <i class="el-icon-loading"></i>
+                  加载中...
+                </div>
+                <div
+                  v-else-if="filteredToolList.length === 0"
+                  class="config-empty"
+                >
+                  <i class="el-icon-search"></i>
+                  <span>未找到匹配的工具</span>
+                </div>
+                <div v-else class="tool-categories">
+                  <div
+                    v-for="category in filteredToolList"
+                    :key="category.category"
+                    class="tool-category"
+                  >
+                    <div class="category-header">
+                      <span class="category-name">{{ category.category }}</span>
+                      <el-tag
+                        size="mini"
+                        :type="getConditionType(category.condition)"
+                      >
+                        {{ getConditionLabel(category.condition) }}
+                      </el-tag>
+                    </div>
+                    <div class="tool-list">
+                      <el-tooltip
+                        v-for="tool in category.toolList"
+                        :key="tool.toolId"
+                        placement="top"
+                        :open-delay="500"
+                        :disabled="!tool.description && !tool.desc"
+                        effect="light"
+                        popper-class="tool-tooltip-popper"
+                      >
+                        <div slot="content" class="tool-detail-tooltip">
+                          <div class="tooltip-title">{{ tool.toolName }}</div>
+                          <div class="tooltip-desc">
+                            {{
+                              tool.description || tool.desc || '暂无详细描述'
+                            }}
+                          </div>
+                        </div>
+                        <div
+                          :class="[
+                            'tool-item',
+                            { selected: isToolSelected(tool.toolId) },
+                          ]"
+                          @click="toggleTool(tool)"
+                        >
+                          <div class="tool-avatar">
+                            <img
+                              v-if="tool.avatar?.path"
+                              :src="tool.avatar.path"
+                            />
+                            <i v-else class="el-icon-setting"></i>
+                          </div>
+                          <div class="tool-info">
+                            <div class="tool-name">{{ tool.toolName }}</div>
+                            <div class="tool-desc">{{ tool.desc }}</div>
+                          </div>
+                          <el-checkbox
+                            :value="isToolSelected(tool.toolId)"
+                            @click.native.stop
+                            @change="toggleTool(tool)"
+                          />
+                        </div>
+                      </el-tooltip>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="input-footer">
-          <span>通用智能体 · 内容由 AI 生成，仅供参考</span>
-        </div>
-      </div>
+      </el-drawer>
     </div>
   </div>
 </template>
 
 <script>
 import MessageItem from './components/MessageItem.vue';
+import WorkspacePanel from './components/WorkspacePanel.vue';
 import {
   getGeneralAgentConversationList,
   createGeneralAgentConversation,
@@ -211,13 +403,17 @@ import {
   chatGeneralAgentConversation,
   getGeneralAgentToolSelect,
   getLlmModelSelect,
+  getGeneralAgentWorkspace,
+  uploadGeneralAgentFile,
 } from '@/api/generalAgent';
-import { SSEEventParser } from './utils/sse-parser';
+import { SSEEventParser, EventType, ActivityType } from './utils/sse-parser';
+import { mapState, mapActions, mapGetters } from 'vuex';
 
 export default {
   name: 'GeneralAgent',
   components: {
     MessageItem,
+    WorkspacePanel,
   },
   data() {
     return {
@@ -228,24 +424,62 @@ export default {
       pageSize: 50,
       total: 0,
 
-      messageList: [],
+      // 每个会话独立的消息列表 { threadId: messageList }
+      messagesMap: {},
       inputMessage: '',
       uploadedFiles: [],
-      isStreaming: false,
-      abortController: null,
+      // 每个会话独立的流式状态 { threadId: { isStreaming, abortController, streamingMessage } }
+      streamingMap: {},
 
       selectedModel: '',
       selectedTools: [],
       selectedAssistants: [],
       modelList: [],
+      modelSearchKeyword: '',
       toolList: [],
+      loadingTools: false,
+      showConfigDrawer: false,
+      toolSearchKeyword: '',
 
       currentRunId: '',
       currentStage: '',
-      streamingMessage: null,
+
+      // Workspace 相关
+      workspacePanelVisible: false,
+      workspaceLoading: false,
+      workspaceInfo: null,
     };
   },
   computed: {
+    ...mapState('workspace', ['activeWorkspace', 'panelVisible']),
+    ...mapGetters('workspace', ['hasWorkspace', 'currentWorkspaceTree']),
+
+    // 当前会话的消息列表
+    messageList: {
+      get() {
+        return this.messagesMap[this.currentThreadId] || [];
+      },
+      set(val) {
+        this.$set(this.messagesMap, this.currentThreadId, val);
+      },
+    },
+    // 当前会话的流式状态
+    currentStreaming() {
+      return (
+        this.streamingMap[this.currentThreadId] || {
+          isStreaming: false,
+          abortController: null,
+          streamingMessage: null,
+        }
+      );
+    },
+    isStreaming() {
+      return this.currentStreaming.isStreaming;
+    },
+    streamingMessage() {
+      return this.currentStreaming.streamingMessage;
+    },
+
     currentTitle() {
       if (!this.currentThreadId) return '通用智能体';
       const conv = this.conversationList.find(
@@ -263,6 +497,67 @@ export default {
           (m.content || m.reasoning || (m.toolCalls && m.toolCalls.length > 0)),
       );
     },
+    // 过滤后的工具列表
+    filteredToolList() {
+      if (!this.toolSearchKeyword.trim()) {
+        return this.toolList;
+      }
+      const keyword = this.toolSearchKeyword.toLowerCase().trim();
+      return this.toolList
+        .map(category => {
+          const filteredTools = category.toolList.filter(tool => {
+            const name = (tool.toolName || '').toLowerCase();
+            const desc = (tool.desc || '').toLowerCase();
+            const description = (tool.description || '').toLowerCase();
+            return (
+              name.includes(keyword) ||
+              desc.includes(keyword) ||
+              description.includes(keyword)
+            );
+          });
+          if (filteredTools.length === 0) return null;
+          return {
+            ...category,
+            toolList: filteredTools,
+          };
+        })
+        .filter(Boolean);
+    },
+    // 过滤后的模型列表
+    filteredModelList() {
+      if (!this.modelSearchKeyword.trim()) {
+        return this.modelList;
+      }
+      const keyword = this.modelSearchKeyword.toLowerCase().trim();
+      return this.modelList.filter(model => {
+        const name = (model.modelName || '').toLowerCase();
+        const provider = (model.provider || '').toLowerCase();
+        const modelType = (model.modelType || '').toLowerCase();
+        return (
+          name.includes(keyword) ||
+          provider.includes(keyword) ||
+          modelType.includes(keyword)
+        );
+      });
+    },
+    // Workspace 相关
+    workspaceThreadAndRun() {
+      if (this.activeWorkspace && this.currentThreadId) {
+        return {
+          threadId: this.currentThreadId,
+          runId: this.activeWorkspace.runId,
+        };
+      }
+      return null;
+    },
+  },
+  watch: {
+    panelVisible(val) {
+      this.workspacePanelVisible = val;
+      if (val && this.activeWorkspace) {
+        this.loadWorkspaceFiles();
+      }
+    },
   },
   mounted() {
     this.fetchModelList();
@@ -270,9 +565,27 @@ export default {
     this.fetchToolList();
   },
   beforeDestroy() {
-    this.stopStreaming();
+    // 清理所有会话的流式状态
+    Object.keys(this.streamingMap).forEach(threadId => {
+      const streaming = this.streamingMap[threadId];
+      if (streaming && streaming.abortController) {
+        streaming.abortController.abort();
+      }
+    });
+    this.streamingMap = {};
+    this.reset();
   },
   methods: {
+    ...mapActions('workspace', [
+      'handleWorkspaceActivity',
+      'showPanel',
+      'hidePanel',
+      'setWorkspaceTree',
+      'setActiveWorkspace',
+      'clearWorkspace',
+      'reset',
+    ]),
+
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed;
     },
@@ -314,6 +627,7 @@ export default {
     },
 
     async fetchToolList() {
+      this.loadingTools = true;
       try {
         const res = await getGeneralAgentToolSelect();
         if (res.code === 0 && res.data) {
@@ -321,20 +635,41 @@ export default {
         }
       } catch (error) {
         console.error('获取工具列表失败:', error);
+      } finally {
+        this.loadingTools = false;
       }
     },
 
     async createConversation() {
       try {
+        // 检查模型列表是否已加载
+        if (!this.modelList || this.modelList.length === 0) {
+          this.$message.warning('模型列表加载中，请稍后重试');
+          return false;
+        }
+
+        // 获取默认模型配置
+        const defaultModel = this.modelList[0];
+        const modelConfig = {
+          modelId: defaultModel?.modelId || '',
+          model: defaultModel?.model || '',
+          provider: defaultModel?.provider || '',
+          displayName: defaultModel?.modelName || '',
+          modelType: defaultModel?.modelType || 'llm',
+          config: defaultModel?.config || {},
+        };
+
         const res = await createGeneralAgentConversation({
           title: '新对话',
+          modelConfig,
         });
         if (res.code === 0) {
           const threadId = res.data?.threadId;
           if (threadId) {
             this.currentThreadId = threadId;
-            this.messageList = [];
-            this.selectedModel = '';
+            // 初始化新会话的消息列表
+            this.$set(this.messagesMap, threadId, []);
+            this.selectedModel = modelConfig.modelId;
             this.selectedTools = [];
             this.conversationList.unshift({
               threadId,
@@ -359,13 +694,26 @@ export default {
 
     selectConversation(threadId) {
       if (this.currentThreadId === threadId) return;
+      // 切换会话时，只切换 currentThreadId，不中止 SSE 流
+      // SSE 流会继续在后台运行，切换回来时能继续显示
       this.currentThreadId = threadId;
       this.fetchHistory();
     },
 
     async fetchHistory() {
       if (!this.currentThreadId) return;
-      this.messageList = [];
+
+      // 如果当前会话正在流式传输，不清空消息
+      if (this.isStreaming) {
+        console.log('[fetchHistory] 当前会话正在流式传输，跳过获取历史');
+        return;
+      }
+
+      // 初始化当前会话的消息列表
+      if (!this.messagesMap[this.currentThreadId]) {
+        this.$set(this.messagesMap, this.currentThreadId, []);
+      }
+
       try {
         const res = await getGeneralAgentConversationDetail({
           threadId: this.currentThreadId,
@@ -395,7 +743,8 @@ export default {
             if (run.runId) this.currentRunId = run.runId;
           });
           console.log('all messages:', allMessages);
-          this.messageList = allMessages;
+          // 使用 $set 确保响应式
+          this.$set(this.messagesMap, this.currentThreadId, allMessages);
           this.$nextTick(() => this.scrollToBottom());
         }
         this.loadConfig();
@@ -581,6 +930,35 @@ export default {
             }
             break;
           }
+
+          // Workspace 活动快照
+          case 'ACTIVITY_SNAPSHOT': {
+            if (event.activityType === 'workspace' && event.content) {
+              // 更新 workspace store
+              this.handleWorkspaceActivity({
+                runId: event.content.runId,
+                threadId: event.content.threadId || this.currentThreadId,
+                fileCount: event.content.fileCount || 0,
+                totalSize: event.content.totalSize || 0,
+                timestamp: event.content.timestamp || eventTimestamp,
+              });
+
+              // 创建 workspace 片段消息
+              messages.push({
+                id: event.messageId || this.generateId(),
+                role: 'assistant',
+                type: 'workspace',
+                isWorkspaceActivity: true,
+                workspaceInfo: {
+                  fileCount: event.content.fileCount || 0,
+                  totalSize: event.content.totalSize || 0,
+                },
+                runId: event.content.runId,
+                toolCalls: null,
+              });
+            }
+            break;
+          }
         }
       }
 
@@ -634,6 +1012,13 @@ export default {
               currentAssistant.toolCalls = [];
             }
             currentAssistant.toolCalls.push(msg.toolCalls[0]);
+          } else if (msg.isWorkspaceActivity) {
+            // Workspace 活动片段
+            currentAssistant.fragments.push({
+              type: 'workspace',
+              workspaceInfo: msg.workspaceInfo,
+              runId: msg.runId,
+            });
           } else if (msg.content) {
             currentAssistant.fragments.push({
               type: 'text',
@@ -771,12 +1156,14 @@ export default {
         const res = await getGeneralAgentConfig({
           threadId: this.currentThreadId,
         });
+        console.log('loadConfig response:', res);
         if (res.code === 0 && res.data) {
           if (res.data.modelConfig) {
             const modelConfig = res.data.modelConfig;
-            if (modelConfig.modelId) {
-              this.selectedModel = modelConfig.modelId;
-            }
+            console.log('modelConfig:', modelConfig);
+            // 使用 model 或 modelId，取决于后端返回
+            this.selectedModel = modelConfig.modelId || modelConfig.model || '';
+            console.log('selectedModel set to:', this.selectedModel);
           }
           if (res.data.toolList && Array.isArray(res.data.toolList)) {
             this.selectedTools = res.data.toolList.map(tool => ({
@@ -788,7 +1175,7 @@ export default {
           }
           if (res.data.assistantList && Array.isArray(res.data.assistantList)) {
             this.selectedAssistants = res.data.assistantList.map(assistant => ({
-              assistantId: assistant.agentId,
+              assistantId: assistant.agentId || assistant.assistantId,
               name: assistant.name,
             }));
           }
@@ -798,13 +1185,17 @@ export default {
       }
     },
 
-    async saveModelConfig() {
+    async saveModelConfig(silent = false) {
       if (!this.currentThreadId) {
-        this.$message.warning('请先创建对话');
+        if (!silent) {
+          this.$message.warning('请先创建对话');
+        }
         return;
       }
       if (!this.selectedModel) {
-        this.$message.warning('请选择模型');
+        if (!silent) {
+          this.$message.warning('请选择模型');
+        }
         return;
       }
       try {
@@ -827,7 +1218,9 @@ export default {
           })),
         });
         if (res.code === 0) {
-          this.$message.success('模型配置已保存');
+          if (!silent) {
+            this.$message.success('配置已保存');
+          }
         } else {
           this.$message.error(res.msg || '保存模型配置失败');
         }
@@ -855,17 +1248,76 @@ export default {
       this.sendMessage();
     },
 
-    handleFileChange(file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.uploadedFiles.push({
-          name: file.name,
-          type: file.raw.type,
-          url: reader.result,
-          data: reader.result.split(',')[1],
-        });
+    // 将内部服务地址转换为外部可访问地址
+    convertToExternalUrl(url) {
+      if (!url) return url;
+      // 替换 minio 内部服务名为外部地址
+      return url.replace(/minio-wanwu:9000/g, '192.168.0.21:9000');
+    },
+
+    async handleFileChange(file) {
+      // 先显示本地预览
+      const localUrl = URL.createObjectURL(file.raw);
+      const tempFile = {
+        name: file.name,
+        type: file.raw.type,
+        url: localUrl,
+        localUrl: localUrl,
+        uploading: true,
+        uploadProgress: 0,
       };
-      reader.readAsDataURL(file.raw);
+      this.uploadedFiles.push(tempFile);
+
+      // 上传文件到服务器
+      try {
+        const res = await uploadGeneralAgentFile(file.raw, percent => {
+          // 更新进度
+          const index = this.uploadedFiles.findIndex(
+            f => f.localUrl === localUrl,
+          );
+          if (index !== -1) {
+            this.$set(this.uploadedFiles[index], 'uploadProgress', percent);
+          }
+        });
+        if (res.code === 0 && res.data?.files?.[0]?.filePath) {
+          // 更新为服务器 URL（转换为外部可访问地址）
+          const index = this.uploadedFiles.findIndex(
+            f => f.localUrl === localUrl,
+          );
+          if (index !== -1) {
+            // 使用 Vue.set 确保响应式更新
+            this.$set(this.uploadedFiles, index, {
+              name: file.name,
+              type: file.raw.type,
+              url: res.data.files[0].filePath, // 原始 minio URL，用于发送给后端
+              displayUrl: this.convertToExternalUrl(res.data.files[0].filePath), // 转换后的 URL，用于前端显示
+              uploading: false,
+              uploadProgress: 100,
+            });
+          }
+          URL.revokeObjectURL(localUrl);
+        } else {
+          // 上传失败，移除文件
+          const index = this.uploadedFiles.findIndex(
+            f => f.localUrl === localUrl,
+          );
+          if (index !== -1) {
+            this.uploadedFiles.splice(index, 1);
+          }
+          this.$message.error(res.msg || '文件上传失败');
+          URL.revokeObjectURL(localUrl);
+        }
+      } catch (error) {
+        console.error('文件上传失败:', error);
+        const index = this.uploadedFiles.findIndex(
+          f => f.localUrl === localUrl,
+        );
+        if (index !== -1) {
+          this.uploadedFiles.splice(index, 1);
+        }
+        this.$message.error('文件上传失败');
+        URL.revokeObjectURL(localUrl);
+      }
     },
 
     removeFile(index) {
@@ -876,10 +1328,62 @@ export default {
       this.saveModelConfig();
     },
 
+    // 模型搜索过滤
+    filterModel(keyword) {
+      this.modelSearchKeyword = keyword || '';
+    },
+
+    isToolSelected(toolId) {
+      return this.selectedTools.some(t => t.toolId === toolId);
+    },
+
+    async toggleTool(tool) {
+      const index = this.selectedTools.findIndex(t => t.toolId === tool.toolId);
+      if (index > -1) {
+        this.selectedTools.splice(index, 1);
+      } else {
+        this.selectedTools.push({
+          toolId: tool.toolId,
+          toolName: tool.toolName,
+          toolType: tool.toolType,
+        });
+      }
+      // 静默保存配置，不显示消息
+      await this.saveModelConfig(true);
+    },
+
+    getConditionLabel(condition) {
+      const labels = {
+        none: '可选',
+        optional: '推荐',
+        required: '必选',
+      };
+      return labels[condition] || condition;
+    },
+
+    getConditionType(condition) {
+      const types = {
+        none: 'info',
+        optional: 'warning',
+        required: 'danger',
+      };
+      return types[condition] || 'info';
+    },
+
     async sendMessage() {
       const content = this.inputMessage.trim();
       if (!content && this.uploadedFiles.length === 0) return;
-      if (this.isStreaming) return;
+
+      // 检查当前会话是否正在流式传输
+      const currentStreaming = this.streamingMap[this.currentThreadId];
+      if (currentStreaming && currentStreaming.isStreaming) return;
+
+      // 检查是否有文件正在上传
+      const uploadingFiles = this.uploadedFiles.filter(f => f.uploading);
+      if (uploadingFiles.length > 0) {
+        this.$message.warning('请等待文件上传完成');
+        return;
+      }
 
       if (!this.currentThreadId) {
         const created = await this.createConversation();
@@ -891,7 +1395,14 @@ export default {
 
       const userMessage = this.buildUserMessage(content);
 
-      this.messageList.push({
+      // 确保当前会话的消息列表存在
+      if (!this.messagesMap[this.currentThreadId]) {
+        this.$set(this.messagesMap, this.currentThreadId, []);
+      }
+
+      // 添加用户消息到当前会话
+      const messages = this.messagesMap[this.currentThreadId];
+      messages.push({
         id: this.generateId(),
         role: 'user',
         content: content,
@@ -907,33 +1418,44 @@ export default {
 
     buildUserMessage(content) {
       const message = { id: this.generateId(), role: 'user' };
+
+      // 如果没有文件，直接返回文本
       if (this.uploadedFiles.length === 0) {
         message.content = content;
-      } else {
-        const contentArray = [];
-        if (content) contentArray.push({ type: 'text', text: content });
-        this.uploadedFiles.forEach(file => {
-          contentArray.push({
-            type: 'binary',
-            mimeType: file.type,
-            url: file.url,
-          });
-        });
-        message.content = contentArray;
+        return message;
       }
+
+      // 有文件时，构建多部分内容
+      const contentArray = [];
+
+      // 添加文本内容（如果有）
+      if (content && content.trim()) {
+        contentArray.push({ type: 'text', text: content.trim() });
+      }
+
+      // 添加文件内容 - 后端统一使用 type: 'binary'，根据 mimeType 判断具体类型
+      this.uploadedFiles.forEach(file => {
+        contentArray.push({
+          type: 'binary',
+          mimeType: file.type || 'application/octet-stream',
+          url: file.url, // 使用服务器返回的 HTTP URL
+        });
+      });
+
+      message.content = contentArray;
       return message;
     },
 
     async startStreaming(userMessage) {
       if (!this.currentThreadId) {
         this.$message.error('对话ID不存在，请刷新页面重试');
-        this.isStreaming = false;
         return;
       }
 
-      this.isStreaming = true;
-      this.abortController = new AbortController();
+      const streamingThreadId = this.currentThreadId;
 
+      // 初始化该会话的流式状态
+      const abortController = new AbortController();
       const assistantMessage = {
         id: this.generateId(),
         role: 'assistant',
@@ -941,6 +1463,7 @@ export default {
         reasoning: '',
         toolCalls: [],
         toolResults: [],
+        fragments: [],
         isStreaming: true,
         stageTimers: {
           thinking: { start: null, duration: '' },
@@ -948,51 +1471,89 @@ export default {
         },
         reasoningDuration: '',
         toolDuration: '',
+        threadId: streamingThreadId,
       };
-      this.messageList.push(assistantMessage);
-      this.streamingMessage = assistantMessage;
+
+      // 设置该会话的流式状态
+      this.$set(this.streamingMap, streamingThreadId, {
+        isStreaming: true,
+        abortController: abortController,
+        streamingMessage: assistantMessage,
+      });
+
+      // 确保该会话的消息列表存在
+      if (!this.messagesMap[streamingThreadId]) {
+        this.$set(this.messagesMap, streamingThreadId, []);
+      }
+
+      // 添加消息到对应会话的消息列表
+      const messages = this.messagesMap[streamingThreadId];
+      messages.push(assistantMessage);
+
       this.currentStage = 'understanding';
 
       const parser = new SSEEventParser();
 
       try {
         await chatGeneralAgentConversation({
-          threadId: this.currentThreadId,
+          threadId: streamingThreadId,
           messages: [userMessage],
           onMessage: event => {
-            this.handleSSEEvent(event, assistantMessage, parser);
+            // 直接更新对应会话的消息，不检查当前会话
+            this.handleSSEEvent(
+              event,
+              assistantMessage,
+              parser,
+              streamingThreadId,
+            );
           },
           onError: error => {
             console.error('SSE Error:', error);
-            this.$message.error('对话请求失败');
+            // 只在对应会话显示错误提示
+            if (this.currentThreadId === streamingThreadId) {
+              this.$message.error('对话请求失败');
+            }
+            // 更新该会话的流式状态
+            const streaming = this.streamingMap[streamingThreadId];
+            if (streaming) {
+              streaming.isStreaming = false;
+              streaming.streamingMessage = null;
+            }
             assistantMessage.isStreaming = false;
-            this.isStreaming = false;
-            this.currentStage = '';
           },
-          signal: this.abortController.signal,
+          signal: abortController.signal,
         });
       } catch (error) {
         console.error('Stream error:', error);
-        if (error.name !== 'AbortError') {
+        if (
+          error.name !== 'AbortError' &&
+          this.currentThreadId === streamingThreadId
+        ) {
           this.$message.error('发送消息失败: ' + (error.message || error));
         }
       } finally {
+        // 更新该会话的流式状态
+        const streaming = this.streamingMap[streamingThreadId];
+        if (streaming) {
+          streaming.isStreaming = false;
+          streaming.streamingMessage = null;
+          streaming.abortController = null;
+        }
         assistantMessage.isStreaming = false;
-        this.isStreaming = false;
-        this.abortController = null;
-        this.streamingMessage = null;
         this.currentStage = '';
       }
     },
 
-    handleSSEEvent(event, assistantMessage, parser) {
+    handleSSEEvent(event, assistantMessage, parser, streamingThreadId) {
       const parsed = parser.parse(event);
       if (!parsed) return;
 
       switch (parsed.type) {
         case 'RUN_STARTED':
           this.currentRunId = parsed.runId;
-          this.currentStage = 'understanding';
+          if (this.currentThreadId === streamingThreadId) {
+            this.currentStage = 'understanding';
+          }
           break;
 
         case 'TEXT_MESSAGE_START':
@@ -1000,7 +1561,11 @@ export default {
           break;
 
         case 'TEXT_MESSAGE_CONTENT':
-          if (!assistantMessage.content && this.currentStage !== 'generating') {
+          if (
+            !assistantMessage.content &&
+            this.currentThreadId === streamingThreadId &&
+            this.currentStage !== 'generating'
+          ) {
             this.currentStage = 'generating';
           }
           if (
@@ -1014,8 +1579,13 @@ export default {
 
         case 'REASONING_START':
         case 'REASONING_MESSAGE_START':
-          if (this.currentStage !== 'thinking') {
+          if (
+            this.currentThreadId === streamingThreadId &&
+            this.currentStage !== 'thinking'
+          ) {
             this.currentStage = 'thinking';
+          }
+          if (!assistantMessage.stageTimers.thinking.start) {
             assistantMessage.stageTimers.thinking.start = Date.now();
           }
           break;
@@ -1041,8 +1611,13 @@ export default {
           break;
 
         case 'TOOL_CALL_START':
-          if (this.currentStage !== 'tool_calling') {
+          if (
+            this.currentThreadId === streamingThreadId &&
+            this.currentStage !== 'tool_calling'
+          ) {
             this.currentStage = 'tool_calling';
+          }
+          if (!assistantMessage.stageTimers.tool.start) {
             assistantMessage.stageTimers.tool.start = Date.now();
           }
           assistantMessage.toolCalls.push({
@@ -1091,11 +1666,225 @@ export default {
           break;
 
         case 'RUN_FINISHED':
-          // SSE 结束时不再重新加载历史，保留实时构建的消息
-          // this.fetchHistory();
+          // SSE 结束时规范化 fragments，确保所有内容都被正确添加
+          this.normalizeFragments(assistantMessage);
+          break;
+
+        case 'ACTIVITY_SNAPSHOT':
+          console.log('[ACTIVITY_SNAPSHOT] Received:', parsed);
+          this.handleActivitySnapshot(
+            parsed,
+            assistantMessage,
+            streamingThreadId,
+          );
           break;
       }
-      this.$nextTick(() => this.scrollToBottom());
+      // 只有当前会话才滚动到底部
+      if (this.currentThreadId === streamingThreadId) {
+        this.$nextTick(() => this.scrollToBottom());
+      }
+    },
+
+    handleActivitySnapshot(event, assistantMessage, streamingThreadId) {
+      console.log('[handleActivitySnapshot] event:', event);
+      console.log('[handleActivitySnapshot] activityType:', event.activityType);
+      console.log(
+        '[handleActivitySnapshot] ActivityType.WORKSPACE:',
+        ActivityType.WORKSPACE,
+      );
+      console.log('[handleActivitySnapshot] content:', event.content);
+      console.log(
+        '[handleActivitySnapshot] assistantMessage.fragments:',
+        assistantMessage?.fragments,
+      );
+
+      const { activityType, content } = event;
+
+      if (activityType === ActivityType.WORKSPACE) {
+        console.log(
+          '[handleActivitySnapshot] MATCH! Processing workspace activity',
+        );
+
+        // 处理 Workspace 活动
+        const result = this.handleWorkspaceActivity({
+          runId: content.runId || this.currentRunId,
+          threadId: content.threadId || this.currentThreadId,
+          fileCount: content.fileCount || 0,
+          totalSize: content.totalSize || 0,
+          timestamp: content.timestamp || Date.now(),
+        });
+
+        // 添加 workspace 片段到消息
+        if (assistantMessage.fragments) {
+          console.log('[handleActivitySnapshot] Adding fragment to message');
+          assistantMessage.fragments.push({
+            type: 'workspace',
+            workspaceInfo: {
+              fileCount: content.fileCount || 0,
+              totalSize: content.totalSize || 0,
+            },
+            runId: content.runId || this.currentRunId,
+          });
+          console.log(
+            '[handleActivitySnapshot] fragments after push:',
+            assistantMessage.fragments,
+          );
+        } else {
+          console.log(
+            '[handleActivitySnapshot] WARNING: fragments is not initialized',
+          );
+        }
+
+        // 只有当前会话时才显示通知
+        if (this.currentThreadId === streamingThreadId) {
+          this.$notify({
+            type: 'success',
+            title: '工作空间已更新',
+            message: `生成了 ${content.fileCount || 0} 个文件`,
+            duration: 3000,
+            onClick: () => {
+              this.showPanel();
+            },
+          });
+        }
+
+        // 如果面板已打开，刷新文件列表
+        if (result && result.shouldRefresh) {
+          this.loadWorkspaceFiles();
+        }
+      } else {
+        console.log(
+          '[handleActivitySnapshot] NOT MATCHED, activityType:',
+          activityType,
+        );
+      }
+    },
+
+    // 规范化 fragments，确保所有内容都被正确添加
+    normalizeFragments(assistantMessage) {
+      if (!assistantMessage) return;
+
+      const fragments = [];
+      let hasReasoning =
+        assistantMessage.reasoning && assistantMessage.reasoning.length > 0;
+      let hasToolCalls =
+        assistantMessage.toolCalls && assistantMessage.toolCalls.length > 0;
+      let hasContent =
+        assistantMessage.content && assistantMessage.content.length > 0;
+      let hasWorkspace =
+        assistantMessage.fragments &&
+        assistantMessage.fragments.some(f => f.type === 'workspace');
+
+      // 如果已经有 fragments 且包含 workspace，需要重新组织
+      const existingWorkspaceFragments = (
+        assistantMessage.fragments || []
+      ).filter(f => f.type === 'workspace');
+
+      // 添加思考片段
+      if (hasReasoning) {
+        fragments.push({
+          type: 'reasoning',
+          content: assistantMessage.reasoning,
+          duration: assistantMessage.reasoningDuration || '',
+        });
+      }
+
+      // 添加工具调用片段
+      if (hasToolCalls) {
+        assistantMessage.toolCalls.forEach(tc => {
+          fragments.push({
+            type: 'tool_call',
+            toolCall: tc,
+          });
+        });
+      }
+
+      // 添加文本片段
+      if (hasContent) {
+        fragments.push({
+          type: 'text',
+          content: assistantMessage.content,
+        });
+      }
+
+      // 添加工作空间片段
+      existingWorkspaceFragments.forEach(ws => {
+        fragments.push(ws);
+      });
+
+      // 只有当有内容时才更新 fragments
+      if (fragments.length > 0) {
+        assistantMessage.fragments = fragments;
+      }
+    },
+
+    async loadWorkspaceFiles() {
+      if (!this.activeWorkspace || !this.currentThreadId) return;
+
+      this.workspaceLoading = true;
+      try {
+        const res = await getGeneralAgentWorkspace({
+          threadId: this.currentThreadId,
+          runId: this.activeWorkspace.runId,
+        });
+        if (res.code === 0 && res.data) {
+          this.setWorkspaceTree({
+            threadId: this.currentThreadId,
+            runId: this.activeWorkspace.runId,
+            data: res.data,
+          });
+        }
+      } catch (error) {
+        console.error('加载工作空间文件失败:', error);
+      } finally {
+        this.workspaceLoading = false;
+      }
+    },
+
+    toggleWorkspacePanel() {
+      if (this.panelVisible) {
+        this.hidePanel();
+      } else {
+        this.showPanel();
+        if (this.activeWorkspace) {
+          this.loadWorkspaceFiles();
+        }
+      }
+    },
+
+    handleViewWorkspace(data) {
+      console.log('[handleViewWorkspace] data:', data);
+      console.log(
+        '[handleViewWorkspace] currentThreadId:',
+        this.currentThreadId,
+      );
+      console.log(
+        '[handleViewWorkspace] activeWorkspace before:',
+        this.activeWorkspace,
+      );
+
+      // 设置 activeWorkspace
+      this.setActiveWorkspace({
+        runId: data.runId,
+        threadId: data.threadId || this.currentThreadId,
+        fileCount: data.fileCount || 0,
+        totalSize: data.totalSize || 0,
+        timestamp: Date.now(),
+      });
+
+      console.log(
+        '[handleViewWorkspace] activeWorkspace after:',
+        this.activeWorkspace,
+      );
+
+      // 收起会话列表
+      if (!this.sidebarCollapsed) {
+        this.sidebarCollapsed = true;
+      }
+      // 打开工作空间面板
+      this.showPanel();
+
+      console.log('[handleViewWorkspace] panelVisible:', this.panelVisible);
     },
 
     formatDuration(ms) {
@@ -1112,11 +1901,14 @@ export default {
     },
 
     stopStreaming() {
-      if (this.abortController) {
-        this.abortController.abort();
-        this.abortController = null;
+      // 中止当前会话的 SSE 流
+      const streaming = this.streamingMap[this.currentThreadId];
+      if (streaming && streaming.abortController) {
+        streaming.abortController.abort();
+        streaming.isStreaming = false;
+        streaming.streamingMessage = null;
+        streaming.abortController = null;
       }
-      this.isStreaming = false;
     },
 
     scrollToBottom() {
@@ -1406,6 +2198,22 @@ $message-max-width: 900px;
 .agent-main-content {
   flex: 1;
   display: flex;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+
+  &.has-workspace {
+    .main-content-body {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}
+
+.main-content-body {
+  flex: 1;
+  display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
@@ -1418,14 +2226,45 @@ $message-max-width: 900px;
   height: 56px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 24px;
   background: $claude-bg;
   border-bottom: 1px solid $claude-border;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
   .header-title {
     font-size: 16px;
     font-weight: 600;
     color: $claude-text;
+  }
+
+  .sidebar-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid $claude-border;
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    color: $claude-text-muted;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: $claude-primary;
+      color: $claude-primary;
+      background: rgba($claude-primary, 0.05);
+    }
+
+    i {
+      font-size: 16px;
+    }
   }
 }
 
@@ -1539,15 +2378,21 @@ $message-max-width: 900px;
     }
   }
 
-  .model-selector {
+  .model-config-row {
     display: flex;
     align-items: center;
+    gap: 12px;
     margin-bottom: 12px;
     padding-bottom: 12px;
     border-bottom: 1px solid $claude-border;
+  }
+
+  .model-selector {
+    display: flex;
+    align-items: center;
 
     ::v-deep .el-select {
-      width: 160px;
+      width: 200px;
 
       .el-input__inner {
         background: transparent;
@@ -1556,6 +2401,64 @@ $message-max-width: 900px;
         font-size: 13px;
         color: $claude-text;
       }
+    }
+  }
+
+  .model-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+
+    .model-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .model-provider {
+      flex-shrink: 0;
+      margin-left: 8px;
+      padding: 2px 6px;
+      font-size: 11px;
+      color: #666;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+  }
+
+  .config-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: $claude-text-secondary;
+    background: transparent;
+    border: 1px solid $claude-border;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba($claude-primary, 0.08);
+      color: $claude-primary;
+      border-color: rgba($claude-primary, 0.3);
+    }
+
+    &.has-selection {
+      color: $claude-primary;
+      border-color: rgba($claude-primary, 0.3);
+      background: rgba($claude-primary, 0.05);
+    }
+
+    i {
+      font-size: 16px;
+    }
+
+    .el-badge {
+      margin-left: 4px;
     }
   }
 
@@ -1603,9 +2506,68 @@ $message-max-width: 900px;
         cursor: pointer;
         font-size: 10px;
         transition: transform 0.2s;
+        z-index: 10;
 
         &:hover {
           transform: scale(1.1);
+        }
+      }
+
+      .upload-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5;
+
+        .upload-progress-bar {
+          width: 32px;
+          height: 32px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotate(-90deg);
+
+            circle {
+              fill: none;
+              stroke-width: 3;
+            }
+
+            .progress-bg {
+              stroke: rgba(255, 255, 255, 0.3);
+            }
+
+            .progress-fill {
+              stroke: #fff;
+              stroke-linecap: round;
+              transition: stroke-dashoffset 0.3s ease;
+            }
+          }
+
+          .progress-text {
+            color: #fff;
+            font-size: 9px;
+            font-weight: 600;
+            z-index: 1;
+          }
+        }
+      }
+
+      &.is-uploading {
+        .file-remove {
+          display: none;
         }
       }
     }
@@ -1685,6 +2647,246 @@ $message-max-width: 900px;
     font-size: 12px;
     color: $claude-text-muted;
     margin-top: 12px;
+  }
+}
+
+// Workspace 面板过渡动画
+.workspace-slide-enter-active,
+.workspace-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.workspace-slide-enter,
+.workspace-slide-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+// Workspace 面板容器（需要添加）
+.workspace-panel {
+  width: 320px;
+  flex-shrink: 0;
+}
+</style>
+
+<style lang="scss">
+// 配置抽屉样式 - 需要非 scoped 才能覆盖 Element UI
+.config-drawer {
+  .drawer-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e5e5;
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+
+    .el-icon-close {
+      font-size: 18px;
+      color: #999;
+      cursor: pointer;
+      transition: color 0.2s;
+
+      &:hover {
+        color: #10a37f;
+      }
+    }
+  }
+
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+
+  .drawer-section {
+    margin-bottom: 24px;
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a1a1a;
+
+      i {
+        font-size: 16px;
+        color: #10a37f;
+      }
+    }
+  }
+
+  .config-loading {
+    text-align: center;
+    color: #999;
+    padding: 24px;
+  }
+
+  .tool-categories {
+    .tool-category {
+      margin-bottom: 16px;
+
+      .category-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f0f0f0;
+
+        .category-name {
+          font-size: 13px;
+          font-weight: 500;
+          color: #1a1a1a;
+        }
+      }
+    }
+  }
+
+  .tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tool-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+
+    &:hover {
+      background: #f5f7fa;
+      border-color: #e4e7ed;
+    }
+
+    &.selected {
+      background: rgba(16, 163, 127, 0.08);
+      border-color: rgba(16, 163, 127, 0.2);
+    }
+
+    .tool-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      margin-right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      overflow: hidden;
+      flex-shrink: 0;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      i {
+        font-size: 18px;
+        color: #999;
+      }
+    }
+
+    .tool-info {
+      flex: 1;
+      min-width: 0;
+
+      .tool-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1a1a1a;
+        margin-bottom: 2px;
+      }
+
+      .tool-desc {
+        font-size: 12px;
+        color: #666;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .el-checkbox {
+      margin-left: 8px;
+    }
+  }
+
+  .tool-search {
+    margin-bottom: 16px;
+
+    .el-input {
+      .el-input__inner {
+        border-radius: 8px;
+      }
+    }
+  }
+
+  .config-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    color: #999;
+
+    i {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    span {
+      font-size: 14px;
+    }
+  }
+}
+
+// 工具详情 tooltip
+.tool-tooltip-popper {
+  max-width: 360px !important;
+  padding: 0 !important;
+  border: 1px solid #e4e7ed !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 8px !important;
+}
+
+.tool-detail-tooltip {
+  padding: 12px 14px;
+
+  .tooltip-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .tooltip-desc {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
   }
 }
 </style>

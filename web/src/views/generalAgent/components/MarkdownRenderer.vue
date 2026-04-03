@@ -1,5 +1,20 @@
 <template>
-  <div class="markdown-renderer" v-html="renderedContent"></div>
+  <div class="markdown-renderer">
+    <!-- 渲染的 HTML 内容 -->
+    <div v-html="renderedContent"></div>
+
+    <!-- PPT 预览弹窗 -->
+    <el-dialog
+      :visible.sync="pptDialogVisible"
+      :title="pptDialogTitle"
+      width="90%"
+      top="5vh"
+      custom-class="ppt-preview-dialog"
+      @close="closePptDialog"
+    >
+      <ppt-preview v-if="pptDialogVisible" :src="currentPptUrl" />
+    </el-dialog>
+  </div>
 </template>
 
 <script>
@@ -25,6 +40,7 @@ import xml from 'highlight.js/lib/languages/xml';
 import css from 'highlight.js/lib/languages/css';
 import scss from 'highlight.js/lib/languages/scss';
 import markdown from 'highlight.js/lib/languages/markdown';
+import PptPreview from './PptPreview.vue';
 
 // 注册语言
 hljs.registerLanguage('javascript', javascript);
@@ -59,13 +75,28 @@ const languageAliases = {
   yml: 'yaml',
 };
 
+// 生成唯一ID
+let pptIdCounter = 0;
+const generatePptId = () => `ppt-preview-${++pptIdCounter}`;
+
 export default {
   name: 'MarkdownRenderer',
+  components: {
+    PptPreview,
+  },
   props: {
     content: {
       type: String,
       default: '',
     },
+  },
+  data() {
+    return {
+      pptDialogVisible: false,
+      currentPptUrl: '',
+      pptDialogTitle: 'PPT 预览',
+      pptLinks: [], // 存储 PPT 链接信息
+    };
   },
   computed: {
     renderedContent() {
@@ -73,14 +104,77 @@ export default {
       return this.parseMarkdown(this.content);
     },
   },
+  mounted() {
+    // 绑定 PPT 预览点击事件
+    this.bindPptClickEvents();
+  },
+  updated() {
+    // 更新后重新绑定事件
+    this.bindPptClickEvents();
+  },
   methods: {
+    // 绑定 PPT 预览点击事件
+    bindPptClickEvents() {
+      this.$nextTick(() => {
+        const pptElements = this.$el.querySelectorAll('.ppt-preview-card');
+        pptElements.forEach(el => {
+          el.removeEventListener('click', this.handlePptClick);
+          el.addEventListener('click', this.handlePptClick);
+        });
+      });
+    },
+
+    // 处理 PPT 点击
+    handlePptClick(event) {
+      const url = event.currentTarget.dataset.url;
+      const title = event.currentTarget.dataset.title || 'PPT 预览';
+      if (url) {
+        this.currentPptUrl = url;
+        this.pptDialogTitle = title;
+        this.pptDialogVisible = true;
+      }
+    },
+
+    // 关闭 PPT 弹窗
+    closePptDialog() {
+      this.pptDialogVisible = false;
+      this.currentPptUrl = '';
+    },
+
+    // 生成 PPT 预览卡片 HTML
+    generatePptCard(url, title = 'PPT 文档') {
+      const id = generatePptId();
+      this.pptLinks.push({ id, url, title });
+      return `<div class="ppt-preview-card" data-url="${url}" data-title="${title}">
+        <div class="ppt-card-icon">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/>
+          </svg>
+        </div>
+        <div class="ppt-card-info">
+          <div class="ppt-card-title">${title}</div>
+          <div class="ppt-card-hint">点击预览</div>
+        </div>
+      </div>`;
+    },
+
     // 解码URL中的转义字符
     decodeUrl(url) {
       try {
-        // 解码 \u0026 这类 Unicode 转义
-        return url.replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) => {
+        // 先解码 HTML 实体 (如 &amp; -> &)
+        let decoded = url
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'");
+
+        // 再解码 \u0026 这类 Unicode 转义
+        decoded = decoded.replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) => {
           return String.fromCharCode(parseInt(hex, 16));
         });
+
+        return decoded;
       } catch (e) {
         return url;
       }
@@ -144,9 +238,54 @@ export default {
           return `<a href="${decodedUrl}" target="_blank" rel="noopener" class="markdown-pdf-link">📄 ${text}</a>`;
         }
 
+        // PPT
+        if (/\.(pptx?)(\?.*)?$/i.test(decodedUrl)) {
+          return this.generatePptCard(decodedUrl, text);
+        }
+
         // 普通链接
         return `<a href="${decodedUrl}" target="_blank" rel="noopener">${text}</a>`;
       });
+
+      // 处理纯文本 URL（自动识别视频、音频、图片链接）
+      // 只匹配不在 HTML 标签属性中的 URL
+      html = html.replace(
+        /(^|[^"'>])(https?:\/\/[^\s<>"']+)/g,
+        (match, prefix, url) => {
+          const decodedUrl = this.decodeUrl(url);
+          const cleanUrl = decodedUrl.replace(/[.,;:!?]+$/, ''); // 移除末尾标点
+
+          // 视频
+          if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(cleanUrl)) {
+            return `${prefix}<video src="${cleanUrl}" controls class="markdown-video"></video>`;
+          }
+
+          // 音频
+          if (/\.(mp3|wav|ogg|m4a|flac|aac)(\?.*)?$/i.test(cleanUrl)) {
+            return `${prefix}<audio src="${cleanUrl}" controls class="markdown-audio"></audio>`;
+          }
+
+          // 图片
+          if (
+            /\.(png|jpe?g|gif|webp|svg|bmp|ico|avif)(\?.*)?$/i.test(cleanUrl)
+          ) {
+            return `${prefix}<img src="${cleanUrl}" alt="" class="markdown-image" />`;
+          }
+
+          // PDF
+          if (/\.(pdf)(\?.*)?$/i.test(cleanUrl)) {
+            return `${prefix}<a href="${cleanUrl}" target="_blank" rel="noopener" class="markdown-pdf-link">📄 查看 PDF</a>`;
+          }
+
+          // PPT
+          if (/\.(pptx?)(\?.*)?$/i.test(cleanUrl)) {
+            return `${prefix}${this.generatePptCard(cleanUrl, 'PPT 文档')}`;
+          }
+
+          // 普通链接
+          return `${prefix}<a href="${cleanUrl}" target="_blank" rel="noopener">${decodedUrl}</a>`;
+        },
+      );
 
       // 处理引用
       html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
@@ -616,10 +755,13 @@ $blockquote-border: #10a37f;
     // 视频样式
     .markdown-video {
       max-width: 100%;
+      width: 100%;
+      max-height: 480px;
       border-radius: 12px;
       margin: 18px 0;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       background: #000;
+      display: block;
     }
 
     // 音频样式
@@ -656,7 +798,7 @@ $blockquote-border: #10a37f;
       margin: 20px 0;
       border-collapse: collapse;
       width: 100%;
-      font-size: 14px;
+      font-size: 15px;
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -666,6 +808,7 @@ $blockquote-border: #10a37f;
         padding: 14px 18px;
         border: 1px solid #e5e7eb;
         text-align: left;
+        font-size: 14px;
       }
 
       th {
@@ -673,12 +816,13 @@ $blockquote-border: #10a37f;
         font-weight: 600;
         color: $text-primary;
         text-transform: uppercase;
-        font-size: 12px;
+        font-size: 13px;
         letter-spacing: 0.05em;
       }
 
       td {
         background: #fff;
+        font-size: 15px;
       }
 
       tr:nth-child(even) td {
@@ -790,6 +934,66 @@ $blockquote-border: #10a37f;
       border-bottom: 1px dotted $text-muted;
       cursor: help;
     }
+
+    // PPT 预览卡片
+    .ppt-preview-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border: 1px solid #f59e0b;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+      }
+
+      .ppt-card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        background: #fff;
+        border-radius: 10px;
+        color: #f59e0b;
+        flex-shrink: 0;
+      }
+
+      .ppt-card-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .ppt-card-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #92400e;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .ppt-card-hint {
+        font-size: 13px;
+        color: #b45309;
+        margin-top: 4px;
+      }
+    }
+  }
+}
+
+// PPT 预览弹窗样式（非 scoped）
+::v-deep .ppt-preview-dialog {
+  .el-dialog__body {
+    padding: 0;
+    max-height: 80vh;
+    overflow: auto;
   }
 }
 </style>
