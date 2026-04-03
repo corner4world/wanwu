@@ -1,4 +1,4 @@
-import { fetchEventSource } from '../sse/index.js';
+﻿import { fetchEventSource } from '../sse/index.js';
 import { store } from '@/store/index';
 import Print from '../utils/printPlus2.js';
 import {
@@ -828,8 +828,31 @@ export default {
                   currentMainChunk.response += processedResponse;
                   chunkProcessor.append(processedResponse);
                   const renderResult = chunkProcessor.getRenderResult();
-                  currentMainChunk.stableChunks = renderResult.stableChunks;
-                  currentMainChunk.activeResponse = renderResult.activeResponse;
+
+                  // 应对同一 order 下的多包连续推流
+                  this.$set(
+                    currentMainChunk,
+                    'stableChunks',
+                    renderResult.stableChunks,
+                  );
+                  this.$set(
+                    currentMainChunk,
+                    'activeResponse',
+                    renderResult.activeResponse,
+                  );
+
+                  // 把打字机状态同步提升到外层 subConversion
+                  // 当作为文本分段被父级“吸收”时，外层模板将直接读取 subConversion 的这两个属性进行打字
+                  this.$set(
+                    subConversion,
+                    'stableChunks',
+                    renderResult.stableChunks,
+                  );
+                  this.$set(
+                    subConversion,
+                    'activeResponse',
+                    renderResult.activeResponse,
+                  );
 
                   // 物理累加（兼容旧逻辑，但不作为新版嵌套渲染的主数据源）
                   subConversion.response = subConversion.messageSequence
@@ -853,14 +876,20 @@ export default {
                         data.eventType ===
                         AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.EVENT_TYPE;
 
-                      // 如果是文本分段，则以 main 类型注册入父级，实现“吸收合并”同步展示
-                      // 否则以 sub 类型注册，作为独立折叠卡片递归展示
-                      parentSub.messageSequence.push({
-                        type: isTextChunk ? 'main' : 'sub',
-                        id: id,
-                        order: data.order,
-                        ...(isTextChunk ? subConversion : {}), // 核心：如果是文本片段，则直接挂载子会话模型数据，供父级组件内层循环实时渲染
-                      });
+                      // 若为正文片段，直接强转类型，并将其整体obj放入父序列
+                      if (isTextChunk) {
+                        subConversion.type = 'main';
+                        subConversion.order = data.order;
+                        parentSub.messageSequence.push(subConversion);
+                      } else {
+                        // 常规情况：只是放一个引用卡片标志过去
+                        parentSub.messageSequence.push({
+                          type: 'sub',
+                          id: id,
+                          order: data.order,
+                        });
+                      }
+
                       parentSub.messageSequence.sort(
                         (a, b) => (a.order || 0) - (b.order || 0),
                       );
