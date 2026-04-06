@@ -75,15 +75,17 @@ type GeneralAgentConversationMessage struct {
 	Content interface{} `json:"content" validate:"required"` // 内容 string 或者 [{"type":"text","text":"这张图片是什么？"},{"type":"binary","mimeType":"image/png","url":"https://..."}]
 }
 
-func (m *GeneralAgentConversationMessage) GetURLs() []string {
-	var urls []string
+func (m *GeneralAgentConversationMessage) GetURLs() map[string]string {
+	urls := make(map[string]string)
 	switch v := m.Content.(type) {
 	case []interface{}:
 		for _, item := range v {
 			if m, ok := item.(map[string]interface{}); ok {
 				if m["type"] == "binary" {
-					if urlStr, ok := m["url"].(string); ok {
-						urls = append(urls, urlStr)
+					urlStr, _ := m["url"].(string)
+					fileName, _ := m["fileName"].(string)
+					if urlStr != "" && fileName != "" {
+						urls[fileName] = urlStr
 					}
 				}
 			}

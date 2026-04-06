@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,6 +51,18 @@ func GeneralAgentCopilotRuntimeInfo(_ *gin.Context) *response.GeneralAgentCopilo
 }
 
 func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req request.GeneralAgentConversationChatReq) error {
+	// 过滤出当前用户消息（最后一条 User 消息）
+	var userInputMessage *request.GeneralAgentConversationMessage
+	for i := len(req.Messages) - 1; i >= 0; i-- {
+		if req.Messages[i].Role == ag_ui_util.RoleUser {
+			userInputMessage = &req.Messages[i]
+			break
+		}
+	}
+	if userInputMessage == nil {
+		return grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "no user message found in input messages")
+	}
+
 	// 验证 threadId 是否存在
 	existsResp, err := assistant.WgaConversationExists(ctx.Request.Context(), &assistant_service.WgaConversationExistsReq{
 		ThreadId: req.ThreadID,
@@ -69,46 +80,10 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 
 	runID := uuid.NewString()
 
-	// 获取 WGA Conversation 配置
-	wgaConversationConfigResp, err := assistant.GetWgaConversationConfig(ctx.Request.Context(), &assistant_service.GetWgaConversationConfigReq{
-		ThreadId: req.ThreadID,
-		Identity: &assistant_service.Identity{
-			UserId: userId,
-			OrgId:  orgId,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	// 获取 WGA 配置
-	wgaConfigResp, err := assistant.GetWgaConfig(ctx.Request.Context(), &assistant_service.GetWgaConfigReq{
-		Identity: &assistant_service.Identity{
-			UserId: userId,
-			OrgId:  orgId,
-		},
-	})
-	if err != nil {
-		return err
-	}
-	wgaConversationConfig := wgaConversationConfigResp.Config
-	wgaConfig := wgaConfigResp.Config
-
-	// 过滤消息 FIXME 历史信息应从后端获取
-	messages := filterWgaMessages(req.Messages)
-
-	var currentUserMessage *request.GeneralAgentConversationMessage
-	for i := len(req.Messages) - 1; i >= 0; i-- {
-		if req.Messages[i].Role == ag_ui_util.RoleUser {
-			currentUserMessage = &req.Messages[i]
-			break
-		}
-	}
-
 	// 构建 WGA 选项
-	opts, err := buildWgaRunOptions(ctx, req.ThreadID, runID, wgaConversationConfig, wgaConfig, messages, currentUserMessage)
+	opts, err := buildWgaRunOptions(ctx, userId, orgId, req.ThreadID, runID, userInputMessage)
 	if err != nil {
-		return grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error())
+		return err
 	}
 
 	// 运行 WGA
@@ -123,11 +98,11 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 
 	processorConfig := &ag_ui_util.ProcessorConfig{
 		ToolNameMapper: map[string]string{
-			"transfer_to_agent": "正在交给智能体",
+			"transfer_to_agent": "正在交给专业智能体",
 		},
-		// ExcludedAgentNames: []string{
-		// 	"Supervisor Agent",
-		// },
+		ExcludedAgentNames: []string{
+			"Supervisor Agent",
+		},
 		ResultFormatters: map[string]func(string) string{
 			"bochaWebSearch":      WgaFormatBochaWebSearchResult,
 			"tavily_basic_search": WgaFormatTavilySearchResult,
@@ -143,7 +118,7 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 	processedEventCh, historyEventCh := processor.Process(ctx.Request.Context(), eventCh, map[string]interface{}{
 		"threadId":       req.ThreadID,
 		"runId":          runID,
-		"messages":       []interface{}{currentUserMessage},
+		"messages":       []interface{}{userInputMessage},
 		"state":          map[string]interface{}{},
 		"tools":          []interface{}{},
 		"context":        []interface{}{},
@@ -185,7 +160,104 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 	return nil
 }
 
-func buildWgaRunOptions(ctx *gin.Context, threadID, runID string, wgaConversationConfig *assistant_service.WgaConversationConfig, wgaConfig *assistant_service.WgaConfig, messages []request.GeneralAgentConversationMessage, currentUserMessage *request.GeneralAgentConversationMessage) ([]wga_option.Option, error) {
+func filterWgaHistoryMessages(ctx *gin.Context, userId, orgId, threadId string) ([]*schema.Message, error) {
+	resp, err := assistant.SearchFromES(ctx.Request.Context(), &assistant_service.SearchFromESReq{
+		IndexName: wgaConversationHistoryEventESIndexName,
+		Conditions: map[string]string{
+			"threadId": threadId,
+			"userId":   userId,
+			"orgId":    orgId,
+		},
+		SortOrder: "asc",
+		PageNo:    1,
+		PageSize:  1000,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var messages []adk.Message
+	for _, docJson := range resp.DocJsonList {
+		var doc map[string]interface{}
+		if err := json.Unmarshal([]byte(docJson), &doc); err != nil {
+			continue
+		}
+
+		if eventsStr, ok := doc["events"].(string); ok {
+			var events []map[string]interface{}
+			if err := json.Unmarshal([]byte(eventsStr), &events); err != nil {
+				log.Errorf("[wga] thread %v unmarshal events err: %v", threadId, err)
+				continue
+			}
+			for _, event := range events {
+				eventType, ok := event["type"].(string)
+				if !ok {
+					continue
+				}
+				var message *schema.Message
+				switch aguievents.EventType(eventType) {
+				case aguievents.EventTypeRunStarted:
+					if input := event["input"].(map[string]interface{}); input != nil {
+						if msgs, ok := input["messages"].([]map[string]interface{}); ok {
+							for _, msg := range msgs {
+								message = convertWgaMessage(nil, msg["role"].(string), msg["content"])
+								messages = append(messages, message)
+							}
+						}
+					}
+
+				case aguievents.EventTypeReasoningMessageContent:
+					if delta, ok := event["delta"].(string); ok {
+						message = &schema.Message{
+							Role:             ag_ui_util.RoleAssistant,
+							ReasoningContent: delta,
+						}
+					}
+				case aguievents.EventTypeTextMessageContent:
+					if delta, ok := event["delta"].(string); ok {
+						message = &schema.Message{
+							Role:    ag_ui_util.RoleAssistant,
+							Content: delta,
+						}
+					}
+				default:
+					// do nothing
+				}
+				if message != nil {
+					messages = append(messages, message)
+				}
+			}
+		}
+	}
+	return messages, nil
+}
+
+func buildWgaRunOptions(ctx *gin.Context, userID, orgID, threadID, runID string, userInputMessage *request.GeneralAgentConversationMessage) ([]wga_option.Option, error) {
+	// 获取 WGA 配置
+	wgaConfigResp, err := assistant.GetWgaConfig(ctx.Request.Context(), &assistant_service.GetWgaConfigReq{
+		Identity: &assistant_service.Identity{
+			UserId: userID,
+			OrgId:  orgID,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	wgaConfig := wgaConfigResp.Config
+
+	// 获取 WGA Conversation 配置
+	wgaConversationConfigResp, err := assistant.GetWgaConversationConfig(ctx.Request.Context(), &assistant_service.GetWgaConversationConfigReq{
+		ThreadId: threadID,
+		Identity: &assistant_service.Identity{
+			UserId: userID,
+			OrgId:  orgID,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	wgaConversationConfig := wgaConversationConfigResp.Config
+
 	opts := []wga_option.Option{
 		wga_option.WithRunSession(wga_option.RunSession{
 			ThreadID: threadID,
@@ -204,7 +276,6 @@ func buildWgaRunOptions(ctx *gin.Context, threadID, runID string, wgaConversatio
 			}
 		}
 	}
-
 	// 用户模型配置无效，尝试使用默认配置
 	if !modelConfigValid {
 		defaultModelConfig := config.WgaCfg().Model
@@ -218,7 +289,7 @@ func buildWgaRunOptions(ctx *gin.Context, threadID, runID string, wgaConversatio
 				ModelName:    defaultModelConfig.ModelName,
 			}))
 		} else {
-			return nil, fmt.Errorf("model config is required: user config invalid and default config not set")
+			return nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "model config is required: user config invalid and default config not set")
 		}
 	}
 
@@ -233,7 +304,6 @@ func buildWgaRunOptions(ctx *gin.Context, threadID, runID string, wgaConversatio
 			}
 		}
 	}
-
 	// 用户工具配置无效，尝试使用默认配置
 	if !toolConfigValid {
 		defaultTools := config.WgaCfg().Tools
@@ -245,7 +315,7 @@ func buildWgaRunOptions(ctx *gin.Context, threadID, runID string, wgaConversatio
 				}))
 			}
 		} else {
-			return nil, fmt.Errorf("tool list is required: user config invalid and default config not set")
+			return nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "tool list is required: user config invalid and default config not set")
 		}
 	}
 
@@ -271,23 +341,20 @@ func buildWgaRunOptions(ctx *gin.Context, threadID, runID string, wgaConversatio
 			}
 		}
 		// 下载用户消息中的URL文件到inputDir
-		if currentUserMessage != nil {
-			if urls := currentUserMessage.GetURLs(); len(urls) > 0 {
-				if err := downloadURLsToDir(urls, inputDir); err != nil {
-					log.Errorf("download URLs %+v to inputDir %v failed: %v", urls, inputDir, err)
-				}
+		if urls := userInputMessage.GetURLs(); len(urls) > 0 {
+			if err := downloadURLsToDir(urls, inputDir); err != nil {
+				log.Errorf("download URLs %+v to inputDir %v failed: %v", urls, inputDir, err)
 			}
 		}
 	}
 
-	// 传递历史消息
-	if len(messages) > 0 {
-		msgs := make([]adk.Message, len(messages))
-		for i, msg := range messages {
-			msgs[i] = convertWgaMessage(ctx, msg.Role, msg.Content)
-		}
-		opts = append(opts, wga_option.WithMessages(msgs))
+	// 历史消息 + 当前用户消息
+	messages, err := filterWgaHistoryMessages(ctx, userID, orgID, threadID)
+	if err != nil {
+		return nil, err
 	}
+	messages = append(messages, convertWgaMessage(ctx, userInputMessage.Role, userInputMessage.Content))
+	opts = append(opts, wga_option.WithMessages(messages))
 
 	return opts, nil
 }
@@ -453,40 +520,37 @@ func convertWgaMessageInputPart(ctx *gin.Context, m map[string]interface{}) sche
 	case "binary":
 		mimeType, _ := m["mimeType"].(string)
 		url, _ := m["url"].(string)
-		base64Data, _ := FileUrlConvertBase64(ctx, &request.FileUrlConvertBase64Req{
-			FileUrl: url,
-		})
 		switch {
 		case strings.HasPrefix(mimeType, "image/"):
 			part.Type = schema.ChatMessagePartTypeImageURL
 			part.Image = &schema.MessageInputImage{
 				MessagePartCommon: schema.MessagePartCommon{
-					Base64Data: &base64Data,
-					MIMEType:   mimeType,
+					URL:      &url,
+					MIMEType: mimeType,
 				},
 			}
 		case strings.HasPrefix(mimeType, "audio/"):
 			part.Type = schema.ChatMessagePartTypeAudioURL
 			part.Audio = &schema.MessageInputAudio{
 				MessagePartCommon: schema.MessagePartCommon{
-					Base64Data: &base64Data,
-					MIMEType:   mimeType,
+					URL:      &url,
+					MIMEType: mimeType,
 				},
 			}
 		case strings.HasPrefix(mimeType, "video/"):
 			part.Type = schema.ChatMessagePartTypeVideoURL
 			part.Video = &schema.MessageInputVideo{
 				MessagePartCommon: schema.MessagePartCommon{
-					Base64Data: &base64Data,
-					MIMEType:   mimeType,
+					URL:      &url,
+					MIMEType: mimeType,
 				},
 			}
 		default:
 			part.Type = schema.ChatMessagePartTypeFileURL
 			part.File = &schema.MessageInputFile{
 				MessagePartCommon: schema.MessagePartCommon{
-					Base64Data: &base64Data,
-					MIMEType:   mimeType,
+					URL:      &url,
+					MIMEType: mimeType,
 				},
 			}
 		}
@@ -497,26 +561,6 @@ func convertWgaMessageInputPart(ctx *gin.Context, m map[string]interface{}) sche
 		}
 	}
 	return part
-}
-
-// 对话过滤
-// 过滤规则：
-// 1. 过滤掉 role 非 user/assistant 的消息
-// 2. 过滤掉 role 为 assistant 且 content 为空的消息
-func filterWgaMessages(messages []request.GeneralAgentConversationMessage) []request.GeneralAgentConversationMessage {
-	filtered := make([]request.GeneralAgentConversationMessage, 0, len(messages))
-	for _, msg := range messages {
-		// 过滤掉 tool 消息
-		if msg.Role != ag_ui_util.RoleUser && msg.Role != ag_ui_util.RoleAssistant {
-			continue
-		}
-		// 过滤掉空内容的消息
-		if msg.Content == nil {
-			continue
-		}
-		filtered = append(filtered, msg)
-	}
-	return filtered
 }
 
 // saveWgaChatHistoryEvent 保存智能体返回的聊天历史到 ES
@@ -558,17 +602,15 @@ func saveWgaChatHistoryEvent(ctx context.Context, historyEventCh <-chan aguieven
 	}
 }
 
-func downloadURLsToDir(urls []string, dir string) error {
+func downloadURLsToDir(urls map[string]string, dir string) error {
+	if len(urls) == 0 {
+		return nil
+	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("[downloadURLsToDir] create dir %s failed: %w", dir, err)
 	}
-	for _, urlStr := range urls {
+	for fileName, urlStr := range urls {
 		log.Infof("[downloadURLsToDir] downloading URL %s to %s", urlStr, dir)
-		u, err := url.Parse(urlStr)
-		if err != nil {
-			log.Errorf("[downloadURLsToDir] parse URL %s failed: %v", urlStr, err)
-			continue
-		}
 		body, err := http_client.Default().Get(context.Background(), &http_client.HttpRequestParams{
 			Url: urlStr,
 		})
@@ -576,11 +618,7 @@ func downloadURLsToDir(urls []string, dir string) error {
 			log.Errorf("[downloadURLsToDir] download URL %s failed: %v", urlStr, err)
 			continue
 		}
-		filename := filepath.Base(u.Path)
-		if filename == "" || strings.Contains(filename, "?") {
-			filename = uuid.NewString()
-		}
-		filePath := filepath.Join(dir, filename)
+		filePath := filepath.Join(dir, fileName)
 		if err := os.WriteFile(filePath, body, 0644); err != nil {
 			log.Errorf("[downloadURLsToDir] save file %s failed: %v", filePath, err)
 			continue

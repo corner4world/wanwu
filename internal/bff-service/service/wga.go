@@ -100,9 +100,6 @@ func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) ([]respon
 				toolInfo.NeedApiKeyInput = item.NeedApiKeyInput
 				toolInfo.APIKey = item.ApiKey
 				toolInfo.Avatar = cacheToolAvatar(ctx, constant.ToolTypeBuiltIn, item.AvatarPath)
-				if toolInfo.Avatar.Path != "" {
-					toolInfo.Avatar.Path, _ = net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, toolInfo.Avatar.Path)
-				}
 			}
 
 			categoryResp.ToolList = append(categoryResp.ToolList, toolInfo)
@@ -134,11 +131,6 @@ func GetGeneralAgentToolInfo(ctx *gin.Context, userId, orgId, toolId, toolType s
 		}
 	}
 
-	toolAvatar := cacheToolAvatar(ctx, constant.ToolTypeBuiltIn, resp.Info.AvatarPath)
-	if toolAvatar.Path != "" {
-		toolAvatar.Path, _ = net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, toolAvatar.Path)
-	}
-
 	return &response.GeneralAgentToolInfoResp{
 		Actions: actions,
 		ToolInfo: response.ToolInfo{
@@ -148,7 +140,7 @@ func GetGeneralAgentToolInfo(ctx *gin.Context, userId, orgId, toolId, toolType s
 			Desc:            resp.Info.Desc,
 			NeedApiKeyInput: resp.BuiltInTools.NeedApiKeyInput,
 			APIKey:          resp.BuiltInTools.ApiAuth.ApiKeyValue,
-			Avatar:          toolAvatar,
+			Avatar:          cacheToolAvatar(ctx, constant.ToolTypeBuiltIn, resp.Info.AvatarPath),
 		},
 	}, nil
 }
@@ -342,18 +334,16 @@ func GetGeneralAgentConversationDetail(ctx *gin.Context, userId, orgId, threadId
 		return &response.ListResult{}, nil
 	}
 
-	conditions := map[string]string{
-		"threadId": threadId,
-		"userId":   userId,
-		"orgId":    orgId,
-	}
-
 	resp, err := assistant.SearchFromES(ctx.Request.Context(), &assistant_service.SearchFromESReq{
-		IndexName:  wgaConversationHistoryEventESIndexName,
-		Conditions: conditions,
-		SortOrder:  "asc",
-		PageNo:     1,
-		PageSize:   1000,
+		IndexName: wgaConversationHistoryEventESIndexName,
+		Conditions: map[string]string{
+			"threadId": threadId,
+			"userId":   userId,
+			"orgId":    orgId,
+		},
+		SortOrder: "asc",
+		PageNo:    1,
+		PageSize:  1000,
 	})
 	if err != nil {
 		return nil, err

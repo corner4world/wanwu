@@ -76,7 +76,7 @@ const (
 
 {{range .Messages}}### {{.Role}}
 
-{{.Content}}
+{{.ReasoningContent}}{{.Content}}
 
 {{end}}{{end}}`
 )
