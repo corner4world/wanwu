@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
@@ -60,8 +61,13 @@ func Run(ctx context.Context, opts ...wga_sandbox_option.Option) (wga_sandbox_op
 	go func() {
 		defer util.PrintPanicStack()
 		defer close(outputCh)
+
 		if !opt.SkipCleanup {
-			defer func() { _ = manager.Cleanup(ctx, runID) }()
+			defer func() {
+				cleanupCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
+				defer cancel()
+				_ = manager.Cleanup(cleanupCtx, runID)
+			}()
 		}
 
 		log.Infof("%s preparing...", logPrefix)
@@ -79,16 +85,22 @@ func Run(ctx context.Context, opts ...wga_sandbox_option.Option) (wga_sandbox_op
 			return
 		}
 
+		ctxCanceled := false
 		for line := range runnerOutputCh {
+			if ctxCanceled {
+				break
+			}
 			select {
 			case outputCh <- line:
 			case <-ctx.Done():
-				return
+				ctxCanceled = true
 			}
 		}
 
 		log.Infof("%s finishing...", logPrefix)
-		if err := r.AfterRun(ctx); err != nil {
+		afterRunCtx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		if err := r.AfterRun(afterRunCtx); err != nil {
 			log.Errorf("%s finish failed: %v", logPrefix, err)
 			sendErrorEvent(outputCh, fmt.Sprintf("finish failed: %v", err))
 			return
