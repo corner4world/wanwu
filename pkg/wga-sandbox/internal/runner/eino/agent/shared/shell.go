@@ -135,32 +135,32 @@ func validateCommand(command string) error {
 	return nil
 }
 
-var pythonCmdPattern = regexp.MustCompile(`(?i)(^|&&\s*|\|\|\s*|;\s*)(python3?|pip3?)\b`)
-var apkAddPyPattern = regexp.MustCompile(`(?i)\bapk\s+add\s+[^\n]*\bpy3?-`)
+// var pythonCmdPattern = regexp.MustCompile(`(?i)(^|&&\s*|\|\|\s*|;\s*)(python3?|pip3?)\b`)
+// var apkAddPyPattern = regexp.MustCompile(`(?i)\bapk\s+add\s+[^\n]*\bpy3?-`)
 
-// pip和python命令在Python虚拟环境中执行
-func wrapWithVenv(command, workDir string) string {
-	venvDir := filepath.Join(workDir, ".venv")
-	// 追加pip国内源配置（阿里云）
-	pipConfigCmd := `pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
-                     pip config set global.trusted-host mirrors.aliyun.com`
+// // pip和python命令在Python虚拟环境中执行
+// func wrapWithVenv(command, workDir string) string {
+// 	venvDir := filepath.Join(workDir, ".venv")
+// 	// 追加pip国内源配置（阿里云）
+// 	pipConfigCmd := `pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
+//                      pip config set global.trusted-host mirrors.aliyun.com`
 
-	return fmt.Sprintf(
-		`if [ ! -d "%s" ]; then 
-			[ ! -x "$(command -v python3)" ] && echo "ERROR: python3未安装" && exit 1
-			if ! python3 -m venv "%s" >/dev/null 2>&1; then 
-				if command -v apt-get >/dev/null; then 
-					apt-get update -qq >/dev/null 2>&1 && \
-					DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-venv >/dev/null 2>&1; 
-				elif command -v apk >/dev/null; then 
-					apk add --no-cache python3-venv >/dev/null 2>&1; 
-				fi; 
-				python3 -m venv "%s" >/dev/null 2>&1 || { echo "ERROR: 创建虚拟环境失败"; exit 1; }; 
-			fi; 
-		fi && . "%s/bin/activate" && %s && %s`,
-		venvDir, venvDir, venvDir, venvDir, pipConfigCmd, command, // 先配置pip源，再执行原命令
-	)
-}
+// 	return fmt.Sprintf(
+// 		`if [ ! -d "%s" ]; then
+// 			[ ! -x "$(command -v python3)" ] && echo "ERROR: python3未安装" && exit 1
+// 			if ! python3 -m venv "%s" >/dev/null 2>&1; then
+// 				if command -v apt-get >/dev/null; then
+// 					apt-get update -qq >/dev/null 2>&1 && \
+// 					DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3-venv >/dev/null 2>&1;
+// 				elif command -v apk >/dev/null; then
+// 					apk add --no-cache python3-venv >/dev/null 2>&1;
+// 				fi;
+// 				python3 -m venv "%s" >/dev/null 2>&1 || { echo "ERROR: 创建虚拟环境失败"; exit 1; };
+// 			fi;
+// 		fi && . "%s/bin/activate" && %s && %s`,
+// 		venvDir, venvDir, venvDir, venvDir, pipConfigCmd, command, // 先配置pip源，再执行原命令
+// 	)
+// }
 
 // --- Execute ---
 
@@ -174,18 +174,20 @@ func (b *ShellOnlyBackend) Execute(ctx context.Context, req *filesystem.ExecuteR
 	}
 
 	command := req.Command
-	if pythonCmdPattern.MatchString(command) {
-		command = wrapWithVenv(command, b.workDir)
-		log.Printf("[Execute] Python 命令已自动改写为虚拟环境执行: %s", command)
-	}
 
-	if apkAddPyPattern.MatchString(command) {
-		exitCode := 1
-		return &filesystem.ExecuteResponse{
-			Output:   "安全拦截：禁止通过 apk 安装 Python 依赖包（py3-*），请使用 pip install 安装。",
-			ExitCode: &exitCode,
-		}, nil
-	}
+	// 不启用虚拟环境
+	// if pythonCmdPattern.MatchString(command) {
+	// 	command = wrapWithVenv(command, b.workDir)
+	// 	log.Printf("[Execute] Python 命令已自动改写为虚拟环境执行: %s", command)
+	// }
+
+	// if apkAddPyPattern.MatchString(command) {
+	// 	exitCode := 1
+	// 	return &filesystem.ExecuteResponse{
+	// 		Output:   "安全拦截：禁止通过 apk 安装 Python 依赖包（py3-*），请使用 pip install 安装。",
+	// 		ExitCode: &exitCode,
+	// 	}, nil
+	// }
 
 	execCtx, cancel := context.WithTimeout(ctx, b.commandTimeout)
 	defer cancel()

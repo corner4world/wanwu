@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"text/template"
+	"time"
 
 	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/runner/eino/agent/shared"
 	"github.com/cloudwego/eino/adk"
@@ -42,8 +43,12 @@ func NewApp(ctx context.Context, cfg shared.AppConfig) (*App, error) {
 	skillMiddleware.AdditionalTools = append(skillMiddleware.AdditionalTools, bashTool)
 
 	tmplData := struct {
-		Workspace string
-	}{Workspace: cfg.Workspace}
+		Workspace   string
+		CurrentTime string
+	}{
+		Workspace:   cfg.Workspace,
+		CurrentTime: time.Now().Format("2006/01/02 Mon"),
+	}
 
 	tmpl, err := template.New("instruction").Parse(instructionTemplate)
 	if err != nil {
