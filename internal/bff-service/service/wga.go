@@ -30,7 +30,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) ([]response.GetGeneralAgentToolSelectResp, error) {
+func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) (*response.ListResult, error) {
 	toolResp, err := mcp.GetToolSelect(ctx.Request.Context(), &mcp_service.GetToolSelectReq{
 		Identity: &mcp_service.Identity{
 			UserId: userId,
@@ -80,7 +80,10 @@ func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) ([]respon
 		result = append(result, categoryResp)
 	}
 
-	return result, nil
+	return &response.ListResult{
+		List:  result,
+		Total: int64(len(result)),
+	}, nil
 
 }
 
@@ -123,7 +126,7 @@ func UpdateGeneralAgentConfig(ctx *gin.Context, userId, orgId string, req reques
 	for _, a := range req.AssistantList {
 		assistantList = append(assistantList, &assistant_service.WgaConfigAssistant{
 			AssistantId:   a.AssistantID,
-			AssistantType: a.AssistantType,
+			AssistantType: "1", // 默认单智能体
 		})
 	}
 	if err := checkWgaAssistantConfig(ctx, userId, orgId, assistantList); err != nil {
@@ -219,8 +222,7 @@ func GetGeneralAgentConfig(ctx *gin.Context, userId, orgId string) (*response.Ge
 	for _, a := range resp.Config.AssistantList {
 		if validAssistantIds[a.AssistantId] {
 			result.AssistantList = append(result.AssistantList, request.AssistantSelected{
-				AssistantID:   a.AssistantId,
-				AssistantType: a.AssistantType,
+				AssistantID: a.AssistantId,
 			})
 		}
 	}
@@ -427,12 +429,12 @@ func GetGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string, r
 		ModelConfig: request.AppModelConfig{},
 	}
 
-	// 处理模型配置 - 需要验证模型是否存在
+	// 处理模型配置 - 需要验证模型是否存在且已启用
 	if wgaConfig.ModelConfig != nil && wgaConfig.ModelConfig.ModelId != "" {
 		// 验证模型是否存在
 		modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: wgaConfig.ModelConfig.ModelId})
-		if err == nil && modelInfo != nil {
-			// 模型存在，返回配置
+		if err == nil && modelInfo != nil && modelInfo.IsActive {
+			// 模型存在且已启用，返回配置
 			result.ModelConfig = request.AppModelConfig{
 				Provider:    wgaConfig.ModelConfig.Provider,
 				Model:       wgaConfig.ModelConfig.Model,
@@ -441,7 +443,7 @@ func GetGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string, r
 				DisplayName: modelInfo.DisplayName,
 			}
 		}
-		// 如果模型不存在，返回空的 ModelConfig
+		// 如果模型不存在或未启用，返回空的 ModelConfig
 	}
 
 	return result, nil
@@ -694,6 +696,10 @@ func checkModelConfig(ctx *gin.Context, modelConfig *request.AppModelConfig) err
 	if err != nil {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
 	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
+	}
 	// 校验 model 名称是否匹配
 	if modelInfo.Model != modelConfig.Model {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model name mismatch: expected %s, got %s", modelInfo.Model, modelConfig.Model))
@@ -710,6 +716,10 @@ func checkModelConfigFromProto(ctx *gin.Context, modelConfig *common.AppModelCon
 	if err != nil {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
 	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
+	}
 	if modelInfo.Model != modelConfig.Model {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model name mismatch: expected %s, got %s", modelInfo.Model, modelConfig.Model))
 	}
@@ -725,6 +735,10 @@ func buildWgaModelOption(ctx *gin.Context, modelConfig *common.AppModelConfig) (
 	modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: modelConfig.ModelId})
 	if err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
+	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
 	}
 
 	endpoint := mp.ToModelEndpoint(modelConfig.ModelId, modelConfig.Model)
@@ -969,26 +983,10 @@ func checkWgaAssistantConfig(ctx *gin.Context, userId, orgId string, assistantLi
 			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("assistant not published: %s", a.AssistantId))
 		}
 
-		// 校验智能体类型
+		// 校验智能体类型：通用智能体只支持单智能体
 		info := assistantInfos[a.AssistantId]
-		if info != nil {
-			// 通用智能体只支持单智能体
-			if info.Category != constant.AgentCategorySingle {
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("assistant must be single agent: %s", a.AssistantId))
-			}
-
-			var expectedCategory int32
-			switch a.AssistantType {
-			case "1":
-				expectedCategory = constant.AgentCategorySingle
-			case "2":
-				expectedCategory = constant.AgentCategoryMulti
-			default:
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("invalid assistant type: %s", a.AssistantType))
-			}
-			if info.Category != expectedCategory {
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("assistant category mismatch: %s (expected %d, got %d)", a.AssistantId, expectedCategory, info.Category))
-			}
+		if info != nil && info.Category != constant.AgentCategorySingle {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("assistant must be single agent: %s", a.AssistantId))
 		}
 	}
 	return nil

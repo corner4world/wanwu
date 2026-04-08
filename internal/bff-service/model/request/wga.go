@@ -67,8 +67,7 @@ type ToolSelected struct {
 }
 
 type AssistantSelected struct {
-	AssistantID   string `json:"assistantId" validate:"required"`   // 智能体ID
-	AssistantType string `json:"assistantType" validate:"required"` // 智能体类型
+	AssistantID string `json:"assistantId" validate:"required"` // 智能体ID
 }
 
 func (c *UpdateGeneralAgentConversationConfigReq) Check() error { return nil }
