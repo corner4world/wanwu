@@ -293,7 +293,11 @@ export default {
           runId: this.runId,
           path: filePath,
         });
-        resDownloadFile(blob, file.name);
+        // 如果是文件夹，文件名添加.zip后缀
+        const fileName = this.isDirectory(file)
+          ? `${file.name}.zip`
+          : file.name;
+        resDownloadFile(blob, fileName);
         this.$message.success('下载成功');
       } catch (error) {
         console.error('下载文件失败:', error);

@@ -59,13 +59,7 @@
             {{ formatSize(file.size) }}
           </span>
         </div>
-        <!-- 文件下载按钮 -->
-        <button
-          v-if="!isDirectory(file)"
-          class="file-download-btn"
-          @click.stop="$emit('download', file)"
-          title="下载"
-        >
+        <button class="file-download-btn" @click.stop="$emit('download', file)">
           <i class="el-icon-download"></i>
         </button>
       </div>
