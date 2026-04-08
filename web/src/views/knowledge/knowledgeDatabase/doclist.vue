@@ -9,7 +9,7 @@
       {{ knowledgeName }}
       <div style="margin-left: 34px; font-weight: normal; color: #6b7280">
         uuid: {{ docQuery.knowledgeId }}
-        <copyIcon :text="docQuery.knowledgeId" :onlyIcon="true" size="mini" />
+        <copyIcon :text="docQuery.knowledgeId" type="icon" />
       </div>
     </div>
     <div class="block table-wrap list-common wrap-fullheight">

@@ -247,6 +247,7 @@ export default {
     },
     copy: {
       success: '内容已复制到粘贴板',
+      error: '复制失败，请手动复制',
       copyText: '副本',
       copySuccess: '复制成功',
     },

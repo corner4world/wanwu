@@ -2,9 +2,7 @@
   <div :class="['tool-call-block', statusClass]">
     <div class="tool-header" @click="toggleExpand">
       <div class="header-left">
-        <i
-          :class="isExpanded ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"
-        ></i>
+        <i :class="isExpanded ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
         <div class="tool-icon-wrapper">
           <img
             :src="require('@/assets/imgs/tool-icon.png')"
@@ -33,11 +31,7 @@
           </div>
           <div class="tool-arguments">
             <pre><code>{{ formattedArgs }}</code></pre>
-            <button class="copy-btn" @click.stop="copyArgs" title="复制">
-              <i
-                :class="argsCopied ? 'el-icon-check' : 'el-icon-document-copy'"
-              ></i>
-            </button>
+            <CopyIcon :text="formattedArgs" type="button" class="copy-btn" />
           </div>
         </div>
         <!-- 结果展示 -->
@@ -51,13 +45,7 @@
           </div>
           <div class="tool-result">
             <pre><code>{{ formattedResult }}</code></pre>
-            <button class="copy-btn" @click.stop="copyResult" title="复制">
-              <i
-                :class="
-                  resultCopied ? 'el-icon-check' : 'el-icon-document-copy'
-                "
-              ></i>
-            </button>
+            <CopyIcon :text="formattedResult" type="button" class="copy-btn" />
           </div>
         </div>
         <!-- 运行中进度指示 -->
@@ -72,8 +60,13 @@
 </template>
 
 <script>
+import CopyIcon from '@/components/copyIcon.vue';
+
 export default {
   name: 'ToolCallBlock',
+  components: {
+    CopyIcon,
+  },
   props: {
     toolCall: {
       type: Object,
@@ -101,8 +94,6 @@ export default {
   data() {
     return {
       isExpanded: this.defaultExpanded,
-      argsCopied: false,
-      resultCopied: false,
     };
   },
   computed: {
@@ -194,28 +185,6 @@ export default {
       if (!name) return 'Unknown Tool';
       // 将下划线或连字符转为空格，首字母大写
       return name.replace(/[_-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    },
-    async copyArgs() {
-      try {
-        await navigator.clipboard.writeText(this.formattedArgs);
-        this.argsCopied = true;
-        setTimeout(() => {
-          this.argsCopied = false;
-        }, 2000);
-      } catch (err) {
-        console.error('Copy failed:', err);
-      }
-    },
-    async copyResult() {
-      try {
-        await navigator.clipboard.writeText(this.formattedResult);
-        this.resultCopied = true;
-        setTimeout(() => {
-          this.resultCopied = false;
-        }, 2000);
-      } catch (err) {
-        console.error('Copy failed:', err);
-      }
     },
   },
 };

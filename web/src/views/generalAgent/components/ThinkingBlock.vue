@@ -40,9 +40,7 @@
         </div>
         <div v-else-if="content" class="thinking-content">
           <pre><code>{{ content }}</code></pre>
-          <button class="copy-btn" @click.stop="copyContent" title="复制">
-            <i :class="copied ? 'el-icon-check' : 'el-icon-document-copy'"></i>
-          </button>
+          <CopyIcon :text="content" type="button" class="copy-btn" />
         </div>
       </div>
     </el-collapse-transition>
@@ -50,8 +48,13 @@
 </template>
 
 <script>
+import CopyIcon from '@/components/copyIcon.vue';
+
 export default {
   name: 'ThinkingBlock',
+  components: {
+    CopyIcon,
+  },
   props: {
     content: {
       type: String,
@@ -75,7 +78,6 @@ export default {
       isExpanded: this.defaultExpanded,
       timer: 0,
       timerInterval: null,
-      copied: false,
     };
   },
   computed: {
@@ -111,29 +113,6 @@ export default {
   methods: {
     toggleExpand() {
       this.isExpanded = !this.isExpanded;
-    },
-
-    copyContent() {
-      if (!this.content) return;
-
-      const textArea = document.createElement('textarea');
-      textArea.value = this.content;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-9999px';
-      document.body.appendChild(textArea);
-      textArea.select();
-
-      try {
-        document.execCommand('copy');
-        this.copied = true;
-        setTimeout(() => {
-          this.copied = false;
-        }, 2000);
-      } catch (err) {
-        console.error('Copy failed:', err);
-      }
-
-      document.body.removeChild(textArea);
     },
 
     startTimer() {
@@ -390,31 +369,6 @@ export default {
         position: absolute;
         top: 10px;
         right: 10px;
-        padding: 7px 14px;
-        background: #fff;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        color: $text-secondary;
-        font-size: 13px;
-        font-family: $font-sans;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-        &:hover {
-          background: #f9fafb;
-          border-color: #9ca3af;
-          color: $text-primary;
-          transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        }
-
-        i.el-icon-check {
-          color: #10a37f;
-        }
       }
     }
   }

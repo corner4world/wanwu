@@ -192,11 +192,7 @@
             class="message-actions"
           >
             <el-tooltip content="复制内容" placement="top">
-              <button class="action-btn" @click="copyContent">
-                <i
-                  :class="copied ? 'el-icon-check' : 'el-icon-document-copy'"
-                ></i>
-              </button>
+              <CopyIcon :text="fullContent" type="icon" />
             </el-tooltip>
             <el-tooltip v-if="isLastMessage" content="重新生成" placement="top">
               <button class="action-btn" @click="regenerate">
@@ -221,6 +217,7 @@ import StreamMarkdown from './StreamMarkdown.vue';
 import TypingCursor from './TypingCursor.vue';
 import WorkspaceActivity from './WorkspaceActivity.vue';
 import ActivityBlock from './ActivityBlock.vue';
+import CopyIcon from '@/components/copyIcon.vue';
 
 export default {
   name: 'MessageItem',
@@ -232,6 +229,7 @@ export default {
     TypingCursor,
     WorkspaceActivity,
     ActivityBlock,
+    CopyIcon,
   },
   props: {
     message: {
@@ -252,9 +250,7 @@ export default {
     },
   },
   data() {
-    return {
-      copied: false,
-    };
+    return {};
   },
   computed: {
     ...mapGetters('user', ['userAvatar']),
@@ -407,35 +403,6 @@ export default {
 
         div.appendChild(img);
         document.body.appendChild(div);
-      }
-    },
-
-    async copyContent() {
-      try {
-        await navigator.clipboard.writeText(this.fullContent);
-        this.copied = true;
-        setTimeout(() => {
-          this.copied = false;
-        }, 2000);
-      } catch (err) {
-        console.error('Copy failed:', err);
-        // 降级方案
-        const textarea = document.createElement('textarea');
-        textarea.value = this.fullContent;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand('copy');
-          this.copied = true;
-          setTimeout(() => {
-            this.copied = false;
-          }, 2000);
-        } catch (e) {
-          console.error('Fallback copy failed:', e);
-        }
-        document.body.removeChild(textarea);
       }
     },
 
