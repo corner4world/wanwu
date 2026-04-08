@@ -13,7 +13,7 @@ prompt_relative_path: ./prompt.md
 
 tool_categories:
   - category: wga_tool_category_search
-    condition: optional
+    condition: none
     tools:
       - path: configs/microservice/mcp-service/configs/tool/tavilysearch/openapi.json
         auth_required: true
