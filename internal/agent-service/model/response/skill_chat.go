@@ -1,9 +1,10 @@
 package response
 
 import (
+	"strings"
+
 	agent_util "github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	"github.com/cloudwego/eino/schema"
-	"strings"
 )
 
 type SkillStep int

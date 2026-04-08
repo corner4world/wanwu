@@ -29,8 +29,9 @@ import (
 )
 
 var (
+	AvatarCachePrefix = "v1/cache/avatar"
+
 	workflowAvatarCachePrefix = "v1/cache/avatar/workflow"
-	AvatarCachePrefix         = "v1/cache/avatar"
 	mcpAvatarCachePrefix      = "v1/cache/avatar/mcp"
 	customAvatarCachePrefix   = "v1/cache/avatar/custom"
 )

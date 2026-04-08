@@ -1,9 +1,10 @@
 package response
 
 import (
+	"time"
+
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
-	"time"
 )
 
 type ThinkStep int

@@ -5,13 +5,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/UnicomAI/wanwu/pkg/log"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/UnicomAI/wanwu/pkg/log"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 // ZipDir 将目录打包为 zip 格式数据。

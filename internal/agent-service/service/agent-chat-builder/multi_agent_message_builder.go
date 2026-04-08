@@ -1,11 +1,12 @@
 package agent_chat_builder
 
 import (
+	"strconv"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/response"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/cloudwego/eino/schema"
-	"strconv"
 )
 
 type AgentStep int

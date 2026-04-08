@@ -24,14 +24,17 @@ import (
 )
 
 var (
-	avatarCacheMu               sync.Mutex
+	avatarCacheMu sync.Mutex
+
 	avatarCacheLocalDir         = "cache/avatar"
-	avatarCacheMinio            = "workflow/minio/presign/"
-	avatarStaticIcon            = "/api/static/icon/"
 	mcpAvatarCacheLocalDir      = "cache/avatar/mcp"
 	workflowAvatarCacheLocalDir = "cache/avatar/workflow"
-	avatarHTTPClient            = &http.Client{Timeout: 10 * time.Second}
-	avatarMaxBodySize           = int64(10 << 20) // 10MB
+
+	workflowMinioPresign     = "workflow/minio/presign/"
+	workflowAvatarStaticIcon = "/api/static/icon/"
+
+	avatarHTTPClient  = &http.Client{Timeout: 10 * time.Second}
+	avatarMaxBodySize = int64(10 << 20) // 10MB
 )
 
 // CacheAvatar 缓存中间件，当请求 cache/avatar 路径下的文件时，检查文件是否存在，如果不存在则从 MinIO 或其他服务下载并缓存
@@ -90,12 +93,12 @@ func CacheAvatar() gin.HandlerFunc {
 func handleWorkflowAvatarCache(ctx *gin.Context, relativePath string) bool {
 	relativePath = strings.TrimPrefix(relativePath, "/")
 	var completeURL string
-	if strings.Contains(relativePath, avatarCacheMinio) {
+	if strings.Contains(relativePath, workflowMinioPresign) {
 		pathWithoutWorkflow := strings.TrimPrefix(relativePath, "workflow/")
 		completeURL = config.Cfg().Server.WebBaseUrl + "/" + pathWithoutWorkflow
 	} else {
 		fileName := strings.TrimPrefix(relativePath, "workflow/")
-		completeURL = config.Cfg().Server.WebBaseUrl + avatarStaticIcon + fileName
+		completeURL = config.Cfg().Server.WebBaseUrl + workflowAvatarStaticIcon + fileName
 	}
 	avatarPath := cacheWorkflowAvatar(ctx, completeURL, constant.AppTypeWorkflow)
 	if avatarPath == "" {
@@ -143,7 +146,7 @@ func downloadAndCacheAvatar(ctx *gin.Context, avatarObjectPath string, isResize 
 	objectName := parts[1]
 	filePath := filepath.Join(avatarCacheLocalDir, objectName)
 	if !isResize {
-		filePath = filepath.Join(avatarCacheLocalDir, "custom", objectName)
+		filePath = filepath.Join(avatarCacheLocalDir, "raw", objectName)
 	}
 
 	if !strings.HasPrefix(filePath, avatarCacheLocalDir) {

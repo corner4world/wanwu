@@ -3,11 +3,12 @@ package response
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
-	"strings"
 )
 
 const (

@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"path/filepath"
+	"strings"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	minio_service "github.com/UnicomAI/wanwu/internal/agent-service/service/minio-service"
 	"github.com/UnicomAI/wanwu/pkg/util"
-	"path/filepath"
-	"strings"
 )
 
 const (

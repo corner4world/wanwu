@@ -1,11 +1,12 @@
 package response
 
 import (
+	"strings"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	agent_util "github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/cloudwego/eino/schema"
-	"strings"
 )
 
 type AgentEventType int

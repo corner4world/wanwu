@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
+	"strings"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/response"
 	agent_config "github.com/UnicomAI/wanwu/internal/agent-service/pkg/config"
@@ -22,8 +25,6 @@ import (
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
-	"path/filepath"
-	"strings"
 )
 
 // 使用 map 存储特殊字符，查找效率 O(1)
