@@ -275,57 +275,39 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, threadID, runID string,
 	}
 
 	// 校验并构建模型配置选项
-	modelConfigValid := false
 	if wgaConversationConfig != nil && wgaConversationConfig.ModelConfig != nil && wgaConversationConfig.ModelConfig.ModelId != "" {
-		if err := checkModelConfigFromProto(ctx, wgaConversationConfig.GetModelConfig()); err == nil {
-			modelOpt, err := buildWgaModelOption(ctx, wgaConversationConfig.ModelConfig)
-			if err == nil {
-				opts = append(opts, modelOpt)
-				modelConfigValid = true
-			}
+		if err := checkModelConfigFromProto(ctx, wgaConversationConfig.GetModelConfig()); err != nil {
+			return nil, err
 		}
-	}
-	// 用户模型配置无效，尝试使用默认配置
-	if !modelConfigValid {
-		defaultModelConfig := config.WgaCfg().Model
-		if defaultModelConfig.Model != "" && defaultModelConfig.BaseURL != "" {
-			opts = append(opts, wga_option.WithModelConfig(wga_option.ModelConfig{
-				Provider:     defaultModelConfig.Provider,
-				ProviderName: defaultModelConfig.ProviderName,
-				BaseURL:      defaultModelConfig.BaseURL,
-				APIKey:       defaultModelConfig.APIKey,
-				Model:        defaultModelConfig.Model,
-				ModelName:    defaultModelConfig.ModelName,
-			}))
-		} else {
-			return nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "model config is required: user config invalid and default config not set")
+		modelOpt, err := buildWgaModelOption(ctx, wgaConversationConfig.ModelConfig)
+		if err != nil {
+			return nil, err
 		}
+		opts = append(opts, modelOpt)
 	}
 
 	// 校验并构建工具配置选项
-	toolConfigValid := false
 	if wgaConfig != nil && len(wgaConfig.ToolList) > 0 {
-		if err := checkWgaToolConfig(ctx, wgaConfig.UserId, wgaConfig.OrgId, wgaConfig.ToolList); err == nil {
-			toolOpts, err := buildWgaToolOptions(ctx, wgaConfig.UserId, wgaConfig.OrgId, wgaConfig.ToolList)
-			if err == nil {
-				opts = append(opts, toolOpts...)
-				toolConfigValid = true
-			}
+		if err := checkWgaToolConfig(ctx, userID, orgID, wgaConfig.ToolList); err != nil {
+			return nil, err
 		}
+		toolOpts, err := buildWgaToolOptions(ctx, userID, orgID, wgaConfig.ToolList)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, toolOpts...)
 	}
-	// 用户工具配置无效，尝试使用默认配置
-	if !toolConfigValid {
-		defaultTools := config.WgaCfg().Tools
-		if len(defaultTools) > 0 {
-			for _, tool := range defaultTools {
-				opts = append(opts, wga_option.WithToolConfig(wga_option.ToolConfig{
-					Title:   tool.Title,
-					APIAuth: &tool.APIAuth,
-				}))
-			}
-		} else {
-			return nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "tool list is required: user config invalid and default config not set")
+
+	// 校验并构建工作流配置选项
+	if wgaConfig != nil && len(wgaConfig.WorkflowList) > 0 {
+		if err := checkWgaWorkflowConfig(ctx, userID, orgID, wgaConfig.WorkflowList); err != nil {
+			return nil, err
 		}
+		workflowOpts, err := buildWgaWorkflowOptions(ctx, userID, orgID, wgaConfig.WorkflowList)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, workflowOpts...)
 	}
 
 	// TODO 智能体配置
