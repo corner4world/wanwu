@@ -3210,6 +3210,18 @@ definitions:
     required:
     - mcpId
     type: object
+  request.MCPSelected:
+    properties:
+      mcpId:
+        description: MCP ID
+        type: string
+      mcpType:
+        description: MCP类型 mcp/mcpserver
+        type: string
+    required:
+    - mcpId
+    - mcpType
+    type: object
   request.MCPServerCreateReq:
     properties:
       avatar:
@@ -4070,14 +4082,24 @@ definitions:
   request.UpdateGeneralAgentConfigReq:
     properties:
       assistantList:
-        description: 智能体ID
+        description: 智能体列表
         items:
           $ref: '#/definitions/request.AssistantSelected'
         type: array
+      mcpList:
+        description: MCP列表
+        items:
+          $ref: '#/definitions/request.MCPSelected'
+        type: array
       toolList:
-        description: 工具ID
+        description: 工具列表
         items:
           $ref: '#/definitions/request.ToolSelected'
+        type: array
+      workflowList:
+        description: 工作流列表
+        items:
+          $ref: '#/definitions/request.WorkflowSelected'
         type: array
     type: object
   request.UpdateGeneralAgentConversationConfigReq:
@@ -4458,6 +4480,14 @@ definitions:
         type: string
     required:
     - workflow_id
+    type: object
+  request.WorkflowSelected:
+    properties:
+      workflowId:
+        description: 工作流ID
+        type: string
+    required:
+    - workflowId
     type: object
   response.APIKeyDetailResponse:
     properties:
@@ -6169,40 +6199,6 @@ definitions:
       totalSize:
         type: integer
     type: object
-  response.GetGeneralAgentAssistantSelectResp:
-    properties:
-      appId:
-        description: 应用id
-        type: string
-      appType:
-        description: 应用类型
-        type: string
-      avatar:
-        allOf:
-        - $ref: '#/definitions/request.Avatar'
-        description: 应用图标
-      category:
-        description: 智能体分类(1:单智能体,2:多智能体)
-        type: integer
-      createdAt:
-        description: 应用创建时间
-        type: string
-      desc:
-        description: 应用描述
-        type: string
-      name:
-        description: 应用名称
-        type: string
-      publishType:
-        description: 发布类型(public:公开发布,private:私密发布)
-        type: string
-      uniqueId:
-        description: 随机unique id(每次动态生成)
-        type: string
-      updatedAt:
-        description: 应用更新时间(用于历史记录排序)
-        type: string
-    type: object
   response.GetGeneralAgentConfigResp:
     properties:
       assistantList:
@@ -6210,10 +6206,20 @@ definitions:
         items:
           $ref: '#/definitions/request.AssistantSelected'
         type: array
+      mcpList:
+        description: MCP列表
+        items:
+          $ref: '#/definitions/request.MCPSelected'
+        type: array
       toolList:
         description: 工具列表
         items:
           $ref: '#/definitions/request.ToolSelected'
+        type: array
+      workflowList:
+        description: 工作流列表
+        items:
+          $ref: '#/definitions/request.WorkflowSelected'
         type: array
     type: object
   response.GetGeneralAgentConversationConfigResp:
@@ -10570,7 +10576,7 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.AppBriefInfo'
+                          $ref: '#/definitions/response.ExplorationAppInfo'
                         type: array
                     type: object
               type: object
@@ -11807,7 +11813,7 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.GetGeneralAgentAssistantSelectResp'
+                          $ref: '#/definitions/response.ExplorationAppInfo'
                         type: array
                     type: object
               type: object
@@ -12210,6 +12216,40 @@ paths:
       summary: 通用智能体CopilotRuntime协议端点
       tags:
       - wga
+  /general/agent/mcp/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体MCP下拉接口列表，用于用户选择MCP进行对话
+      parameters:
+      - description: MCP名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.MCPSelect'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 通用智能体MCP下拉接口列表
+      tags:
+      - wga
   /general/agent/tool/info:
     get:
       consumes:
@@ -12270,6 +12310,40 @@ paths:
       security:
       - JWT: []
       summary: 通用智能体工具选择
+      tags:
+      - wga
+  /general/agent/workflow/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体工作流列表
+      parameters:
+      - description: workflow名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.ExplorationAppInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 通用智能体工作流列表
       tags:
       - wga
   /knowledge:

@@ -1,11 +1,22 @@
 package request
 
 type UpdateGeneralAgentConfigReq struct {
-	ToolList      []ToolSelected      `json:"toolList"`      // 工具ID
-	AssistantList []AssistantSelected `json:"assistantList"` // 智能体ID
+	ToolList      []ToolSelected      `json:"toolList"`      // 工具列表
+	AssistantList []AssistantSelected `json:"assistantList"` // 智能体列表
+	MCPList       []MCPSelected       `json:"mcpList"`       // MCP列表
+	WorkflowList  []WorkflowSelected  `json:"workflowList"`  // 工作流列表
 }
 
 func (c *UpdateGeneralAgentConfigReq) Check() error { return nil }
+
+type MCPSelected struct {
+	MCPID   string `json:"mcpId" validate:"required"`   // MCP ID
+	MCPType string `json:"mcpType" validate:"required"` // MCP类型 mcp/mcpserver
+}
+
+type WorkflowSelected struct {
+	WorkflowID string `json:"workflowId" validate:"required"` // 工作流ID
+}
 
 type GetGeneralAgentConversationConfigReq struct {
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
@@ -56,8 +67,7 @@ type ToolSelected struct {
 }
 
 type AssistantSelected struct {
-	AssistantID   string `json:"assistantId" validate:"required"`   // 智能体ID
-	AssistantType string `json:"assistantType" validate:"required"` // 智能体类型
+	AssistantID string `json:"assistantId" validate:"required"` // 智能体ID
 }
 
 func (c *UpdateGeneralAgentConversationConfigReq) Check() error { return nil }
@@ -75,15 +85,17 @@ type GeneralAgentConversationMessage struct {
 	Content interface{} `json:"content" validate:"required"` // 内容 string 或者 [{"type":"text","text":"这张图片是什么？"},{"type":"binary","mimeType":"image/png","url":"https://..."}]
 }
 
-func (m *GeneralAgentConversationMessage) GetURLs() []string {
-	var urls []string
+func (m *GeneralAgentConversationMessage) GetURLs() map[string]string {
+	urls := make(map[string]string)
 	switch v := m.Content.(type) {
 	case []interface{}:
 		for _, item := range v {
 			if m, ok := item.(map[string]interface{}); ok {
 				if m["type"] == "binary" {
-					if urlStr, ok := m["url"].(string); ok {
-						urls = append(urls, urlStr)
+					urlStr, _ := m["url"].(string)
+					fileName, _ := m["fileName"].(string)
+					if urlStr != "" && fileName != "" {
+						urls[fileName] = urlStr
 					}
 				}
 			}

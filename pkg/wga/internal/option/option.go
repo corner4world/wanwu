@@ -2,13 +2,16 @@
 package option
 
 import (
+	"context"
 	"fmt"
 
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	openapi3_util "github.com/UnicomAI/wanwu/pkg/openapi3-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/wga/internal/config"
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/schema"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/google/uuid"
 )
 
@@ -31,6 +34,12 @@ type ModelConfig struct {
 type ToolConfig struct {
 	Title   string                  // 工具标题（对应 OpenAPI schema 的 info.title）
 	APIAuth *util.ApiAuthWebRequest // API 认证配置
+}
+
+// ExtraTool 额外工具配置（非配置文件中的工具）。
+type ExtraTool struct {
+	OpenAPI3Schema *openapi3.T             // OpenAPI 3.0 schema（必须）
+	APIAuth        *util.ApiAuthWebRequest // API 认证（可选）
 }
 
 // WorkspaceConfig 工作空间配置。
@@ -66,7 +75,8 @@ type Options struct {
 	RunSession RunSession      // 执行会话标识
 	Workspace  WorkspaceConfig // 工作空间配置
 	Model      ModelConfig     // 模型配置
-	Tools      []ToolConfig    // 工具配置列表
+	Tools      []ToolConfig    // 工具配置列表（配置文件工具的认证）
+	ExtraTools []ExtraTool     // 额外工具列表（运行时传入）
 	Messages   []adk.Message   // 历史消息 + 当前问题（最后一条 User 消息）
 }
 
@@ -133,9 +143,13 @@ func (options *Options) CheckMessages() error {
 	return nil
 }
 
-// CheckToolCategories 检查智能体的工具类别条件是否满足。
-func (options *Options) CheckToolCategories(cfg *config.Agent) ([]CheckToolCategory, error) {
-	return options.checkToolsCondition(cfg.ToolCategories)
+// CheckTools 检查工具配置（包括配置文件工具条件和额外工具冲突检查）。
+func (options *Options) CheckTools(cfg *config.Agent) ([]CheckToolCategory, error) {
+	categories := cfg.CollectToolCategories()
+	if err := options.checkExtraToolsConflict(categories); err != nil {
+		return nil, err
+	}
+	return options.checkToolCategories(categories)
 }
 
 // ============================================================================
@@ -164,6 +178,29 @@ func WithToolConfig(tool ToolConfig) Option {
 			}
 		}
 		opts.Tools = append(opts.Tools, tool)
+		return nil
+	})
+}
+
+// WithExtraTool 添加额外工具（非配置文件中的工具）。
+// 工具标题不能与配置文件中的工具重复，也不能与已添加的额外工具重复。
+func WithExtraTool(tool ExtraTool) Option {
+	return optionFunc(func(opts *Options) error {
+		if tool.OpenAPI3Schema == nil {
+			return fmt.Errorf("extra tool schema is required")
+		}
+		if tool.OpenAPI3Schema.Info == nil || tool.OpenAPI3Schema.Info.Title == "" {
+			return fmt.Errorf("extra tool schema must have title")
+		}
+		if err := openapi3_util.ValidateDoc(context.Background(), tool.OpenAPI3Schema); err != nil {
+			return fmt.Errorf("extra tool schema invalid: %w", err)
+		}
+		if tool.APIAuth != nil {
+			if err := tool.APIAuth.Check(); err != nil {
+				return fmt.Errorf("extra tool (%s) check auth err: %w", tool.OpenAPI3Schema.Info.Title, err)
+			}
+		}
+		opts.ExtraTools = append(opts.ExtraTools, tool)
 		return nil
 	})
 }

@@ -14,6 +14,8 @@ func registerWGA(apiV1 *gin.RouterGroup) {
 	mid.Sub("wga").Reg(apiV1, "/general/agent/assistant/select", http.MethodGet, v1.GetGeneralAgentAssistantSelect, "通用智能体下拉列表接口")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/tool/select", http.MethodGet, v1.GetGeneralAgentToolSelect, "通用智能体工具下拉列表接口")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/tool/info", http.MethodGet, v1.GetGeneralAgentToolInfo, "通用智能体工具详情")
+	mid.Sub("wga").Reg(apiV1, "/general/agent/mcp/select", http.MethodGet, v1.GetGeneralAgentMCPSelect, "通用智能体MCP下拉接口列表")
+	mid.Sub("wga").Reg(apiV1, "/general/agent/workflow/select", http.MethodGet, v1.GetGeneralAgentWorkflowSelect, "通用智能体Workflow下拉接口列表")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/config", http.MethodPut, v1.UpdateGeneralAgentConfig, "修改通用智能体配置")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/config", http.MethodGet, v1.GetGeneralAgentConfig, "通用智能体配置")
 
@@ -31,6 +33,5 @@ func registerWGA(apiV1 *gin.RouterGroup) {
 
 	// 通用智能体对话相关接口
 	mid.Sub("wga").Reg(apiV1, "/general/agent/conversation/chat", http.MethodPost, v1.GeneralAgentConversationChat, "通用智能体流式问答")
-	mid.Sub("wga").Reg(apiV1, "/general/agent/copilotkit", http.MethodPost, v1.GeneralAgentCopilotRuntime, "CopilotRuntime协议端点")
 
 }

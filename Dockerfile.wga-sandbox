@@ -50,6 +50,7 @@ RUN set -eux; \
         fonts-noto-cjk \
         fonts-wqy-zenhei \
         fonts-wqy-microhei \
+        fonts-liberation \
         fontconfig; \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*;

@@ -9,7 +9,7 @@ import (
 	"github.com/cloudwego/eino/compose"
 )
 
-func (options *Options) checkToolsCondition(toolCategories []*config.ToolCategory) ([]CheckToolCategory, error) {
+func (options *Options) checkToolCategories(toolCategories []*config.ToolCategory) ([]CheckToolCategory, error) {
 	var rets []CheckToolCategory
 	for _, toolCategory := range toolCategories {
 		// category tools
@@ -73,22 +73,34 @@ func (options *Options) checkToolsCondition(toolCategories []*config.ToolCategor
 	return rets, nil
 }
 
+func (options *Options) checkExtraToolsConflict(toolCategories []*config.ToolCategory) error {
+	configToolTitles := make(map[string]bool)
+	for _, tc := range toolCategories {
+		for _, tool := range tc.Tools {
+			configToolTitles[tool.Doc.Info.Title] = true
+		}
+	}
+
+	extraToolTitles := make(map[string]bool)
+	for _, et := range options.ExtraTools {
+		title := et.OpenAPI3Schema.Info.Title
+		if configToolTitles[title] {
+			return fmt.Errorf("extra tool (%s) conflicts with config tool", title)
+		}
+		if extraToolTitles[title] {
+			return fmt.Errorf("extra tool (%s) duplicate", title)
+		}
+		extraToolTitles[title] = true
+	}
+	return nil
+}
+
 func (options *Options) ToToolsConfig(toolCategories []*config.ToolCategory) (adk.ToolsConfig, error) {
 	ret := adk.ToolsConfig{
 		ToolsNodeConfig: compose.ToolsNodeConfig{
 			ExecuteSequentially: true,
 		},
 		ReturnDirectly: make(map[string]bool),
-	}
-
-	conditions, err := options.checkToolsCondition(toolCategories)
-	if err != nil {
-		return ret, err
-	}
-	for _, condition := range conditions {
-		if !condition.Meet {
-			return ret, fmt.Errorf("tool category (%v) condition (%v) not meet", condition.Category, condition.Condition)
-		}
 	}
 
 	for _, toolCategory := range toolCategories {

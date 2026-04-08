@@ -8,6 +8,8 @@ import (
 type GetGeneralAgentConfigResp struct {
 	ToolList      []request.ToolSelected      `json:"toolList"`      // 工具列表
 	AssistantList []request.AssistantSelected `json:"assistantList"` // 智能体列表
+	MCPList       []request.MCPSelected       `json:"mcpList"`       // MCP列表
+	WorkflowList  []request.WorkflowSelected  `json:"workflowList"`  // 工作流列表
 }
 
 type GetGeneralAgentConversationConfigResp struct {
@@ -23,10 +25,6 @@ type GeneralAgentConversationInfo struct {
 	ThreadID  string `json:"threadId"`  // 对话ID
 	Title     string `json:"title"`     // 对话标题
 	CreatedAt string `json:"createdAt"` // 创建时间
-}
-
-type GetGeneralAgentAssistantSelectResp struct {
-	AppBriefInfo
 }
 
 type GetGeneralAgentToolSelectResp struct {

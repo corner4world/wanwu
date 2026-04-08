@@ -614,6 +614,288 @@
           }
         }
       }
+    },
+    "/wan-image/wan2.7-image": {
+      "post": {
+        "tags": [
+          "Tongyi Multi-Modal"
+        ],
+        "summary": "通义万相图片生成与编辑: wan2.7-image",
+        "description": "调用通义万相进行图片生成与编辑，支持文生图、图像编辑、交互式编辑和组图生成。",
+        "operationId": "wan27_image",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "prompt"
+                ],
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "description": "编辑指令 (正向提示词), 用于描述期望对原图进行的修改内容。",
+                    "example": "参考图1的风格和图2的背景，生成番茄炒蛋"
+                  },
+                  "images": {
+                    "type": "array",
+                    "description": "输入图像的 URL 或 Base64 编码数据。支持传入1-3张图像。多图输入时,按照数组顺序定义图像顺序。",
+                    "minItems": 1,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "example": [
+                      "https://cdn.wanx.aliyuncs.com/tmp/pressure/umbrella1.png",
+                      "https://img.alicdn.com/imgextra/i3/O1CN01SfG4J41UYn9WNt4X1_!!6000000002530-49-tps-1696-960.webp"
+                    ]
+                  },
+                  "negative_prompt": {
+                    "type": "string",
+                    "description": "反向提示词, 用于描述不希望在图像中出现的内容。",
+                    "default": "",
+                    "example": "模糊，低质量，变形"
+                  },
+                  "size": {
+                    "type": "string",
+                    "description": "输出图像分辨率格式为“宽*高”。支持多种比例，宽高范围[512,2048]。",
+                    "default": "1280*1280",
+                    "example": "1280*1280"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "description": "生成数量",
+                    "default": 1,
+                    "example": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "生成任务提交成功/生成成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "output": {
+                      "type": "object",
+                      "properties": {
+                        "finished": {
+                          "type": "boolean"
+                        },
+                        "choices": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "finish_reason": {
+                                "type": "string"
+                              },
+                              "message": {
+                                "type": "object",
+                                "properties": {
+                                  "role": {
+                                    "type": "string"
+                                  },
+                                  "content": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "image": {
+                                          "type": "string",
+                                          "format": "uri"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "usage": {
+                      "type": "object",
+                      "properties": {
+                        "image_count": {
+                          "type": "integer"
+                        },
+                        "input_tokens": {
+                          "type": "integer"
+                        },
+                        "output_tokens": {
+                          "type": "integer"
+                        },
+                        "total_tokens": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wan-image/wan2.7-image-pro": {
+      "post": {
+        "tags": [
+          "Tongyi Multi-Modal"
+        ],
+        "summary": "通义万相图片生成与编辑: wan2.7-image-pro",
+        "description": "调用通义万相进行图片生成与编辑，支持文生图、图像编辑、交互式编辑和组图生成。",
+        "operationId": "wan27_image_pro",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "prompt"
+                ],
+                "properties": {
+                  "prompt": {
+                    "type": "string",
+                    "description": "编辑指令 (正向提示词), 用于描述期望对原图进行的修改内容。",
+                    "example": "参考图1的风格和图2的背景，生成番茄炒蛋"
+                  },
+                  "images": {
+                    "type": "array",
+                    "description": "输入图像的 URL 或 Base64 编码数据。支持传入1-3张图像。多图输入时,按照数组顺序定义图像顺序。",
+                    "minItems": 1,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "example": [
+                      "https://cdn.wanx.aliyuncs.com/tmp/pressure/umbrella1.png",
+                      "https://img.alicdn.com/imgextra/i3/O1CN01SfG4J41UYn9WNt4X1_!!6000000002530-49-tps-1696-960.webp"
+                    ]
+                  },
+                  "negative_prompt": {
+                    "type": "string",
+                    "description": "反向提示词, 用于描述不希望在图像中出现的内容。",
+                    "default": "",
+                    "example": "模糊，低质量，变形"
+                  },
+                  "size": {
+                    "type": "string",
+                    "description": "输出图像分辨率格式为“宽*高”。支持多种比例，宽高范围[512,2048]。",
+                    "default": "1280*1280",
+                    "example": "1280*1280"
+                  },
+                  "n": {
+                    "type": "integer",
+                    "description": "生成数量",
+                    "default": 1,
+                    "example": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "生成任务提交成功/生成成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "output": {
+                      "type": "object",
+                      "properties": {
+                        "finished": {
+                          "type": "boolean"
+                        },
+                        "choices": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "finish_reason": {
+                                "type": "string"
+                              },
+                              "message": {
+                                "type": "object",
+                                "properties": {
+                                  "role": {
+                                    "type": "string"
+                                  },
+                                  "content": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "type": {
+                                          "type": "string"
+                                        },
+                                        "image": {
+                                          "type": "string",
+                                          "format": "uri"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "usage": {
+                      "type": "object",
+                      "properties": {
+                        "image_count": {
+                          "type": "integer"
+                        },
+                        "input_tokens": {
+                          "type": "integer"
+                        },
+                        "output_tokens": {
+                          "type": "integer"
+                        },
+                        "total_tokens": {
+                          "type": "integer"
+                        },
+                        "size": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

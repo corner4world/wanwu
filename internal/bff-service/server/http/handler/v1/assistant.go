@@ -713,7 +713,7 @@ func MultiAgentConfigUpdate(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	query		string	false	"assistant名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AppBriefInfo}}
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.ExplorationAppInfo}}
 //	@Router			/assistant/select [get]
 func GetAssistantSelect(ctx *gin.Context) {
 	req := request.GetExplorationAppListRequest{

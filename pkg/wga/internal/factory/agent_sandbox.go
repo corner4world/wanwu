@@ -37,7 +37,10 @@ func (a *sandboxAgent) Run(ctx context.Context, agentInput *adk.AgentInput, _ ..
 	messages := make([]adk.Message, 0, len(agentInput.Messages)+len(a.options.Messages))
 	messages = append(messages, a.options.Messages...)
 	messages = append(messages, agentInput.Messages...)
-	sandboxOpts := a.buildSandboxOpts(messages)
+	sandboxOpts, err := a.buildSandboxOpts(ctx, messages)
+	if err != nil {
+		return wga_sandbox_converter.ConvertToEinoIteratorWithError(ctx, wga_sandbox_option.RunnerTypeOpencode, err)
+	}
 
 	_, outputCh, err := wga_sandbox.Run(ctx, sandboxOpts...)
 	if err != nil {
@@ -47,7 +50,7 @@ func (a *sandboxAgent) Run(ctx context.Context, agentInput *adk.AgentInput, _ ..
 	return wga_sandbox_converter.ConvertToEinoIterator(ctx, wga_sandbox_option.RunnerTypeOpencode, outputCh)
 }
 
-func (a *sandboxAgent) buildSandboxOpts(messages []adk.Message) []wga_sandbox_option.Option {
+func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Message) ([]wga_sandbox_option.Option, error) {
 	opts := []wga_sandbox_option.Option{
 		wga_sandbox_option.WithRunSession(wga_sandbox_option.RunSession{
 			ThreadID: a.options.RunSession.ThreadID,
@@ -62,12 +65,17 @@ func (a *sandboxAgent) buildSandboxOpts(messages []adk.Message) []wga_sandbox_op
 			ModelName:    a.options.Model.ModelName,
 			Params:       a.options.Model.Params,
 		}),
-		wga_sandbox_option.WithInstruction(a.cfg.Prompt),
 		wga_sandbox_option.WithMessages(messages),
 		wga_sandbox_option.WithEnableThinking(a.cfg.Configure.EnableThinking),
 		wga_sandbox_option.WithRunnerType(wga_sandbox_option.RunnerTypeOpencode),
 		wga_sandbox_option.WithAgentName(a.cfg.ID),
 	}
+
+	instruction, err := a.options.FormatInstruction(ctx, a.cfg)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, wga_sandbox_option.WithInstruction(instruction))
 
 	// 传递技能
 	if len(a.cfg.Skills) > 0 {
@@ -124,9 +132,22 @@ func (a *sandboxAgent) buildSandboxOpts(messages []adk.Message) []wga_sandbox_op
 			})
 		}
 	}
+	for _, extraTool := range a.options.ExtraTools {
+		var auth *openapi3_util.Auth
+		if extraTool.APIAuth != nil {
+			if converted, err := extraTool.APIAuth.ToOpenapiAuth(); err == nil {
+				auth = converted
+			}
+		}
+		tools = append(tools, wga_sandbox_option.Tool{
+			OpenAPI3Schema: extraTool.OpenAPI3Schema,
+			OperationIDs:   nil,
+			APIAuth:        auth,
+		})
+	}
 	if len(tools) > 0 {
 		opts = append(opts, wga_sandbox_option.WithTools(tools))
 	}
 
-	return opts
+	return opts, nil
 }

@@ -1,34 +1,8 @@
-package wga_option
+package config
 
 import (
 	"sort"
-
-	"github.com/UnicomAI/wanwu/pkg/wga/internal/config"
 )
-
-// ToolCategoryCondition 工具类别条件
-type ToolCategoryCondition = config.ToolCategoryCondition
-
-const (
-	ToolCategoryConditionNone     = config.ToolCategoryConditionNone     // 无需检查，该类别下的工具都是可选项
-	ToolCategoryConditionOptional = config.ToolCategoryConditionOptional // 该类别下至少有一个工具完成配置
-	ToolCategoryConditionRequired = config.ToolCategoryConditionRequired // 该类别下所有工具完成配置
-)
-
-// ToolCategoryInfo 工具类别信息
-type ToolCategoryInfo struct {
-	Category  string
-	Condition ToolCategoryCondition
-	Tools     []ToolInfo
-}
-
-// ToolInfo 工具信息
-type ToolInfo struct {
-	Title        string
-	Description  string
-	AuthRequired bool
-	Operations   []string
-}
 
 // CollectToolCategories 递归收集 agent 及其 sub agents 的 tool categories，扁平合并。
 // 合并规则：
@@ -40,15 +14,15 @@ type ToolInfo struct {
 //   - Category: required → optional → none，然后按 category name
 //   - Tool: need auth → no auth，然后按 tool title
 //   - Operations: 按 string 排序
-func CollectToolCategories(agent *config.Agent) []ToolCategoryInfo {
-	categoryMap := make(map[string]*ToolCategoryInfo)
+func (agent *Agent) CollectToolCategories() []*ToolCategory {
+	categoryMap := make(map[string]*ToolCategory)
 
 	collectToolCategoriesRecursive(agent, categoryMap)
 
-	result := make([]ToolCategoryInfo, 0, len(categoryMap))
+	result := make([]*ToolCategory, 0, len(categoryMap))
 	for _, cat := range categoryMap {
 		sortTools(cat.Tools)
-		result = append(result, *cat)
+		result = append(result, cat)
 	}
 
 	sort.Slice(result, func(i, j int) bool {
@@ -64,15 +38,15 @@ func CollectToolCategories(agent *config.Agent) []ToolCategoryInfo {
 }
 
 // collectToolCategoriesRecursive 递归收集 agent 及其 sub agents 的 tool categories 到 categoryMap
-func collectToolCategoriesRecursive(agent *config.Agent, categoryMap map[string]*ToolCategoryInfo) {
+func collectToolCategoriesRecursive(agent *Agent, categoryMap map[string]*ToolCategory) {
 	for _, tc := range agent.ToolCategories {
 		existing, ok := categoryMap[string(tc.Category)]
 		if !ok {
 			// 首次遇到该 category，直接创建
-			existing = &ToolCategoryInfo{
-				Category:  string(tc.Category),
+			existing = &ToolCategory{
+				Category:  tc.Category,
 				Condition: tc.Condition,
-				Tools:     make([]ToolInfo, 0),
+				Tools:     make([]*Tool, 0),
 			}
 			categoryMap[string(tc.Category)] = existing
 		} else {
@@ -81,9 +55,9 @@ func collectToolCategoriesRecursive(agent *config.Agent, categoryMap map[string]
 		}
 
 		// 构建已存在 tool 的索引，便于查找和合并
-		toolMap := make(map[string]*ToolInfo)
+		toolMap := make(map[string]*Tool)
 		for i := range existing.Tools {
-			toolMap[existing.Tools[i].Title] = &existing.Tools[i]
+			toolMap[existing.Tools[i].Doc.Info.Title] = existing.Tools[i]
 		}
 
 		for _, tool := range tc.Tools {
@@ -96,32 +70,26 @@ func collectToolCategoriesRecursive(agent *config.Agent, categoryMap map[string]
 				// 合并 operations
 				opMap := make(map[string]bool)
 				for _, op := range existingTool.Operations {
-					opMap[op] = true
+					opMap[op.OperationID] = true
 				}
 				for _, op := range tool.Operations {
 					if !opMap[op.OperationID] {
-						existingTool.Operations = append(existingTool.Operations, op.OperationID)
+						existingTool.Operations = append(existingTool.Operations, op)
 						opMap[op.OperationID] = true
 					}
 				}
 			} else {
 				// 首次遇到，创建
-				ops := make([]string, 0, len(tool.Operations))
-				for _, op := range tool.Operations {
-					ops = append(ops, op.OperationID)
-				}
-				description := ""
-				if tool.Doc.Info.Description != "" {
-					description = tool.Doc.Info.Description
-				}
-				newTool := ToolInfo{
-					Title:        title,
-					Description:  description,
+				ops := make([]ToolOperation, 0, len(tool.Operations))
+				ops = append(ops, tool.Operations...)
+				newTool := &Tool{
+					Doc:          tool.Doc,
+					SchemaPath:   tool.SchemaPath,
 					AuthRequired: tool.AuthRequired,
 					Operations:   ops,
 				}
 				existing.Tools = append(existing.Tools, newTool)
-				toolMap[title] = &existing.Tools[len(existing.Tools)-1]
+				toolMap[title] = newTool
 			}
 		}
 	}
@@ -156,14 +124,11 @@ func conditionPriority(c ToolCategoryCondition) int {
 }
 
 // sortTools 对工具列表排序：need auth → no auth，然后按 title
-func sortTools(tools []ToolInfo) {
+func sortTools(tools []*Tool) {
 	sort.Slice(tools, func(i, j int) bool {
 		if tools[i].AuthRequired != tools[j].AuthRequired {
 			return tools[i].AuthRequired
 		}
-		return tools[i].Title < tools[j].Title
+		return tools[i].Doc.Info.Title < tools[j].Doc.Info.Title
 	})
-	for i := range tools {
-		sort.Strings(tools[i].Operations)
-	}
 }

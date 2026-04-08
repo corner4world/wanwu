@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	net_url "net/url"
 	"os"
 	"path/filepath"
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
+	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	"github.com/UnicomAI/wanwu/api/proto/common"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
@@ -30,35 +30,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetGeneralAgentAssistantSelect(ctx *gin.Context, userId, orgId string, name string) ([]response.GetGeneralAgentAssistantSelectResp, error) {
-	resp, err := assistant.GetAssistantListMyAll(ctx.Request.Context(), &assistant_service.GetAssistantListMyAllReq{
-		Name: name,
-		Identity: &assistant_service.Identity{
-			UserId: userId,
-			OrgId:  orgId,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	var result []response.GetGeneralAgentAssistantSelectResp
-	for _, assistantInfo := range resp.AssistantInfos {
-		// 只展示单智能体
-		if assistantInfo.Category != constant.AgentCategorySingle {
-			continue
-		}
-		appBriefInfo := appBriefProto2Model(ctx, assistantInfo.Info, assistantInfo.Category)
-		if appBriefInfo.Avatar.Path != "" {
-			appBriefInfo.Avatar.Path, _ = net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, appBriefInfo.Avatar.Path)
-		}
-		result = append(result, response.GetGeneralAgentAssistantSelectResp{
-			AppBriefInfo: appBriefInfo,
-		})
-	}
-	return result, nil
-}
-
-func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) ([]response.GetGeneralAgentToolSelectResp, error) {
+func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) (*response.ListResult, error) {
 	toolResp, err := mcp.GetToolSelect(ctx.Request.Context(), &mcp_service.GetToolSelectReq{
 		Identity: &mcp_service.Identity{
 			UserId: userId,
@@ -84,7 +56,7 @@ func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) ([]respon
 	result := make([]response.GetGeneralAgentToolSelectResp, 0, len(toolCategories))
 	for _, tc := range toolCategories {
 		categoryResp := response.GetGeneralAgentToolSelectResp{
-			Category:  gin_util.I18nKey(ctx, tc.Category),
+			Category:  gin_util.I18nKey(ctx, string(tc.Category)),
 			Condition: string(tc.Condition),
 			ToolList:  []response.ToolInfo{},
 		}
@@ -92,7 +64,7 @@ func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) ([]respon
 		for _, t := range tc.Tools {
 			toolInfo := response.ToolInfo{}
 
-			if item, ok := toolNameToInfo[t.Title]; ok {
+			if item, ok := toolNameToInfo[t.Doc.Info.Title]; ok {
 				toolInfo.ToolId = item.ToolId
 				toolInfo.ToolName = item.ToolName
 				toolInfo.ToolType = item.ToolType
@@ -100,9 +72,6 @@ func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) ([]respon
 				toolInfo.NeedApiKeyInput = item.NeedApiKeyInput
 				toolInfo.APIKey = item.ApiKey
 				toolInfo.Avatar = cacheToolAvatar(ctx, constant.ToolTypeBuiltIn, item.AvatarPath)
-				if toolInfo.Avatar.Path != "" {
-					toolInfo.Avatar.Path, _ = net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, toolInfo.Avatar.Path)
-				}
 			}
 
 			categoryResp.ToolList = append(categoryResp.ToolList, toolInfo)
@@ -111,7 +80,10 @@ func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) ([]respon
 		result = append(result, categoryResp)
 	}
 
-	return result, nil
+	return &response.ListResult{
+		List:  result,
+		Total: int64(len(result)),
+	}, nil
 
 }
 
@@ -134,11 +106,6 @@ func GetGeneralAgentToolInfo(ctx *gin.Context, userId, orgId, toolId, toolType s
 		}
 	}
 
-	toolAvatar := cacheToolAvatar(ctx, constant.ToolTypeBuiltIn, resp.Info.AvatarPath)
-	if toolAvatar.Path != "" {
-		toolAvatar.Path, _ = net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, toolAvatar.Path)
-	}
-
 	return &response.GeneralAgentToolInfoResp{
 		Actions: actions,
 		ToolInfo: response.ToolInfo{
@@ -148,7 +115,7 @@ func GetGeneralAgentToolInfo(ctx *gin.Context, userId, orgId, toolId, toolType s
 			Desc:            resp.Info.Desc,
 			NeedApiKeyInput: resp.BuiltInTools.NeedApiKeyInput,
 			APIKey:          resp.BuiltInTools.ApiAuth.ApiKeyValue,
-			Avatar:          toolAvatar,
+			Avatar:          cacheToolAvatar(ctx, constant.ToolTypeBuiltIn, resp.Info.AvatarPath),
 		},
 	}, nil
 }
@@ -159,12 +126,13 @@ func UpdateGeneralAgentConfig(ctx *gin.Context, userId, orgId string, req reques
 	for _, a := range req.AssistantList {
 		assistantList = append(assistantList, &assistant_service.WgaConfigAssistant{
 			AssistantId:   a.AssistantID,
-			AssistantType: a.AssistantType,
+			AssistantType: "1", // 默认单智能体
 		})
 	}
 	if err := checkWgaAssistantConfig(ctx, userId, orgId, assistantList); err != nil {
 		return err
 	}
+
 	// 校验 tool 配置
 	toolList := make([]*assistant_service.WgaConfigTool, 0, len(req.ToolList))
 	for _, t := range req.ToolList {
@@ -177,9 +145,34 @@ func UpdateGeneralAgentConfig(ctx *gin.Context, userId, orgId string, req reques
 		return err
 	}
 
+	// 校验 mcp 配置
+	mcpList := make([]*assistant_service.WgaConfigMcp, 0, len(req.MCPList))
+	for _, m := range req.MCPList {
+		mcpList = append(mcpList, &assistant_service.WgaConfigMcp{
+			McpId:   m.MCPID,
+			McpType: m.MCPType,
+		})
+	}
+	if err := checkWgaMCPConfig(ctx, userId, orgId, mcpList); err != nil {
+		return err
+	}
+
+	// 校验 workflow 配置
+	workflowList := make([]*assistant_service.WgaConfigWorkflow, 0, len(req.WorkflowList))
+	for _, w := range req.WorkflowList {
+		workflowList = append(workflowList, &assistant_service.WgaConfigWorkflow{
+			WorkflowId: w.WorkflowID,
+		})
+	}
+	if err := checkWgaWorkflowConfig(ctx, userId, orgId, workflowList); err != nil {
+		return err
+	}
+
 	_, err := assistant.UpdateWgaConfig(ctx.Request.Context(), &assistant_service.UpdateWgaConfigReq{
 		ToolList:      toolList,
 		AssistantList: assistantList,
+		McpList:       mcpList,
+		WorkflowList:  workflowList,
 		Identity: &assistant_service.Identity{
 			UserId: userId,
 			OrgId:  orgId,
@@ -202,23 +195,22 @@ func GetGeneralAgentConfig(ctx *gin.Context, userId, orgId string) (*response.Ge
 	result := &response.GetGeneralAgentConfigResp{}
 
 	// 过滤存在的 tool
+	toolIds := make([]string, 0, len(resp.Config.ToolList))
 	for _, t := range resp.Config.ToolList {
 		if t.ToolType == constant.ToolTypeBuiltIn {
-			_, err := mcp.GetSquareTool(ctx.Request.Context(), &mcp_service.GetSquareToolReq{
-				ToolSquareId: t.ToolId,
-				Identity: &mcp_service.Identity{
-					UserId: userId,
-					OrgId:  orgId,
-				},
-			})
-			if err != nil {
-				continue
+			toolIds = append(toolIds, t.ToolId)
+		}
+	}
+	validToolIds, _ := getValidToolIds(ctx, userId, orgId, toolIds)
+	for _, t := range resp.Config.ToolList {
+		if t.ToolType == constant.ToolTypeBuiltIn {
+			if validToolIds[t.ToolId] {
+				result.ToolList = append(result.ToolList, request.ToolSelected{
+					ToolID:   t.ToolId,
+					ToolType: t.ToolType,
+				})
 			}
 		}
-		result.ToolList = append(result.ToolList, request.ToolSelected{
-			ToolID:   t.ToolId,
-			ToolType: t.ToolType,
-		})
 	}
 
 	// 过滤存在的 assistant
@@ -226,28 +218,47 @@ func GetGeneralAgentConfig(ctx *gin.Context, userId, orgId string) (*response.Ge
 	for _, a := range resp.Config.AssistantList {
 		assistantIds = append(assistantIds, a.AssistantId)
 	}
+	validAssistantIds, _, _ := getValidAssistantIds(ctx, userId, orgId, assistantIds)
+	for _, a := range resp.Config.AssistantList {
+		if validAssistantIds[a.AssistantId] {
+			result.AssistantList = append(result.AssistantList, request.AssistantSelected{
+				AssistantID: a.AssistantId,
+			})
+		}
+	}
 
-	if len(assistantIds) > 0 {
-		assistantResp, err := assistant.GetAssistantByIds(ctx.Request.Context(), &assistant_service.GetAssistantByIdsReq{
-			AssistantIdList: assistantIds,
-			Identity: &assistant_service.Identity{
-				UserId: userId,
-				OrgId:  orgId,
-			},
-		})
-		if err == nil && len(assistantResp.AssistantInfos) > 0 {
-			validAssistantIds := make(map[string]bool)
-			for _, info := range assistantResp.AssistantInfos {
-				validAssistantIds[info.Info.AppId] = true
-			}
-			for _, a := range resp.Config.AssistantList {
-				if validAssistantIds[a.AssistantId] {
-					result.AssistantList = append(result.AssistantList, request.AssistantSelected{
-						AssistantID:   a.AssistantId,
-						AssistantType: a.AssistantType,
-					})
-				}
-			}
+	// 过滤存在的 mcp
+	var mcpCustomIds, mcpServerIds []string
+	for _, m := range resp.Config.McpList {
+		switch m.McpType {
+		case constant.MCPTypeMCP:
+			mcpCustomIds = append(mcpCustomIds, m.McpId)
+		case constant.MCPTypeMCPServer:
+			mcpServerIds = append(mcpServerIds, m.McpId)
+		}
+	}
+	validMcpIds, mcpTypes, _ := getValidMcpIds(ctx, mcpCustomIds, mcpServerIds)
+	for _, m := range resp.Config.McpList {
+		// 验证 MCP 存在且类型匹配
+		if validMcpIds[m.McpId] && mcpTypes[m.McpId] == m.McpType {
+			result.MCPList = append(result.MCPList, request.MCPSelected{
+				MCPID:   m.McpId,
+				MCPType: m.McpType,
+			})
+		}
+	}
+
+	// 过滤存在的 workflow
+	workflowIds := make([]string, 0, len(resp.Config.WorkflowList))
+	for _, w := range resp.Config.WorkflowList {
+		workflowIds = append(workflowIds, w.WorkflowId)
+	}
+	validWorkflowIds, _ := getValidWorkflowIds(ctx, workflowIds)
+	for _, w := range resp.Config.WorkflowList {
+		if validWorkflowIds[w.WorkflowId] {
+			result.WorkflowList = append(result.WorkflowList, request.WorkflowSelected{
+				WorkflowID: w.WorkflowId,
+			})
 		}
 	}
 
@@ -289,6 +300,19 @@ func DeleteGeneralAgentConversation(ctx *gin.Context, userId, orgId string, req 
 	})
 	if err != nil {
 		return err
+	}
+
+	// 同步删除 workspace
+	cfg := config.WgaCfg()
+	store, err := wga_persistent.NewStore(wga_persistent.Mode(cfg.Persistent.Mode), cfg.Persistent.BaseDir, req.ThreadID)
+	if err != nil {
+		log.Errorf("[wga] thread %v delete persistent store err: %v", req.ThreadID, err)
+	} else {
+		if threadDir := store.GetThreadDir().Dir; threadDir != "" {
+			if err := util.DeleteDir(threadDir); err != nil {
+				log.Errorf("[wga] thread %v delete persistent dir err: %v", req.ThreadID, err)
+			}
+		}
 	}
 
 	// 同步删除 ES 中的聊天历史
@@ -342,18 +366,16 @@ func GetGeneralAgentConversationDetail(ctx *gin.Context, userId, orgId, threadId
 		return &response.ListResult{}, nil
 	}
 
-	conditions := map[string]string{
-		"threadId": threadId,
-		"userId":   userId,
-		"orgId":    orgId,
-	}
-
 	resp, err := assistant.SearchFromES(ctx.Request.Context(), &assistant_service.SearchFromESReq{
-		IndexName:  wgaConversationHistoryEventESIndexName,
-		Conditions: conditions,
-		SortOrder:  "asc",
-		PageNo:     1,
-		PageSize:   1000,
+		IndexName: wgaConversationHistoryEventESIndexName,
+		Conditions: map[string]string{
+			"threadId": threadId,
+			"userId":   userId,
+			"orgId":    orgId,
+		},
+		SortOrder: "asc",
+		PageNo:    1,
+		PageSize:  1000,
 	})
 	if err != nil {
 		return nil, err
@@ -407,12 +429,12 @@ func GetGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string, r
 		ModelConfig: request.AppModelConfig{},
 	}
 
-	// 处理模型配置 - 需要验证模型是否存在
+	// 处理模型配置 - 需要验证模型是否存在且已启用
 	if wgaConfig.ModelConfig != nil && wgaConfig.ModelConfig.ModelId != "" {
 		// 验证模型是否存在
 		modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: wgaConfig.ModelConfig.ModelId})
-		if err == nil && modelInfo != nil {
-			// 模型存在，返回配置
+		if err == nil && modelInfo != nil && modelInfo.IsActive {
+			// 模型存在且已启用，返回配置
 			result.ModelConfig = request.AppModelConfig{
 				Provider:    wgaConfig.ModelConfig.Provider,
 				Model:       wgaConfig.ModelConfig.Model,
@@ -421,7 +443,7 @@ func GetGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string, r
 				DisplayName: modelInfo.DisplayName,
 			}
 		}
-		// 如果模型不存在，返回空的 ModelConfig
+		// 如果模型不存在或未启用，返回空的 ModelConfig
 	}
 
 	return result, nil
@@ -491,6 +513,8 @@ func CheckGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string,
 		return nil, err
 	}
 	opts = append(opts, toolOpts...)
+
+	// FIXME check mcp、workflow、assistant 配置
 
 	// 检查配置
 	checkResult, err := wga.CheckOptions(ctx.Request.Context(), config.WgaCfg().AgentID, opts...)
@@ -656,7 +680,7 @@ func GeneralAgentWorkspaceInfo(ctx *gin.Context, userId, orgId string, req reque
 	}, nil
 }
 
-// --- internal ---
+// --- internal wga model ---
 
 // checkModelConfig 校验请求中的模型配置（用于创建/更新对话配置）
 func checkModelConfig(ctx *gin.Context, modelConfig *request.AppModelConfig) error {
@@ -674,6 +698,10 @@ func checkModelConfig(ctx *gin.Context, modelConfig *request.AppModelConfig) err
 	if err != nil {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
 	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
+	}
 	// 校验 model 名称是否匹配
 	if modelInfo.Model != modelConfig.Model {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model name mismatch: expected %s, got %s", modelInfo.Model, modelConfig.Model))
@@ -690,6 +718,10 @@ func checkModelConfigFromProto(ctx *gin.Context, modelConfig *common.AppModelCon
 	if err != nil {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
 	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
+	}
 	if modelInfo.Model != modelConfig.Model {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model name mismatch: expected %s, got %s", modelInfo.Model, modelConfig.Model))
 	}
@@ -705,6 +737,10 @@ func buildWgaModelOption(ctx *gin.Context, modelConfig *common.AppModelConfig) (
 	modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: modelConfig.ModelId})
 	if err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
+	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
 	}
 
 	endpoint := mp.ToModelEndpoint(modelConfig.ModelId, modelConfig.Model)
@@ -740,6 +776,53 @@ func buildWgaModelOption(ctx *gin.Context, modelConfig *common.AppModelConfig) (
 		ModelName:    modelConfig.Model,
 		Params:       modelParams,
 	}), nil
+}
+
+// --- internal wga tool ---
+
+// checkWgaToolConfig 校验工具配置是否存在且是 WGA 所需的（用于运行前检查）
+func checkWgaToolConfig(ctx *gin.Context, userId, orgId string, toolList []*assistant_service.WgaConfigTool) error {
+	if len(toolList) == 0 {
+		return nil
+	}
+
+	// 获取 wga 允许的 tool 名称列表
+	toolCategories, err := wga.GetAgentToolCategories(config.WgaCfg().AgentID)
+	if err != nil {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("get agent tool categories failed: %v", err))
+	}
+
+	validToolTitles := make(map[string]bool)
+	for _, tc := range toolCategories {
+		for _, t := range tc.Tools {
+			validToolTitles[t.Doc.Info.Title] = true
+		}
+	}
+
+	for _, t := range toolList {
+		switch t.ToolType {
+		case constant.ToolTypeBuiltIn:
+			// 验证 builtin tool 是否存在
+			toolResp, err := mcp.GetSquareTool(ctx.Request.Context(), &mcp_service.GetSquareToolReq{
+				ToolSquareId: t.ToolId,
+				Identity: &mcp_service.Identity{
+					UserId: userId,
+					OrgId:  orgId,
+				},
+			})
+			if err != nil {
+				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("builtin tool not found: %s", t.ToolId))
+			}
+			// 验证 tool 是否在 wga 工具列表中
+			if !validToolTitles[toolResp.Info.Name] {
+				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("tool not allowed for wga: %s", toolResp.Info.Name))
+			}
+		default:
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("invalid tool type: %s", t.ToolType))
+		}
+	}
+
+	return nil
 }
 
 // buildWgaToolOptions 构建工具配置选项（复用逻辑）
@@ -783,79 +866,220 @@ func buildWgaToolOptions(ctx *gin.Context, userId, orgId string, toolList []*ass
 	return opts, nil
 }
 
-// checkWgaToolConfig 校验工具配置是否存在且是 WGA 所需的（用于运行前检查）
-func checkWgaToolConfig(ctx *gin.Context, userId, orgId string, toolList []*assistant_service.WgaConfigTool) error {
-	if len(toolList) == 0 {
+// --- internal wga assistant ---
+
+// checkWgaAssistantConfig 校验wga智能体配置（用于更新配置）
+// 通用智能体配置只支持单智能体
+func checkWgaAssistantConfig(ctx *gin.Context, userId, orgId string, assistantList []*assistant_service.WgaConfigAssistant) error {
+	if len(assistantList) == 0 {
 		return nil
 	}
-
-	// 获取 wga 允许的 tool 名称列表
-	toolCategories, err := wga.GetAgentToolCategories(config.WgaCfg().AgentID)
+	assistantIds := make([]string, 0, len(assistantList))
+	for _, a := range assistantList {
+		assistantIds = append(assistantIds, a.AssistantId)
+	}
+	validIds, assistantInfos, err := getValidAssistantIds(ctx, userId, orgId, assistantIds)
 	if err != nil {
-		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("get agent tool categories failed: %v", err))
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "assistant not found")
 	}
 
-	validToolTitles := make(map[string]bool)
-	for _, tc := range toolCategories {
-		for _, t := range tc.Tools {
-			validToolTitles[t.Title] = true
+	// 校验所有智能体
+	for _, a := range assistantList {
+		// 校验智能体是否存在
+		if !validIds[a.AssistantId] {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("assistant not found: %s", a.AssistantId))
+		}
+
+		// 校验智能体是否已发布
+		appInfo, err := app.GetAppInfo(ctx.Request.Context(), &app_service.GetAppInfoReq{
+			AppId:   a.AssistantId,
+			AppType: constant.AppTypeAgent,
+		})
+		if err != nil || appInfo.PublishType == "" {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("assistant not published: %s", a.AssistantId))
+		}
+
+		// 校验智能体类型：通用智能体只支持单智能体
+		info := assistantInfos[a.AssistantId]
+		if info != nil && info.Category != constant.AgentCategorySingle {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("assistant must be single agent: %s", a.AssistantId))
 		}
 	}
-
-	for _, t := range toolList {
-		switch t.ToolType {
-		case constant.ToolTypeBuiltIn:
-			// 验证 tool 是否存在
-			toolResp, err := mcp.GetSquareTool(ctx.Request.Context(), &mcp_service.GetSquareToolReq{
-				ToolSquareId: t.ToolId,
-				Identity: &mcp_service.Identity{
-					UserId: userId,
-					OrgId:  orgId,
-				},
-			})
-			if err != nil {
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("tool not found: %s", t.ToolId))
-			}
-
-			// 验证 tool 是否在 wga 工具列表中
-			if !validToolTitles[toolResp.Info.Name] {
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("tool not allowed for wga: %s", toolResp.Info.Name))
-			}
-		}
-	}
-
 	return nil
 }
 
-// checkWgaAssistantConfig 校验wga智能体配置（用于更新配置）
-func checkWgaAssistantConfig(ctx *gin.Context, userId, orgId string, assistantList []*assistant_service.WgaConfigAssistant) error {
-	// 验证 assistant 是否存在且是单智能体
-	if len(assistantList) > 0 {
-		assistantIds := make([]string, 0, len(assistantList))
-		for _, a := range assistantList {
-			assistantIds = append(assistantIds, a.AssistantId)
+// --- internal wga mcp ---
+
+// checkWgaMCPConfig 校验wga MCP配置（用于更新配置）
+func checkWgaMCPConfig(ctx *gin.Context, userId, orgId string, mcpList []*assistant_service.WgaConfigMcp) error {
+	if len(mcpList) == 0 {
+		return nil
+	}
+
+	var mcpCustomIds, mcpServerIds []string
+	for _, m := range mcpList {
+		switch m.McpType {
+		case constant.MCPTypeMCP:
+			mcpCustomIds = append(mcpCustomIds, m.McpId)
+		case constant.MCPTypeMCPServer:
+			mcpServerIds = append(mcpServerIds, m.McpId)
+		default:
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("invalid mcp type: %s", m.McpType))
 		}
-		assistantResp, err := assistant.GetAssistantByIds(ctx.Request.Context(), &assistant_service.GetAssistantByIdsReq{
-			AssistantIdList: assistantIds,
-			Identity: &assistant_service.Identity{
+	}
+
+	validIds, mcpTypes, err := getValidMcpIds(ctx, mcpCustomIds, mcpServerIds)
+	if err != nil {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "mcp not found")
+	}
+
+	for _, m := range mcpList {
+		// 校验 MCP 是否存在
+		if !validIds[m.McpId] {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("mcp not found: %s", m.McpId))
+		}
+		// 校验 McpType 与 ID 是否匹配
+		if actualType, ok := mcpTypes[m.McpId]; !ok || actualType != m.McpType {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("mcp type mismatch: %s (expected %s, got %s)", m.McpId, m.McpType, actualType))
+		}
+	}
+	return nil
+}
+
+// --- internal wga workflow ---
+
+// checkWgaWorkflowConfig 校验wga Workflow配置（用于更新配置）
+func checkWgaWorkflowConfig(ctx *gin.Context, userId, orgId string, workflowList []*assistant_service.WgaConfigWorkflow) error {
+	if len(workflowList) == 0 {
+		return nil
+	}
+
+	workflowIds := make([]string, 0, len(workflowList))
+	for _, w := range workflowList {
+		workflowIds = append(workflowIds, w.WorkflowId)
+	}
+
+	validIds, err := getValidWorkflowIds(ctx, workflowIds)
+	if err != nil {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "workflow not found")
+	}
+
+	for _, w := range workflowList {
+		if !validIds[w.WorkflowId] {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("workflow not found: %s", w.WorkflowId))
+		}
+	}
+	return nil
+}
+
+func buildWgaWorkflowOptions(ctx *gin.Context, userId, orgId string, workflowList []*assistant_service.WgaConfigWorkflow) ([]wga_option.Option, error) {
+	if len(workflowList) == 0 {
+		return nil, nil
+	}
+
+	var workflowIDs []string
+	for _, wf := range workflowList {
+		workflowIDs = append(workflowIDs, wf.WorkflowId)
+	}
+	workflowSchemas, err := GetWorkflowSchemas(ctx, workflowIDs)
+	if err != nil {
+		return nil, err
+	}
+	var opts []wga_option.Option
+	for _, schema := range workflowSchemas {
+		opts = append(opts, wga_option.WithExtraTool(wga_option.ExtraTool{OpenAPI3Schema: schema}))
+	}
+	return opts, nil
+}
+
+// --- internal ---
+
+// getValidAssistantIds 批量获取有效的智能体ID映射
+// 返回: validIds - 有效ID映射, assistantInfos - 智能体信息映射, error
+func getValidAssistantIds(ctx *gin.Context, userId, orgId string, assistantIds []string) (map[string]bool, map[string]*assistant_service.AssistantBrief, error) {
+	if len(assistantIds) == 0 {
+		return make(map[string]bool), make(map[string]*assistant_service.AssistantBrief), nil
+	}
+	assistantResp, err := assistant.GetAssistantByIds(ctx.Request.Context(), &assistant_service.GetAssistantByIdsReq{
+		AssistantIdList: assistantIds,
+		Identity: &assistant_service.Identity{
+			UserId: userId,
+			OrgId:  orgId,
+		},
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	validIds := make(map[string]bool)
+	assistantInfos := make(map[string]*assistant_service.AssistantBrief)
+	for _, info := range assistantResp.AssistantInfos {
+		validIds[info.Info.AppId] = true
+		assistantInfos[info.Info.AppId] = info
+	}
+	return validIds, assistantInfos, nil
+}
+
+// getValidMcpIds 批量获取有效的MCP ID映射
+// 返回: validIds - 有效ID映射, mcpTypes - ID对应的类型映射(mcp/mcpserver), error
+func getValidMcpIds(ctx *gin.Context, mcpCustomIds, mcpServerIds []string) (map[string]bool, map[string]string, error) {
+	if len(mcpCustomIds) == 0 && len(mcpServerIds) == 0 {
+		return make(map[string]bool), make(map[string]string), nil
+	}
+	mcpResp, err := mcp.GetMCPByMCPIdList(ctx.Request.Context(), &mcp_service.GetMCPByMCPIdListReq{
+		McpIdList:       mcpCustomIds,
+		McpServerIdList: mcpServerIds,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	validIds := make(map[string]bool)
+	mcpTypes := make(map[string]string)
+	for _, item := range mcpResp.Infos {
+		validIds[item.McpId] = true
+		mcpTypes[item.McpId] = constant.MCPTypeMCP
+	}
+	for _, item := range mcpResp.Servers {
+		validIds[item.McpServerId] = true
+		mcpTypes[item.McpServerId] = constant.MCPTypeMCPServer
+	}
+	return validIds, mcpTypes, nil
+}
+
+// getValidWorkflowIds 批量获取有效的Workflow ID映射
+func getValidWorkflowIds(ctx *gin.Context, workflowIds []string) (map[string]bool, error) {
+	if len(workflowIds) == 0 {
+		return make(map[string]bool), nil
+	}
+	workflowResp, err := ListWorkflowByIDs(ctx, "", workflowIds)
+	if err != nil {
+		return nil, err
+	}
+	validIds := make(map[string]bool)
+	for _, w := range workflowResp.Workflows {
+		validIds[w.WorkflowId] = true
+	}
+	return validIds, nil
+}
+
+// getValidToolIds 批量获取有效的Tool ID映射
+func getValidToolIds(ctx *gin.Context, userId, orgId string, toolIds []string) (map[string]bool, error) {
+	if len(toolIds) == 0 {
+		return make(map[string]bool), nil
+	}
+	validIds := make(map[string]bool)
+	for _, toolId := range toolIds {
+		_, err := mcp.GetSquareTool(ctx.Request.Context(), &mcp_service.GetSquareToolReq{
+			ToolSquareId: toolId,
+			Identity: &mcp_service.Identity{
 				UserId: userId,
 				OrgId:  orgId,
 			},
 		})
-		if err != nil {
-			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "assistant not found")
-		}
-		if len(assistantResp.AssistantInfos) != len(assistantList) {
-			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "assistant not found")
-		}
-		// 验证所有 assistant 都是单智能体
-		for _, info := range assistantResp.AssistantInfos {
-			if info.Category != constant.AgentCategorySingle {
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("assistant not single agent: %s", info.Info.Name))
-			}
+		if err == nil {
+			validIds[toolId] = true
 		}
 	}
-	return nil
+	return validIds, nil
 }
 
 func buildWgaFileTree(dirPath, parentPath string) ([]response.GeneralAgentFileInfo, error) {

@@ -922,6 +922,15 @@ message WgaConfigAssistant {
   string assistantType = 2;
 }
 
+message WgaConfigMcp {
+  string mcpId = 1;
+  string mcpType = 2;
+}
+
+message WgaConfigWorkflow {
+  string workflowId = 1;
+}
+
 message WgaConversationConfig {
   string threadId = 1;
   string title = 2;
@@ -935,10 +944,12 @@ message WgaConversationConfig {
 message WgaConfig{
   repeated WgaConfigTool toolList = 1;
   repeated WgaConfigAssistant assistantList = 2;
-  string userId = 3;
-  string orgId = 4;
-  int64 createdAt = 5;
-  int64 updatedAt = 6;
+  repeated WgaConfigMcp mcpList = 3;
+  repeated WgaConfigWorkflow workflowList = 4;
+  string userId = 5;
+  string orgId = 6;
+  int64 createdAt = 7;
+  int64 updatedAt = 8;
 }
 
 message GetWgaConversationConfigReq {
@@ -968,4 +979,6 @@ message UpdateWgaConfigReq {
   repeated WgaConfigTool toolList = 1;
   repeated WgaConfigAssistant assistantList = 2;
   Identity identity = 3;
+  repeated WgaConfigMcp mcpList = 4;
+  repeated WgaConfigWorkflow workflowList = 5;
 }

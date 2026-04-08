@@ -20,7 +20,9 @@ import (
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	openapi3_util "github.com/UnicomAI/wanwu/pkg/openapi3-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 )
@@ -599,6 +601,46 @@ func RollbackWorkflowVersion(ctx *gin.Context, workflowID, version string) error
 			fmt.Sprintf("code %v msg %v", ret.Code, ret.Msg))
 	}
 	return nil
+}
+
+func GetWorkflowSchemas(ctx *gin.Context, workflowIDs []string) ([]*openapi3.T, error) {
+	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.ListSchemaUri)
+	resp, err := resty.New().
+		R().
+		SetContext(ctx.Request.Context()).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept", "application/json").
+		SetHeaders(workflowHttpReqHeader(ctx)).
+		SetBody(map[string]any{
+			"workflow_ids": workflowIDs,
+		}).
+		Post(url)
+
+	if err != nil {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_list_schema", err.Error())
+	}
+	if resp.StatusCode() >= 300 {
+		b, _ := io.ReadAll(resp.RawResponse.Body)
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_list_schema",
+			fmt.Sprintf("[%d] %s", resp.StatusCode(), string(b)))
+	}
+	var schemas []interface{}
+	if err := json.Unmarshal(resp.Body(), &schemas); err != nil {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_list_schema", fmt.Sprintf("failed to unmarshal schemas response: %v", err))
+	}
+	var ret []*openapi3.T
+	for _, schema := range schemas {
+		schemaBytes, err := json.Marshal(schema)
+		if err != nil {
+			return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_list_schema", fmt.Sprintf("failed to marshal schema: %v", err))
+		}
+		doc, err := openapi3_util.LoadFromData(ctx.Request.Context(), schemaBytes)
+		if err != nil {
+			return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_list_schema", fmt.Sprintf("failed to load schema: %v", err))
+		}
+		ret = append(ret, doc)
+	}
+	return ret, nil
 }
 
 // --- internal ---

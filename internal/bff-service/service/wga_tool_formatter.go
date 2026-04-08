@@ -2,9 +2,12 @@ package service
 
 import (
 	"encoding/json"
+	"os"
 
 	ag_ui_util "github.com/UnicomAI/wanwu/pkg/ag-ui-util"
 )
+
+var tavilyIconPath = os.Getenv("WANWU_EXTERNAL_ENDPOINT") + "/user/api/v1/cache/mcp/tool/tavilysearch/logo.png"
 
 func WgaFormatBochaWebSearchResult(result string) string {
 	var rawResponse struct {
@@ -94,7 +97,7 @@ func WgaFormatTavilySearchResult(result string) string {
 		formattedResult.WebPages = append(formattedResult.WebPages, ag_ui_util.WebPage{
 			Title:    page.Title,
 			SiteName: "Tavily",
-			Icon:     "https://imgbed-1303886329.cos.ap-nanjing.myqcloud.com/20260327144847.png",
+			Icon:     tavilyIconPath,
 			Summary:  summary,
 			URL:      page.URL,
 		})
