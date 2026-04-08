@@ -186,6 +186,19 @@
               </div>
             </div>
 
+            <!-- 模型选择 -->
+            <div style="margin-bottom: 12px">
+              <ModelSelect
+                v-model="selectedModel"
+                :options="modelList"
+                placeholder="选择模型"
+                :loading="modelLoading"
+                :filterable="true"
+                @change="handleModelChange"
+                class="model-select-inline"
+              />
+            </div>
+
             <!-- 输入框 -->
             <div class="input-wrapper">
               <el-input
@@ -199,21 +212,22 @@
               />
             </div>
 
-            <!-- 底部工具栏：模型选择 + 发送按钮 -->
+            <!-- 底部工具栏：配置按钮 + 发送按钮 -->
             <div class="input-toolbar">
               <div class="toolbar-left">
-                <ModelSelect
-                  v-model="selectedModel"
-                  :options="modelList"
-                  placeholder="选择模型"
-                  :loading="modelLoading"
-                  :filterable="true"
-                  @change="handleModelChange"
-                  class="model-select-inline"
-                />
                 <div class="config-btn" @click="showConfigDialog = true">
                   <i class="el-icon-setting"></i>
                   <span>配置</span>
+                </div>
+                <!-- 已选模式标签 -->
+                <div
+                  v-for="mode in selectedModes"
+                  :key="mode.value"
+                  class="mode-tag"
+                >
+                  <i :class="mode.icon"></i>
+                  <span>{{ mode.label }}</span>
+                  <i class="el-icon-close" @click="removeMode(mode.value)"></i>
                 </div>
               </div>
               <div class="toolbar-right">
@@ -269,7 +283,18 @@
               </div>
             </div>
           </div>
-          <div v-if="!isEmptyConversation" class="input-footer">
+          <div v-if="selectedModes.length === 0" class="mode-buttons">
+            <div
+              v-for="(mode, key) in modeOptions"
+              :key="key"
+              class="mode-btn"
+              @click="addMode(mode.value)"
+            >
+              <i :class="mode.icon"></i>
+              <span>{{ mode.label }}</span>
+            </div>
+          </div>
+          <div class="input-footer">
             <span>通用智能体 · 内容由 AI 生成，仅供参考</span>
           </div>
         </div>
@@ -399,6 +424,46 @@ export default {
       userHasScrolled: false,
       showScrollToBottom: false,
       isAutoScrolling: false,
+
+      // 模式选择
+      selectedModes: [],
+      modeOptions: {
+        research: {
+          label: '深度研究',
+          icon: 'el-icon-aim',
+          value: 'research',
+        },
+        ppt: {
+          label: '创建ppt',
+          icon: 'el-icon-document',
+          value: 'ppt',
+        },
+        excel: {
+          label: '创建excel',
+          icon: 'el-icon-s-grid',
+          value: 'excel',
+        },
+        web: {
+          label: '创建网页',
+          icon: 'el-icon-monitor',
+          value: 'web',
+        },
+        // video: {
+        //   label: '创建视频',
+        //   icon: 'el-icon-video-camera',
+        //   value: 'video',
+        // },
+        // skill: {
+        //   label: '创建skill',
+        //   icon: 'el-icon-cpu',
+        //   value: 'skill',
+        // },
+        // 'data-analysis': {
+        //   label: '数据分析',
+        //   icon: 'el-icon-data-analysis',
+        //   value: 'data-analysis',
+        // },
+      },
     };
   },
   computed: {
@@ -553,6 +618,23 @@ export default {
       }
     },
 
+    addMode(modeValue) {
+      // 避免重复添加
+      if (this.selectedModes.find(m => m.value === modeValue)) {
+        return;
+      }
+      const mode = this.modeOptions[modeValue];
+      if (mode) {
+        this.selectedModes.push({ ...mode });
+      }
+    },
+
+    removeMode(modeValue) {
+      this.selectedModes = this.selectedModes.filter(
+        m => m.value !== modeValue,
+      );
+    },
+
     setupResizeObserver() {
       if (typeof ResizeObserver === 'undefined') return;
       this.resizeObserver = new ResizeObserver(() => {
@@ -630,6 +712,8 @@ export default {
       // 重置滚动状态
       this.userHasScrolled = false;
       this.showScrollToBottom = false;
+      // 重置模式选择
+      this.selectedModes = [];
       // 关闭工作区面板
       this.hidePanel();
       this.$nextTick(() => {
@@ -700,6 +784,8 @@ export default {
       this.isLoadingHistory = true;
       this.userHasScrolled = false;
       this.showScrollToBottom = false;
+      // 重置模式选择
+      this.selectedModes = [];
       this.hidePanel();
       this.fetchHistory();
     },
@@ -2526,10 +2612,6 @@ $message-max-width: 900px;
         font-weight: 600;
       }
     }
-
-    .input-footer {
-      display: none;
-    }
   }
 
   &:not(.is-centered) {
@@ -2853,6 +2935,48 @@ $message-max-width: 900px;
     }
   }
 
+  // 模式标签样式
+  .mode-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px 4px 12px;
+    border-radius: 16px;
+    background: rgba($claude-primary, 0.08);
+    border: 1px solid rgba($claude-primary, 0.2);
+    color: $claude-primary;
+    font-size: 13px;
+    font-weight: 500;
+    animation: mode-tag-enter 0.2s ease;
+
+    i:first-child {
+      font-size: 14px;
+    }
+
+    .el-icon-close {
+      font-size: 12px;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 50%;
+      transition: all 0.2s;
+
+      &:hover {
+        background: rgba($claude-primary, 0.2);
+      }
+    }
+  }
+
+  @keyframes mode-tag-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
   .model-option {
     display: flex;
     align-items: center;
@@ -2882,6 +3006,46 @@ $message-max-width: 900px;
     font-size: 12px;
     color: $claude-text-muted;
     margin-top: 12px;
+  }
+
+  // 模式按钮样式
+  .mode-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+
+    .mode-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid $claude-border;
+      background: #fff;
+      color: $claude-text-secondary;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+
+      i {
+        font-size: 14px;
+      }
+
+      &:hover {
+        background: rgba($claude-primary, 0.06);
+        border-color: rgba($claude-primary, 0.3);
+        color: $claude-primary;
+      }
+
+      .el-icon--right {
+        margin-left: 0;
+        font-size: 12px;
+      }
+    }
   }
 }
 
