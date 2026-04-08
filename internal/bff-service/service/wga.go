@@ -416,12 +416,12 @@ func GetGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string, r
 		ModelConfig: request.AppModelConfig{},
 	}
 
-	// 处理模型配置 - 需要验证模型是否存在
+	// 处理模型配置 - 需要验证模型是否存在且已启用
 	if wgaConfig.ModelConfig != nil && wgaConfig.ModelConfig.ModelId != "" {
 		// 验证模型是否存在
 		modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: wgaConfig.ModelConfig.ModelId})
-		if err == nil && modelInfo != nil {
-			// 模型存在，返回配置
+		if err == nil && modelInfo != nil && modelInfo.IsActive {
+			// 模型存在且已启用，返回配置
 			result.ModelConfig = request.AppModelConfig{
 				Provider:    wgaConfig.ModelConfig.Provider,
 				Model:       wgaConfig.ModelConfig.Model,
@@ -430,7 +430,7 @@ func GetGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string, r
 				DisplayName: modelInfo.DisplayName,
 			}
 		}
-		// 如果模型不存在，返回空的 ModelConfig
+		// 如果模型不存在或未启用，返回空的 ModelConfig
 	}
 
 	return result, nil
@@ -683,6 +683,10 @@ func checkModelConfig(ctx *gin.Context, modelConfig *request.AppModelConfig) err
 	if err != nil {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
 	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
+	}
 	// 校验 model 名称是否匹配
 	if modelInfo.Model != modelConfig.Model {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model name mismatch: expected %s, got %s", modelInfo.Model, modelConfig.Model))
@@ -699,6 +703,10 @@ func checkModelConfigFromProto(ctx *gin.Context, modelConfig *common.AppModelCon
 	if err != nil {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
 	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
+	}
 	if modelInfo.Model != modelConfig.Model {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model name mismatch: expected %s, got %s", modelInfo.Model, modelConfig.Model))
 	}
@@ -714,6 +722,10 @@ func buildWgaModelOption(ctx *gin.Context, modelConfig *common.AppModelConfig) (
 	modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: modelConfig.ModelId})
 	if err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model not found: %s", modelConfig.ModelId))
+	}
+	// 校验模型是否已启用
+	if !modelInfo.IsActive {
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("model is not active: %s", modelConfig.ModelId))
 	}
 
 	endpoint := mp.ToModelEndpoint(modelConfig.ModelId, modelConfig.Model)
