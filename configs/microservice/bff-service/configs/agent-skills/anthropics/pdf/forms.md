@@ -1,54 +1,5 @@
 **CRITICAL: You MUST complete these steps in order. Do not skip ahead to writing code.**
 
-## Font Support
-
-This skill includes automatic font support with intelligent selection:
-
-### Font Selection Rules
-
-The system automatically selects fonts based on text content:
-- **Chinese characters** → Noto Serif CJK SC (宋体)
-- **English text and numbers** → Times New Roman (新罗马)
-
-### Automatic Font Detection
-
-When filling forms, the system automatically:
-1. **Detects text type**: Identifies Chinese vs English/numbers
-2. **Selects appropriate font**: 
-   - Chinese text → 宋体 (Noto Serif CJK SC)
-   - English/numbers → 新罗马 (Times New Roman)
-3. **No manual configuration needed**: Simply include your text - the system handles font selection
-
-**Example**:
-```json
-{
-  "form_fields": [
-    {
-      "entry_text": {
-        "text": "张三",  // Will use 宋体
-        "font_size": 12
-      }
-    },
-    {
-      "entry_text": {
-        "text": "John Smith",  // Will use 新罗马
-        "font_size": 12
-      }
-    },
-    {
-      "entry_text": {
-        "text": "ID: 12345",  // Will use 新罗马
-        "font_size": 12
-      }
-    }
-  ]
-}
-```
-
-For more details on font support, see SKILL.md.
-
----
-
 If you need to fill out a PDF form, first check to see if the PDF has fillable form fields. Run this script from this file's directory:
  `python scripts/check_fillable_fields <file.pdf>`, and depending on the result go to either the "Fillable fields" or "Non-fillable fields" and follow those instructions.
 

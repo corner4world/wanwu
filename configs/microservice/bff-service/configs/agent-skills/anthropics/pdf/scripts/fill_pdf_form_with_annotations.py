@@ -1,43 +1,8 @@
 import json
-import re
 import sys
 
 from pypdf import PdfReader, PdfWriter
 from pypdf.annotations import FreeText
-
-
-def contains_chinese(text):
-    chinese_pattern = re.compile(r'[\u4e00-\u9fff]+')
-    return bool(chinese_pattern.search(text))
-
-
-def get_chinese_font():
-    try:
-        from register_fonts import register_chinese_fonts, get_chinese_font_name
-        register_chinese_fonts()
-        return get_chinese_font_name()
-    except Exception as e:
-        print(f"Warning: Could not register Chinese fonts: {e}")
-        return "Arial"
-
-
-def get_english_font():
-    try:
-        from register_fonts import register_chinese_fonts, get_english_font_name
-        register_chinese_fonts()
-        return get_english_font_name()
-    except Exception as e:
-        print(f"Warning: Could not register English fonts: {e}")
-        return "Arial"
-
-
-def select_font_for_text(text, default_font="Arial"):
-    if contains_chinese(text):
-        chinese_font = get_chinese_font()
-        return chinese_font, "Chinese"
-    else:
-        english_font = get_english_font()
-        return english_font, "English"
 
 
 
@@ -80,9 +45,6 @@ def fill_pdf_form(input_pdf_path, fields_json_path, output_pdf_path):
         mediabox = page.mediabox
         pdf_dimensions[i + 1] = [mediabox.width, mediabox.height]
     
-    chinese_font = get_chinese_font()
-    english_font = get_english_font()
-    
     annotations = []
     for field in fields_data["form_fields"]:
         page_num = field["page_number"]
@@ -114,13 +76,6 @@ def fill_pdf_form(input_pdf_path, fields_json_path, output_pdf_path):
         font_name = entry_text.get("font", "Arial")
         font_size = str(entry_text.get("font_size", 14)) + "pt"
         font_color = entry_text.get("font_color", "000000")
-        
-        if font_name == "Arial":
-            font_name, font_type = select_font_for_text(text)
-            if font_type == "Chinese":
-                print(f"Using Chinese font (宋体) '{font_name}' for text: {text[:20]}...")
-            else:
-                print(f"Using English font (新罗马) '{font_name}' for text: {text[:20]}...")
 
         annotation = FreeText(
             text=text,

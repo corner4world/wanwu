@@ -170,7 +170,7 @@
                   },
                   "images": {
                     "type": "array",
-                    "description": "输入图像的 URL 或 Base64 编码数据。支持传入1-3张图像。多图输入时,按照数组顺序定义图像顺序。",
+                    "description": "输入图像的 URL 或 Base64 编码数据。支持传入1-3张图像。多图输入时,按照数组顺序定义图像顺序。图像格式:JPG、JPEG、PNG、BMP、TIFF、WEBP和GIF,Base64 编码示例:data:image/jpeg;base64,GDU7MtCZz...",
                     "minItems": 1,
                     "maxItems": 3,
                     "items": {
@@ -302,7 +302,7 @@
                   },
                   "images": {
                     "type": "array",
-                    "description": "输入图像的 URL 或 Base64 编码数据。支持传入1-3张图像。多图输入时,按照数组顺序定义图像顺序。",
+                    "description": "输入图像的 URL 或 Base64 编码数据。支持传入1-3张图像。多图输入时,按照数组顺序定义图像顺序。图像格式:JPG、JPEG、PNG、BMP、TIFF、WEBP和GIF,Base64 编码示例:data:image/jpeg;base64,GDU7MtCZz...",
                     "minItems": 1,
                     "maxItems": 3,
                     "items": {
@@ -434,7 +434,7 @@
                   },
                   "images": {
                     "type": "array",
-                    "description": "输入图像的 URL 或 Base64 编码数据。支持传入1-3张图像。多图输入时,按照数组顺序定义图像顺序。",
+                    "description": "输入图像的 URL 或 Base64 编码数据。支持传入1-3张图像。多图输入时,按照数组顺序定义图像顺序。图像格式:JPG、JPEG、PNG、BMP、TIFF、WEBP和GIF,Base64 编码示例:data:image/jpeg;base64,GDU7MtCZz...",
                     "minItems": 1,
                     "maxItems": 3,
                     "items": {

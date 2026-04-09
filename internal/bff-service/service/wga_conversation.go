@@ -107,19 +107,19 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 		ExcludedAgentNames: []string{
 			"Supervisor Agent",
 		},
-		ResultFormatters: map[string]func(string) string{
-			"bocha_comprehensive_search": WgaFormatBochaWebSearchResult,
-			"bocha_web_search_only":      WgaFormatBochaWebSearchResult,
-			"bocha_search_structured":    WgaFormatBochaWebSearchResult,
-			"bocha_search_day":           WgaFormatBochaWebSearchResult,
-			"bocha_search_last_week":     WgaFormatBochaWebSearchResult,
-			"tavily_basic_search":        WgaFormatTavilySearchResult,
-			"tavily_deep_search":         WgaFormatTavilySearchResult,
-			"tavily_day_search":          WgaFormatTavilySearchResult,
-			"tavily_week_search":         WgaFormatTavilySearchResult,
-			"tavily_image_search":        WgaFormatTavilySearchResult,
-			"tavily_date_search":         WgaFormatTavilySearchResult,
-		},
+		// ResultFormatters: map[string]func(string) string{
+		// 	"bocha_comprehensive_search": WgaFormatBochaWebSearchResult,
+		// 	"bocha_web_search_only":      WgaFormatBochaWebSearchResult,
+		// 	"bocha_search_structured":    WgaFormatBochaWebSearchResult,
+		// 	"bocha_search_day":           WgaFormatBochaWebSearchResult,
+		// 	"bocha_search_last_week":     WgaFormatBochaWebSearchResult,
+		// 	"tavily_basic_search":        WgaFormatTavilySearchResult,
+		// 	"tavily_deep_search":         WgaFormatTavilySearchResult,
+		// 	"tavily_day_search":          WgaFormatTavilySearchResult,
+		// 	"tavily_week_search":         WgaFormatTavilySearchResult,
+		// 	"tavily_image_search":        WgaFormatTavilySearchResult,
+		// 	"tavily_date_search":         WgaFormatTavilySearchResult,
+		// },
 	}
 
 	processor := ag_ui_util.NewStreamProcessor(processorConfig)
