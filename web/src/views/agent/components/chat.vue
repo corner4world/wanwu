@@ -101,6 +101,7 @@ import {
   getRecommendQuestionUrl,
   getConversationDraftHistory,
   delConversationDraft,
+  clearConversation,
 } from '@/api/agent';
 import sseMethod from '@/mixins/sseMethod';
 import { md } from '@/mixins/markdown-it';
@@ -772,6 +773,14 @@ export default {
       if (this.chatType === 'test') {
         const res = await delConversationDraft({
           assistantId: this.editForm.assistantId,
+        });
+        if (res.code === 0) {
+          this.clearHistory();
+        }
+      } else if (this.chatType === 'chat') {
+        // 探索广场页面清空对话，需要调用后端接口清除ES数据
+        const res = await clearConversation({
+          conversationId: this.conversationId,
         });
         if (res.code === 0) {
           this.clearHistory();
