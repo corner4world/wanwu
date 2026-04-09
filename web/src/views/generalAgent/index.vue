@@ -690,6 +690,13 @@ export default {
     async fetchHistory() {
       if (!this.currentThreadId) return;
 
+      const streaming = this.streamingMap[this.currentThreadId];
+      if (streaming && streaming.isStreaming) {
+        this.isLoadingHistory = false;
+        this.loadConfig();
+        return;
+      }
+
       try {
         const res = await getGeneralAgentConversationDetail({
           threadId: this.currentThreadId,
@@ -707,42 +714,7 @@ export default {
             }
             if (run.runId) this.currentRunId = run.runId;
           });
-          console.log('allMessages', allMessages);
 
-          // 检查是否有正在进行的流式传输
-          const streaming = this.streamingMap[this.currentThreadId];
-          const hasStreamingMessage =
-            streaming && streaming.isStreaming && streaming.streamingMessage;
-
-          // 如果有正在进行的流式消息，保留它
-          if (hasStreamingMessage) {
-            // 将历史消息和流式消息合并
-            const streamingMsg = streaming.streamingMessage;
-            // 检查流式消息是否已经在历史消息中（通过 messageId 或内容匹配）
-            const isDuplicate = allMessages.some(
-              msg =>
-                msg.id === streamingMsg.id ||
-                (msg.role === 'assistant' &&
-                  msg.content === streamingMsg.content),
-            );
-
-            if (!isDuplicate) {
-              allMessages.push(streamingMsg);
-            } else {
-              // 如果已存在，用流式消息替换历史消息（保留最新的流式内容）
-              const index = allMessages.findIndex(
-                msg =>
-                  msg.id === streamingMsg.id ||
-                  (msg.role === 'assistant' &&
-                    msg.content === streamingMsg.content),
-              );
-              if (index !== -1) {
-                allMessages[index] = streamingMsg;
-              }
-            }
-          }
-
-          // 使用 $set 确保响应式
           this.$set(this.messagesMap, this.currentThreadId, allMessages);
           // 先关闭加载状态，让消息列表渲染
           this.isLoadingHistory = false;
