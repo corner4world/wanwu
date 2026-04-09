@@ -1,26 +1,25 @@
-***
-
+---
 name: frontend-dev
 description: |
-Full-stack frontend development combining premium UI design, cinematic animations,
-AI-generated media assets, persuasive copywriting, and visual art. Builds complete,
-visually striking web pages with real media, advanced motion, and compelling copy.
-Use when: building landing pages, marketing sites, product pages, dashboards,
-generating media assets (image/video/audio/music), writing conversion copy,
-creating generative art, or implementing cinematic scroll animations.
+  Full-stack frontend development combining premium UI design, cinematic animations,
+  AI-generated media assets, persuasive copywriting, and visual art. Builds complete,
+  visually striking web pages with real media, advanced motion, and compelling copy.
+  Use when: building landing pages, marketing sites, product pages, dashboards,
+  generating media assets (image/video/audio/music), writing conversion copy,
+  creating generative art, or implementing cinematic scroll animations.
 license: MIT
 metadata:
-version: "1.0.0"
-category: frontend
-sources:
-\- Framer Motion documentation
-\- GSAP / GreenSock documentation
-\- Three.js documentation
-\- Tailwind CSS documentation
-\- React / Next.js documentation
-\- AIDA Framework (Elmo Lewis)
-\- p5.js documentation
-----------------------
+  version: "1.0.0"
+  category: frontend
+  sources:
+    - Framer Motion documentation
+    - GSAP / GreenSock documentation
+    - Three.js documentation
+    - Tailwind CSS documentation
+    - React / Next.js documentation
+    - AIDA Framework (Elmo Lewis)
+    - p5.js documentation
+---
 
 # Frontend Studio
 
