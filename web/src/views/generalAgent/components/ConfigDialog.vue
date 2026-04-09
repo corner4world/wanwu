@@ -711,12 +711,14 @@ export default {
 
   .el-dialog__body {
     padding: 0;
+    max-height: 50vh;
+    display: flex;
+    flex-direction: column;
   }
 
   .dialog-body {
     overflow-y: auto;
     padding: 16px 20px;
-    max-height: calc(80vh - 60px);
   }
 
   .dialog-footer {
