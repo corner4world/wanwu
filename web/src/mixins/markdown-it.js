@@ -1,12 +1,12 @@
 import MarkdownIt from 'markdown-it';
 import mk from '@ruanyf/markdown-it-katex';
 import { i18n } from '@/lang';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/atom-one-dark.css';
 
+let hljs = require('highlight.js');
 hljs.configure({
   lineNumbers: true,
 });
+import 'highlight.js/styles/atom-one-dark.css';
 
 export const md = MarkdownIt({
   // 在源码中启用 HTML 标签
@@ -16,22 +16,20 @@ export const md = MarkdownIt({
     // 经过highlight.js处理后的html
     let preCode = '';
     try {
-      if (lang && hljs && hljs.getLanguage(lang)) {
+      if (lang && hljs.getLanguage(lang)) {
         preCode = hljs.highlight(str, { language: lang }).value;
-      } else if (hljs) {
-        preCode = hljs.highlightAuto(str).value;
       } else {
-        preCode = md.utils.escapeHtml(str);
+        preCode = hljs.highlightAuto(str).value;
       }
     } catch (err) {
       preCode = md.utils.escapeHtml(str);
     }
 
-    const lines = preCode.split(/\n/);
-    if (lines[lines.length - 1] === '') lines.pop(); // 移除最后一行多余换行符
+    const lines = preCode.split(/\n/).slice(0, -1);
+    let _lines = lines.filter((it, i) => it !== '');
 
     // 添加自定义行号
-    let html = lines
+    let html = _lines
       .map((item, index) => {
         return (
           '<li class="line-li"><span class="line-numbers-rows"></span>' +
@@ -46,7 +44,7 @@ export const md = MarkdownIt({
     let htmlCode = `<div style="color: #888;border-radius: 0 0 5px 5px;">`;
 
     htmlCode += `<div class="code-header">`;
-    htmlCode += `${lang || ''}<a class="copy-btn mk-copy-btn" style="cursor: pointer;">${i18n.t('common.button.copy')} </a>`;
+    htmlCode += `${lang}<a class="copy-btn mk-copy-btn" style="cursor: pointer;">${i18n.t('common.button.copy')} </a>`;
     htmlCode += `</div>`;
 
     htmlCode += `<pre class="hljs" style="padding:0 10px!important;margin-bottom:5px;overflow: auto;display: block;border-radius: 5px;"><code>${html}</code></pre>`;

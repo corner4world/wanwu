@@ -26,11 +26,7 @@
             <p>{{ editForm.desc || '' }}</p>
             <p>
               uuid: {{ this.editForm.appId }}
-              <copyIcon
-                :text="this.editForm.appId"
-                :onlyIcon="true"
-                size="mini"
-              />
+              <copyIcon :text="this.editForm.appId" type="icon" />
             </p>
           </div>
         </div>

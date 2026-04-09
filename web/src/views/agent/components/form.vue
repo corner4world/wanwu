@@ -45,11 +45,7 @@
             </el-tooltip>
             <p>
               uuid: {{ this.editForm.uuid }}
-              <copyIcon
-                :text="this.editForm.uuid"
-                :onlyIcon="true"
-                size="mini"
-              />
+              <copyIcon :text="this.editForm.uuid" type="icon" />
             </p>
           </div>
         </div>
