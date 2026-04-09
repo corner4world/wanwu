@@ -877,7 +877,7 @@ export default {
                     if (!hasInParent) {
                       const isTextChunk =
                         data.eventType ===
-                        AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.EVENT_TYPE;
+                        AGENT_MESSAGE_CONFIG.SUB_TEXT.EVENT_TYPE;
 
                       // 若为正文片段，直接强转类型，并将其整体obj放入父序列
                       if (isTextChunk) {

@@ -30,7 +30,7 @@ export const AGENT_MESSAGE_CONFIG = {
     CONVERSATION_TYPE: 'agentThink',
   },
   // 智能体-子会话正文文本分段
-  AGENT_SKILL_TEXT: {
+  SUB_TEXT: {
     EVENT_TYPE: 20,
     CONVERSATION_TYPE: 'subText',
   },

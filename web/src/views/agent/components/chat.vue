@@ -681,7 +681,7 @@ export default {
                   // 如果是文本片段扩展，则将其吸收为父容器内的正文，不作为独立卡片显示
                   if (
                     m.conversationType ===
-                    AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.CONVERSATION_TYPE
+                    AGENT_MESSAGE_CONFIG.SUB_TEXT.CONVERSATION_TYPE
                   ) {
                     parent.messageSequence.push({
                       type: 'main',
@@ -713,7 +713,7 @@ export default {
                 }
               } else if (
                 m.conversationType !==
-                AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.CONVERSATION_TYPE
+                AGENT_MESSAGE_CONFIG.SUB_TEXT.CONVERSATION_TYPE
               ) {
                 // 顶级项且不是文本分段时，才登记入主序列
                 sequence.push({
