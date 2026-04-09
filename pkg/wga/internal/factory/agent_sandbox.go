@@ -149,5 +149,17 @@ func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Mess
 		opts = append(opts, wga_sandbox_option.WithTools(tools))
 	}
 
+	// 传递 MCP 服务器
+	if len(a.options.MCPs) > 0 {
+		mcps := make([]wga_sandbox_option.MCP, len(a.options.MCPs))
+		for i, mcp := range a.options.MCPs {
+			mcps[i] = wga_sandbox_option.MCP{
+				Name:   mcp.Name,
+				SSEURL: mcp.SSEURL,
+			}
+		}
+		opts = append(opts, wga_sandbox_option.WithMCPs(mcps))
+	}
+
 	return opts, nil
 }

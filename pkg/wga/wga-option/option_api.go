@@ -10,6 +10,7 @@ type Option = option.Option
 type ModelConfig = option.ModelConfig
 type ToolConfig = option.ToolConfig
 type ExtraTool = option.ExtraTool
+type MCP = option.MCP
 type RunSession = option.RunSession
 
 type CheckResult = option.CheckResult
@@ -31,6 +32,11 @@ func WithToolConfig(tool ToolConfig) Option {
 // 工具标题不能与配置文件中的工具重复，也不能与已添加的额外工具重复。
 func WithExtraTool(tool ExtraTool) Option {
 	return option.WithExtraTool(tool)
+}
+
+// WithMCP 添加 MCP 服务器。
+func WithMCP(mcp MCP) Option {
+	return option.WithMCP(mcp)
 }
 
 // WithInputDir 设置输入目录。

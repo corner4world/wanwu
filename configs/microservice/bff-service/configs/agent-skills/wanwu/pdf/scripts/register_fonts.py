@@ -5,9 +5,25 @@ from pathlib import Path
 
 def register_chinese_fonts():
     from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.cidfonts import UnicodeCIDFont
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.lib.fonts import addMapping
     
+    registered_fonts = {}
+    
+    # 优先使用 CIDFont（无需字体文件，PDF阅读器内置）
+    try:
+        pdfmetrics.registerFont(UnicodeCIDFont('STSong-Light'))
+        registered_fonts['STSong-Light'] = {
+            'path': 'CIDFont (Built-in)',
+            'description': '宋体 (CIDFont)'
+        }
+        print(f"✓ Registered CIDFont: STSong-Light (宋体) - Built-in, no file needed")
+    except Exception as e:
+        print(f"✗ Failed to register STSong-Light CIDFont: {e}")
+    
+    # 备选：使用 TTF 字体（需要字体文件）
+    # 注意：跳过 .ttc 文件，因为 reportlab 不支持 TTC 格式
     font_dirs = [
         '/usr/share/fonts/truetype/noto',
         '/usr/share/fonts/truetype/wqy',
@@ -19,33 +35,33 @@ def register_chinese_fonts():
     fonts_to_register = {
         'NotoSerifCJK': {
             'files': {
-                'regular': ['NotoSerifCJK-Regular.ttc', 'NotoSerifCJKsc-Regular.otf'],
-                'bold': ['NotoSerifCJK-Bold.ttc', 'NotoSerifCJKsc-Bold.otf'],
+                'regular': ['NotoSerifCJKsc-Regular.otf'],  # 使用 OTF，跳过 TTC
+                'bold': ['NotoSerifCJKsc-Bold.otf'],
             },
             'family': 'Noto Serif CJK SC',
-            'description': '宋体'
+            'description': '宋体 (OTF)'
         },
         'NotoSansCJK': {
             'files': {
-                'regular': ['NotoSansCJK-Regular.ttc', 'NotoSansCJKsc-Regular.otf'],
-                'bold': ['NotoSansCJK-Bold.ttc', 'NotoSansCJKsc-Bold.otf'],
+                'regular': ['NotoSansCJKsc-Regular.otf'],  # 使用 OTF，跳过 TTC
+                'bold': ['NotoSansCJKsc-Bold.otf'],
             },
             'family': 'Noto Sans CJK',
-            'description': '黑体'
+            'description': '黑体 (OTF)'
         },
         'WenQuanYiZenHei': {
             'files': {
-                'regular': ['wqy-zenhei.ttc', 'WenQuanYiZenHei.ttf'],
+                'regular': ['WenQuanYiZenHei.ttf'],  # 使用 TTF
             },
             'family': 'WenQuanYi Zen Hei',
-            'description': '文泉驿正黑'
+            'description': '文泉驿正黑 (TTF)'
         },
         'WenQuanYiMicroHei': {
             'files': {
-                'regular': ['wqy-microhei.ttc', 'WenQuanYiMicroHei.ttf'],
+                'regular': ['WenQuanYiMicroHei.ttf'],  # 使用 TTF
             },
             'family': 'WenQuanYi Micro Hei',
-            'description': '文泉驿微米黑'
+            'description': '文泉驿微米黑 (TTF)'
         },
         'TimesNewRoman': {
             'files': {
@@ -55,15 +71,17 @@ def register_chinese_fonts():
                 'bolditalic': ['LiberationSerif-BoldItalic.ttf', 'TimesNewRomanBoldItalic.ttf'],
             },
             'family': 'Liberation Serif',
-            'description': '新罗马'
+            'description': '新罗马 (TTF)'
         }
     }
-    
-    registered_fonts = {}
     
     for font_name, font_info in fonts_to_register.items():
         for style, filenames in font_info['files'].items():
             for filename in filenames:
+                # 跳过 TTC 文件，reportlab 不支持
+                if filename.endswith('.ttc'):
+                    continue
+                    
                 found = False
                 for font_dir in font_dirs:
                     font_path = Path(font_dir) / filename
@@ -74,7 +92,7 @@ def register_chinese_fonts():
                                 'path': str(font_path),
                                 'description': font_info.get('description', font_name)
                             }
-                            print(f"✓ Registered font: {font_name} ({font_info.get('description', '')}) from {font_path}")
+                            print(f"✓ Registered: {font_name} ({font_info.get('description', '')}) from {font_path}")
                             found = True
                             break
                         except Exception as e:
@@ -110,6 +128,7 @@ def list_available_fonts():
 
 def get_chinese_font_name():
     preferred_fonts = [
+        'STSong-Light',  # CIDFont (优先，无需字体文件)
         'NotoSerifCJK',
         'NotoSansCJK',
         'WenQuanYiZenHei',
@@ -129,19 +148,40 @@ def get_chinese_font_name():
 
 
 def get_english_font_name():
-    preferred_fonts = [
-        'TimesNewRoman',
+    """
+    获取英文字体名称
+    
+    优先级：
+    1. Times-Roman (PDF内置，无需注册)
+    2. Liberation Serif (需要字体文件)
+    3. Helvetica (PDF内置，无需注册)
+    """
+    # PDF 内置字体，无需注册
+    # Times-Roman 是 PDF 标准字体，类似 Times New Roman
+    built_in_fonts = [
+        'Times-Roman',  # PDF 内置，类似新罗马
     ]
     
     from reportlab.pdfbase import pdfmetrics
     
-    for font_name in preferred_fonts:
+    # 首先尝试内置字体
+    for font_name in built_in_fonts:
         try:
             pdfmetrics.getFont(font_name)
             return font_name
         except:
             continue
     
+    # 然后尝试注册的字体
+    registered_fonts = ['TimesNewRoman']
+    for font_name in registered_fonts:
+        try:
+            pdfmetrics.getFont(font_name)
+            return font_name
+        except:
+            continue
+    
+    # 最后使用 Helvetica (PDF 内置)
     return 'Helvetica'
 
 
