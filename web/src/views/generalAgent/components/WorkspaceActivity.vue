@@ -9,9 +9,11 @@
         </svg>
       </div>
       <div class="activity-title">
-        <span class="title-text">工作空间已更新</span>
+        <span class="title-text">
+          {{ $t('generalAgent.workspaceActivity.updated') }}
+        </span>
         <span class="activity-badge" v-if="fileCount > 0">
-          {{ fileCount }} 个文件
+          {{ $t('generalAgent.workspaceActivity.files', { count: fileCount }) }}
         </span>
       </div>
     </div>
@@ -20,23 +22,27 @@
       <div class="activity-stats">
         <div class="stat-item">
           <span class="stat-value">{{ fileCount }}</span>
-          <span class="stat-label">文件</span>
+          <span class="stat-label">
+            {{ $t('generalAgent.workspaceActivity.fileLabel') }}
+          </span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
           <span class="stat-value">{{ formatSize(totalSize) }}</span>
-          <span class="stat-label">大小</span>
+          <span class="stat-label">
+            {{ $t('generalAgent.workspaceActivity.sizeLabel') }}
+          </span>
         </div>
       </div>
 
       <div class="activity-actions">
         <el-button size="mini" plain @click="handleViewWorkspace">
           <i class="el-icon-folder-opened"></i>
-          查看工作空间
+          {{ $t('generalAgent.workspaceActivity.viewWorkspace') }}
         </el-button>
         <el-button size="mini" plain @click="handleDownloadAll">
           <i class="el-icon-download"></i>
-          下载
+          {{ $t('generalAgent.workspaceActivity.download') }}
         </el-button>
       </div>
     </div>

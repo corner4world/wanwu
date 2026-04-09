@@ -27,7 +27,7 @@
         <div v-if="hasArgs" class="tool-section">
           <div class="section-label">
             <i class="el-icon-setting"></i>
-            <span>参数</span>
+            <span>{{ $t('generalAgent.toolCall.parameters') }}</span>
           </div>
           <div class="tool-arguments">
             <pre><code>{{ formattedArgs }}</code></pre>
@@ -38,7 +38,7 @@
         <div v-if="result" class="tool-section">
           <div class="section-label">
             <i class="el-icon-document"></i>
-            <span>结果</span>
+            <span>{{ $t('generalAgent.toolCall.result') }}</span>
             <span v-if="resultLength" class="result-length">
               {{ resultLength }}
             </span>
@@ -110,11 +110,11 @@ export default {
     statusText() {
       const status = this.toolCall.status;
       const texts = {
-        running: '执行中',
-        completed: '完成',
-        error: '失败',
+        running: this.$t('generalAgent.toolCall.running'),
+        completed: this.$t('generalAgent.toolCall.completed'),
+        error: this.$t('generalAgent.toolCall.failed'),
       };
-      return texts[status] || '待执行';
+      return texts[status] || this.$t('generalAgent.toolCall.pending');
     },
     hasArgs() {
       if (!this.toolCall.arguments) return false;
@@ -156,7 +156,7 @@ export default {
       if (len > 1024) {
         return `${(len / 1024).toFixed(1)} KB`;
       }
-      return `${len} 字符`;
+      return this.$t('generalAgent.toolCall.chars', { len });
     },
   },
   watch: {

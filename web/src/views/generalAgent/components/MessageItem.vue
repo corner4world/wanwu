@@ -309,14 +309,18 @@ export default {
           if (fragment.type === 'text' && fragment.content) {
             parts.push(fragment.content);
           } else if (fragment.type === 'reasoning' && fragment.content) {
-            parts.push(`【思考过程】\n${fragment.content}`);
+            parts.push(
+              this.$t('generalAgent.message.reasoning') + fragment.content,
+            );
           } else if (fragment.type === 'tool_call' && fragment.toolCall) {
             const tc = fragment.toolCall;
             parts.push(
-              `【工具调用】${tc.name}\n参数: ${tc.arguments || '{}'}\n结果: ${tc.result || '无'}`,
+              `${this.$t('generalAgent.message.toolCall')}${tc.name}\n${this.$t('generalAgent.message.args')}${tc.arguments || '{}'}\n${this.$t('generalAgent.message.result')}${tc.result || this.$t('generalAgent.message.none')}`,
             );
           } else if (fragment.type === 'activity' && fragment.fragments) {
-            parts.push(`【子智能体】${fragment.agentName || ''}`);
+            parts.push(
+              `${this.$t('generalAgent.message.subAgent')}${fragment.agentName || ''}`,
+            );
             processFragments(fragment.fragments);
           }
         });
@@ -328,12 +332,14 @@ export default {
       } else {
         // 兼容旧格式
         if (this.message.reasoning) {
-          parts.push(`【思考过程】\n${this.message.reasoning}`);
+          parts.push(
+            this.$t('generalAgent.message.reasoning') + this.message.reasoning,
+          );
         }
         if (this.message.toolCalls && this.message.toolCalls.length > 0) {
           this.message.toolCalls.forEach(tc => {
             parts.push(
-              `【工具调用】${tc.name}\n参数: ${tc.arguments || '{}'}\n结果: ${tc.result || '无'}`,
+              `${this.$t('generalAgent.message.toolCall')}${tc.name}\n${this.$t('generalAgent.message.args')}${tc.arguments || '{}'}\n${this.$t('generalAgent.message.result')}${tc.result || this.$t('generalAgent.message.none')}`,
             );
           });
         }

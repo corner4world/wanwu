@@ -15,7 +15,6 @@ export default {
      */
     handleSetFileId(fileInfo) {
       if (fileInfo && fileInfo.length > 0) {
-        console.log('fileInfo:', fileInfo);
         fileInfo.forEach(file => {
           this.uploadedFiles.push({
             name: file.fileName,

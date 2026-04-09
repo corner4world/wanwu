@@ -7,7 +7,7 @@
         @click="navigateTo('')"
       >
         <i class="el-icon-folder-opened"></i>
-        根目录
+        {{ $t('generalAgent.workspace.rootDir') }}
       </span>
       <template v-for="(part, index) in pathParts">
         <span :key="'sep-' + index" class="breadcrumb-sep">/</span>
@@ -27,7 +27,11 @@
     <div class="tree-info">
       <span class="info-item">
         <i class="el-icon-document"></i>
-        {{ workspaceInfo.fileCount }} 个文件
+        {{
+          $t('generalAgent.workspace.fileCount', {
+            count: workspaceInfo.fileCount,
+          })
+        }}
       </span>
       <span class="info-divider">|</span>
       <span class="info-item">

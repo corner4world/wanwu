@@ -13,10 +13,15 @@
             d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"
           />
         </svg>
-        <span class="header-title">工作空间</span>
+        <span class="header-title">
+          {{ $t('generalAgent.workspace.title') }}
+        </span>
       </div>
       <div class="header-actions">
-        <el-tooltip content="刷新" placement="bottom">
+        <el-tooltip
+          :content="$t('generalAgent.workspace.refresh')"
+          placement="bottom"
+        >
           <button
             class="header-btn"
             @click="refreshCurrent"
@@ -25,7 +30,10 @@
             <i :class="loading ? 'el-icon-loading' : 'el-icon-refresh'"></i>
           </button>
         </el-tooltip>
-        <el-tooltip content="关闭" placement="bottom">
+        <el-tooltip
+          :content="$t('generalAgent.workspace.close')"
+          placement="bottom"
+        >
           <button class="header-btn" @click="$emit('close')">
             <i class="el-icon-close"></i>
           </button>
@@ -37,7 +45,7 @@
       <!-- 加载状态 -->
       <div v-if="loading" class="loading-state">
         <i class="el-icon-loading"></i>
-        <span>加载中...</span>
+        <span>{{ $t('generalAgent.workspace.loading') }}</span>
       </div>
 
       <!-- 空状态 -->
@@ -54,8 +62,10 @@
             opacity="0.3"
           />
         </svg>
-        <span class="empty-text">暂无文件</span>
-        <span class="empty-hint">AI 生成的文件将显示在这里</span>
+        <span class="empty-text">{{ $t('generalAgent.workspace.empty') }}</span>
+        <span class="empty-hint">
+          {{ $t('generalAgent.workspace.emptyHint') }}
+        </span>
       </div>
 
       <!-- 文件树 -->
@@ -232,7 +242,9 @@ export default {
           this.files = this.processFiles(this.rootFiles);
         } else if (res.code !== 0) {
           console.error('[WorkspacePanel] API error:', res.msg);
-          this.$message.error(res.msg || '加载工作空间失败');
+          this.$message.error(
+            res.msg || this.$t('generalAgent.workspace.loadFailed'),
+          );
           this.workspaceInfo = {
             fileCount: 0,
             totalSize: 0,
@@ -243,7 +255,7 @@ export default {
         }
       } catch (error) {
         console.error('[WorkspacePanel] 加载工作空间失败:', error);
-        this.$message.error('加载工作空间失败，请稍后重试');
+        this.$message.error(this.$t('generalAgent.workspace.loadFailed'));
         this.workspaceInfo = {
           fileCount: 0,
           totalSize: 0,
@@ -298,10 +310,12 @@ export default {
           ? `${file.name}.zip`
           : file.name;
         resDownloadFile(blob, fileName);
-        this.$message.success('下载成功');
+        this.$message.success(
+          this.$t('generalAgent.workspace.downloadSuccess'),
+        );
       } catch (error) {
         console.error('下载文件失败:', error);
-        this.$message.error('下载文件失败');
+        this.$message.error(this.$t('generalAgent.workspace.downloadFailed'));
       }
     },
   },

@@ -10,7 +10,7 @@
             @click="initNewConversation"
           >
             <i class="el-icon-plus"></i>
-            新建对话
+            {{ $t('generalAgent.sidebar.newChat') }}
           </el-button>
         </div>
 
@@ -73,7 +73,7 @@
           <!-- 加载历史记录中 -->
           <div v-if="isLoadingHistory" class="history-loading">
             <i class="el-icon-loading"></i>
-            <span>加载中...</span>
+            <span>{{ $t('generalAgent.sidebar.loading') }}</span>
           </div>
 
           <!-- 消息列表 -->
@@ -139,7 +139,9 @@
               />
               <i v-else class="el-icon-cpu"></i>
             </div>
-            <div class="welcome-title">你好，我是万悟</div>
+            <div class="welcome-title">
+              {{ $t('generalAgent.header.welcomeTitle') }}
+            </div>
           </div>
 
           <div class="input-container">
@@ -217,7 +219,7 @@
               <div class="toolbar-left">
                 <div class="config-btn" @click="showConfigDialog = true">
                   <i class="el-icon-setting"></i>
-                  <span>配置</span>
+                  <span>{{ $t('generalAgent.header.config') }}</span>
                 </div>
                 <!-- 已选模式标签 -->
                 <div
@@ -237,7 +239,10 @@
                   @setFileId="handleSetFileId"
                 >
                   <template #default="{ openDialog }">
-                    <el-tooltip content="上传文件" placement="top">
+                    <el-tooltip
+                      :content="$t('generalAgent.header.uploadFile')"
+                      placement="top"
+                    >
                       <i
                         class="action-icon el-icon-paperclip"
                         @click="openDialog"
@@ -295,7 +300,7 @@
             </div>
           </div>
           <div class="input-footer">
-            <span>通用智能体 · 内容由 AI 生成，仅供参考</span>
+            <span>{{ $t('generalAgent.header.footer') }}</span>
           </div>
         </div>
       </div>
@@ -474,7 +479,7 @@ export default {
         }
       }
       // 默认 placeholder
-      return '选择一款模型,和我对话吧';
+      return this.$t('generalAgent.header.placeholder');
     },
   },
   watch: {
@@ -617,7 +622,7 @@ export default {
 
     async createConversationWithTitle(title) {
       if (!this.modelList || this.modelList.length === 0) {
-        this.$message.warning('模型列表加载中，请稍后重试');
+        this.$message.warning(this.$t('generalAgent.error.modelListLoading'));
         return null;
       }
 
@@ -658,10 +663,12 @@ export default {
           });
           return threadId;
         } else {
-          this.$message.error('创建对话失败：未返回对话ID');
+          this.$message.error(this.$t('generalAgent.error.createFailed'));
         }
       } else {
-        this.$message.error(res.msg || '创建对话失败');
+        this.$message.error(
+          res.msg || this.$t('generalAgent.error.createError'),
+        );
       }
       return null;
     },
@@ -799,7 +806,7 @@ export default {
         },
       });
       if (res.code === 0) {
-        this.$message.success('配置已保存');
+        this.$message.success(this.$t('generalAgent.config.saveSuccess'));
       }
     },
 
@@ -815,7 +822,9 @@ export default {
         const title = content.slice(0, 50);
         const threadId = await this.createConversationWithTitle(title);
         if (!threadId) {
-          this.$message.error('创建对话失败，请重试');
+          this.$message.error(
+            this.$t('generalAgent.error.createConversationFailed'),
+          );
           return;
         }
       }
@@ -833,7 +842,9 @@ export default {
 
     async startStreaming(userMessage) {
       if (!this.currentThreadId) {
-        this.$message.error('对话ID不存在，请刷新页面重试');
+        this.$message.error(
+          this.$t('generalAgent.error.conversationIdNotExist'),
+        );
         return;
       }
 
@@ -866,7 +877,9 @@ export default {
           onError: error => {
             console.error('SSE Error:', error);
             if (this.currentThreadId === streamingThreadId) {
-              this.$message.error('对话请求失败');
+              this.$message.error(
+                this.$t('generalAgent.error.chatRequestFailed'),
+              );
             }
             const streaming = this.streamingMap[streamingThreadId];
             if (streaming) {
@@ -883,7 +896,10 @@ export default {
           error.name !== 'AbortError' &&
           this.currentThreadId === streamingThreadId
         ) {
-          this.$message.error('发送消息失败: ' + (error.message || error));
+          this.$message.error(
+            this.$t('generalAgent.error.sendMessageFailed') +
+              (error.message || error),
+          );
         }
       } finally {
         const streaming = this.streamingMap[streamingThreadId];
@@ -962,10 +978,12 @@ export default {
           path: '',
         });
         resDownloadFile(blob, '工作空间.zip');
-        this.$message.success('下载成功');
+        this.$message.success(
+          this.$t('generalAgent.workspace.downloadSuccess'),
+        );
       } catch (error) {
         console.error('下载工作空间失败:', error);
-        this.$message.error('下载失败');
+        this.$message.error(this.$t('generalAgent.workspace.downloadFailed'));
       }
     },
 

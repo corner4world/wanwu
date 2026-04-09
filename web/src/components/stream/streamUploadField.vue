@@ -375,12 +375,17 @@ export default {
         this.fileInfo = [];
       }
       this.lastFileType = this.fileType;
-      this.fileInfo.push({
+      const fileInfoItem = {
         fileName,
         oldFileName,
         fileSize: this.fileList[this.fileIndex]['size'],
         fileUrl: fiePath,
-      });
+      };
+      // 如果是图片类型，添加 imgUrl 用于前端预览
+      if (this.fileType === 'image/*' && this.imgUrl) {
+        fileInfoItem.imgUrl = this.imgUrl;
+      }
+      this.fileInfo.push(fileInfoItem);
     },
     doBatchUpload() {
       this.$emit('setFileId', this.fileInfo);

@@ -10,7 +10,11 @@
           />
         </div>
         <span class="thinking-title">
-          {{ isStreaming ? '思考中...' : '思考过程' }}
+          {{
+            isStreaming
+              ? $t('generalAgent.thinking.thinking')
+              : $t('generalAgent.thinking.title')
+          }}
         </span>
       </div>
       <div class="header-right">
@@ -22,11 +26,15 @@
         </span>
         <div v-if="isStreaming" class="status-badge running">
           <span class="status-dot"></span>
-          <span class="status-text">执行中</span>
+          <span class="status-text">
+            {{ $t('generalAgent.thinking.running') }}
+          </span>
         </div>
         <div v-else class="status-badge completed">
           <span class="status-dot"></span>
-          <span class="status-text">完成</span>
+          <span class="status-text">
+            {{ $t('generalAgent.thinking.completed') }}
+          </span>
         </div>
       </div>
     </div>

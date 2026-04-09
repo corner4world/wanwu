@@ -9,7 +9,7 @@
       @close="handleClose"
     >
       <div slot="title" class="dialog-title">
-        <h3>配置</h3>
+        <h3>{{ $t('generalAgent.config.title') }}</h3>
       </div>
 
       <div class="dialog-body">
@@ -21,7 +21,7 @@
               :class="['tab-btn', { active: activeTab === 'tools' }]"
               @click="activeTab = 'tools'"
             >
-              工具
+              {{ $t('generalAgent.config.tools') }}
             </div>
             <!-- MCP 选择 -->
             <div
@@ -29,7 +29,7 @@
               :class="['tab-btn', { active: activeTab === 'mcp' }]"
               @click="activeTab = 'mcp'"
             >
-              MCP
+              {{ $t('generalAgent.config.mcp') }}
             </div>
             <!-- 工作流选择 -->
             <div
@@ -37,7 +37,7 @@
               :class="['tab-btn', { active: activeTab === 'workflows' }]"
               @click="activeTab = 'workflows'"
             >
-              工作流
+              {{ $t('generalAgent.config.workflows') }}
             </div>
             <!-- 智能体选择 -->
             <div
@@ -45,7 +45,7 @@
               :class="['tab-btn', { active: activeTab === 'assistants' }]"
               @click="activeTab = 'assistants'"
             >
-              智能体
+              {{ $t('generalAgent.config.agents') }}
             </div>
           </div>
 
@@ -72,7 +72,7 @@
                     v-if="validationErrors.has(categoryIndex)"
                     class="error-tip"
                   >
-                    ⚠️ 不满足选择条件
+                    {{ $t('generalAgent.config.validationError') }}
                   </span>
                 </div>
                 <div class="tool-list">
@@ -106,7 +106,7 @@
                         class="api-key-tip"
                       >
                         <i class="el-icon-warning"></i>
-                        需要配置 API Key
+                        {{ $t('generalAgent.config.needApiKey') }}
                       </div>
                     </div>
                     <el-checkbox
@@ -162,8 +162,12 @@
       </div>
 
       <div slot="footer" class="dialog-footer">
-        <el-button @click="handleCancel">取消</el-button>
-        <el-button type="primary" @click="handleConfirm">确定</el-button>
+        <el-button @click="handleCancel">
+          {{ $t('generalAgent.config.cancel') }}
+        </el-button>
+        <el-button type="primary" @click="handleConfirm">
+          {{ $t('generalAgent.config.confirm') }}
+        </el-button>
       </div>
     </el-dialog>
 
@@ -185,13 +189,15 @@
         />
       </div>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="handleApiKeyModalClose">取消</el-button>
+        <el-button @click="handleApiKeyModalClose">
+          {{ $t('generalAgent.config.cancel') }}
+        </el-button>
         <el-button
           type="primary"
           :loading="submitting"
           @click="handleApiKeySubmit"
         >
-          确定
+          {{ $t('generalAgent.config.confirm') }}
         </el-button>
       </div>
     </el-dialog>
@@ -401,7 +407,9 @@ export default {
         if (errors.size > 0) {
           this.activeTab = 'tools';
           this.validationErrors = errors;
-          this.$message.warning('请检查红色标记的分类,确保满足选择条件');
+          this.$message.warning(
+            this.$t('generalAgent.config.validationWarning'),
+          );
           return;
         }
 
@@ -432,7 +440,9 @@ export default {
       // 如果有工具缺少 API Key，提醒用户
       if (toolsWithoutApiKey.length > 0) {
         this.$message.warning(
-          `以下工具未配置 API Key，无法选中：${toolsWithoutApiKey.join('、')}`,
+          this.$t('generalAgent.config.missingApiKey', {
+            names: toolsWithoutApiKey.join('、'),
+          }),
         );
         return;
       }
@@ -477,7 +487,7 @@ export default {
       });
 
       if (res.code === 0) {
-        this.$message.success('配置保存成功');
+        this.$message.success(this.$t('generalAgent.config.saveSuccess'));
         // 触发确认事件,传递选中的工具和智能体列表
         this.$emit('confirm', {
           tools: allSelectedTools,
@@ -546,7 +556,7 @@ export default {
       if (!this.currentTool) return;
 
       if (!this.apiKeyValue.trim()) {
-        this.$message.warning('API Key 不能为空');
+        this.$message.warning(this.$t('generalAgent.config.apiKeyRequired'));
         return;
       }
 
@@ -564,7 +574,7 @@ export default {
         // 更新工具列表中的 apiKey
         this.updateToolApiKeyInList(toolId, this.apiKeyValue);
 
-        this.$message.success('API Key 保存成功');
+        this.$message.success(this.$t('generalAgent.config.apiKeySaveSuccess'));
         this.apiKeyModalVisible = false;
         this.currentTool = null;
         this.apiKeyValue = '';
@@ -579,7 +589,9 @@ export default {
         }
       } catch (error) {
         console.error('保存 API Key 失败:', error);
-        this.$message.error(error.msg || '保存失败，请重试');
+        this.$message.error(
+          error.msg || this.$t('generalAgent.config.apiKeySaveFailed'),
+        );
       } finally {
         this.submitting = false;
       }
@@ -638,9 +650,9 @@ export default {
 
     getConditionLabel(condition) {
       const labels = {
-        none: '无要求',
-        optional: '可选（至少选一个）',
-        required: '必选（每项都要选）',
+        none: this.$t('generalAgent.config.conditionLabels.none'),
+        optional: this.$t('generalAgent.config.conditionLabels.optional'),
+        required: this.$t('generalAgent.config.conditionLabels.required'),
       };
       return labels[condition] || condition;
     },
