@@ -19,12 +19,13 @@ import (
 
 // --- user excel import constants ---
 const (
-	ExcelHeaderUserName = "用户名"
-	ExcelHeaderPassword = "密码"
-	ExcelHeaderCompany  = "单位"
-	ExcelHeaderPhone    = "电话"
-	ExcelHeaderRole     = "角色"
-	ExcelHeaderRemark   = "备注"
+	ExcelHeaderUserName      = "用户名"
+	ExcelHeaderPassword      = "密码"
+	ExcelHeaderCompany       = "单位"
+	ExcelHeaderPhone         = "电话"
+	ExcelHeaderRole          = "角色"
+	ExcelHeaderRemark        = "备注"
+	MaxBatchCreateUsersLimit = 500
 )
 
 var requiredUserExcelHeaders = []string{
@@ -131,6 +132,9 @@ func ChangeUserPassword(ctx *gin.Context, userID, oldPwd, newPwd string) error {
 	if err != nil {
 		return fmt.Errorf("decrypt password err: %v", err)
 	}
+	if err := validatePassword(newPassword); err != nil {
+		return err
+	}
 	_, err = iam.UpdateUserPassword(ctx.Request.Context(), &iam_service.UpdateUserPasswordReq{
 		UserId:      userID,
 		OldPassword: oldPassword,
@@ -217,6 +221,10 @@ func CreateUserByFile(ctx *gin.Context, creatorID, orgID string) error {
 		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("parse excel err: %v", err))
 	}
 
+	if len(users) > MaxBatchCreateUsersLimit {
+		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("批量创建用户条数不能超过%d条", MaxBatchCreateUsersLimit))
+	}
+
 	for _, user := range users {
 		if err := validateUsername(user.UserName); err != nil {
 			return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("username %s: %v", user.UserName, err))
@@ -249,26 +257,34 @@ func parseUserExcel(fileData []byte) ([]*iam_service.CreateUsersInfo, error) {
 	}
 	defer func() { _ = wb.Close() }()
 
-	f := wb.F()
-	sheets := f.GetSheetList()
+	sheets, err := wb.GetSheets()
+	if err != nil {
+		return nil, fmt.Errorf("excel has no sheets")
+	}
 	if len(sheets) == 0 {
 		return nil, fmt.Errorf("excel has no sheets")
 	}
-	sheetName := sheets[0]
-	rows, err := f.GetRows(sheetName)
+	rows, err := wb.GetRows("")
 	if err != nil {
 		return nil, fmt.Errorf("invalid excel data")
 	}
 
-	headerMap := util.GetExcelHeaderColIndexes(rows, 0, requiredUserExcelHeaders)
-	for _, col := range requiredUserExcelHeaders {
-		if headerMap[col] == -1 {
-			return nil, fmt.Errorf("excel header invalid: missing %s", col)
+	if len(rows) == 0 {
+		return nil, fmt.Errorf("excel has no data rows")
+	}
+	headerRow := rows[0]
+	headerSet := make(map[string]bool)
+	for _, h := range headerRow {
+		headerSet[h] = true
+	}
+	for _, required := range requiredUserExcelHeaders {
+		if !headerSet[required] {
+			return nil, fmt.Errorf("excel header invalid: missing %s", required)
 		}
 	}
 
 	records, err := wb.ReadWithHeaderMapping(util.ReadWithHeaderMappingOptions{
-		Sheet:     sheetName,
+		Sheet:     "",
 		HeaderRow: 0,
 		HeaderMapping: map[string]string{
 			ExcelHeaderUserName: "userName",

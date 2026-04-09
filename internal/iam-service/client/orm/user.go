@@ -533,9 +533,13 @@ func (c *Client) UpdateUserPassword(ctx context.Context, userID uint32, pwd, new
 		if err := sqlopt.WithID(userID).Apply(tx).First(user).Error; err != nil {
 			return toErrStatus("iam_user_password_update", util.Int2Str(userID), err.Error())
 		}
-		// check password
+		// check old password
 		if user.Password != util.SHA256(pwd) {
 			return toErrStatus("iam_user_password_update", util.Int2Str(userID), "password error")
+		}
+		// check new password same as old password
+		if user.Password == util.SHA256(newPwd) {
+			return toErrStatus("iam_user_password_update", util.Int2Str(userID), "new password cannot be same as old password")
 		}
 		if err := tx.Model(user).Updates(map[string]interface{}{
 			"password":                util.SHA256(newPwd),
