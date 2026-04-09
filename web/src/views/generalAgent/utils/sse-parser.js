@@ -198,43 +198,5 @@ export class SSEEventParser {
     this.currentToolCallId = null;
   }
 }
-
-/**
- * 格式化工具调用参数
- * @param {string} args - JSON 字符串参数
- * @returns {object} 解析后的参数对象
- */
-export function formatToolArgs(args) {
-  if (!args) return {};
-  try {
-    return JSON.parse(args);
-  } catch {
-    return { raw: args };
-  }
-}
-
-/**
- * 格式化工具调用结果
- * @param {string} content - 结果内容
- * @param {number} maxLength - 最大显示长度
- * @returns {string} 格式化后的内容
- */
-export function formatToolResult(content, maxLength = 500) {
-  if (!content) return '';
-
-  // 尝试解析 JSON
-  try {
-    const parsed = JSON.parse(content);
-    content = JSON.stringify(parsed, null, 2);
-  } catch {
-    // 不是 JSON，保持原样
-  }
-
-  if (content.length > maxLength) {
-    return content.substring(0, maxLength) + '...';
-  }
-  return content;
-}
-
 // 从 @/utils/util 重新导出 formatDuration
 export { formatDuration } from '@/utils/util';

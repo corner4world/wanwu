@@ -337,27 +337,32 @@ import ConfigDialog from './components/ConfigDialog.vue';
 import ModelSelect from '@/components/modelSelect.vue';
 import StreamUploadField from '@/components/stream/streamUploadField.vue';
 import {
-  getGeneralAgentConversationList,
+  chatGeneralAgentConversation,
   createGeneralAgentConversation,
   deleteGeneralAgentConversation,
-  getGeneralAgentConversationDetail,
+  downloadGeneralAgentWorkspace,
   getGeneralAgentConversationConfig,
-  updateGeneralAgentConversationConfig,
-  chatGeneralAgentConversation,
-  getGeneralAgentToolSelect,
+  getGeneralAgentConversationDetail,
+  getGeneralAgentConversationList,
   getGeneralAgentWorkspace,
   previewGeneralAgentWorkspace,
-  downloadGeneralAgentWorkspace,
+  updateGeneralAgentConversationConfig,
 } from '@/api/generalAgent';
 import { selectModelList } from '@/api/modelAccess';
+import { avatarSrc, resDownloadFile } from '@/utils/util';
+import { mapActions, mapGetters, mapState } from 'vuex';
+import { SSEEventParser } from './utils/sse-parser';
+// 引入工具函数
 import {
-  SSEEventParser,
-  EventType,
-  ActivityType,
-  ActivityStatus,
-} from './utils/sse-parser';
-import { formatDuration, avatarSrc, resDownloadFile } from '@/utils/util';
-import { mapState, mapActions, mapGetters } from 'vuex';
+  aggregateEventsToMessages,
+  formatMessage,
+} from './utils/message-aggregator';
+// 引入 Mixins
+import streamStateManager from './mixins/streamStateManager';
+import messageManager from './mixins/messageManager';
+import fileManager from './mixins/fileManager';
+import scrollController from './mixins/scrollController';
+import modeManager from './mixins/modeManager';
 
 export default {
   name: 'GeneralAgent',
@@ -369,6 +374,13 @@ export default {
     ModelSelect,
     StreamUploadField,
   },
+  mixins: [
+    streamStateManager,
+    messageManager,
+    fileManager,
+    scrollController,
+    modeManager,
+  ],
   data() {
     return {
       sidebarCollapsed: true,
@@ -379,13 +391,7 @@ export default {
       isNewConversation: false,
       isLoadingHistory: false,
 
-      // 每个会话独立的消息列表 { threadId: messageList }
-      messagesMap: {},
       inputMessage: '',
-      uploadedFiles: [],
-      // 每个会话独立的流式状态 { threadId: { isStreaming, abortController, streamingMessage } }
-      streamingMap: {},
-
       selectedModel: '',
       modelList: [],
       modelLoading: false,
@@ -407,51 +413,6 @@ export default {
       previewBlob: null, // 只存储 blob
       workspaceRect: null,
       resizeObserver: null,
-
-      // 滚动控制
-      userHasScrolled: false,
-      showScrollToBottom: false,
-      isAutoScrolling: false,
-
-      // 模式选择
-      selectedModes: [],
-      modeOptions: {
-        research: {
-          label: '深度研究',
-          icon: 'el-icon-aim',
-          value: 'research',
-        },
-        ppt: {
-          label: '创建ppt',
-          icon: 'el-icon-document',
-          value: 'ppt',
-        },
-        excel: {
-          label: '创建excel',
-          icon: 'el-icon-s-grid',
-          value: 'excel',
-        },
-        web: {
-          label: '创建网页',
-          icon: 'el-icon-monitor',
-          value: 'web',
-        },
-        // video: {
-        //   label: '创建视频',
-        //   icon: 'el-icon-video-camera',
-        //   value: 'video',
-        // },
-        // skill: {
-        //   label: '创建skill',
-        //   icon: 'el-icon-cpu',
-        //   value: 'skill',
-        // },
-        // 'data-analysis': {
-        //   label: '数据分析',
-        //   icon: 'el-icon-data-analysis',
-        //   value: 'data-analysis',
-        // },
-      },
     };
   },
   computed: {
@@ -461,32 +422,6 @@ export default {
 
     assistantAvatar() {
       return avatarSrc(this.commonInfo?.data?.tab?.logo?.path);
-    },
-
-    // 当前会话的消息列表
-    messageList: {
-      get() {
-        return this.messagesMap[this.currentThreadId] || [];
-      },
-      set(val) {
-        this.$set(this.messagesMap, this.currentThreadId, val);
-      },
-    },
-    // 当前会话的流式状态
-    currentStreaming() {
-      return (
-        this.streamingMap[this.currentThreadId] || {
-          isStreaming: false,
-          abortController: null,
-          streamingMessage: null,
-        }
-      );
-    },
-    isStreaming() {
-      return this.currentStreaming.isStreaming;
-    },
-    streamingMessage() {
-      return this.currentStreaming.streamingMessage;
     },
 
     currentTitle() {
@@ -526,25 +461,8 @@ export default {
         width: `${width}px`,
       };
     },
-    hasAssistantContent() {
-      return this.messageList.some(
-        m =>
-          m.role === 'assistant' &&
-          (m.content || m.reasoning || (m.toolCalls && m.toolCalls.length > 0)),
-      );
-    },
     isEmptyConversation() {
       return this.messageList.length === 0;
-    },
-    // Workspace 相关
-    workspaceThreadAndRun() {
-      if (this.activeWorkspace && this.currentThreadId) {
-        return {
-          threadId: this.currentThreadId,
-          runId: this.activeWorkspace.runId,
-        };
-      }
-      return null;
     },
   },
   watch: {
@@ -572,14 +490,6 @@ export default {
     this.setupResizeObserver();
   },
   beforeDestroy() {
-    // 清理所有会话的流式状态
-    Object.keys(this.streamingMap).forEach(threadId => {
-      const streaming = this.streamingMap[threadId];
-      if (streaming && streaming.abortController) {
-        streaming.abortController.abort();
-      }
-    });
-    this.streamingMap = {};
     this.reset();
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
@@ -603,23 +513,6 @@ export default {
         await this.getPermissionInfo();
         await this.getCommonInfo();
       }
-    },
-
-    addMode(modeValue) {
-      // 避免重复添加
-      if (this.selectedModes.find(m => m.value === modeValue)) {
-        return;
-      }
-      const mode = this.modeOptions[modeValue];
-      if (mode) {
-        this.selectedModes.push({ ...mode });
-      }
-    },
-
-    removeMode(modeValue) {
-      this.selectedModes = this.selectedModes.filter(
-        m => m.value !== modeValue,
-      );
     },
 
     setupResizeObserver() {
@@ -695,12 +588,11 @@ export default {
     initNewConversation() {
       this.currentThreadId = '';
       this.isNewConversation = true;
-      this.$set(this.messagesMap, '', []);
+      this.clearMessages('');
       // 重置滚动状态
-      this.userHasScrolled = false;
-      this.showScrollToBottom = false;
+      this.resetScrollState();
       // 重置模式选择
-      this.selectedModes = [];
+      this.clearModes();
       // 关闭工作区面板
       this.hidePanel();
       this.$nextTick(() => {
@@ -769,10 +661,9 @@ export default {
       this.currentThreadId = threadId;
       this.isNewConversation = false;
       this.isLoadingHistory = true;
-      this.userHasScrolled = false;
-      this.showScrollToBottom = false;
+      this.resetScrollState();
       // 重置模式选择
-      this.selectedModes = [];
+      this.clearModes();
       this.hidePanel();
       this.fetchHistory();
     },
@@ -792,13 +683,13 @@ export default {
           res.data.list.forEach(run => {
             // 后端返回的是 events 字段，需要聚合为消息
             if (run.events && Array.isArray(run.events)) {
-              const messages = this.aggregateEventsToMessages(run.events);
+              const messages = aggregateEventsToMessages(run.events);
               allMessages.push(...messages);
             }
             // 兼容旧格式 messages 字段
             if (run.messages && Array.isArray(run.messages)) {
               run.messages.forEach(msg => {
-                const formatted = this.formatMessage(msg);
+                const formatted = formatMessage(msg);
                 if (formatted) {
                   allMessages.push(formatted);
                 }
@@ -860,447 +751,6 @@ export default {
       }
     },
 
-    // 将 AG-UI 事件聚合为消息 - 支持交错展示和 activity 嵌套
-    aggregateEventsToMessages(events) {
-      const messages = [];
-      const toolCallMap = new Map();
-      const activityStack = []; // 用于跟踪嵌套的 activity
-      let currentActivity = null; // 当前的 activity
-
-      const getCurrentActivity = () => currentActivity;
-
-      const addFragment = fragment => {
-        if (currentActivity) {
-          currentActivity.fragments.push(fragment);
-        } else {
-          messages.push({
-            ...fragment,
-            id: fragment.id || this.generateId(),
-            role: 'assistant',
-            timestamp: Date.now(),
-          });
-        }
-      };
-
-      for (const event of events) {
-        const eventTimestamp = event.timestamp
-          ? new Date(event.timestamp).getTime()
-          : Date.now();
-
-        switch (event.type) {
-          case 'RUN_STARTED': {
-            if (event.input?.messages && Array.isArray(event.input.messages)) {
-              event.input.messages.forEach(msg => {
-                if (msg.role === 'user') {
-                  messages.push({
-                    id: msg.id || this.generateId(),
-                    role: 'user',
-                    content: this.formatContent(msg.content),
-                    files: this.extractFilesFromContent(msg.content),
-                    toolCalls: null,
-                    toolResults: null,
-                    toolCallId: null,
-                    reasoning: '',
-                    timestamp: eventTimestamp,
-                  });
-                }
-              });
-            }
-            break;
-          }
-
-          case 'ACTIVITY_SNAPSHOT': {
-            const activityContent = event.content || {};
-            if (event.activityType === 'sub_agent') {
-              if (activityContent.status === 'started') {
-                currentActivity = {
-                  type: 'activity',
-                  activityType: event.activityType,
-                  activityId: event.activityId,
-                  agentName: activityContent.agentName,
-                  fragments: [],
-                };
-                activityStack.push(currentActivity);
-              } else if (activityContent.status === 'finished') {
-                if (activityStack.length > 0) {
-                  const finishedActivity = activityStack.pop();
-                  if (activityStack.length > 0) {
-                    currentActivity = activityStack[activityStack.length - 1];
-                    currentActivity.fragments.push(finishedActivity);
-                  } else {
-                    messages.push({
-                      id: event.messageId || this.generateId(),
-                      role: 'assistant',
-                      ...finishedActivity,
-                      timestamp: eventTimestamp,
-                    });
-                    currentActivity = null;
-                  }
-                }
-              }
-            } else if (
-              event.activityType === 'workspace' &&
-              activityContent.runId
-            ) {
-              this.handleWorkspaceActivity({
-                runId: activityContent.runId,
-                threadId: activityContent.threadId || this.currentThreadId,
-                fileCount: activityContent.fileCount || 0,
-                totalSize: activityContent.totalSize || 0,
-                timestamp: activityContent.timestamp || eventTimestamp,
-              });
-
-              addFragment({
-                type: 'workspace',
-                workspaceInfo: {
-                  fileCount: activityContent.fileCount || 0,
-                  totalSize: activityContent.totalSize || 0,
-                },
-                runId: activityContent.runId,
-              });
-            }
-            break;
-          }
-
-          case 'REASONING_MESSAGE_START': {
-            addFragment({
-              type: 'reasoning',
-              content: '',
-              messageId: event.messageId,
-              startTime: eventTimestamp,
-            });
-            break;
-          }
-
-          case 'REASONING_MESSAGE_CONTENT': {
-            const activity = getCurrentActivity();
-            if (activity) {
-              const lastFragment =
-                activity.fragments[activity.fragments.length - 1];
-              if (lastFragment && lastFragment.type === 'reasoning') {
-                lastFragment.content += event.delta;
-              }
-            } else {
-              const lastMsg = messages[messages.length - 1];
-              if (lastMsg && lastMsg.type === 'reasoning') {
-                lastMsg.content += event.delta;
-              }
-            }
-            break;
-          }
-
-          case 'REASONING_MESSAGE_END': {
-            const activity = getCurrentActivity();
-            if (activity) {
-              const lastFragment =
-                activity.fragments[activity.fragments.length - 1];
-              if (
-                lastFragment &&
-                lastFragment.type === 'reasoning' &&
-                lastFragment.startTime
-              ) {
-                lastFragment.duration = formatDuration(
-                  eventTimestamp - lastFragment.startTime,
-                );
-              }
-            } else {
-              const lastMsg = messages[messages.length - 1];
-              if (
-                lastMsg &&
-                lastMsg.type === 'reasoning' &&
-                lastMsg.startTime
-              ) {
-                lastMsg.duration = formatDuration(
-                  eventTimestamp - lastMsg.startTime,
-                );
-              }
-            }
-            break;
-          }
-
-          case 'TEXT_MESSAGE_START': {
-            addFragment({
-              type: 'text',
-              content: '',
-              messageId: event.messageId,
-            });
-            break;
-          }
-
-          case 'TEXT_MESSAGE_CONTENT': {
-            const activity = getCurrentActivity();
-            if (activity) {
-              const lastFragment =
-                activity.fragments[activity.fragments.length - 1];
-              if (lastFragment && lastFragment.type === 'text') {
-                lastFragment.content += event.delta;
-              }
-            } else {
-              const lastMsg = messages[messages.length - 1];
-              if (lastMsg && lastMsg.type === 'text') {
-                lastMsg.content += event.delta;
-              }
-            }
-            break;
-          }
-
-          case 'TEXT_MESSAGE_END':
-            break;
-
-          case 'TOOL_CALL_START': {
-            const toolCallData = {
-              id: event.toolCallId,
-              name: event.toolCallName,
-              arguments: '',
-              status: 'completed',
-              result: '',
-              startTime: eventTimestamp,
-              executionTime: '',
-            };
-            toolCallMap.set(event.toolCallId, toolCallData);
-            addFragment({
-              type: 'tool_call',
-              toolCall: toolCallData,
-              messageId: event.messageId,
-            });
-            break;
-          }
-
-          case 'TOOL_CALL_ARGS': {
-            if (toolCallMap.has(event.toolCallId)) {
-              const toolCall = toolCallMap.get(event.toolCallId);
-              toolCall.arguments += event.delta;
-            }
-            break;
-          }
-
-          case 'TOOL_CALL_END': {
-            // 不删除 toolCallMap，等 TOOL_CALL_RESULT 处理
-            break;
-          }
-
-          case 'TOOL_CALL_RESULT': {
-            let executionTime = '';
-            if (toolCallMap.has(event.toolCallId)) {
-              const toolCall = toolCallMap.get(event.toolCallId);
-              toolCall.result = event.content;
-              toolCall.status = 'completed';
-              if (toolCall.startTime && eventTimestamp) {
-                executionTime = formatDuration(
-                  eventTimestamp - toolCall.startTime,
-                );
-                toolCall.executionTime = executionTime;
-              }
-              toolCallMap.delete(event.toolCallId);
-            }
-            const activity = getCurrentActivity();
-            if (activity) {
-              const fragment = activity.fragments.find(
-                f =>
-                  f.type === 'tool_call' && f.toolCall?.id === event.toolCallId,
-              );
-              if (fragment && fragment.toolCall) {
-                fragment.toolCall.result = event.content;
-                fragment.toolCall.status = 'completed';
-                fragment.toolCall.executionTime = executionTime;
-              }
-            } else {
-              const toolCallMsg = messages.find(
-                m =>
-                  m.type === 'tool_call' && m.toolCall?.id === event.toolCallId,
-              );
-              if (toolCallMsg && toolCallMsg.toolCall) {
-                toolCallMsg.toolCall.result = event.content;
-                toolCallMsg.toolCall.status = 'completed';
-                toolCallMsg.toolCall.executionTime = executionTime;
-              }
-            }
-            break;
-          }
-        }
-      }
-
-      // 处理未关闭的 activity
-      while (activityStack.length > 0) {
-        const activity = activityStack.pop();
-        if (activityStack.length > 0) {
-          activityStack[activityStack.length - 1].fragments.push(activity);
-        } else {
-          messages.push({
-            id: this.generateId(),
-            role: 'assistant',
-            ...activity,
-            timestamp: Date.now(),
-          });
-        }
-      }
-
-      return this.mergeToFragments(messages);
-    },
-
-    // 将消息合并为带 fragments 的格式
-    mergeToFragments(messages) {
-      const result = [];
-      let currentAssistant = null;
-
-      for (const msg of messages) {
-        if (msg.role === 'user') {
-          if (currentAssistant) {
-            result.push(currentAssistant);
-            currentAssistant = null;
-          }
-          result.push(msg);
-        } else if (msg.role === 'assistant') {
-          if (!currentAssistant) {
-            currentAssistant = {
-              id: msg.id || this.generateId(),
-              role: 'assistant',
-              content: '',
-              reasoning: '',
-              toolCalls: [],
-              fragments: [],
-            };
-          }
-
-          if (msg.type === 'activity') {
-            currentAssistant.fragments.push({
-              type: 'activity',
-              activityType: msg.activityType,
-              agentName: msg.agentName,
-              fragments: msg.fragments || [],
-            });
-          } else if (msg.type === 'reasoning') {
-            currentAssistant.fragments.push({
-              type: 'reasoning',
-              content: msg.content,
-              duration: msg.duration,
-            });
-            currentAssistant.reasoning = msg.content;
-          } else if (msg.type === 'tool_call' && msg.toolCall) {
-            currentAssistant.fragments.push({
-              type: 'tool_call',
-              toolCall: msg.toolCall,
-            });
-            currentAssistant.toolCalls.push(msg.toolCall);
-          } else if (msg.type === 'workspace') {
-            currentAssistant.fragments.push({
-              type: 'workspace',
-              workspaceInfo: msg.workspaceInfo,
-              runId: msg.runId,
-            });
-          } else if (msg.type === 'text' && msg.content) {
-            currentAssistant.fragments.push({
-              type: 'text',
-              content: msg.content,
-            });
-            currentAssistant.content += msg.content;
-          }
-        }
-      }
-
-      if (currentAssistant) {
-        result.push(currentAssistant);
-      }
-
-      return result;
-    },
-
-    parseDuration(durationStr) {
-      if (!durationStr) return 0;
-      const match = durationStr.match(/(\d+)m\s*(\d+)s/);
-      if (match) {
-        return parseInt(match[1]) * 60000 + parseInt(match[2]) * 1000;
-      }
-      const seconds = durationStr.match(/(\d+)s/);
-      if (seconds) {
-        return parseInt(seconds[1]) * 1000;
-      }
-      const ms = durationStr.match(/(\d+)ms/);
-      if (ms) {
-        return parseInt(ms[1]);
-      }
-      return 0;
-    },
-
-    formatMessage(msg) {
-      if (!msg) return null;
-
-      // 如果已经是标准格式
-      if (msg.role && (msg.content || msg.toolCalls || msg.reasoning)) {
-        return {
-          id: msg.id || this.generateId(),
-          role: msg.role,
-          content: this.formatContent(msg.content),
-          toolCalls: msg.toolCalls,
-          toolResults: msg.toolResults,
-          toolCallId: msg.toolCallId,
-          reasoning: msg.reasoning,
-          reasoningDuration: msg.reasoningDuration,
-          toolDuration: msg.toolDuration,
-        };
-      }
-
-      // 处理 AG-UI 协议格式
-      if (msg.type) {
-        switch (msg.type) {
-          case 'TEXT_MESSAGE':
-          case 'text_message':
-            return {
-              id: msg.id || msg.messageId || this.generateId(),
-              role: msg.role || 'assistant',
-              content: this.formatContent(msg.content || msg.text),
-              toolCalls: null,
-              toolResults: null,
-              toolCallId: null,
-              reasoning: '',
-              reasoningDuration: '',
-              toolDuration: '',
-            };
-          case 'TOOL_CALL':
-          case 'tool_call':
-            return {
-              id: msg.id || this.generateId(),
-              role: 'tool',
-              content: this.formatContent(msg.result || msg.content),
-              toolCalls: null,
-              toolResults: null,
-              toolCallId: msg.toolCallId || msg.id,
-              reasoning: '',
-              reasoningDuration: '',
-              toolDuration: '',
-            };
-          default:
-            // 尝试从 message 字段获取内容
-            if (msg.message) {
-              return this.formatMessage(msg.message);
-            }
-            return null;
-        }
-      }
-
-      // 尝试处理嵌套结构
-      if (msg.message) {
-        return this.formatMessage(msg.message);
-      }
-
-      // 跳过无效消息
-      if (!msg.role && !msg.content && !msg.text) {
-        return null;
-      }
-
-      return {
-        id: msg.id || this.generateId(),
-        role: msg.role || 'unknown',
-        content: this.formatContent(msg.content || msg.text),
-        toolCalls: msg.toolCalls,
-        toolResults: msg.toolResults,
-        toolCallId: msg.toolCallId,
-        reasoning: msg.reasoning,
-        reasoningDuration: msg.reasoningDuration,
-        toolDuration: msg.toolDuration,
-      };
-    },
-
     async loadConfig() {
       if (!this.currentThreadId) return;
       const res = await getGeneralAgentConversationConfig({
@@ -1314,66 +764,10 @@ export default {
       }
     },
 
-    formatContent(content) {
-      if (typeof content === 'string') return content;
-      if (Array.isArray(content)) {
-        return content
-          .filter(item => item.type === 'text')
-          .map(item => item.text)
-          .join('\n');
-      }
-      if (typeof content === 'object' && content?.text) return content.text;
-      return '';
-    },
-
-    extractFilesFromContent(content) {
-      if (!Array.isArray(content)) return null;
-      const files = content.filter(item => item.type === 'binary');
-      if (files.length === 0) return null;
-      return files.map(file => ({
-        fileName: file.fileName || 'unknown',
-        type: file.mimeType || 'application/octet-stream',
-        url: file.url,
-        displayUrl: file.url,
-      }));
-    },
-
     handleKeyDown(e) {
       if (e.shiftKey) return;
       e.preventDefault();
       this.sendMessage();
-    },
-
-    handleSetFileId(fileInfo) {
-      // 处理文件ID，将文件信息添加到 uploadedFiles
-      if (fileInfo && fileInfo.length > 0) {
-        console.log('fileInfo:', fileInfo);
-        fileInfo.forEach(file => {
-          this.uploadedFiles.push({
-            name: file.fileName,
-            fileName: file.oldFileName,
-            url: file.fileUrl,
-            displayUrl: file.imgUrl,
-            type: this.getFileTypeFromName(file.fileName),
-            size: file.fileSize || 0,
-            uploading: false,
-            uploadProgress: 100,
-          });
-        });
-      }
-    },
-
-    getFileTypeFromName(fileName) {
-      const ext = fileName.split('.').pop().toLowerCase();
-      const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-      if (imageExts.includes(ext)) {
-        return 'image/' + ext;
-      }
-      return 'application/octet-stream';
-    },
-
-    removeFile(index) {
-      this.uploadedFiles.splice(index, 1);
     },
 
     handleModelChange(value) {
@@ -1415,57 +809,14 @@ export default {
       }
 
       const userMessage = this.buildUserMessage(content);
-
-      // 确保当前会话的消息列表存在
-      if (!this.messagesMap[this.currentThreadId]) {
-        this.$set(this.messagesMap, this.currentThreadId, []);
-      }
-
-      // 添加用户消息到当前会话
-      const messages = this.messagesMap[this.currentThreadId];
-      messages.push({
-        id: this.generateId(),
-        role: 'user',
-        content: content,
-        files: [...this.uploadedFiles],
-      });
+      this.ensureMessageList(this.currentThreadId);
+      this.addUserMessage(this.currentThreadId, content, this.uploadedFiles);
 
       this.inputMessage = '';
-      this.uploadedFiles = [];
+      this.clearFiles();
       this.$nextTick(() => this.scrollToBottom());
 
       await this.startStreaming(userMessage);
-    },
-
-    buildUserMessage(content) {
-      const message = { id: this.generateId(), role: 'user' };
-
-      // 如果没有文件，直接返回文本
-      if (this.uploadedFiles.length === 0) {
-        message.content = content;
-        return message;
-      }
-
-      // 有文件时，构建多部分内容
-      const contentArray = [];
-
-      // 添加文本内容（如果有）
-      if (content && content.trim()) {
-        contentArray.push({ type: 'text', text: content.trim() });
-      }
-
-      // 添加文件内容 - 后端统一使用 type: 'binary'，根据 mimeType 判断具体类型
-      this.uploadedFiles.forEach(file => {
-        contentArray.push({
-          type: 'binary',
-          mimeType: file.type || 'application/octet-stream',
-          url: file.url, // 使用服务器返回的 HTTP URL
-          fileName: file.fileName, // 服务器返回的文件名
-        });
-      });
-
-      message.content = contentArray;
-      return message;
     },
 
     async startStreaming(userMessage) {
@@ -1476,45 +827,15 @@ export default {
 
       const streamingThreadId = this.currentThreadId;
 
-      // 初始化该会话的流式状态
-      const abortController = new AbortController();
-      const assistantMessage = {
-        id: this.generateId(),
-        role: 'assistant',
-        content: '',
-        reasoning: '',
-        toolCalls: [],
-        toolResults: [],
-        fragments: [],
-        isStreaming: true,
-        threadId: streamingThreadId,
-      };
-
-      // 设置该会话的流式状态
-      this.$set(this.streamingMap, streamingThreadId, {
-        isStreaming: true,
-        abortController: abortController,
-        streamingMessage: assistantMessage,
-        activityStack: [],
-        currentActivity: null,
-        currentFragment: null,
-        toolCallMap: new Map(),
-      });
-
-      // 确保该会话的消息列表存在
-      if (!this.messagesMap[streamingThreadId]) {
-        this.$set(this.messagesMap, streamingThreadId, []);
-      }
+      // 使用 mixin 初始化流式状态
+      const { abortController, assistantMessage } =
+        this.initStreamState(streamingThreadId);
 
       // 添加消息到对应会话的消息列表
-      const messages = this.messagesMap[streamingThreadId];
-      messages.push(assistantMessage);
+      this.addAssistantMessage(streamingThreadId, assistantMessage);
 
       this.currentStage = 'understanding';
-
-      // 重置滚动状态
-      this.userHasScrolled = false;
-      this.showScrollToBottom = false;
+      this.resetScrollState();
 
       const parser = new SSEEventParser();
 
@@ -1523,7 +844,6 @@ export default {
           threadId: streamingThreadId,
           messages: [userMessage],
           onMessage: event => {
-            // 直接更新对应会话的消息，不检查当前会话
             this.handleSSEEvent(
               event,
               assistantMessage,
@@ -1533,11 +853,9 @@ export default {
           },
           onError: error => {
             console.error('SSE Error:', error);
-            // 只在对应会话显示错误提示
             if (this.currentThreadId === streamingThreadId) {
               this.$message.error('对话请求失败');
             }
-            // 更新该会话的流式状态
             const streaming = this.streamingMap[streamingThreadId];
             if (streaming) {
               streaming.isStreaming = false;
@@ -1556,7 +874,6 @@ export default {
           this.$message.error('发送消息失败: ' + (error.message || error));
         }
       } finally {
-        // 更新该会话的流式状态
         const streaming = this.streamingMap[streamingThreadId];
         if (streaming) {
           streaming.isStreaming = false;
@@ -1565,286 +882,10 @@ export default {
         }
         assistantMessage.isStreaming = false;
         this.currentStage = '';
-        // 流式结束后滚动到底部
         if (this.currentThreadId === streamingThreadId) {
-          this.userHasScrolled = false;
-          this.showScrollToBottom = false;
+          this.resetScrollState();
           this.$nextTick(() => this.scrollToBottom(true));
         }
-      }
-    },
-
-    handleSSEEvent(event, assistantMessage, parser, streamingThreadId) {
-      const parsed = parser.parse(event);
-      if (!parsed) return;
-
-      const streamState = this.streamingMap[streamingThreadId];
-      if (!streamState) return;
-
-      const getCurrentFragments = () => {
-        if (streamState.currentActivity) {
-          return streamState.currentActivity.fragments;
-        }
-        return assistantMessage.fragments;
-      };
-
-      const addFragment = fragment => {
-        const fragments = getCurrentFragments();
-        if (fragments) {
-          fragments.push(fragment);
-        }
-      };
-
-      switch (parsed.type) {
-        case 'RUN_STARTED':
-          this.currentRunId = parsed.runId;
-          if (this.currentThreadId === streamingThreadId) {
-            this.currentStage = 'understanding';
-          }
-          break;
-
-        case 'ACTIVITY_SNAPSHOT': {
-          const activityContent = parsed.content || {};
-          if (parsed.activityType === ActivityType.SUB_AGENT) {
-            if (activityContent.status === ActivityStatus.STARTED) {
-              const activity = {
-                type: 'activity',
-                activityType: parsed.activityType,
-                activityId: parsed.activityId,
-                agentName: activityContent.agentName,
-                fragments: [],
-                isStreaming: true,
-                startTime: Date.now(),
-                duration: '',
-              };
-              // 先添加到父级 fragments，再设置 currentActivity
-              const parentFragments = getCurrentFragments();
-              if (parentFragments) {
-                parentFragments.push(activity);
-              }
-              streamState.currentActivity = activity;
-              streamState.activityStack.push(activity);
-            } else if (activityContent.status === ActivityStatus.FINISHED) {
-              if (streamState.activityStack.length > 0) {
-                const finishedActivity = streamState.activityStack.pop();
-                finishedActivity.isStreaming = false;
-                if (finishedActivity.startTime) {
-                  finishedActivity.duration = formatDuration(
-                    Date.now() - finishedActivity.startTime,
-                  );
-                }
-                if (streamState.activityStack.length > 0) {
-                  streamState.currentActivity =
-                    streamState.activityStack[
-                      streamState.activityStack.length - 1
-                    ];
-                } else {
-                  streamState.currentActivity = null;
-                }
-              }
-            }
-          } else if (
-            parsed.activityType === ActivityType.WORKSPACE &&
-            activityContent.runId
-          ) {
-            this.handleWorkspaceActivity({
-              runId: activityContent.runId,
-              threadId: activityContent.threadId || this.currentThreadId,
-              fileCount: activityContent.fileCount || 0,
-              totalSize: activityContent.totalSize || 0,
-              timestamp: activityContent.timestamp || Date.now(),
-            });
-            addFragment({
-              type: 'workspace',
-              workspaceInfo: {
-                fileCount: activityContent.fileCount || 0,
-                totalSize: activityContent.totalSize || 0,
-              },
-              runId: activityContent.runId,
-            });
-            if (this.currentThreadId === streamingThreadId) {
-              this.$notify({
-                type: 'success',
-                title: '工作空间已更新',
-                message: `生成了 ${activityContent.fileCount || 0} 个文件`,
-                duration: 3000,
-                onClick: () => {
-                  this.showPanel();
-                },
-              });
-            }
-          }
-          break;
-        }
-
-        case 'REASONING_MESSAGE_START':
-          streamState.currentFragment = {
-            type: 'reasoning',
-            content: '',
-            messageId: parsed.messageId,
-            startTime: Date.now(),
-            isStreaming: true,
-          };
-          addFragment(streamState.currentFragment);
-          if (this.currentThreadId === streamingThreadId) {
-            this.currentStage = 'thinking';
-          }
-          break;
-
-        case 'REASONING_MESSAGE_CONTENT':
-          if (
-            streamState.currentFragment &&
-            streamState.currentFragment.type === 'reasoning'
-          ) {
-            streamState.currentFragment.content += parsed.delta;
-            if (!streamState.currentActivity) {
-              assistantMessage.reasoning += parsed.delta;
-            }
-          }
-          break;
-
-        case 'REASONING_MESSAGE_END':
-          if (
-            streamState.currentFragment &&
-            streamState.currentFragment.type === 'reasoning'
-          ) {
-            if (streamState.currentFragment.startTime) {
-              streamState.currentFragment.duration = formatDuration(
-                Date.now() - streamState.currentFragment.startTime,
-              );
-            }
-            streamState.currentFragment.isStreaming = false;
-          }
-          streamState.currentFragment = null;
-          break;
-
-        case 'TEXT_MESSAGE_START':
-          streamState.currentFragment = {
-            type: 'text',
-            content: '',
-            messageId: parsed.messageId,
-            isStreaming: true,
-          };
-          addFragment(streamState.currentFragment);
-          assistantMessage.id = parsed.messageId || assistantMessage.id;
-          if (this.currentThreadId === streamingThreadId) {
-            this.currentStage = 'generating';
-          }
-          break;
-
-        case 'TEXT_MESSAGE_CONTENT':
-          if (
-            streamState.currentFragment &&
-            streamState.currentFragment.type === 'text'
-          ) {
-            streamState.currentFragment.content += parsed.delta;
-            if (!streamState.currentActivity) {
-              assistantMessage.content += parsed.delta;
-            }
-          }
-          break;
-
-        case 'TEXT_MESSAGE_END':
-          if (
-            streamState.currentFragment &&
-            streamState.currentFragment.type === 'text'
-          ) {
-            streamState.currentFragment.isStreaming = false;
-          }
-          streamState.currentFragment = null;
-          break;
-
-        case 'TOOL_CALL_START': {
-          const toolCallData = {
-            id: parsed.toolCallId,
-            name: parsed.toolCallName,
-            arguments: '',
-            status: 'running',
-            result: '',
-            startTime: Date.now(),
-            executionTime: '',
-          };
-          streamState.toolCallMap.set(parsed.toolCallId, toolCallData);
-          assistantMessage.toolCalls.push(toolCallData);
-          streamState.currentFragment = {
-            type: 'tool_call',
-            toolCall: toolCallData,
-            messageId: parsed.messageId,
-          };
-          addFragment(streamState.currentFragment);
-          if (this.currentThreadId === streamingThreadId) {
-            this.currentStage = 'tool_calling';
-          }
-          break;
-        }
-
-        case 'TOOL_CALL_ARGS':
-          if (streamState.toolCallMap.has(parsed.toolCallId)) {
-            const toolCall = streamState.toolCallMap.get(parsed.toolCallId);
-            toolCall.arguments += parsed.delta;
-          }
-          break;
-
-        case 'TOOL_CALL_END':
-          // 不设置 completed，不计算时间，等 TOOL_CALL_RESULT
-          streamState.currentFragment = null;
-          break;
-
-        case 'TOOL_CALL_RESULT':
-          if (streamState.toolCallMap.has(parsed.toolCallId)) {
-            const toolCall = streamState.toolCallMap.get(parsed.toolCallId);
-            toolCall.result = parsed.content;
-            toolCall.status = 'completed';
-            if (toolCall.startTime) {
-              toolCall.executionTime = formatDuration(
-                Date.now() - toolCall.startTime,
-              );
-            }
-            streamState.toolCallMap.delete(parsed.toolCallId);
-          }
-          const tc = assistantMessage.toolCalls.find(
-            t => t.id === parsed.toolCallId,
-          );
-          if (tc) {
-            tc.result = parsed.content;
-            tc.status = 'completed';
-            if (tc.startTime) {
-              tc.executionTime = formatDuration(Date.now() - tc.startTime);
-            }
-          }
-          const fragments = getCurrentFragments();
-          const toolCallFragment = fragments.find(
-            f => f.type === 'tool_call' && f.toolCall?.id === parsed.toolCallId,
-          );
-          if (toolCallFragment && toolCallFragment.toolCall) {
-            toolCallFragment.toolCall.result = parsed.content;
-            toolCallFragment.toolCall.status = 'completed';
-            if (toolCallFragment.toolCall.startTime) {
-              toolCallFragment.toolCall.executionTime = formatDuration(
-                Date.now() - toolCallFragment.toolCall.startTime,
-              );
-            }
-          }
-          break;
-
-        case 'RUN_FINISHED':
-          while (streamState.activityStack.length > 0) {
-            const activity = streamState.activityStack.pop();
-            if (streamState.activityStack.length > 0) {
-              streamState.activityStack[
-                streamState.activityStack.length - 1
-              ].fragments.push(activity);
-            } else {
-              assistantMessage.fragments.push(activity);
-            }
-          }
-          streamState.currentActivity = null;
-          streamState.currentFragment = null;
-          break;
-      }
-
-      if (this.currentThreadId === streamingThreadId) {
-        this.$nextTick(() => this.scrollToBottom());
       }
     },
 
@@ -1880,72 +921,6 @@ export default {
       this.showPanel();
     },
 
-    stopStreaming() {
-      // 中止当前会话的 SSE 流
-      const streaming = this.streamingMap[this.currentThreadId];
-      if (streaming && streaming.abortController) {
-        streaming.abortController.abort();
-        streaming.isStreaming = false;
-        streaming.streamingMessage = null;
-        streaming.abortController = null;
-      }
-    },
-
-    scrollToBottom(force = false) {
-      if (!force && this.userHasScrolled) {
-        this.showScrollToBottom = true;
-        return;
-      }
-      this.isAutoScrolling = true;
-      const container = this.$refs.messageArea;
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-      setTimeout(() => {
-        this.isAutoScrolling = false;
-      }, 100);
-    },
-
-    handleMessageAreaScroll() {
-      if (this.isAutoScrolling) return;
-
-      const container = this.$refs.messageArea;
-      if (!container) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-      const threshold = 150;
-
-      const isNearBottom = distanceFromBottom < threshold;
-
-      if (isNearBottom) {
-        this.userHasScrolled = false;
-        this.showScrollToBottom = false;
-      } else {
-        this.userHasScrolled = true;
-        this.showScrollToBottom = true;
-      }
-    },
-
-    handleScrollToBottomClick() {
-      this.userHasScrolled = false;
-      this.showScrollToBottom = false;
-      this.scrollToBottom(true);
-    },
-
-    generateId() {
-      return (
-        'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-      );
-    },
-
-    getToolResultsForMessage(message) {
-      if (message.toolResults && message.toolResults.length > 0) {
-        return message.toolResults;
-      }
-      return [];
-    },
-
     async handlePreviewFile(data) {
       const { file, filePath, threadId, runId } = data;
 
@@ -1956,15 +931,11 @@ export default {
       this.previewBlob = null;
 
       try {
-        const blob = await previewGeneralAgentWorkspace({
+        this.previewBlob = await previewGeneralAgentWorkspace({
           threadId,
           runId,
           path: filePath,
         });
-        this.previewBlob = blob;
-      } catch (error) {
-        console.error('预览文件失败:', error);
-        this.$message.error('预览文件失败');
       } finally {
         this.previewLoading = false;
       }
@@ -2005,48 +976,16 @@ export default {
 
       if (!userMessage) return;
 
-      // 删除当前助手消息（保留用户消息和之前的消息）
-      this.messageList.splice(messageIndex, 1);
+      // 删除当前助手消息
+      this.removeMessage(this.currentThreadId, message.id);
 
       // 构建请求消息
       const requestMessage = this.buildRequestMessage(userMessage);
 
-      // 直接调用 startStreaming，不再添加用户消息
+      // 直接调用 startStreaming
       this.$nextTick(() => {
         this.startStreaming(requestMessage);
       });
-    },
-
-    // 根据已存在的用户消息构建请求消息
-    buildRequestMessage(userMessage) {
-      const message = { id: this.generateId(), role: 'user' };
-
-      // 如果没有文件，直接返回文本
-      if (!userMessage.files || userMessage.files.length === 0) {
-        message.content = userMessage.content;
-        return message;
-      }
-
-      // 有文件时，构建多部分内容
-      const contentArray = [];
-
-      // 添加文本内容（如果有）
-      if (userMessage.content && userMessage.content.trim()) {
-        contentArray.push({ type: 'text', text: userMessage.content.trim() });
-      }
-
-      // 添加文件内容
-      userMessage.files.forEach(file => {
-        contentArray.push({
-          type: 'binary',
-          mimeType: file.type || 'application/octet-stream',
-          url: file.url,
-          fileName: file.name,
-        });
-      });
-
-      message.content = contentArray;
-      return message;
     },
 
     async handleDeleteConversation(item) {
