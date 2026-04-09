@@ -254,7 +254,7 @@
                   v-if="isStreaming"
                   class="send-btn stop-btn"
                   circle
-                  @click="stopStreaming"
+                  @click="handleStopClick"
                 >
                   <svg
                     class="stop-icon"
@@ -861,6 +861,7 @@ export default {
       this.resetScrollState();
 
       const parser = new SSEEventParser();
+      let isUserAborted = false;
 
       try {
         await chatGeneralAgentConversation({
@@ -887,32 +888,42 @@ export default {
               streaming.streamingMessage = null;
             }
             assistantMessage.isStreaming = false;
+
+            // 清理所有 fragments 的 isStreaming 状态
+            this.setFragmentsNotStreaming(assistantMessage.fragments);
           },
           signal: abortController.signal,
         });
       } catch (error) {
         console.error('Stream error:', error);
-        if (
-          error.name !== 'AbortError' &&
-          this.currentThreadId === streamingThreadId
-        ) {
+        // 判断是否是用户主动中止
+        isUserAborted = error.name === 'AbortError';
+
+        if (!isUserAborted && this.currentThreadId === streamingThreadId) {
           this.$message.error(
             this.$t('generalAgent.error.sendMessageFailed') +
               (error.message || error),
           );
         }
       } finally {
-        const streaming = this.streamingMap[streamingThreadId];
-        if (streaming) {
-          streaming.isStreaming = false;
-          streaming.streamingMessage = null;
-          streaming.abortController = null;
-        }
-        assistantMessage.isStreaming = false;
-        this.currentStage = '';
-        if (this.currentThreadId === streamingThreadId) {
-          this.resetScrollState();
-          this.$nextTick(() => this.scrollToBottom(true));
+        // 只有非用户主动中止时才清理状态（用户中止由 stopStreaming 处理）
+        if (!isUserAborted) {
+          const streaming = this.streamingMap[streamingThreadId];
+          if (streaming) {
+            streaming.isStreaming = false;
+            streaming.streamingMessage = null;
+            streaming.abortController = null;
+          }
+          assistantMessage.isStreaming = false;
+
+          // 清理所有 fragments 的 isStreaming 状态
+          this.setFragmentsNotStreaming(assistantMessage.fragments);
+
+          this.currentStage = '';
+          if (this.currentThreadId === streamingThreadId) {
+            this.resetScrollState();
+            this.$nextTick(() => this.scrollToBottom(true));
+          }
         }
       }
     },
@@ -1035,6 +1046,11 @@ export default {
         }
         this.fetchConversationList();
       }
+    },
+
+    // 处理停止按钮点击
+    handleStopClick() {
+      this.stopStreaming(this.currentThreadId);
     },
   },
 };

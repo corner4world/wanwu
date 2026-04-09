@@ -99,12 +99,54 @@ export default {
     stopStreaming(threadId) {
       const targetThreadId = threadId || this.currentThreadId;
       const streaming = this.streamingMap[targetThreadId];
-      if (streaming && streaming.abortController) {
-        streaming.abortController.abort();
-        streaming.isStreaming = false;
-        streaming.streamingMessage = null;
-        streaming.abortController = null;
+      if (!streaming) {
+        return;
       }
+
+      if (!streaming.abortController) {
+        return;
+      }
+
+      // 中止请求
+      streaming.abortController.abort();
+
+      // 清理流式消息的 isStreaming 状态
+      if (streaming.streamingMessage) {
+        streaming.streamingMessage.isStreaming = false;
+
+        // 递归设置所有 fragments 的 isStreaming 为 false
+        this.setFragmentsNotStreaming(streaming.streamingMessage.fragments);
+      }
+
+      // 使用 $set 确保响应式更新
+      this.$set(streaming, 'isStreaming', false);
+      this.$set(streaming, 'streamingMessage', null);
+      this.$set(streaming, 'abortController', null);
+
+      // 重置滚动状态和阶段
+      if (targetThreadId === this.currentThreadId) {
+        this.currentStage = '';
+        this.resetScrollState();
+        this.$nextTick(() => this.scrollToBottom(true));
+      }
+    },
+
+    /**
+     * 递归设置所有 fragments 的 isStreaming 为 false
+     */
+    setFragmentsNotStreaming(fragments) {
+      if (!fragments || !Array.isArray(fragments)) return;
+
+      fragments.forEach(fragment => {
+        if (fragment.isStreaming !== undefined) {
+          this.$set(fragment, 'isStreaming', false);
+        }
+
+        // 处理 activity 类型，递归设置其子 fragments
+        if (fragment.type === 'activity' && fragment.fragments) {
+          this.setFragmentsNotStreaming(fragment.fragments);
+        }
+      });
     },
 
     /**
