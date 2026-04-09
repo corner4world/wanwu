@@ -61,6 +61,12 @@ type Skill struct {
 	Dir string // skill 目录路径
 }
 
+// MCP MCP 服务器配置。
+type MCP struct {
+	Name   string // MCP 名称
+	SSEURL string // MCP SSE 服务器地址
+}
+
 // RunSession 执行会话标识。
 type RunSession struct {
 	ThreadID string // 对话会话 ID
@@ -136,6 +142,7 @@ type RunOption struct {
 	OutputDir      string
 	Skills         []Skill
 	Tools          []Tool
+	MCPs           []MCP         // MCP 服务器列表
 	Messages       []adk.Message // 历史消息 + 当前问题（最后一条 User 消息）
 	EnableThinking bool
 	SkipCleanup    bool
@@ -270,6 +277,21 @@ func WithMessages(messages []adk.Message) Option {
 func WithSkills(skills []Skill) Option {
 	return OptionFunc(func(opts *RunOption) error {
 		opts.Skills = skills
+		return nil
+	})
+}
+
+func WithMCPs(mcps []MCP) Option {
+	return OptionFunc(func(opts *RunOption) error {
+		for _, mcp := range mcps {
+			if mcp.Name == "" {
+				return fmt.Errorf("mcp name is required")
+			}
+			if mcp.SSEURL == "" {
+				return fmt.Errorf("mcp [%s] sse url is required", mcp.Name)
+			}
+		}
+		opts.MCPs = mcps
 		return nil
 	})
 }

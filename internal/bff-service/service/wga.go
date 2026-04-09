@@ -946,6 +946,47 @@ func checkWgaMCPConfig(ctx *gin.Context, userId, orgId string, mcpList []*assist
 	return nil
 }
 
+func buildWgaMCPOptions(ctx *gin.Context, userId, orgId string, mcpList []*assistant_service.WgaConfigMcp) ([]wga_option.Option, error) {
+	if len(mcpList) == 0 {
+		return nil, nil
+	}
+
+	var mcpCustomIds, mcpServerIds []string
+	for _, m := range mcpList {
+		switch m.McpType {
+		case constant.MCPTypeMCP:
+			mcpCustomIds = append(mcpCustomIds, m.McpId)
+		case constant.MCPTypeMCPServer:
+			mcpServerIds = append(mcpServerIds, m.McpId)
+		default:
+			return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("invalid mcp type: %s", m.McpType))
+		}
+	}
+
+	mcpResp, err := mcp.GetMCPByMCPIdList(ctx.Request.Context(), &mcp_service.GetMCPByMCPIdListReq{
+		McpIdList:       mcpCustomIds,
+		McpServerIdList: mcpServerIds,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var opts []wga_option.Option
+	for _, item := range mcpResp.Infos {
+		opts = append(opts, wga_option.WithMCP(wga_option.MCP{
+			Name:   item.Info.GetName(),
+			SSEURL: item.SseUrl,
+		}))
+	}
+	for _, item := range mcpResp.Servers {
+		opts = append(opts, wga_option.WithMCP(wga_option.MCP{
+			Name:   item.Name,
+			SSEURL: item.SseUrl,
+		}))
+	}
+	return opts, nil
+}
+
 // --- internal wga workflow ---
 
 // checkWgaWorkflowConfig 校验wga Workflow配置（用于更新配置）

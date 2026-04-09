@@ -53,7 +53,8 @@
 │  │   │  1. buildSandboxOpts()     构建沙箱选项                                    │ │
 │  │   │     ├─ ModelConfig (来自 WithModelConfig)                                 │ │
 │  │   │     ├─ Instruction (来自配置文件)                                          │ │
-│  │   │     └─ Tools (来自配置 + WithToolConfig + WithExtraTool)                  │ │
+│  │   │     ├─ Tools (来自配置 + WithToolConfig + WithExtraTool)                  │ │
+│  │   │     └─ MCPs (来自 WithMCP)                                                │ │
 │  │   │                                                                           │ │
 │  │   │  2. wga_sandbox.Run()  ─────────────────▶ wga-sandbox (opencode runner)  │ │
 │  │   │                                                                           │ │
@@ -409,6 +410,11 @@ wga.WithExtraTool(        ─────▶  options.ExtraTools[]  ────
   APIAuth: {...}                                              .APIAuth
 )
 
+wga.WithMCP(               ─────▶  options.MCPs[]        ─────▶  MCP 服务器
+  Name: "Jira工单",                                            .Name
+  SSEURL: "https://...",                                       .SSEURL
+)
+
 wga.WithInputDir("...")    ─────▶  options.Workspace.InputDir   ─────▶  InputDir
 wga.WithOutputDir("...")   ─────▶  options.Workspace.OutputDir  ─────▶  OutputDir
 
@@ -510,6 +516,10 @@ runSession, iter, _ := wga.Run(ctx, "agent-id",
     wga.WithMessages([]adk.Message{
         &schema.Message{Role: schema.User, Content: "任务描述"},
     }),
+    wga.WithMCP(wga_option.MCP{
+        Name:   "Jira工单",
+        SSEURL: "https://jira.example.com/sse",
+    }),
 )
 
 // 获取结果
@@ -541,10 +551,45 @@ for {
 | `WithModelConfig` | 模型配置（必须） |
 | `WithToolConfig` | 工具配置（配置文件工具的认证信息） |
 | `WithExtraTool` | 额外工具（运行时动态添加，非配置文件中定义的工具） |
+| `WithMCP` | MCP 服务器（运行时动态添加） |
 | `WithInputDir` | 输入目录 |
 | `WithOutputDir` | 输出目录 |
 | `WithRunSession` | 会话标识 |
 | `WithMessages` | 消息列表（历史消息 + 当前问题，最后一条必须是 User 消息） |
+
+## MCP 服务器
+
+`WithMCP` 用于添加 MCP (Model Context Protocol) 服务器，允许智能体通过 SSE 协议与外部工具交互。
+
+```go
+wga.WithMCP(wga_option.MCP{
+    Name:   "Jira工单",
+    SSEURL: "https://jira.example.com/sse",
+}),
+wga.WithMCP(wga_option.MCP{
+    Name:   "Confluence",
+    SSEURL: "https://confluence.example.com/sse",
+}),
+```
+
+MCP 配置会被传递到 opencode runner，生成 opencode.json 中的 mcp 配置：
+
+```json
+{
+  "mcp": {
+    "Jira工单": {
+      "type": "remote",
+      "url": "https://jira.example.com/sse",
+      "enabled": true
+    },
+    "Confluence": {
+      "type": "remote",
+      "url": "https://confluence.example.com/sse",
+      "enabled": true
+    }
+  }
+}
+```
 
 ## 工具配置
 

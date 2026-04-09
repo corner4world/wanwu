@@ -314,6 +314,18 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, threadID, runID string,
 		opts = append(opts, workflowOpts...)
 	}
 
+	// 校验并构建MCP配置选项
+	if wgaConfig != nil && len(wgaConfig.McpList) > 0 {
+		if err := checkWgaMCPConfig(ctx, userID, orgID, wgaConfig.McpList); err != nil {
+			return nil, err
+		}
+		mcpOpts, err := buildWgaMCPOptions(ctx, userID, orgID, wgaConfig.McpList)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, mcpOpts...)
+	}
+
 	// TODO 智能体配置
 
 	// 持久化存储

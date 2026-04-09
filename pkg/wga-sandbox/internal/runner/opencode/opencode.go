@@ -52,7 +52,14 @@ const (
         }
       }
     }
-  }
+  }{{if .MCPs}},
+  "mcp": {
+{{range $i, $mcp := .MCPs}}    "{{$mcp.Name}}": {
+      "type": "remote",
+      "url": "{{$mcp.SSEURL}}",
+      "enabled": true
+    }{{if ne $i (sub (len $.MCPs) 1)}},{{end}}
+{{end}}  }{{end}}
 }`
 
 	// 系统提示词模板
@@ -191,7 +198,7 @@ func (r *Runner) setupConfig(ctx context.Context) error {
 		return fmt.Errorf("failed to create .opencode directory: %w", err)
 	}
 
-	content, err := renderConfig(r.opt.ModelConfig)
+	content, err := renderConfig(r.opt.ModelConfig, r.opt.MCPs)
 	if err != nil {
 		return fmt.Errorf("failed to render config: %w", err)
 	}
@@ -680,13 +687,29 @@ func (r *Runner) convertErrorEvent(event *sseEvent) string {
 // ============================================================================
 
 // renderConfig 渲染 opencode 配置文件。
-func renderConfig(config wga_sandbox_option.ModelConfig) (string, error) {
-	tmpl, err := template.New("config").Parse(configTemplate)
+func renderConfig(config wga_sandbox_option.ModelConfig, mcps []wga_sandbox_option.MCP) (string, error) {
+	tmpl, err := template.New("config").Funcs(template.FuncMap{
+		"sub": func(a, b int) int { return a - b },
+		"len": func(v interface{}) int {
+			switch s := v.(type) {
+			case []wga_sandbox_option.MCP:
+				return len(s)
+			}
+			return 0
+		},
+	}).Parse(configTemplate)
 	if err != nil {
 		return "", fmt.Errorf("parse config template failed: %w", err)
 	}
+	data := struct {
+		wga_sandbox_option.ModelConfig
+		MCPs []wga_sandbox_option.MCP
+	}{
+		ModelConfig: config,
+		MCPs:        mcps,
+	}
 	var buf strings.Builder
-	if err := tmpl.Execute(&buf, config); err != nil {
+	if err := tmpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("execute config template failed: %w", err)
 	}
 	return buf.String(), nil
