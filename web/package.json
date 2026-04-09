@@ -25,6 +25,7 @@
     "@microsoft/fetch-event-source": "^2.0.1",
     "@riophae/vue-treeselect": "^0.4.0",
     "@ruanyf/markdown-it-katex": "^5.0.0",
+    "@vue-office/docx": "^1.6.3",
     "@vue-office/excel": "^1.7.14",
     "@vue-office/pptx": "^1.0.1",
     "@vue/composition-api": "^1.7.2",

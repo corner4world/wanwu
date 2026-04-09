@@ -625,7 +625,7 @@ export function getFileType(fileName) {
     pdf: ['pdf'],
     ppt: ['ppt', 'pptx'],
     excel: ['xls', 'xlsx'],
-    office: ['doc', 'docx'],
+    word: ['doc', 'docx'],
     html: ['html', 'htm'],
     markdown: ['md'],
     text: [

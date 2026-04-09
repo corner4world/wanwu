@@ -318,15 +318,9 @@
         :visible.sync="previewVisible"
         :file="previewFile"
         :file-path="previewFilePath"
-        :file-ext="previewFileExt"
-        :type="previewType"
-        :url="previewUrl"
-        :content="previewContent"
+        :blob="previewBlob"
         :loading="previewLoading"
         :panel-style="previewPanelStyle"
-        :excel-data="previewExcelData"
-        @download="downloadPreviewFile"
-        @close="closePreview"
       />
 
       <!-- 配置弹窗 -->
@@ -364,7 +358,6 @@ import {
 } from './utils/sse-parser';
 import { formatDuration, avatarSrc, resDownloadFile } from '@/utils/util';
 import { mapState, mapActions, mapGetters } from 'vuex';
-import * as XLSX from 'xlsx';
 
 export default {
   name: 'GeneralAgent',
@@ -411,12 +404,7 @@ export default {
       previewLoading: false,
       previewFile: null,
       previewFilePath: '',
-      previewFileExt: '',
-      previewUrl: '',
-      previewContent: '',
-      previewType: '',
-      previewBlobUrl: '',
-      previewExcelData: null,
+      previewBlob: null, // 只存储 blob
       workspaceRect: null,
       resizeObserver: null,
 
@@ -568,7 +556,6 @@ export default {
       } else if (!val) {
         // 工作空间关闭时，关闭文件预览
         this.previewVisible = false;
-        this.closePreview();
       }
     },
     previewVisible(val) {
@@ -1959,170 +1946,27 @@ export default {
       return [];
     },
 
-    getPreviewType(file) {
-      if (!file || !file.name) return 'unsupported';
-      const ext = file.name.split('.').pop().toLowerCase();
-
-      const typeMap = {
-        image: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico'],
-        video: ['mp4', 'webm', 'ogg', 'mov', 'm4v', 'avi', 'mkv'],
-        audio: ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma'],
-        pdf: ['pdf'],
-        ppt: ['ppt', 'pptx'],
-        excel: ['xls', 'xlsx'],
-        office: ['doc', 'docx'],
-        html: ['html', 'htm'],
-        markdown: ['md'],
-        text: [
-          'txt',
-          'json',
-          'js',
-          'ts',
-          'jsx',
-          'tsx',
-          'vue',
-          'py',
-          'java',
-          'go',
-          'rs',
-          'c',
-          'cpp',
-          'h',
-          'hpp',
-          'cs',
-          'rb',
-          'php',
-          'swift',
-          'kt',
-          'scala',
-          'css',
-          'scss',
-          'sass',
-          'less',
-          'xml',
-          'yaml',
-          'yml',
-          'toml',
-          'ini',
-          'conf',
-          'cfg',
-          'sh',
-          'bash',
-          'zsh',
-          'bat',
-          'sql',
-          'dockerfile',
-          'makefile',
-          'r',
-          'm',
-          'lua',
-          'pl',
-          'pm',
-        ],
-      };
-
-      for (const [type, exts] of Object.entries(typeMap)) {
-        if (exts.includes(ext)) {
-          return type;
-        }
-      }
-
-      return 'unsupported';
-    },
-
     async handlePreviewFile(data) {
       const { file, filePath, threadId, runId } = data;
 
       this.previewFile = file;
-      this.previewLoading = true;
+      this.previewFilePath = filePath;
       this.previewVisible = true;
-      this.previewUrl = '';
-      this.previewContent = '';
-      this.previewType = '';
-      this.previewBlobUrl = '';
-      this.previewExcelData = null;
+      this.previewLoading = true;
+      this.previewBlob = null;
 
       try {
-        this.previewFilePath = filePath;
-        this.previewFileExt = file.name.split('.').pop().toLowerCase();
         const blob = await previewGeneralAgentWorkspace({
           threadId,
           runId,
           path: filePath,
         });
-
-        this.previewType = this.getPreviewType(file);
-
-        if (
-          ['image', 'video', 'audio', 'pdf', 'html'].includes(this.previewType)
-        ) {
-          this.previewBlobUrl = URL.createObjectURL(blob);
-          this.previewUrl = this.previewBlobUrl;
-        } else if (this.previewType === 'ppt') {
-          this.previewUrl = blob;
-          this.previewBlobUrl = blob;
-        } else if (['markdown', 'text'].includes(this.previewType)) {
-          this.previewContent = await blob.text();
-        } else if (this.previewType === 'excel') {
-          const arrayBuffer = await blob.arrayBuffer();
-          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-          const excelData = workbook.SheetNames.map(sheetName => {
-            const sheet = workbook.Sheets[sheetName];
-            const jsonData = XLSX.utils.sheet_to_json(sheet, {
-              header: 1,
-              defval: '',
-            });
-            const merges = sheet['!merges'] || [];
-            return {
-              name: sheetName,
-              data: jsonData,
-              merges: merges.map(m => ({
-                sr: m.s.r,
-                sc: m.s.c,
-                er: m.e.r,
-                ec: m.e.c,
-              })),
-              colCount: Math.max(
-                1,
-                sheet['!ref']
-                  ? XLSX.utils.decode_range(sheet['!ref']).e.c + 1
-                  : 1,
-              ),
-            };
-          });
-          this.previewExcelData = excelData;
-        }
+        this.previewBlob = blob;
       } catch (error) {
         console.error('预览文件失败:', error);
         this.$message.error('预览文件失败');
-        this.previewType = 'unsupported';
       } finally {
         this.previewLoading = false;
-      }
-    },
-
-    closePreview() {
-      if (this.previewBlobUrl) {
-        URL.revokeObjectURL(this.previewBlobUrl);
-        this.previewBlobUrl = '';
-      }
-    },
-
-    // 预览抽屉中下载单个文件
-    async downloadPreviewFile(file) {
-      if (!file || !this.previewFilePath) return;
-
-      try {
-        const blob = await downloadGeneralAgentWorkspace({
-          threadId: this.currentThreadId,
-          runId: this.currentRunId,
-          path: this.previewFilePath,
-        });
-        resDownloadFile(blob, file.name);
-        this.$message.success('下载成功');
-      } catch (error) {
-        console.error('下载文件失败:', error);
-        this.$message.error('下载文件失败');
       }
     },
 

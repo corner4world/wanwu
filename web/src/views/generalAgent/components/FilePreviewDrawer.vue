@@ -2,10 +2,7 @@
   <transition name="preview-slide">
     <div v-if="visible" class="preview-panel" :style="mergedPanelStyle">
       <!-- 左侧拖拽手柄 -->
-      <div
-        class="resize-handle"
-        @mousedown="startResize"
-      ></div>
+      <div class="resize-handle" @mousedown="startResize"></div>
       <!-- 拖拽时的透明遮罩，防止 iframe 捕获鼠标事件 -->
       <div v-if="isResizing" class="resize-overlay"></div>
       <div class="preview-header">
@@ -13,14 +10,15 @@
           {{ filePath || (file ? file.name : '') }}
         </div>
         <div class="preview-actions">
-          <el-button size="small" @click="$emit('download', file)">
+          <el-button size="small" @click="handleDownload">
             <i class="el-icon-download"></i>
             下载
           </el-button>
           <el-button
             size="small"
             v-if="
-              url && type !== 'ppt' && type !== 'markdown' && type !== 'text'
+              previewUrl &&
+              ['image', 'video', 'audio', 'pdf', 'html'].includes(previewType)
             "
             @click="openInNewTab"
           >
@@ -42,55 +40,64 @@
         <!-- 预览内容 -->
         <template v-else>
           <!-- 图片预览 -->
-          <div v-if="type === 'image'" class="preview-image-wrapper">
-            <img :src="url" class="preview-image" @error="handleError" />
+          <div v-if="previewType === 'image'" class="preview-image-wrapper">
+            <img :src="previewUrl" class="preview-image" @error="handleError" />
           </div>
 
           <!-- 视频预览 -->
-          <div v-else-if="type === 'video'" class="preview-video-wrapper">
-            <video :src="url" controls class="preview-video">
+          <div
+            v-else-if="previewType === 'video'"
+            class="preview-video-wrapper"
+          >
+            <video :src="previewUrl" controls class="preview-video">
               您的浏览器不支持视频播放
             </video>
           </div>
 
           <!-- 音频预览 -->
-          <div v-else-if="type === 'audio'" class="preview-audio-wrapper">
+          <div
+            v-else-if="previewType === 'audio'"
+            class="preview-audio-wrapper"
+          >
             <div class="audio-cover">
               <i class="el-icon-headset"></i>
             </div>
-            <audio :src="url" controls class="preview-audio">
+            <audio :src="previewUrl" controls class="preview-audio">
               您的浏览器不支持音频播放
             </audio>
           </div>
 
           <!-- PDF 预览 -->
-          <div v-else-if="type === 'pdf'" class="preview-pdf-wrapper">
-            <iframe :src="url" class="preview-pdf"></iframe>
+          <div v-else-if="previewType === 'pdf'" class="preview-pdf-wrapper">
+            <iframe :src="previewUrl" class="preview-pdf"></iframe>
           </div>
 
           <!-- PPT 预览 -->
-          <div v-else-if="type === 'ppt'" class="preview-ppt-wrapper">
+          <div v-else-if="previewType === 'ppt'" class="preview-ppt-wrapper">
             <ppt-preview
-              :src="url"
+              :src="blob"
               :file-name="file ? file.name : ''"
               @close="handleClose"
             />
           </div>
 
           <!-- HTML 预览 -->
-          <div v-else-if="type === 'html'" class="preview-html-wrapper">
+          <div v-else-if="previewType === 'html'" class="preview-html-wrapper">
             <iframe
-              :src="url"
+              :src="previewUrl"
               class="preview-html-frame"
               sandbox="allow-scripts allow-same-origin"
             ></iframe>
           </div>
 
           <!-- Excel 预览 -->
-          <div v-else-if="type === 'excel' && excelData" class="preview-excel-wrapper">
+          <div
+            v-else-if="previewType === 'excel' && previewExcelData"
+            class="preview-excel-wrapper"
+          >
             <div class="excel-tabs">
               <button
-                v-for="(sheet, index) in excelData"
+                v-for="(sheet, index) in previewExcelData"
                 :key="sheet.name"
                 :class="['excel-tab', { active: activeSheetIndex === index }]"
                 @click="activeSheetIndex = index"
@@ -99,10 +106,14 @@
               </button>
             </div>
             <div class="excel-table-container">
-              <table class="excel-table" v-if="excelData[activeSheetIndex]">
+              <table
+                class="excel-table"
+                v-if="previewExcelData[activeSheetIndex]"
+              >
                 <tbody>
                   <tr
-                    v-for="(row, rowIndex) in excelData[activeSheetIndex].data"
+                    v-for="(row, rowIndex) in previewExcelData[activeSheetIndex]
+                      .data"
                     :key="rowIndex"
                   >
                     <td
@@ -110,11 +121,21 @@
                       :key="colIndex"
                       :class="{
                         'excel-header': rowIndex === 0,
-                        'merged-cell': isMergedCell(activeSheetIndex, rowIndex, colIndex)
+                        'merged-cell': isMergedCell(
+                          activeSheetIndex,
+                          rowIndex,
+                          colIndex,
+                        ),
                       }"
-                      :rowspan="getRowspan(activeSheetIndex, rowIndex, colIndex)"
-                      :colspan="getColspan(activeSheetIndex, rowIndex, colIndex)"
-                      v-show="!isHiddenByMerge(activeSheetIndex, rowIndex, colIndex)"
+                      :rowspan="
+                        getRowspan(activeSheetIndex, rowIndex, colIndex)
+                      "
+                      :colspan="
+                        getColspan(activeSheetIndex, rowIndex, colIndex)
+                      "
+                      v-show="
+                        !isHiddenByMerge(activeSheetIndex, rowIndex, colIndex)
+                      "
                     >
                       {{ cell }}
                     </td>
@@ -126,25 +147,24 @@
 
           <!-- Markdown 预览 -->
           <div
-            v-else-if="type === 'markdown'"
+            v-else-if="previewType === 'markdown'"
             class="preview-markdown-wrapper"
             ref="markdownRef"
           >
             <div class="markdown-body" v-html="renderedMarkdown"></div>
           </div>
 
-          <!-- Office 文件预览 (Word/Excel 等) -->
-          <div v-else-if="type === 'office'" class="preview-office-wrapper">
-            <div class="office-notice">
-              <i class="el-icon-document"></i>
-              <p>{{ file ? file.name : '' }}</p>
-              <p class="notice-text">此文件类型暂不支持在线预览</p>
-            </div>
+          <!-- Word 预览 -->
+          <div
+            v-else-if="previewType === 'word'"
+            class="preview-office-wrapper"
+          >
+            <vue-office-docx :src="blob" @error="handleWordError" />
           </div>
 
           <!-- 文本/代码预览 -->
           <div
-            v-else-if="type === 'text'"
+            v-else-if="previewType === 'text'"
             class="preview-text-wrapper"
             ref="codeRef"
           >
@@ -166,11 +186,17 @@
 <script>
 import PptPreview from './PptPreview.vue';
 import { md, highlightCode } from '../utils/markdown';
+import VueOfficeDocx from '@vue-office/docx';
+import '@vue-office/docx/lib/index.css';
+import { downloadGeneralAgentWorkspace } from '@/api/generalAgent';
+import { resDownloadFile, getFileType } from '@/utils/util';
+import * as XLSX from 'xlsx';
 
 export default {
   name: 'FilePreviewDrawer',
   components: {
     PptPreview,
+    VueOfficeDocx,
   },
   props: {
     visible: {
@@ -185,21 +211,10 @@ export default {
       type: String,
       default: '',
     },
-    fileExt: {
-      type: String,
-      default: '',
-    },
-    type: {
-      type: String,
-      default: '',
-    },
-    url: {
-      type: String,
-      default: '',
-    },
-    content: {
-      type: String,
-      default: '',
+    // 只接收 blob 数据
+    blob: {
+      type: Blob,
+      default: null,
     },
     loading: {
       type: Boolean,
@@ -209,10 +224,6 @@ export default {
       type: Object,
       default: () => ({}),
     },
-    excelData: {
-      type: Array,
-      default: null,
-    },
   },
   data() {
     return {
@@ -220,16 +231,26 @@ export default {
       isResizing: false,
       panelWidth: null,
       activeSheetIndex: 0,
+      // 内部预览状态
+      previewType: '',
+      previewUrl: '',
+      previewContent: '',
+      previewBlobUrl: '',
+      previewExcelData: null,
     };
   },
   computed: {
+    fileExt() {
+      if (!this.file || !this.file.name) return '';
+      return this.file.name.split('.').pop().toLowerCase();
+    },
     renderedMarkdown() {
-      if (!this.content) return '';
-      return md.render(this.content);
+      if (!this.previewContent) return '';
+      return md.render(this.previewContent);
     },
     renderedCode() {
-      if (!this.content) return '';
-      return highlightCode(this.content, this.fileExt);
+      if (!this.previewContent) return '';
+      return highlightCode(this.previewContent, this.fileExt);
     },
     mergedPanelStyle() {
       const style = { ...this.panelStyle };
@@ -240,27 +261,19 @@ export default {
     },
   },
   watch: {
-    content() {
-      this.$nextTick(() => {
-        this.bindCopyButtons();
-        this.bindCodeCopyButtons();
-      });
-    },
     visible(val) {
-      if (val) {
-        // 重置宽度
-        this.panelWidth = null;
-        this.$nextTick(() => {
-          // 重置滚动位置到左上角
-          if (this.$refs.previewBody) {
-            this.$refs.previewBody.scrollTop = 0;
-            this.$refs.previewBody.scrollLeft = 0;
-          }
-          this.bindCopyButtons();
-          this.bindCodeCopyButtons();
-        });
-      } else {
-        this.unbindCopyButtons();
+      if (val && this.blob) {
+        // 打开且有 blob 数据时，处理预览
+        this.processBlob();
+      } else if (!val) {
+        // 关闭时清理资源
+        this.cleanupPreview();
+      }
+    },
+    blob(newVal) {
+      // blob 变化时重新处理
+      if (newVal && this.visible) {
+        this.processBlob();
       }
     },
   },
@@ -277,6 +290,82 @@ export default {
     this.stopResize();
   },
   methods: {
+    // 处理 blob 数据
+    async processBlob() {
+      if (!this.blob || !this.file) {
+        return;
+      }
+
+      // 重置状态
+      this.previewType = '';
+      this.previewUrl = '';
+      this.previewContent = '';
+      this.previewBlobUrl = '';
+      this.previewExcelData = null;
+      this.activeSheetIndex = 0;
+
+      try {
+        this.previewType = getFileType(this.file.name);
+
+        if (
+          ['image', 'video', 'audio', 'pdf', 'html'].includes(this.previewType)
+        ) {
+          // 对于图片、视频、音频、PDF、HTML，创建 Object URL
+          this.previewBlobUrl = URL.createObjectURL(this.blob);
+          this.previewUrl = this.previewBlobUrl;
+        } else if (['markdown', 'text'].includes(this.previewType)) {
+          this.previewContent = await this.blob.text();
+        } else if (this.previewType === 'excel') {
+          const arrayBuffer = await this.blob.arrayBuffer();
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          const excelData = workbook.SheetNames.map(sheetName => {
+            const sheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, {
+              header: 1,
+              defval: '',
+            });
+            const merges = sheet['!merges'] || [];
+            return {
+              name: sheetName,
+              data: jsonData,
+              merges: merges.map(m => ({
+                sr: m.s.r,
+                sc: m.s.c,
+                er: m.e.r,
+                ec: m.e.c,
+              })),
+              colCount: Math.max(
+                1,
+                sheet['!ref']
+                  ? XLSX.utils.decode_range(sheet['!ref']).e.c + 1
+                  : 1,
+              ),
+            };
+          });
+          this.previewExcelData = excelData;
+        }
+      } catch (error) {
+        console.error('处理文件失败:', error);
+        this.$message.error('处理文件失败');
+        this.previewType = 'unsupported';
+      } finally {
+        this.$nextTick(() => {
+          this.bindCopyButtons();
+          this.bindCodeCopyButtons();
+        });
+      }
+    },
+
+    // 清理预览资源
+    cleanupPreview() {
+      if (this.previewBlobUrl && typeof this.previewBlobUrl === 'string') {
+        URL.revokeObjectURL(this.previewBlobUrl);
+        this.previewBlobUrl = '';
+      }
+      this.unbindCopyButtons();
+      this.stopResize();
+    },
+
     handleClose() {
       this.$emit('update:visible', false);
       this.$emit('close');
@@ -317,35 +406,67 @@ export default {
     },
 
     openInNewTab() {
-      if (this.url) {
-        window.open(this.url, '_blank');
+      if (this.previewUrl) {
+        window.open(this.previewUrl, '_blank');
       }
     },
 
     isMergedCell(sheetIndex, row, col) {
-      if (!this.excelData || !this.excelData[sheetIndex]) return false;
-      const merges = this.excelData[sheetIndex].merges || [];
+      if (!this.previewExcelData || !this.previewExcelData[sheetIndex])
+        return false;
+      const merges = this.previewExcelData[sheetIndex].merges || [];
       return merges.some(m => row === m.sr && col === m.sc);
     },
 
     isHiddenByMerge(sheetIndex, row, col) {
-      if (!this.excelData || !this.excelData[sheetIndex]) return false;
-      const merges = this.excelData[sheetIndex].merges || [];
-      return merges.some(m => row >= m.sr && row <= m.er && col >= m.sc && col <= m.ec && !(row === m.sr && col === m.sc));
+      if (!this.previewExcelData || !this.previewExcelData[sheetIndex])
+        return false;
+      const merges = this.previewExcelData[sheetIndex].merges || [];
+      return merges.some(
+        m =>
+          row >= m.sr &&
+          row <= m.er &&
+          col >= m.sc &&
+          col <= m.ec &&
+          !(row === m.sr && col === m.sc),
+      );
     },
 
     getRowspan(sheetIndex, row, col) {
-      if (!this.excelData || !this.excelData[sheetIndex]) return 1;
-      const merges = this.excelData[sheetIndex].merges || [];
+      if (!this.previewExcelData || !this.previewExcelData[sheetIndex])
+        return 1;
+      const merges = this.previewExcelData[sheetIndex].merges || [];
       const merge = merges.find(m => row === m.sr && col === m.sc);
       return merge ? merge.er - merge.sr + 1 : 1;
     },
 
     getColspan(sheetIndex, row, col) {
-      if (!this.excelData || !this.excelData[sheetIndex]) return 1;
-      const merges = this.excelData[sheetIndex].merges || [];
+      if (!this.previewExcelData || !this.previewExcelData[sheetIndex])
+        return 1;
+      const merges = this.previewExcelData[sheetIndex].merges || [];
       const merge = merges.find(m => row === m.sr && col === m.sc);
       return merge ? merge.ec - merge.sc + 1 : 1;
+    },
+
+    // 下载文件
+    async handleDownload() {
+      if (!this.file || !this.filePath || !this.threadId || !this.runId) {
+        return;
+      }
+
+      try {
+        const blob = await downloadGeneralAgentWorkspace({
+          threadId: this.threadId,
+          runId: this.runId,
+          path: this.filePath,
+        });
+
+        resDownloadFile(blob, this.file.name);
+        this.$message.success('下载成功');
+      } catch (error) {
+        console.error('下载文件失败:', error);
+        this.$message.error('下载文件失败');
+      }
     },
 
     bindCopyButtons() {
@@ -432,6 +553,11 @@ export default {
         btn.removeEventListener('click', handler);
       });
       this.copyClickHandlers = [];
+    },
+
+    handleWordError(error) {
+      console.error('Word 文档渲染失败:', error);
+      this.$message.error('Word 文档预览失败');
     },
   },
 };
@@ -736,23 +862,10 @@ export default {
 }
 
 .preview-office-wrapper {
-  align-items: center;
-  justify-content: center;
-}
-
-.office-notice {
-  text-align: center;
-  color: #909399;
-}
-
-.office-notice i {
-  font-size: 48px;
-  margin-bottom: 16px;
-  color: #c0c4cc;
-}
-
-.office-notice p {
-  margin: 8px 0;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #fff;
 }
 
 .preview-unsupported {
