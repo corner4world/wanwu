@@ -205,6 +205,8 @@ definitions:
         $ref: '#/definitions/mp_qwen.LLM'
       multiModalEmbedding:
         $ref: '#/definitions/mp_qwen.MultiModalEmbedding'
+      multiModalRerank:
+        $ref: '#/definitions/mp_qwen.MultiModalRerank'
       rerank:
         $ref: '#/definitions/mp_qwen.Rerank'
     type: object
@@ -669,6 +671,27 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  mp_qwen.MultiModalRerank:
+    properties:
+      apiKey:
+        type: string
+      contextSize:
+        type: integer
+      endpointUrl:
+        type: string
+      maxImageSize:
+        type: integer
+      maxTextLength:
+        type: integer
+      maxVideoClipSize:
+        type: integer
+      supportFileTypes:
+        items:
+          type: string
+        type: array
+      supportImageInQuery:
+        type: boolean
     type: object
   mp_qwen.Rerank:
     properties:

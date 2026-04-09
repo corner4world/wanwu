@@ -133,6 +133,8 @@ definitions:
         $ref: '#/definitions/mp_qwen.LLM'
       multiModalEmbedding:
         $ref: '#/definitions/mp_qwen.MultiModalEmbedding'
+      multiModalRerank:
+        $ref: '#/definitions/mp_qwen.MultiModalRerank'
       rerank:
         $ref: '#/definitions/mp_qwen.Rerank'
     type: object
@@ -501,6 +503,8 @@ definitions:
         type: string
       text:
         type: string
+      video:
+        type: string
     type: object
   mp_common.MultiInput:
     properties:
@@ -557,6 +561,9 @@ definitions:
         items:
           $ref: '#/definitions/mp_common.MultiDocument'
         type: array
+      fps:
+        description: 视频帧率（适配qwen rerank）
+        type: number
       instruction:
         description: 指令内容（适配元景qwen_rerank）
         type: string
@@ -943,6 +950,10 @@ definitions:
   mp_common.Usage:
     properties:
       completion_tokens:
+        type: integer
+      image_tokens:
+        type: integer
+      input_tokens:
         type: integer
       prompt_tokens:
         type: integer
@@ -1336,6 +1347,27 @@ definitions:
           type: string
         type: array
     type: object
+  mp_qwen.MultiModalRerank:
+    properties:
+      apiKey:
+        type: string
+      contextSize:
+        type: integer
+      endpointUrl:
+        type: string
+      maxImageSize:
+        type: integer
+      maxTextLength:
+        type: integer
+      maxVideoClipSize:
+        type: integer
+      supportFileTypes:
+        items:
+          type: string
+        type: array
+      supportImageInQuery:
+        type: boolean
+    type: object
   mp_qwen.Rerank:
     properties:
       apiKey:
@@ -1610,25 +1642,12 @@ definitions:
         description: Title is a human-readable title for the tool, useful for UI display
         type: string
     type: object
-  request.AgentProxyChatReq:
+  request.AgentChatProxyReq:
     properties:
-      assistantId:
-        type: integer
       input:
         type: string
-      orgId:
-        type: string
-      uploadFile:
-        items:
-          type: string
-        type: array
-      userId:
-        type: string
     required:
-    - assistantId
     - input
-    - orgId
-    - userId
     type: object
   request.AppModelConfig:
     properties:
@@ -2425,18 +2444,23 @@ info:
   title: AI Agent Productivity Platform - Callback
   version: v0.0.1
 paths:
-  /agent/proxy/chat:
+  /agent/{assistantId}/chat:
     post:
       consumes:
       - application/json
       description: 智能体代理问答，固定流式返回，提取eventType=0的数据聚合返回
       parameters:
+      - description: assistantId
+        in: path
+        name: assistantId
+        required: true
+        type: string
       - description: 智能体代理问答请求参数
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.AgentProxyChatReq'
+          $ref: '#/definitions/request.AgentChatProxyReq'
       produces:
       - application/json
       responses:

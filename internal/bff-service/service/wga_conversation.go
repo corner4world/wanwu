@@ -326,7 +326,17 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, threadID, runID string,
 		opts = append(opts, mcpOpts...)
 	}
 
-	// TODO 智能体配置
+	// 校验并构建智能体配置选项
+	if wgaConfig != nil && len(wgaConfig.AssistantList) > 0 {
+		if err := checkWgaAssistantConfig(ctx, userID, orgID, wgaConfig.AssistantList); err != nil {
+			return nil, err
+		}
+		assistantOpts, err := buildWgaAssistantOptions(ctx, userID, orgID, wgaConfig.AssistantList)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, assistantOpts...)
+	}
 
 	// 持久化存储
 	if config.WgaCfg().Persistent.Enabled {

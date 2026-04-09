@@ -17247,6 +17247,9 @@ const docTemplate = `{
                 "multiModalEmbedding": {
                     "$ref": "#/definitions/mp_qwen.MultiModalEmbedding"
                 },
+                "multiModalRerank": {
+                    "$ref": "#/definitions/mp_qwen.MultiModalRerank"
+                },
                 "rerank": {
                     "$ref": "#/definitions/mp_qwen.Rerank"
                 }
@@ -17896,6 +17899,38 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "mp_qwen.MultiModalRerank": {
+            "type": "object",
+            "properties": {
+                "apiKey": {
+                    "type": "string"
+                },
+                "contextSize": {
+                    "type": "integer"
+                },
+                "endpointUrl": {
+                    "type": "string"
+                },
+                "maxImageSize": {
+                    "type": "integer"
+                },
+                "maxTextLength": {
+                    "type": "integer"
+                },
+                "maxVideoClipSize": {
+                    "type": "integer"
+                },
+                "supportFileTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "supportImageInQuery": {
+                    "type": "boolean"
                 }
             }
         },

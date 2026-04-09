@@ -23,6 +23,7 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	openapi3_util "github.com/UnicomAI/wanwu/pkg/openapi3-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/wga"
 	wga_persistent "github.com/UnicomAI/wanwu/pkg/wga-persistent"
@@ -906,6 +907,47 @@ func checkWgaAssistantConfig(ctx *gin.Context, userId, orgId string, assistantLi
 		}
 	}
 	return nil
+}
+
+func buildWgaAssistantOptions(ctx *gin.Context, userId, orgId string, assistantList []*assistant_service.WgaConfigAssistant) ([]wga_option.Option, error) {
+	if len(assistantList) == 0 {
+		return nil, nil
+	}
+
+	var assistantIds []string
+	for _, a := range assistantList {
+		assistantIds = append(assistantIds, a.AssistantId)
+	}
+	resp, err := assistant.GetAssistantByIds(ctx.Request.Context(), &assistant_service.GetAssistantByIdsReq{
+		AssistantIdList: assistantIds,
+		Identity: &assistant_service.Identity{
+			UserId: userId,
+			OrgId:  orgId,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var opts []wga_option.Option
+	for _, a := range resp.AssistantInfos {
+		if a.Info == nil {
+			continue
+		}
+		schemaData, err := renderAgentChatProxySchema(a.Info.AppId, a.Info.Name, a.Info.Desc)
+		if err != nil {
+			return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("render assistant(%s) openapi schema err: %v", a.Info.AppId, err))
+		}
+		doc, err := openapi3_util.LoadFromData(ctx.Request.Context(), schemaData)
+		if err != nil {
+			return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("load assistant(%s) openapi schema err: %v", a.Info.AppId, err))
+		}
+		opts = append(opts, wga_option.WithExtraTool(wga_option.ExtraTool{
+			OpenAPI3Schema: doc,
+		}))
+	}
+
+	return opts, nil
 }
 
 // --- internal wga mcp ---

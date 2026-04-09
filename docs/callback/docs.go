@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/agent/proxy/chat": {
+        "/agent/{assistantId}/chat": {
             "post": {
                 "description": "智能体代理问答，固定流式返回，提取eventType=0的数据聚合返回",
                 "consumes": [
@@ -31,12 +31,19 @@ const docTemplate = `{
                 "summary": "智能体代理问答",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "assistantId",
+                        "name": "assistantId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "智能体代理问答请求参数",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.AgentProxyChatReq"
+                            "$ref": "#/definitions/request.AgentChatProxyReq"
                         }
                     }
                 ],
@@ -1491,6 +1498,9 @@ const docTemplate = `{
                 "multiModalEmbedding": {
                     "$ref": "#/definitions/mp_qwen.MultiModalEmbedding"
                 },
+                "multiModalRerank": {
+                    "$ref": "#/definitions/mp_qwen.MultiModalRerank"
+                },
                 "rerank": {
                     "$ref": "#/definitions/mp_qwen.Rerank"
                 }
@@ -2029,6 +2039,9 @@ const docTemplate = `{
                 },
                 "text": {
                     "type": "string"
+                },
+                "video": {
+                    "type": "string"
                 }
             }
         },
@@ -2118,6 +2131,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/mp_common.MultiDocument"
                     }
+                },
+                "fps": {
+                    "description": "视频帧率（适配qwen rerank）",
+                    "type": "number"
                 },
                 "instruction": {
                     "description": "指令内容（适配元景qwen_rerank）",
@@ -2700,6 +2717,12 @@ const docTemplate = `{
                 "completion_tokens": {
                     "type": "integer"
                 },
+                "image_tokens": {
+                    "type": "integer"
+                },
+                "input_tokens": {
+                    "type": "integer"
+                },
                 "prompt_tokens": {
                     "type": "integer"
                 },
@@ -3246,6 +3269,38 @@ const docTemplate = `{
                 }
             }
         },
+        "mp_qwen.MultiModalRerank": {
+            "type": "object",
+            "properties": {
+                "apiKey": {
+                    "type": "string"
+                },
+                "contextSize": {
+                    "type": "integer"
+                },
+                "endpointUrl": {
+                    "type": "string"
+                },
+                "maxImageSize": {
+                    "type": "integer"
+                },
+                "maxTextLength": {
+                    "type": "integer"
+                },
+                "maxVideoClipSize": {
+                    "type": "integer"
+                },
+                "supportFileTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "supportImageInQuery": {
+                    "type": "boolean"
+                }
+            }
+        },
         "mp_qwen.Rerank": {
             "type": "object",
             "properties": {
@@ -3631,31 +3686,13 @@ const docTemplate = `{
                 }
             }
         },
-        "request.AgentProxyChatReq": {
+        "request.AgentChatProxyReq": {
             "type": "object",
             "required": [
-                "assistantId",
-                "input",
-                "orgId",
-                "userId"
+                "input"
             ],
             "properties": {
-                "assistantId": {
-                    "type": "integer"
-                },
                 "input": {
-                    "type": "string"
-                },
-                "orgId": {
-                    "type": "string"
-                },
-                "uploadFile": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "userId": {
                     "type": "string"
                 }
             }
