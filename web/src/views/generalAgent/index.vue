@@ -85,7 +85,6 @@
               v-for="(msg, index) in messageList"
               :key="msg.id || index"
               :message="msg"
-              :tool-results="getToolResultsForMessage(msg)"
               :is-last-message="index === messageList.length - 1"
               :thread-id="currentThreadId"
               @regenerate="handleRegenerate"
@@ -362,10 +361,7 @@ import { avatarSrc, resDownloadFile } from '@/utils/util';
 import { mapActions, mapGetters, mapState } from 'vuex';
 import { SSEEventParser } from './utils/sse-parser';
 // 引入工具函数
-import {
-  aggregateEventsToMessages,
-  formatMessage,
-} from './utils/message-aggregator';
+import { aggregateEventsToMessages } from './utils/message-aggregator';
 // 引入 Mixins
 import streamStateManager from './mixins/streamStateManager';
 import messageManager from './mixins/messageManager';
@@ -708,15 +704,6 @@ export default {
             if (run.events && Array.isArray(run.events)) {
               const messages = aggregateEventsToMessages(run.events);
               allMessages.push(...messages);
-            }
-            // 兼容旧格式 messages 字段
-            if (run.messages && Array.isArray(run.messages)) {
-              run.messages.forEach(msg => {
-                const formatted = formatMessage(msg);
-                if (formatted) {
-                  allMessages.push(formatted);
-                }
-              });
             }
             if (run.runId) this.currentRunId = run.runId;
           });

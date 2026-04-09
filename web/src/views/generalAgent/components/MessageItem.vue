@@ -134,47 +134,10 @@
               >
                 <stream-markdown
                   :content="fragment.content"
-                  :is-streaming="fragment.isStreaming || message.isStreaming"
+                  :is-streaming="fragment.isStreaming || false"
                 />
               </div>
             </template>
-          </template>
-
-          <!-- 兼容旧格式：没有 fragments 时使用原来的展示方式 -->
-          <template v-else>
-            <!-- 阶段区域：思考过程 + 工具调用（默认折叠） -->
-            <div v-if="hasStages" class="stages-container">
-              <!-- 思考过程块 -->
-              <thinking-block
-                v-if="message.reasoning && message.reasoning.length > 0"
-                :content="message.reasoning"
-                :is-streaming="message.isStreaming && !message.content"
-                :duration="message.reasoningDuration"
-                :default-expanded="false"
-              />
-
-              <!-- 工具调用块 -->
-              <tool-call-block
-                v-for="toolCall in visibleToolCalls"
-                :key="toolCall.id"
-                :tool-call="toolCall"
-                :result="getToolResult(toolCall.id)"
-                :execution-time="toolCall.executionTime"
-                :default-expanded="false"
-              />
-            </div>
-
-            <!-- 文本内容 -->
-            <div
-              v-if="message.content && message.content.length > 0"
-              class="message-content"
-            >
-              <stream-markdown
-                :content="message.content"
-                :is-streaming="message.isStreaming"
-              />
-              <typing-cursor v-if="message.isStreaming" />
-            </div>
           </template>
 
           <!-- 流式加载指示器 -->
@@ -231,10 +194,6 @@ export default {
       type: Object,
       required: true,
     },
-    toolResults: {
-      type: Array,
-      default: () => [],
-    },
     isLastMessage: {
       type: Boolean,
       default: false,
@@ -262,26 +221,13 @@ export default {
       if (!this.message.fragments) return [];
       return this.message.fragments;
     },
-    hasStages() {
-      const hasReasoning =
-        this.message.reasoning && this.message.reasoning.length > 0;
-      const hasToolCalls =
-        this.message.toolCalls && this.message.toolCalls.length > 0;
-      return hasReasoning || hasToolCalls;
-    },
     hasContent() {
-      const hasText = this.message.content && this.message.content.length > 0;
-      const hasReasoning =
-        this.message.reasoning && this.message.reasoning.length > 0;
-      const hasToolCalls =
-        this.message.toolCalls && this.message.toolCalls.length > 0;
-
       const checkFragmentContent = fragments => {
         if (!fragments) return false;
         return fragments.some(
           f =>
-            (f.type === 'text' && f.content) ||
-            (f.type === 'reasoning' && f.content) ||
+            (f.type === 'text' && (f.content || f.isStreaming)) ||
+            (f.type === 'reasoning' && (f.content || f.isStreaming)) ||
             (f.type === 'tool_call' && f.toolCall) ||
             (f.type === 'workspace' && f.workspaceInfo) ||
             (f.type === 'activity' &&
@@ -290,14 +236,7 @@ export default {
         );
       };
 
-      const hasFragmentsContent = checkFragmentContent(this.message.fragments);
-      return hasText || hasReasoning || hasToolCalls || hasFragmentsContent;
-    },
-    visibleToolCalls() {
-      if (!this.message.toolCalls || !Array.isArray(this.message.toolCalls)) {
-        return [];
-      }
-      return this.message.toolCalls;
+      return checkFragmentContent(this.message.fragments);
     },
     // 获取完整的可复制内容
     fullContent() {
@@ -329,23 +268,6 @@ export default {
       // 如果有 fragments，按片段顺序提取
       if (this.message.fragments && this.message.fragments.length > 0) {
         processFragments(this.message.fragments);
-      } else {
-        // 兼容旧格式
-        if (this.message.reasoning) {
-          parts.push(
-            this.$t('generalAgent.message.reasoning') + this.message.reasoning,
-          );
-        }
-        if (this.message.toolCalls && this.message.toolCalls.length > 0) {
-          this.message.toolCalls.forEach(tc => {
-            parts.push(
-              `${this.$t('generalAgent.message.toolCall')}${tc.name}\n${this.$t('generalAgent.message.args')}${tc.arguments || '{}'}\n${this.$t('generalAgent.message.result')}${tc.result || this.$t('generalAgent.message.none')}`,
-            );
-          });
-        }
-        if (this.message.content) {
-          parts.push(this.message.content);
-        }
       }
 
       return parts.join('\n\n');
@@ -353,27 +275,6 @@ export default {
   },
   methods: {
     isImageFile,
-
-    getToolResult(toolCallId) {
-      // 优先从 toolCall 本身获取 result
-      const toolCall = this.message.toolCalls?.find(t => t.id === toolCallId);
-      if (toolCall && toolCall.result) {
-        return toolCall.result;
-      }
-      // 从 toolResults 数组获取
-      if (this.message.toolResults && this.message.toolResults.length > 0) {
-        const result = this.message.toolResults.find(
-          r => r.toolCallId === toolCallId,
-        );
-        if (result) return result.content;
-      }
-      // 从 props 传入的 toolResults 获取
-      if (this.toolResults && this.toolResults.length > 0) {
-        const result = this.toolResults.find(r => r.toolCallId === toolCallId);
-        if (result) return result.content;
-      }
-      return '';
-    },
 
     previewImage(file) {
       const url = file.url || file.data;

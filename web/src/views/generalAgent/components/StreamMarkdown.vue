@@ -44,21 +44,37 @@ export default {
   watch: {
     content(newVal, oldVal) {
       if (this.isStreaming) {
-        if (!oldVal || newVal.length < oldVal.length) {
-          this.resetState();
-          this.stableContent = newVal || '';
-        } else if (newVal !== oldVal) {
+        // 只在首次或内容重置时才初始化 stableContent
+        if (!oldVal && newVal) {
+          this.stableContent = newVal;
+        } else if (
+          newVal !== oldVal &&
+          newVal.length >= (oldVal?.length || 0)
+        ) {
+          // 正常增量更新
           this.processIncremental(newVal, oldVal);
         }
+        // 如果 newVal.length < oldVal.length，忽略这次更新（可能是中间状态）
       }
       this.$nextTick(() => this.bindCopyButtons());
     },
     isStreaming(val) {
       if (!val) {
-        this.resetState();
+        // 流式结束时，将所有 activeContent 刷新到 stableContent
+        if (this.activeContent) {
+          this.stableContent += this.activeContent;
+          this.activeContent = '';
+        }
+        this.blockStates = {
+          inCodeBlock: false,
+          inLatexBlock: false,
+        };
         this.$nextTick(() => this.bindCopyButtons());
       } else {
-        this.stableContent = this.content || '';
+        // 开始流式时，初始化 stableContent
+        if (!this.stableContent && this.content) {
+          this.stableContent = this.content;
+        }
       }
     },
   },
@@ -69,15 +85,6 @@ export default {
     this.unbindCopyButtons();
   },
   methods: {
-    resetState() {
-      this.stableContent = '';
-      this.activeContent = '';
-      this.blockStates = {
-        inCodeBlock: false,
-        inLatexBlock: false,
-      };
-    },
-
     processIncremental(newContent, oldContent) {
       const incremental = newContent.slice(oldContent.length);
       this.activeContent += incremental;
