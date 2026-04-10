@@ -12,8 +12,13 @@ import (
 
 func Register(openAPI *gin.RouterGroup) {
 	// agent
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/agent", http.MethodPost, openapi.CreateAgent, "创建智能体OpenAPI", constant.OpenAPITypeAgent, middleware.AuthOpenAPIKey(constant.OpenAPITypeAgent), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/agent/publish", http.MethodPost, openapi.PublishAgent, "发布智能体OpenAPI", constant.OpenAPITypeAgent, middleware.AuthOpenAPIKey(constant.OpenAPITypeAgent), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/agent/info", http.MethodGet, openapi.GetAgentInfo, "获取智能体详情OpenAPI", constant.OpenAPITypeAgent, middleware.AuthOpenAPIKey(constant.OpenAPITypeAgent), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/agent/config", http.MethodPut, openapi.UpdateAgentConfig, "更新智能体配置OpenAPI", constant.OpenAPITypeAgent, middleware.AuthOpenAPIKey(constant.OpenAPITypeAgent), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthModelByUuid([]string{"modelConfig.modelId", "rerankConfig.modelId", "recommendConfig.modelConfig.modelId"}))
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/agent/conversation", http.MethodPost, openapi.CreateAgentConversation, "智能体创建对话OpenAPI", constant.OpenAPITypeAgent, middleware.AuthOpenAPIKey(constant.OpenAPITypeAgent), middleware.APIKeyRecord(middleware.RecordNonStreamType))
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/agent/chat", http.MethodPost, openapi.ChatAgent, "智能体问答OpenAPI", constant.OpenAPITypeAgent, middleware.AuthOpenAPIKey(constant.OpenAPITypeAgent), middleware.APIKeyRecord(middleware.RecordFromReq))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/agent/chat/draft", http.MethodPost, openapi.DraftChatAgent, "智能体草稿态对话OpenAPI", constant.OpenAPITypeAgent, middleware.AuthOpenAPIKey(constant.OpenAPITypeAgent), middleware.APIKeyRecord(middleware.RecordFromReq))
 	// rag
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/rag/chat", http.MethodPost, openapi.ChatRag, "文本问答OpenAPI", constant.OpenAPITypeRag, middleware.AuthOpenAPIKey(constant.OpenAPITypeRag), middleware.APIKeyRecord(middleware.RecordFromReq))
 	// workflow
