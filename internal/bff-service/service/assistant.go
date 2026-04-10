@@ -131,7 +131,6 @@ func AssistantConfigUpdate(ctx *gin.Context, userId, orgId string, req request.A
 	return nil, err
 }
 
-
 func GetAssistantInfo(ctx *gin.Context, userId, orgId string, req request.AssistantIdRequest, needPublished bool) (*response.Assistant, error) {
 	var resp *assistant_service.AssistantInfo
 	var err error

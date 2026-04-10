@@ -1,5 +1,84 @@
 basePath: /openapi/v1
 definitions:
+  mp.AppModelParams:
+    properties:
+      providerDeepSeek:
+        $ref: '#/definitions/mp.AppModelParamsDeepSeek'
+      providerHuoshan:
+        $ref: '#/definitions/mp.AppModelParamsHuoShan'
+      providerInfini:
+        $ref: '#/definitions/mp.AppModelParamsInfini'
+      providerOllama:
+        $ref: '#/definitions/mp.AppModelParamsOllama'
+      providerOpenAICompatible:
+        allOf:
+        - $ref: '#/definitions/mp.AppModelParamsOpenAICompatible'
+        description: OpenAI-API-compatible模型配置
+      providerQianFan:
+        $ref: '#/definitions/mp.AppModelParamsQianFan'
+      providerQwen:
+        $ref: '#/definitions/mp.AppModelParamsQwen'
+      providerYuanjing:
+        allOf:
+        - $ref: '#/definitions/mp.AppModelParamsYuanjing'
+        description: YuanJing模型配置
+    type: object
+  mp.AppModelParamsDeepSeek:
+    properties:
+      llm:
+        allOf:
+        - $ref: '#/definitions/mp_common.LLMParams'
+        description: 大语言模型配置
+    type: object
+  mp.AppModelParamsHuoShan:
+    properties:
+      llm:
+        allOf:
+        - $ref: '#/definitions/mp_common.LLMParams'
+        description: 大语言模型配置
+    type: object
+  mp.AppModelParamsInfini:
+    properties:
+      llm:
+        allOf:
+        - $ref: '#/definitions/mp_common.LLMParams'
+        description: 大语言模型配置
+    type: object
+  mp.AppModelParamsOllama:
+    properties:
+      llm:
+        allOf:
+        - $ref: '#/definitions/mp_common.LLMParams'
+        description: 大语言模型配置
+    type: object
+  mp.AppModelParamsOpenAICompatible:
+    properties:
+      llm:
+        allOf:
+        - $ref: '#/definitions/mp_common.LLMParams'
+        description: 大语言模型配置
+    type: object
+  mp.AppModelParamsQianFan:
+    properties:
+      llm:
+        allOf:
+        - $ref: '#/definitions/mp_common.LLMParams'
+        description: 大语言模型配置
+    type: object
+  mp.AppModelParamsQwen:
+    properties:
+      llm:
+        allOf:
+        - $ref: '#/definitions/mp_common.LLMParams'
+        description: 大语言模型配置
+    type: object
+  mp.AppModelParamsYuanjing:
+    properties:
+      llm:
+        allOf:
+        - $ref: '#/definitions/mp_common.LLMParams'
+        description: 大语言模型配置
+    type: object
   mp.ProviderModelByDeepSeek:
     properties:
       llm:
@@ -103,6 +182,42 @@ definitions:
         $ref: '#/definitions/mp.ProviderModelByYuanjing'
       providerZhipu:
         $ref: '#/definitions/mp.ProviderModelByZhipu'
+    type: object
+  mp_common.LLMParams:
+    properties:
+      frequencyPenalty:
+        description: 频率惩罚
+        type: number
+      frequencyPenaltyEnable:
+        description: 频率惩罚(开关)
+        type: boolean
+      maxTokens:
+        description: 最大标记
+        type: integer
+      maxTokensEnable:
+        description: 最大标记(开关)
+        type: boolean
+      presencePenalty:
+        description: 存在惩罚
+        type: number
+      presencePenaltyEnable:
+        description: 存在惩罚(开关)
+        type: boolean
+      temperature:
+        description: 温度
+        type: number
+      temperatureEnable:
+        description: 温度(开关)
+        type: boolean
+      thinkingEnable:
+        description: 思考过程(开关)
+        type: boolean
+      topP:
+        description: Top P
+        type: number
+      topPEnable:
+        description: Top P(开关)
+        type: boolean
     type: object
   mp_common.Tag:
     properties:
@@ -703,6 +818,90 @@ definitions:
     required:
     - id
     type: object
+  request.AppKnowledgebaseConfig:
+    properties:
+      config:
+        allOf:
+        - $ref: '#/definitions/request.AppKnowledgebaseParams'
+        description: 知识库参数
+      knowledgebases:
+        description: 知识库id、名字
+        items:
+          $ref: '#/definitions/request.AppKnowledgeBase'
+        type: array
+    type: object
+  request.AppKnowledgebaseParams:
+    properties:
+      keywordPriority:
+        description: 关键词权重
+        type: number
+      matchType:
+        description: matchType：vector（向量检索）、text（文本检索）、mix（混合检索：向量+文本）
+        type: string
+      maxHistory:
+        description: 最长上下文
+        type: integer
+      priorityMatch:
+        description: 权重匹配，只有在混合检索模式下，选择权重设置后，这个才设置为1
+        type: integer
+      semanticsPriority:
+        description: 语义权重
+        type: number
+      termWeight:
+        description: 关键词系数，默认为1
+        type: number
+      termWeightEnable:
+        description: 关键词系数开关
+        type: boolean
+      threshold:
+        description: 过滤阈值
+        type: number
+      topK:
+        description: 知识条数
+        type: integer
+      useGraph:
+        description: 知识图谱开关
+        type: boolean
+    type: object
+  request.AppModelConfig:
+    properties:
+      config:
+        description: 模型配置
+      displayName:
+        description: 模型展示名称(请求非必填)
+        type: string
+      examples:
+        allOf:
+        - $ref: '#/definitions/mp.AppModelParams'
+        description: 仅用于swagger展示；模型对应供应商中的对应llm、embedding或rerank结构是config实际的参数
+      model:
+        description: 模型名称
+        type: string
+      modelId:
+        description: 模型ID
+        type: string
+      modelType:
+        description: 模型类型(llm/embedding/rerank)
+        type: string
+      provider:
+        description: 模型供应商
+        type: string
+    type: object
+  request.AppSafetyConfig:
+    properties:
+      enable:
+        description: 安全护栏(开关)
+        type: boolean
+      tables:
+        items:
+          $ref: '#/definitions/request.SensitiveTable'
+        type: array
+    type: object
+  request.AssistantToolConfig:
+    properties:
+      rerankId:
+        type: string
+    type: object
   request.Avatar:
     properties:
       key:
@@ -1077,6 +1276,11 @@ definitions:
           type: string
         type: array
     type: object
+  request.MemoryConfig:
+    properties:
+      maxHistoryLength:
+        type: integer
+    type: object
   request.MetaDataFilterParams:
     properties:
       filterEnable:
@@ -1134,9 +1338,37 @@ definitions:
       uuid:
         type: string
     required:
-    - conversation_id
     - query
     - uuid
+    type: object
+  request.OpenAPIAgentConfigUpdateRequest:
+    properties:
+      assistantUuid:
+        type: string
+      instructions:
+        type: string
+      knowledgeBaseConfig:
+        $ref: '#/definitions/request.AppKnowledgebaseConfig'
+      memoryConfig:
+        $ref: '#/definitions/request.MemoryConfig'
+      modelConfig:
+        $ref: '#/definitions/request.AppModelConfig'
+      prologue:
+        type: string
+      recommendConfig:
+        $ref: '#/definitions/request.RecommendConfig'
+      recommendQuestion:
+        items:
+          type: string
+        type: array
+      rerankConfig:
+        $ref: '#/definitions/request.AppModelConfig'
+      safetyConfig:
+        $ref: '#/definitions/request.AppSafetyConfig'
+      visionConfig:
+        $ref: '#/definitions/request.VisionConfig'
+    required:
+    - assistantUuid
     type: object
   request.OpenAPIAgentCreateConversationRequest:
     properties:
@@ -1146,6 +1378,39 @@ definitions:
         type: string
     required:
     - uuid
+    type: object
+  request.OpenAPIAgentDraftChatRequest:
+    properties:
+      conversation_id:
+        type: string
+      file_info:
+        items:
+          $ref: '#/definitions/request.ConversionStreamFile'
+        type: array
+      query:
+        type: string
+      uuid:
+        type: string
+    required:
+    - query
+    - uuid
+    type: object
+  request.OpenAPIAgentPublishRequest:
+    properties:
+      assistantUuid:
+        type: string
+      desc:
+        type: string
+      publishType:
+        description: public:系统公开发布 organization:组织公开发布 private:私密发布
+        type: string
+      version:
+        type: string
+    required:
+    - assistantUuid
+    - desc
+    - publishType
+    - version
     type: object
   request.OpenAPIChatflowChatRequest:
     properties:
@@ -1184,6 +1449,24 @@ definitions:
     - conversation_id
     - uuid
     type: object
+  request.OpenAPICreateAgentRequest:
+    properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 图标
+      category:
+        description: 1:单智能体 2:多智能体
+        type: integer
+      desc:
+        description: 描述
+        type: string
+      name:
+        description: 名称
+        type: string
+    required:
+    - name
+    type: object
   request.OpenAPIRagChatRequest:
     properties:
       history:
@@ -1210,6 +1493,36 @@ definitions:
     required:
     - uuid
     type: object
+  request.RecommendConfig:
+    properties:
+      maxHistory:
+        description: 最大历史会话轮次
+        type: integer
+      modelConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppModelConfig'
+        description: 模型信息
+      prompt:
+        description: 提示词
+        type: string
+      promptEnable:
+        description: 提示词开关
+        type: boolean
+      recommendEnable:
+        description: 追问配置开关
+        type: boolean
+    type: object
+  request.SensitiveTable:
+    properties:
+      tableId:
+        description: 敏感词表id
+        type: string
+      tableName:
+        description: 敏感词表名称(请求非必填)
+        type: string
+    required:
+    - tableId
+    type: object
   request.UpdateKnowledgeReq:
     properties:
       avatar:
@@ -1225,6 +1538,216 @@ definitions:
     required:
     - knowledgeId
     - name
+    type: object
+  request.VisionConfig:
+    properties:
+      picNum:
+        description: 视觉配置图片数量
+        type: integer
+    type: object
+  response.Assistant:
+    properties:
+      assistantId:
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 图标
+      category:
+        description: 智能体分类 1.单智能体 2.多智能体
+        type: integer
+      createdAt:
+        description: 创建时间
+        type: string
+      desc:
+        description: 描述
+        type: string
+      instructions:
+        description: 系统提示词
+        type: string
+      knowledgeBaseConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppKnowledgebaseConfig'
+        description: 知识库
+      mcpInfos:
+        description: MCP信息
+        items:
+          $ref: '#/definitions/response.AssistantMCPInfo'
+        type: array
+      memoryConfig:
+        allOf:
+        - $ref: '#/definitions/request.MemoryConfig'
+        description: 记忆配置
+      modelConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppModelConfig'
+        description: 模型
+      multiAgentInfos:
+        description: 多智能体配置
+        items:
+          $ref: '#/definitions/response.AssistantAgentInfo'
+        type: array
+      name:
+        description: 名称
+        type: string
+      newAgent:
+        description: 是否是新版本智能体
+        type: boolean
+      prologue:
+        description: 开场白
+        type: string
+      publishType:
+        description: 发布类型
+        type: string
+      recommendConfig:
+        allOf:
+        - $ref: '#/definitions/response.RecommendConfig'
+        description: 追问配置
+      recommendQuestion:
+        description: 推荐问题
+        items:
+          type: string
+        type: array
+      rerankConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppModelConfig'
+        description: Rerank模型
+      safetyConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppSafetyConfig'
+        description: 敏感词表配置
+      scope:
+        description: 作用域
+        type: integer
+      skillInfos:
+        description: 技能配置
+        items:
+          $ref: '#/definitions/response.AssistantSkillInfo'
+        type: array
+      toolInfos:
+        description: 自定义工具、内置工具
+        items:
+          $ref: '#/definitions/response.AssistantToolInfo'
+        type: array
+      updatedAt:
+        description: 更新时间
+        type: string
+      uuid:
+        type: string
+      visionConfig:
+        allOf:
+        - $ref: '#/definitions/response.VisionConfig'
+        description: 视觉配置
+      workFlowInfos:
+        description: 工作流信息
+        items:
+          $ref: '#/definitions/response.AssistantWorkFlowInfo'
+        type: array
+    required:
+    - assistantId
+    - name
+    type: object
+  response.AssistantAgentInfo:
+    properties:
+      agentId:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      enable:
+        type: boolean
+      name:
+        type: string
+    type: object
+  response.AssistantMCPInfo:
+    properties:
+      actionName:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      enable:
+        type: boolean
+      mcpId:
+        type: string
+      mcpName:
+        type: string
+      mcpType:
+        enum:
+        - mcp
+        - mcpserver
+        type: string
+      uniqueId:
+        type: string
+      valid:
+        type: boolean
+    required:
+    - mcpType
+    type: object
+  response.AssistantSkillInfo:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      enable:
+        type: boolean
+      skillId:
+        type: string
+      skillName:
+        type: string
+      skillType:
+        enum:
+        - builtin
+        - custom
+        type: string
+      valid:
+        type: boolean
+    required:
+    - skillType
+    type: object
+  response.AssistantToolInfo:
+    properties:
+      actionName:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      enable:
+        type: boolean
+      toolConfig:
+        $ref: '#/definitions/request.AssistantToolConfig'
+      toolId:
+        type: string
+      toolName:
+        type: string
+      toolType:
+        enum:
+        - builtin
+        - custom
+        type: string
+      uniqueId:
+        type: string
+      valid:
+        type: boolean
+    required:
+    - toolType
+    type: object
+  response.AssistantWorkFlowInfo:
+    properties:
+      apiName:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      enable:
+        type: boolean
+      name:
+        type: string
+      uniqueId:
+        type: string
+      workFlowDesc:
+        type: string
+      workFlowId:
+        type: string
     type: object
   response.ChildContent:
     properties:
@@ -1827,6 +2350,11 @@ definitions:
       last_id:
         type: integer
     type: object
+  response.OpenAPICreateAgentResponse:
+    properties:
+      uuid:
+        type: string
+    type: object
   response.OpenAPIRagChatData:
     properties:
       output:
@@ -1888,6 +2416,25 @@ definitions:
       updated_at:
         type: integer
     type: object
+  response.RecommendConfig:
+    properties:
+      maxHistory:
+        description: 最大历史会话轮次
+        type: integer
+      modelConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppModelConfig'
+        description: 模型信息
+      prompt:
+        description: 提示词
+        type: string
+      promptEnable:
+        description: 提示词开关
+        type: boolean
+      recommendEnable:
+        description: 追问配置开关
+        type: boolean
+    type: object
   response.RerankInfo:
     properties:
       fileUrl:
@@ -1911,6 +2458,15 @@ definitions:
         description: 0:上传失败，1：上传成功
         type: integer
     type: object
+  response.VisionConfig:
+    properties:
+      maxPicNum:
+        description: 最大图片数量
+        type: integer
+      picNum:
+        description: 视觉配置图片数量
+        type: integer
+    type: object
 info:
   contact: {}
   title: AI Agent Productivity Platform - Open API
@@ -1929,6 +2485,33 @@ paths:
       summary: 动态客户端发现配置
       tags:
       - openapi.OIDC
+  /agent:
+    post:
+      consumes:
+      - application/json
+      description: 创建智能体OpenAPI
+      parameters:
+      - description: 请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.OpenAPICreateAgentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.OpenAPICreateAgentResponse'
+              type: object
+      summary: 创建智能体OpenAPI
+      tags:
+      - openapi
   /agent/chat:
     post:
       consumes:
@@ -1953,6 +2536,54 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: 智能体对话OpenAPI
+      tags:
+      - openapi
+  /agent/chat/draft:
+    post:
+      consumes:
+      - application/json
+      description: 智能体草稿态对话OpenAPI，基于草稿配置进行问答，不要求智能体已发布，不计入统计
+      parameters:
+      - description: 请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.OpenAPIAgentDraftChatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.OpenAPIAgentChatResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 智能体草稿态对话OpenAPI
+      tags:
+      - openapi
+  /agent/config:
+    put:
+      consumes:
+      - application/json
+      description: 更新智能体配置OpenAPI
+      parameters:
+      - description: 请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.OpenAPIAgentConfigUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 更新智能体配置OpenAPI
       tags:
       - openapi
   /agent/conversation:
@@ -1980,6 +2611,58 @@ paths:
                   $ref: '#/definitions/response.OpenAPIAgentCreateConversationResponse'
               type: object
       summary: 智能体创建对话OpenAPI
+      tags:
+      - openapi
+  /agent/info:
+    get:
+      consumes:
+      - application/json
+      description: 获取智能体详情，通过 published 参数控制返回草稿态或已发布态配置
+      parameters:
+      - description: 智能体UUID
+        in: query
+        name: uuid
+        required: true
+        type: string
+      - description: true=已发布态，false=草稿态（默认）
+        in: query
+        name: published
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.Assistant'
+              type: object
+      summary: 获取智能体详情OpenAPI
+      tags:
+      - openapi
+  /agent/publish:
+    post:
+      consumes:
+      - application/json
+      description: 发布智能体，发布后可通过智能体对话接口进行正式问答
+      parameters:
+      - description: 请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.OpenAPIAgentPublishRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 智能体发布OpenAPI
       tags:
       - openapi
   /chatflow/chat:
