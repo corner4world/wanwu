@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -59,6 +60,7 @@ type skillRunEnv struct {
 	inputDir       string
 	outputDir      string
 	skillDir       string
+	runDir         string
 	enableThinking bool //是否输出智能体思考过程
 }
 
@@ -165,9 +167,21 @@ func (s *SkillExecutor) initEnv(argumentsInJSON string) *SkillExecutor {
 		inputDir:       dir.InputDir,
 		outputDir:      dir.OutputDir,
 		skillDir:       dir.SkillDir,
+		runDir:         dir.RunDir,
 		enableThinking: false,
 	}
 	return s
+}
+
+// clearEnv 清理运行环境，删除 runDir 下的所有数据
+func (s *SkillExecutor) clearEnv() {
+	if s.runEnv != nil && s.runEnv.runDir != "" {
+		log.Errorf("skillTool clearEnv %s", s.runEnv.runDir)
+		err := os.RemoveAll(s.runEnv.runDir)
+		if err != nil {
+			log.Errorf("skillTool clearEnv error: %v", err)
+		}
+	}
 }
 
 func (s *SkillExecutor) initMessages() *SkillExecutor {
@@ -196,6 +210,8 @@ func (s *SkillExecutor) runStream(runnerType wga_sandbox_option.RunnerType) (*sc
 	safe_go_util.SafeGo(func() {
 		defer func() {
 			sw.Close()
+			// 清理运行环境
+			s.clearEnv()
 		}()
 		for ch := range jsonCh {
 			if conv != nil {

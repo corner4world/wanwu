@@ -8,7 +8,6 @@ import (
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/response"
 	agent_util "github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
-	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/cloudwego/eino/schema"
 )
 
@@ -38,11 +37,7 @@ func (*SkillMessageBuilder) BuildContent(req *request.AgentChatContext, respCont
 	if message == nil {
 		return make([]*response.AgentMessageContent, 0), nil
 	}
-	marshal, _ := json.Marshal(message)
-	log.Infof("buildDataContent, %s", string(marshal))
 	content, err := NewMultiBuilder().BuildContent(req, respContext, message)
-	bytes, _ := json.Marshal(content)
-	log.Infof("buildDataContent, %s", string(bytes))
 	buildSkillEvent(content, respContext.Order)
 	return content, err
 }
