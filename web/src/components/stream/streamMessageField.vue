@@ -438,13 +438,13 @@
               :preview-src-list="[g]"
             ></el-image>
           </div>
-          <!--出处-->
+          <!-- 出处 -->
           <div
             v-if="
               n.searchList &&
               n.searchList.length &&
               n.finish === 1 &&
-              chatType !== 'agent'
+              (chatType !== 'agent' || !hasNewAgentKnowledge(n))
             "
             class="search-list"
           >
@@ -903,6 +903,7 @@ export default {
 
       // 处理引用标签点击
       const citationTarget = target.closest('.citation');
+
       if (!citationTarget) return;
 
       if (citationTarget.dataset.pid) {
@@ -949,12 +950,17 @@ export default {
         }
       }
 
-      // Agent 主会话引用（无 data-pid，来自顶层回答）跳转到对应的知识库子会话
-      if (this.chatType === 'agent' && !citationTarget.dataset.pid) {
-        const index = Number(citationTarget.textContent);
-        const parentsIndex = Number(citationTarget.dataset.parentsIndex);
-        const historyItem = this.session_data.history[parentsIndex];
+      // 获取引用所属的历史消息项
+      const parentsIndex = Number(citationTarget.dataset.parentsIndex);
+      const historyItem = this.session_data.history[parentsIndex];
 
+      // Agent 主会话引用（无 data-pid，来自顶层回答）跳转到对应的知识库子会话
+      if (
+        this.chatType === 'agent' &&
+        !citationTarget.dataset.pid &&
+        this.hasNewAgentKnowledge(historyItem)
+      ) {
+        const index = Number(citationTarget.textContent);
         if (historyItem && historyItem.subConversions) {
           const knowledgeSub = historyItem.subConversions.find(
             a =>
@@ -1433,6 +1439,15 @@ export default {
     findSubData(n, id) {
       if (!n.subConversions) return null;
       return n.subConversions.find(sub => sub.id === id);
+    },
+    // 检测是否包含新式 Agent 知识库子会话
+    hasNewAgentKnowledge(n) {
+      if (!n.subConversions || !n.subConversions.length) return false;
+      return n.subConversions.some(
+        sub =>
+          sub.conversationType ===
+          AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE,
+      );
     },
     /**
      * 解析子会话引用的“数据宿主”和“展示宿主”。
