@@ -8,6 +8,7 @@ export default class StreamProcessor {
     this.md = options.md;
     this.parseSub = options.parseSub;
     this.convertLatexSyntax = options.convertLatexSyntax;
+    this.preProcess = options.preProcess;
 
     this.endStr = ''; // 原始全量文本
     this.stableChunks = []; // 已解析完成的稳定 HTML 块
@@ -19,6 +20,7 @@ export default class StreamProcessor {
       inThinkBlock: false,
       inPreBlock: false,
       inLatexBlock: false,
+      inToolBlock: false,
     };
 
     this.citations = new Set(); // 存储已稳定的引文索引
@@ -54,6 +56,10 @@ export default class StreamProcessor {
         if (codeMatches && codeMatches.length % 2 !== 0) {
           scanStates.inCodeBlock = !scanStates.inCodeBlock;
         }
+
+        // 工具结果块状态判断
+        if (line.trim() === '<<<') scanStates.inToolBlock = true;
+        if (line.trim() === '>>>') scanStates.inToolBlock = false;
 
         // 思考块状态判断
         if (line.includes('<think>')) scanStates.inThinkBlock = true;
@@ -98,6 +104,10 @@ export default class StreamProcessor {
         this.updateCitations(safeFlushText);
 
         let textToRender = safeFlushText;
+        if (this.preProcess) {
+          textToRender = this.preProcess(textToRender);
+        }
+
         // 如果提供了 parseSub，则在渲染前处理引用
         if (this.parseSub) {
           textToRender = this.parseSub(
@@ -128,6 +138,17 @@ export default class StreamProcessor {
       const codeTicks = textToRender.match(/```/g);
       if (codeTicks && codeTicks.length % 2 !== 0) {
         textToRender += '\n```';
+      }
+
+      // 活跃区工具结果块补全
+      const toolOpenCount = (textToRender.match(/^<<<$/gm) || []).length;
+      const toolCloseCount = (textToRender.match(/^>>>$/gm) || []).length;
+      if (toolOpenCount > toolCloseCount) {
+        textToRender += '\n>>>';
+      }
+
+      if (this.preProcess) {
+        textToRender = this.preProcess(textToRender);
       }
 
       if (this.parseSub) {

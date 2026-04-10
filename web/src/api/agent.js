@@ -458,3 +458,12 @@ export const delConversationDraft = data => {
     data,
   });
 };
+
+// 清空对话
+export const clearConversation = data => {
+  return service({
+    url: `${USER_API}/assistant/conversation/clear`,
+    method: 'delete',
+    data,
+  });
+};

@@ -307,6 +307,12 @@ const constantRoutes = [
         meta: { perm: [PERMS.AGENT] },
       },
       {
+        path: '/generalAgent',
+        component: resolve =>
+          require(['@/views/generalAgent/index.vue'], resolve),
+        meta: { perm: [PERMS.AGENT] },
+      },
+      {
         path: '/workflow/publishSet',
         component: resolve => require(['@/components/publishConfig'], resolve),
         meta: { perm: [PERMS.WORKFLOW] },

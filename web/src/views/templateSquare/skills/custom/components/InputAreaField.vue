@@ -116,16 +116,15 @@
               :disabled="false"
             />
             <div class="edtable--wrap-right">
-              <el-button
+              <streamUploadField
                 v-if="
                   type !== 'webChat' && !(type === 'ragChat' && maxPicNum === 0)
                 "
-                class="chat-upload-btn"
-                icon="el-icon-circle-plus-outline"
-                circle
-                plain
-                @click="preUpload"
-              ></el-button>
+                :fileTypeArr="fileTypeArr"
+                :type="type"
+                @setFileId="setFileId"
+                @setFile="setFile"
+              ></streamUploadField>
               <el-divider
                 v-if="
                   type !== 'webChat' && !(type === 'ragChat' && maxPicNum === 0)
@@ -147,14 +146,6 @@
         </div>
       </div>
     </div>
-    <!-- 文件上传弹窗 -->
-    <streamUploadField
-      ref="upload"
-      :fileTypeArr="fileTypeArr"
-      :type="type"
-      @setFileId="setFileId"
-      @setFile="setFile"
-    />
     <transition name="el-zoom-in-bottom">
       <div class="perfectReminder-item-box" v-show="randomReminderShow">
         <div
@@ -434,9 +425,6 @@ export default {
       this.fileUrl = '';
       this.hasFile = false;
     },
-    preUpload() {
-      this.$refs['upload'].openDialog();
-    },
     setFileId(fileIdList) {
       this.fileIdList = fileIdList;
       this.fileUrl = this.fileIdList[this.fileIdList.length - 1].fileUrl;
@@ -599,9 +587,6 @@ export default {
       if (val) {
         this.getModelData();
       }
-    },
-    handleClearHistory() {
-      this.$emit('clearHistory');
     },
   },
 };

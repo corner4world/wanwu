@@ -1,6 +1,17 @@
 <!--问答文件上传-->
 <template>
   <div class="fileUpload">
+    <!-- 上传触发按钮 -->
+    <slot :openDialog="openDialog">
+      <el-button
+        class="chat-upload-btn"
+        icon="el-icon-circle-plus-outline"
+        circle
+        plain
+        @click="openDialog"
+      ></el-button>
+    </slot>
+
     <el-dialog
       custom-class="upload-dialog"
       :visible.sync="dialogVisible"
@@ -186,7 +197,7 @@
 import { mapGetters } from 'vuex';
 import uploadChunk from '@/mixins/uploadChunk';
 export default {
-  props: ['fileTypeArr', 'type', 'sessionId'],
+  props: ['fileTypeArr', 'type'],
   mixins: [uploadChunk],
   data() {
     return {
@@ -220,9 +231,6 @@ export default {
   },
   computed: {
     ...mapGetters('app', ['maxPicNum']),
-  },
-  created() {
-    this.sessionId = this.sessionId || this.$route.query.sessionId;
   },
   methods: {
     checkScrollable() {
@@ -367,12 +375,17 @@ export default {
         this.fileInfo = [];
       }
       this.lastFileType = this.fileType;
-      this.fileInfo.push({
+      const fileInfoItem = {
         fileName,
         oldFileName,
         fileSize: this.fileList[this.fileIndex]['size'],
         fileUrl: fiePath,
-      });
+      };
+      // 如果是图片类型，添加 imgUrl 用于前端预览
+      if (this.fileType === 'image/*' && this.imgUrl) {
+        fileInfoItem.imgUrl = this.imgUrl;
+      }
+      this.fileInfo.push(fileInfoItem);
     },
     doBatchUpload() {
       this.$emit('setFileId', this.fileInfo);
@@ -486,6 +499,19 @@ export default {
   .dialog-footer {
     text-align: center;
     margin: 30px 0 20px 0;
+  }
+}
+
+.chat-upload-btn {
+  padding: 8px;
+  color: rgba(15, 21, 40, 0.82);
+  border: none;
+  &:hover {
+    background-color: rgba(87, 104, 161, 0.08) !important;
+    color: rgba(15, 21, 40, 0.82);
+  }
+  ::v-deep i {
+    font-size: 16px;
   }
 }
 </style>

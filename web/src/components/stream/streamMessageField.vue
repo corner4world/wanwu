@@ -438,13 +438,13 @@
               :preview-src-list="[g]"
             ></el-image>
           </div>
-          <!--出处-->
+          <!-- 出处 -->
           <div
             v-if="
               n.searchList &&
               n.searchList.length &&
               n.finish === 1 &&
-              chatType !== 'agent'
+              (chatType !== 'agent' || !hasNewAgentKnowledge(n))
             "
             class="search-list"
           >
@@ -903,14 +903,10 @@ export default {
 
       // 处理引用标签点击
       const citationTarget = target.closest('.citation');
+
       if (!citationTarget) return;
 
-      const subConversionItem = citationTarget.closest('.sub-conversion-item');
-
-      console.log('++++++');
-      console.log(citationTarget);
-
-      if (subConversionItem && citationTarget.dataset.pid) {
+      if (citationTarget.dataset.pid) {
         // 子会话引用点击处理(思考子会话等)
         const pid = citationTarget.dataset.pid;
         const parentsIndex = Number(citationTarget.dataset.parentsIndex);
@@ -918,29 +914,35 @@ export default {
         const historyItem = this.session_data.history[parentsIndex];
 
         if (historyItem && historyItem.subConversions) {
-          const subConversion = historyItem.subConversions.find(
-            a => a.id === pid,
+          const citationContext = this.resolveCitationSourceConversion(
+            historyItem,
+            pid,
+            citationIndex,
           );
 
           if (
-            subConversion &&
-            subConversion.searchList &&
-            subConversion.searchList[citationIndex - 1]
+            citationContext &&
+            citationContext.dataOwner &&
+            citationContext.dataOwner.searchList &&
+            citationContext.dataOwner.searchList[citationIndex - 1]
           ) {
-            const searchItem = subConversion.searchList[citationIndex - 1];
-            this.collapseClick(subConversion, searchItem, citationIndex - 1);
+            const { dataOwner, displayOwner } = citationContext;
+            const searchItem = dataOwner.searchList[citationIndex - 1];
 
-            this.$nextTick(() => {
-              const targetSearchItem = subConversionItem.querySelector(
-                `.search-list-item[data-citation-index="${citationIndex}"]`,
+            if (
+              displayOwner &&
+              displayOwner.conversationType ===
+                AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE
+            ) {
+              this.$set(displayOwner, 'isOpen', true);
+              this.scrollToKnowledgeCitation(displayOwner.id, citationIndex);
+            } else {
+              this.collapseClick(dataOwner, searchItem, citationIndex - 1);
+              this.scrollToSubConversionCitation(
+                (displayOwner && displayOwner.id) || dataOwner.id,
+                citationIndex,
               );
-              if (targetSearchItem) {
-                targetSearchItem.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'center',
-                });
-              }
-            });
+            }
 
             e.stopPropagation();
             return;
@@ -948,16 +950,17 @@ export default {
         }
       }
 
+      // 获取引用所属的历史消息项
+      const parentsIndex = Number(citationTarget.dataset.parentsIndex);
+      const historyItem = this.session_data.history[parentsIndex];
+
       // Agent 主会话引用（无 data-pid，来自顶层回答）跳转到对应的知识库子会话
-      console.log('----------------');
-
-      console.log(citationTarget);
-
-      if (this.chatType === 'agent' && !citationTarget.dataset.pid) {
+      if (
+        this.chatType === 'agent' &&
+        !citationTarget.dataset.pid &&
+        this.hasNewAgentKnowledge(historyItem)
+      ) {
         const index = Number(citationTarget.textContent);
-        const parentsIndex = Number(citationTarget.dataset.parentsIndex);
-        const historyItem = this.session_data.history[parentsIndex];
-
         if (historyItem && historyItem.subConversions) {
           const knowledgeSub = historyItem.subConversions.find(
             a =>
@@ -1419,7 +1422,9 @@ export default {
         if (this.copyTimerMap.has(btn)) {
           clearTimeout(this.copyTimerMap.get(btn));
         }
-        let innerText = btn.parentNode.nextElementSibling.innerText;
+        let innerText = btn.dataset.clipboardText
+          ? decodeURIComponent(btn.dataset.clipboardText)
+          : btn.parentNode.nextElementSibling.innerText;
         this.copy(innerText);
         this.$message.success(this.$t('agent.copyTips'));
         btn.innerText = this.$t('agent.copySuccess');
@@ -1434,6 +1439,132 @@ export default {
     findSubData(n, id) {
       if (!n.subConversions) return null;
       return n.subConversions.find(sub => sub.id === id);
+    },
+    // 检测是否包含新式 Agent 知识库子会话
+    hasNewAgentKnowledge(n) {
+      if (!n.subConversions || !n.subConversions.length) return false;
+      return n.subConversions.some(
+        sub =>
+          sub.conversationType ===
+          AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE,
+      );
+    },
+    /**
+     * 解析子会话引用的“数据宿主”和“展示宿主”。
+     * 当前规则限定在 subText 所属的父级 subAgent 范围内：
+     * 1. 若当前子会话自己持有 searchList，则直接使用自己；
+     * 2. 否则只回退到直属父级 subAgent，且不再继续向更高祖先查找；
+     * 3. 若父级 subAgent 下存在可命中的 agentKnowledge，则优先将其作为展示宿主。
+     *
+     * @param {Object} historyItem - 当前历史消息项，包含完整的 subConversions 列表
+     * @param {string} subId - 被点击引用所属的子会话 id（通常是 subText 或普通子会话）
+     * @param {number} citationIndex - 引用序号，和 searchList 下标一一对应（需 -1 取值）
+     * @returns {{dataOwner: Object, displayOwner: Object} | null}
+     * dataOwner 负责提供 searchList 数据；displayOwner 负责实际展开和滚动定位。
+     */
+    resolveCitationSourceConversion(historyItem, subId, citationIndex) {
+      if (
+        !historyItem ||
+        !Array.isArray(historyItem.subConversions) ||
+        !subId ||
+        !citationIndex
+      ) {
+        return null;
+      }
+
+      const currentSub = historyItem.subConversions.find(
+        sub => sub.id === subId,
+      );
+      if (!currentSub) {
+        return null;
+      }
+
+      if (
+        Array.isArray(currentSub.searchList) &&
+        currentSub.searchList[citationIndex - 1]
+      ) {
+        return {
+          dataOwner: currentSub,
+          displayOwner: currentSub,
+        };
+      }
+
+      if (!currentSub.parentId) {
+        return null;
+      }
+
+      const parentSubAgent = historyItem.subConversions.find(
+        sub => sub.id === currentSub.parentId,
+      );
+      if (
+        !parentSubAgent ||
+        !Array.isArray(parentSubAgent.searchList) ||
+        !parentSubAgent.searchList[citationIndex - 1]
+      ) {
+        return null;
+      }
+
+      const knowledgeSub = historyItem.subConversions.find(
+        sub =>
+          sub.parentId === parentSubAgent.id &&
+          sub.conversationType ===
+            AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE &&
+          Array.isArray(sub.searchList) &&
+          sub.searchList[citationIndex - 1],
+      );
+
+      return {
+        dataOwner: parentSubAgent,
+        displayOwner: knowledgeSub || parentSubAgent,
+      };
+    },
+    /**
+     * 滚动到普通子会话出处列表中的指定条目。
+     * 适用于 search-list 结构的子会话，不处理 knowledge-item 结构；
+     * knowledge 子会话使用 scrollToKnowledgeCitation。
+     *
+     * @param {string} subId - 目标子会话 id，用于定位 .sub-conversion-item 容器
+     * @param {number} citationIndex - 引用序号，对应 .search-list-item[data-citation-index]
+     */
+    scrollToSubConversionCitation(subId, citationIndex) {
+      if (!subId || !citationIndex) return;
+
+      this.$nextTick(() => {
+        const container = document.querySelector(
+          `.sub-conversion-item[data-sub-id="${subId}"]`,
+        );
+        if (!container) return;
+
+        const targetSearchItem = container.querySelector(
+          `.search-list-item[data-citation-index="${citationIndex}"]`,
+        );
+        if (!targetSearchItem) return;
+
+        targetSearchItem.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      });
+    },
+    scrollToKnowledgeCitation(subId, citationIndex) {
+      if (!subId || !citationIndex) return;
+
+      this.$nextTick(() => {
+        const container = document.querySelector(
+          `.sub-conversion-item[data-sub-id="${subId}"]`,
+        );
+        if (!container) return;
+
+        const targetKnowledgeItem = container.querySelector(
+          `.knowledge-item[data-index="${citationIndex - 1}"]`,
+        );
+        if (!targetKnowledgeItem) return;
+
+        targetKnowledgeItem.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      });
     },
     // 动态设置滚动容器高度
     setHistoryBoxHeight(inputHeight) {

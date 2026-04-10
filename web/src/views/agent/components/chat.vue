@@ -91,6 +91,7 @@ import {
   convertLatexSyntax,
   parseSubConversation,
 } from '@/utils/util.js';
+import { processToolResultBlocks } from '@/utils/toolResultProcessor.js';
 import {
   delConversation,
   createConversation,
@@ -101,6 +102,7 @@ import {
   getRecommendQuestionUrl,
   getConversationDraftHistory,
   delConversationDraft,
+  clearConversation,
 } from '@/api/agent';
 import sseMethod from '@/mixins/sseMethod';
 import { md } from '@/mixins/markdown-it';
@@ -605,7 +607,12 @@ export default {
                   type: 'main',
                   order: item.order,
                   renderedContent: md.render(
-                    parseSub(convertLatexSyntax(item.response), index),
+                    parseSub(
+                      processToolResultBlocks(
+                        convertLatexSyntax(item.response || ''),
+                      ),
+                      index,
+                    ),
                   ),
                 });
               });
@@ -631,7 +638,9 @@ export default {
                       // 此处预渲染 Markdown 供子组件展示
                       renderedContent: md.render(
                         parseSubConversation(
-                          convertLatexSyntax(m.response || ''),
+                          processToolResultBlocks(
+                            convertLatexSyntax(m.response || ''),
+                          ),
                           index,
                           typeof m.searchList === 'string'
                             ? JSON.parse(m.searchList || '[]')
@@ -652,7 +661,9 @@ export default {
                         : m.searchList || [],
                     response: md.render(
                       parseSubConversation(
-                        convertLatexSyntax(m.response || ''),
+                        processToolResultBlocks(
+                          convertLatexSyntax(m.response || ''),
+                        ),
                         index,
                         m.searchList,
                         m.id,
@@ -671,7 +682,7 @@ export default {
                   // 如果是文本片段扩展，则将其吸收为父容器内的正文，不作为独立卡片显示
                   if (
                     m.conversationType ===
-                    AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.CONVERSATION_TYPE
+                    AGENT_MESSAGE_CONFIG.SUB_TEXT.CONVERSATION_TYPE
                   ) {
                     parent.messageSequence.push({
                       type: 'main',
@@ -703,7 +714,7 @@ export default {
                 }
               } else if (
                 m.conversationType !==
-                AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.CONVERSATION_TYPE
+                AGENT_MESSAGE_CONFIG.SUB_TEXT.CONVERSATION_TYPE
               ) {
                 // 顶级项且不是文本分段时，才登记入主序列
                 sequence.push({
@@ -721,7 +732,12 @@ export default {
               query: n.prompt,
               finish: 1, //兼容流式问答
               response: md.render(
-                parseSub(convertLatexSyntax(fullResponse), index),
+                parseSub(
+                  processToolResultBlocks(
+                    convertLatexSyntax(fullResponse || ''),
+                  ),
+                  index,
+                ),
               ),
               oriResponse: fullResponse,
               searchList:
@@ -772,6 +788,14 @@ export default {
       if (this.chatType === 'test') {
         const res = await delConversationDraft({
           assistantId: this.editForm.assistantId,
+        });
+        if (res.code === 0) {
+          this.clearHistory();
+        }
+      } else if (this.chatType === 'chat') {
+        // 探索广场页面清空对话，需要调用后端接口清除ES数据
+        const res = await clearConversation({
+          conversationId: this.conversationId,
         });
         if (res.code === 0) {
           this.clearHistory();

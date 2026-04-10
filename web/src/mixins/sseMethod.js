@@ -17,6 +17,7 @@ import $ from './jquery.min.js';
 import { OPENURL_API, USER_API } from '@/utils/requestConstants';
 import { getCustomSkillSSeUrl } from '@/api/templateSquare';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
+import { processToolResultBlocks } from '@/utils/toolResultProcessor.js';
 
 const AGENT_API_URL = `${USER_API}/assistant/stream`;
 const RAG_API_URL = `${USER_API}/rag/chat`;
@@ -755,6 +756,7 @@ export default {
                     parseSub: (text, index, searchList) =>
                       parseSubConversation(text, index, searchList, id),
                     convertLatexSyntax,
+                    preProcess: processToolResultBlocks,
                     searchList: subConversion.searchList,
                   });
                   this._subConversionProcessors.set(id, subProcessor);
@@ -816,6 +818,7 @@ export default {
                       parseSub: (text, index, searchList) =>
                         parseSubConversation(text, index, searchList, id),
                       convertLatexSyntax,
+                      preProcess: processToolResultBlocks, // 预处理 <<<...>>> 工具结果块
                       searchList: subConversion.searchList,
                     });
                     this._subMainProcessorsMap.set(
@@ -874,7 +877,7 @@ export default {
                     if (!hasInParent) {
                       const isTextChunk =
                         data.eventType ===
-                        AGENT_MESSAGE_CONFIG.AGENT_SKILL_TEXT.EVENT_TYPE;
+                        AGENT_MESSAGE_CONFIG.SUB_TEXT.EVENT_TYPE;
 
                       // 若为正文片段，直接强转类型，并将其整体obj放入父序列
                       if (isTextChunk) {

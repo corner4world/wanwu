@@ -78,6 +78,13 @@ module.exports = {
     open: false,
     hot: true,
     compress: false,
+    watchFiles: {
+      paths: ['src/**/*'],
+      options: {
+        usePolling: true,
+        interval: 1000,
+      },
+    },
     client: {
       // 禁用错误覆盖层
       overlay: {

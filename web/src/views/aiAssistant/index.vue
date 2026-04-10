@@ -24,7 +24,11 @@
     <!-- 服务未启动：显示简化的静态页面 -->
     <div v-if="showError" class="error-page">
       <div class="error-content">
-        <div class="error-icon">🤖</div>
+        <img
+          class="error-icon"
+          src="@/assets/imgs/openclaw.png"
+          alt="openclaw"
+        />
         <div class="error-title">
           {{ $t('aiAssistant.serviceUnavailable') }}
         </div>
@@ -380,7 +384,8 @@ export default {
 }
 
 .error-icon {
-  font-size: 64px;
+  width: 64px;
+  height: 64px;
   margin-bottom: 16px;
 }
 
