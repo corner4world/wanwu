@@ -6,18 +6,20 @@ import (
 )
 
 type MCPSelect struct {
-	UniqueId    string         `json:"uniqueId"`    // 随机unique id(每次动态生成)
-	MCPID       string         `json:"mcpId"`       // mcpId
-	MCPSquareID string         `json:"mcpSquareId"` // 广场mcpId(非空表示来源于广场)
-	Name        string         `json:"name"`        // 名称
-	Type        string         `json:"type"`
-	ToolId      string         `json:"toolId"`                                           // 工具id
-	ToolName    string         `json:"toolName"`                                         // 工具名称
-	ToolType    string         `json:"toolType" validate:"required,oneof=mcp mcpserver"` // 工具类型
-	Description string         `json:"description"`                                      // 描述
-	ServerFrom  string         `json:"serverFrom"`                                       // 来源
-	ServerURL   string         `json:"serverUrl"`                                        // sseUrl
-	Avatar      request.Avatar `json:"avatar"`                                           // 图标
+	UniqueId      string         `json:"uniqueId"`    // 随机unique id(每次动态生成)
+	MCPID         string         `json:"mcpId"`       // mcpId
+	MCPSquareID   string         `json:"mcpSquareId"` // 广场mcpId(非空表示来源于广场)
+	Name          string         `json:"name"`        // 名称
+	Type          string         `json:"type"`
+	ToolId        string         `json:"toolId"`                                           // 工具id
+	ToolName      string         `json:"toolName"`                                         // 工具名称
+	ToolType      string         `json:"toolType" validate:"required,oneof=mcp mcpserver"` // 工具类型
+	Description   string         `json:"description"`                                      // 描述
+	ServerFrom    string         `json:"serverFrom"`                                       // 来源
+	ServerURL     string         `json:"serverUrl"`                                        // sseUrl
+	StreamableURL string         `json:"streamableUrl"`                                    // streamableUrl
+	Transport     string         `json:"transport"`                                        // 传输协议
+	Avatar        request.Avatar `json:"avatar"`                                           // 图标
 }
 
 type MCPToolList struct {
@@ -32,8 +34,10 @@ type MCPDetail struct {
 
 // MCPInfo MCP自定义信息
 type MCPInfo struct {
-	MCPID  string `json:"mcpId"`  // mcpId
-	SSEURL string `json:"sseUrl"` // SSE URL
+	MCPID         string `json:"mcpId"`         // mcpId
+	SSEURL        string `json:"sseUrl"`        // SSE URL
+	StreamableURL string `json:"streamableUrl"` // Streamable HTTP URL
+	Transport     string `json:"transport"`     // 传输协议: "sse" 或 "streamable"
 	MCPSquareInfo
 }
 

@@ -11034,8 +11034,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "serverUrl,就是sseUrl(和mcpId传一个)",
+                        "description": "serverUrl,就是sseUrl/streamable(和mcpId传一个)",
                         "name": "serverUrl",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "传输协议类型: sse 或 streamable(仅当serverUrl不为空时生效)",
+                        "name": "transport",
                         "in": "query"
                     }
                 ],
@@ -19642,6 +19648,10 @@ const docTemplate = `{
             "properties": {
                 "conversationId": {
                     "type": "string"
+                },
+                "detailId": {
+                    "description": "可选，传值则删除单条对话，不传则删除全部对话",
+                    "type": "string"
                 }
             }
         },
@@ -21591,8 +21601,7 @@ const docTemplate = `{
             "required": [
                 "desc",
                 "from",
-                "name",
-                "sseUrl"
+                "name"
             ],
             "properties": {
                 "avatar": {
@@ -21621,6 +21630,14 @@ const docTemplate = `{
                 },
                 "sseUrl": {
                     "description": "SSE URL",
+                    "type": "string"
+                },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
                     "type": "string"
                 }
             }
@@ -21829,8 +21846,7 @@ const docTemplate = `{
                 "desc",
                 "from",
                 "mcpId",
-                "name",
-                "sseUrl"
+                "name"
             ],
             "properties": {
                 "avatar": {
@@ -21858,6 +21874,14 @@ const docTemplate = `{
                 },
                 "sseUrl": {
                     "description": "SSE URL",
+                    "type": "string"
+                },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
                     "type": "string"
                 }
             }
@@ -27245,8 +27269,16 @@ const docTemplate = `{
                     "description": "SSE URL",
                     "type": "string"
                 },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
                 "summary": {
                     "description": "使用概述",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
                     "type": "string"
                 }
             }
@@ -27289,6 +27321,14 @@ const docTemplate = `{
                 "sseUrl": {
                     "description": "SSE URL",
                     "type": "string"
+                },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
+                    "type": "string"
                 }
             }
         },
@@ -27330,6 +27370,10 @@ const docTemplate = `{
                     "description": "sseUrl",
                     "type": "string"
                 },
+                "streamableUrl": {
+                    "description": "streamableUrl",
+                    "type": "string"
+                },
                 "toolId": {
                     "description": "工具id",
                     "type": "string"
@@ -27345,6 +27389,10 @@ const docTemplate = `{
                         "mcp",
                         "mcpserver"
                     ]
+                },
+                "transport": {
+                    "description": "传输协议",
+                    "type": "string"
                 },
                 "type": {
                     "type": "string"

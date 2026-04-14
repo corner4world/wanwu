@@ -11,6 +11,7 @@ import (
 	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	"github.com/UnicomAI/wanwu/internal/mcp-service/client/model"
 	"github.com/UnicomAI/wanwu/internal/mcp-service/config"
+	"github.com/UnicomAI/wanwu/pkg/constant"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -44,14 +45,16 @@ func (s *Service) GetSquareMCPList(ctx context.Context, req *mcp_service.GetSqua
 
 func (s *Service) CreateCustomMCP(ctx context.Context, req *mcp_service.CreateCustomMCPReq) (*emptypb.Empty, error) {
 	if err := s.cli.CreateMCP(ctx, &model.MCPClient{
-		OrgID:       req.OrgId,
-		UserID:      req.UserId,
-		McpSquareId: req.McpSquareId,
-		Name:        req.Name,
-		From:        req.From,
-		Desc:        req.Desc,
-		SseUrl:      req.SseUrl,
-		AvatarPath:  req.AvatarPath,
+		OrgID:         req.OrgId,
+		UserID:        req.UserId,
+		McpSquareId:   req.McpSquareId,
+		Name:          req.Name,
+		From:          req.From,
+		Desc:          req.Desc,
+		SseUrl:        req.SseUrl,
+		StreamableUrl: req.StreamableUrl,
+		Transport:     req.Transport,
+		AvatarPath:    req.AvatarPath,
 	}); err != nil {
 		return nil, errStatus(errs.Code_MCPCreateCustomMCPErr, err)
 	}
@@ -60,12 +63,14 @@ func (s *Service) CreateCustomMCP(ctx context.Context, req *mcp_service.CreateCu
 
 func (s *Service) UpdateCustomMCP(ctx context.Context, req *mcp_service.UpdateCustomMCPReq) (*emptypb.Empty, error) {
 	if err := s.cli.UpdateMCP(ctx, &model.MCPClient{
-		ID:         util.MustU32(req.McpId),
-		Name:       req.Name,
-		From:       req.From,
-		Desc:       req.Desc,
-		SseUrl:     req.SseUrl,
-		AvatarPath: req.AvatarPath,
+		ID:            util.MustU32(req.McpId),
+		Name:          req.Name,
+		From:          req.From,
+		Desc:          req.Desc,
+		SseUrl:        req.SseUrl,
+		StreamableUrl: req.StreamableUrl,
+		Transport:     req.Transport,
+		AvatarPath:    req.AvatarPath,
 	}); err != nil {
 		return nil, errStatus(errs.Code_MCPUpdateCustomMCPErr, err)
 	}
@@ -134,6 +139,11 @@ func (s *Service) GetMCPByMCPIdList(ctx context.Context, req *mcp_service.GetMCP
 			}
 			//todo 还可以优化成批量
 			sseUrl, sseExample, streamableUrl, streamableExample := getMCPServerExample(ctx, info.MCPServerID)
+			// 根据 streamableUrl 是否为空决定 transport
+			transport := constant.MCPTransportSSE
+			if streamableUrl != "" {
+				transport = constant.MCPTransportStreamable
+			}
 			serverToolInfos = append(serverToolInfos, &mcp_service.MCPServerInfo{
 				McpServerId:       info.MCPServerID,
 				Name:              info.Name,
@@ -144,6 +154,7 @@ func (s *Service) GetMCPByMCPIdList(ctx context.Context, req *mcp_service.GetMCP
 				SseExample:        sseExample,
 				StreamableUrl:     streamableUrl,
 				StreamableExample: streamableExample,
+				Transport:         transport,
 			})
 		}
 	}
@@ -169,9 +180,11 @@ func (s *Service) GetMCPAvatar(ctx context.Context, req *mcp_service.GetMCPAvata
 
 func buildCustomMCPDetail(mcp *model.MCPClient) *mcp_service.CustomMCPDetail {
 	ret := &mcp_service.CustomMCPDetail{
-		McpId:      util.Int2Str(mcp.ID),
-		SseUrl:     mcp.SseUrl,
-		AvatarPath: mcp.AvatarPath,
+		McpId:         util.Int2Str(mcp.ID),
+		SseUrl:        mcp.SseUrl,
+		StreamableUrl: mcp.StreamableUrl,
+		Transport:     mcp.Transport,
+		AvatarPath:    mcp.AvatarPath,
 		Info: &mcp_service.SquareMCPInfo{
 			McpSquareId: mcp.McpSquareId,
 			Name:        mcp.Name,
@@ -196,10 +209,12 @@ func buildCustomMCPDetail(mcp *model.MCPClient) *mcp_service.CustomMCPDetail {
 func buildCustomMCPInfo(mcp *model.MCPClient) *mcp_service.CustomMCPInfo {
 	detail := buildCustomMCPDetail(mcp)
 	return &mcp_service.CustomMCPInfo{
-		McpId:      detail.McpId,
-		SseUrl:     detail.SseUrl,
-		AvatarPath: detail.AvatarPath,
-		Info:       detail.Info,
+		McpId:         detail.McpId,
+		SseUrl:        detail.SseUrl,
+		StreamableUrl: detail.StreamableUrl,
+		Transport:     detail.Transport,
+		AvatarPath:    detail.AvatarPath,
+		Info:          detail.Info,
 	}
 }
 

@@ -1862,6 +1862,9 @@ definitions:
     properties:
       conversationId:
         type: string
+      detailId:
+        description: 可选，传值则删除单条对话，不传则删除全部对话
+        type: string
     required:
     - conversationId
     type: object
@@ -3208,11 +3211,16 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
+        type: string
     required:
     - desc
     - from
     - name
-    - sseUrl
     type: object
   request.MCPIDReq:
     properties:
@@ -3370,12 +3378,17 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
+        type: string
     required:
     - desc
     - from
     - mcpId
     - name
-    - sseUrl
     type: object
   request.MemoryConfig:
     properties:
@@ -6993,8 +7006,14 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
       summary:
         description: 使用概述
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
         type: string
     type: object
   response.MCPInfo:
@@ -7024,6 +7043,12 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
+        type: string
     type: object
   response.MCPSelect:
     properties:
@@ -7049,6 +7074,9 @@ definitions:
       serverUrl:
         description: sseUrl
         type: string
+      streamableUrl:
+        description: streamableUrl
+        type: string
       toolId:
         description: 工具id
         type: string
@@ -7060,6 +7088,9 @@ definitions:
         enum:
         - mcp
         - mcpserver
+        type: string
+      transport:
+        description: 传输协议
         type: string
       type:
         type: string
@@ -14893,9 +14924,13 @@ paths:
         in: query
         name: mcpId
         type: string
-      - description: serverUrl,就是sseUrl(和mcpId传一个)
+      - description: serverUrl,就是sseUrl/streamable(和mcpId传一个)
         in: query
         name: serverUrl
+        type: string
+      - description: '传输协议类型: sse 或 streamable(仅当serverUrl不为空时生效)'
+        in: query
+        name: transport
         type: string
       produces:
       - application/json

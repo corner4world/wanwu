@@ -99,11 +99,12 @@ func GetMCPList(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			mcpId		query		string	false	"mcpId(和serverUrl传一个)"
-//	@Param			serverUrl	query		string	false	"serverUrl,就是sseUrl(和mcpId传一个)"
+//	@Param			serverUrl	query		string	false	"serverUrl,就是sseUrl/streamable(和mcpId传一个)"
+//	@Param			transport	query		string	false	"传输协议类型: sse 或 streamable(仅当serverUrl不为空时生效)"
 //	@Success		200			{object}	response.Response{data=response.MCPToolList}
 //	@Router			/mcp/tool/list [get]
 func GetMCPTools(ctx *gin.Context) {
-	resp, err := service.GetMCPToolList(ctx, ctx.Query("mcpId"), ctx.Query("serverUrl"))
+	resp, err := service.GetMCPToolList(ctx, ctx.Query("mcpId"), ctx.Query("serverUrl"), ctx.Query("transport"))
 	gin_util.Response(ctx, resp, err)
 }
 

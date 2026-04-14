@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/UnicomAI/wanwu/pkg/log"
 	"sync"
 
 	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
@@ -9,6 +8,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
+	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )

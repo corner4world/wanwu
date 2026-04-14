@@ -34,6 +34,9 @@ func NewClient(ctx context.Context, db *gorm.DB) (*Client, error) {
 	if err := initCustomToolAuthJson(db); err != nil {
 		return nil, err
 	}
+	if err := initMCPClientTransport(db); err != nil {
+		return nil, err
+	}
 	return &Client{
 		db: db,
 	}, nil
@@ -83,6 +86,16 @@ func initCustomToolAuthJson(dbClient *gorm.DB) error {
 		return err
 	}
 
+	return nil
+}
+
+func initMCPClientTransport(dbClient *gorm.DB) error {
+	err := dbClient.Model(&model.MCPClient{}).
+		Where("transport = '' OR transport IS NULL").
+		Where("sse_url != ''").Update("transport", "sse").Error
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

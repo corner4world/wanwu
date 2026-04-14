@@ -93,6 +93,8 @@ message CreateCustomMCPReq {
   string from = 6;
   string sseUrl = 7;
   string avatarPath = 8;
+  string streamableUrl = 9;
+  string transport = 10; // 传输协议: "sse" 或 "streamable"
 }
 
 message UpdateCustomMCPReq {
@@ -104,6 +106,8 @@ message UpdateCustomMCPReq {
   string from = 6;
   string sseUrl = 7;
   string avatarPath = 8;
+  string streamableUrl = 9;
+  string transport = 10; // 传输协议: "sse" 或 "streamable"
 }
 
 message GetCustomMCPReq {
@@ -151,6 +155,8 @@ message CustomMCPDetail {
   string avatarPath = 3;
   SquareMCPInfo info = 4;
   SquareMCPIntro intro = 5;
+  string streamableUrl = 6;
+  string transport = 7; // 传输协议: "sse" 或 "streamable"
 }
 
 message CustomMCPInfo {
@@ -158,6 +164,8 @@ message CustomMCPInfo {
   string sseUrl = 2;
   string avatarPath = 3;
   SquareMCPInfo info = 4;
+  string streamableUrl = 5;
+  string transport = 6; // 传输协议: "sse" 或 "streamable"
 }
 
 message SquareMCPDetail {
@@ -342,6 +350,7 @@ message MCPServerInfo{
   string sseExample = 7;
   string streamableUrl = 8;
   string streamableExample = 9;
+  string transport = 10; // 传输协议: "sse" 或 "streamable"
 }
 
 message CreateMCPServerReq {

@@ -50,28 +50,32 @@ func GetMCPSquareList(ctx *gin.Context, userID, orgID, category, name string) (*
 
 func CreateMCP(ctx *gin.Context, userID, orgID string, req request.MCPCreate) error {
 	_, err := mcp.CreateCustomMCP(ctx.Request.Context(), &mcp_service.CreateCustomMCPReq{
-		OrgId:       orgID,
-		UserId:      userID,
-		McpSquareId: req.MCPSquareID,
-		Name:        req.Name,
-		Desc:        req.Desc,
-		From:        req.From,
-		SseUrl:      req.SSEURL,
-		AvatarPath:  req.Avatar.Key,
+		OrgId:         orgID,
+		UserId:        userID,
+		McpSquareId:   req.MCPSquareID,
+		Name:          req.Name,
+		Desc:          req.Desc,
+		From:          req.From,
+		SseUrl:        req.SSEURL,
+		StreamableUrl: req.StreamableURL,
+		Transport:     req.Transport,
+		AvatarPath:    req.Avatar.Key,
 	})
 	return err
 }
 
 func UpdateMCP(ctx *gin.Context, userID, orgID string, req request.MCPUpdate) error {
 	_, err := mcp.UpdateCustomMCP(ctx.Request.Context(), &mcp_service.UpdateCustomMCPReq{
-		OrgId:      orgID,
-		UserId:     userID,
-		McpId:      req.MCPID,
-		Name:       req.Name,
-		Desc:       req.Desc,
-		From:       req.From,
-		SseUrl:     req.SSEURL,
-		AvatarPath: req.Avatar.Key,
+		OrgId:         orgID,
+		UserId:        userID,
+		McpId:         req.MCPID,
+		Name:          req.Name,
+		Desc:          req.Desc,
+		From:          req.From,
+		SseUrl:        req.SSEURL,
+		StreamableUrl: req.StreamableURL,
+		Transport:     req.Transport,
+		AvatarPath:    req.Avatar.Key,
 	})
 	return err
 }
@@ -144,11 +148,13 @@ func GetMCPSelect(ctx *gin.Context, userID, orgID string, name string) (*respons
 			ToolName: mcpInfo.Info.Name,
 			ToolType: constant.MCPTypeMCP,
 			// 共有字段
-			Description: mcpInfo.Info.Desc,
-			ServerFrom:  mcpInfo.Info.From,
-			ServerURL:   mcpInfo.SseUrl,
-			Type:        constant.MCPTypeMCP,
-			Avatar:      cacheMCPAvatar(ctx, mcpInfo.Info.AvatarPath, mcpInfo.AvatarPath),
+			Description:   mcpInfo.Info.Desc,
+			ServerFrom:    mcpInfo.Info.From,
+			ServerURL:     mcpInfo.SseUrl,
+			StreamableURL: mcpInfo.StreamableUrl,
+			Transport:     mcpInfo.Transport,
+			Type:          constant.MCPTypeMCP,
+			Avatar:        cacheMCPAvatar(ctx, mcpInfo.Info.AvatarPath, mcpInfo.AvatarPath),
 		})
 	}
 
@@ -165,14 +171,16 @@ func GetMCPSelect(ctx *gin.Context, userID, orgID string, name string) (*respons
 	}
 	for _, mcpServerInfo := range mcpServerList.List {
 		list = append(list, response.MCPSelect{
-			MCPID:       mcpServerInfo.McpServerId,
-			MCPSquareID: "",
-			UniqueId:    bff_util.ConcatAssistantToolUniqueId(constant.AppTypeMCPServer, mcpServerInfo.McpServerId),
-			Name:        mcpServerInfo.Name,
-			Description: mcpServerInfo.Desc,
-			ServerFrom:  "mcp server",
-			ServerURL:   mcpServerInfo.SseUrl,
-			Type:        constant.MCPTypeMCPServer,
+			MCPID:         mcpServerInfo.McpServerId,
+			MCPSquareID:   "",
+			UniqueId:      bff_util.ConcatAssistantToolUniqueId(constant.AppTypeMCPServer, mcpServerInfo.McpServerId),
+			Name:          mcpServerInfo.Name,
+			Description:   mcpServerInfo.Desc,
+			ServerFrom:    "mcp server",
+			ServerURL:     mcpServerInfo.SseUrl,
+			StreamableURL: mcpServerInfo.StreamableUrl,
+			Transport:     mcpServerInfo.Transport,
+			Type:          constant.MCPTypeMCPServer,
 			// 适用于智能体mcp下拉
 			ToolId:   mcpServerInfo.McpServerId,
 			ToolName: mcpServerInfo.Name,
@@ -186,7 +194,8 @@ func GetMCPSelect(ctx *gin.Context, userID, orgID string, name string) (*respons
 	}, nil
 }
 
-func GetMCPToolList(ctx *gin.Context, mcpID, sseUrl string) (*response.MCPToolList, error) {
+func GetMCPToolList(ctx *gin.Context, mcpID, serverUrl, transport string) (*response.MCPToolList, error) {
+	transportType := constant.MCPTransportSSE // 默认使用 sse
 	if mcpID != "" {
 		mcpDetail, err := mcp.GetCustomMCP(ctx.Request.Context(), &mcp_service.GetCustomMCPReq{
 			McpId: mcpID,
@@ -194,15 +203,26 @@ func GetMCPToolList(ctx *gin.Context, mcpID, sseUrl string) (*response.MCPToolLi
 		if err != nil {
 			return nil, err
 		}
-		if mcpDetail.SseUrl != "" {
-			sseUrl = mcpDetail.SseUrl
+		// 根据 transport 字段选择 URL
+		switch mcpDetail.Transport {
+		case constant.MCPTransportStreamable:
+			serverUrl = mcpDetail.StreamableUrl
+			transportType = constant.MCPTransportStreamable
+		case constant.MCPTransportSSE:
+			serverUrl = mcpDetail.SseUrl
+			transportType = constant.MCPTransportSSE
+		default:
+			return nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "transport empty")
 		}
+	} else if transport != "" {
+		// 如果传入了 transport 参数，使用传入的值
+		transportType = transport
 	}
-	if sseUrl == "" {
-		return nil, grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "sseUrl empty")
+	if serverUrl == "" {
+		return nil, grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "url empty")
 	}
 
-	tools, err := mcp_util.ListTools(ctx.Request.Context(), sseUrl)
+	tools, err := mcp_util.ListTools(ctx.Request.Context(), serverUrl, transportType)
 	if err != nil {
 		return nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error())
 	}
@@ -227,7 +247,7 @@ func GetMCPActionList(ctx *gin.Context, userID, orgID string, req request.MCPAct
 			actions = append(actions, toolActions...)
 		}
 	case constant.MCPTypeMCP:
-		tools, err := GetMCPToolList(ctx, req.ToolId, "")
+		tools, err := GetMCPToolList(ctx, req.ToolId, "", "")
 		if err != nil {
 			return nil, err
 		}
@@ -253,6 +273,8 @@ func toMCPCustomDetail(ctx *gin.Context, mcpDetail *mcp_service.CustomMCPDetail)
 		MCPInfo: response.MCPInfo{
 			MCPID:         mcpDetail.McpId,
 			SSEURL:        mcpDetail.SseUrl,
+			StreamableURL: mcpDetail.StreamableUrl,
+			Transport:     mcpDetail.Transport,
 			MCPSquareInfo: toMCPSquareInfo(ctx, mcpDetail.Info, mcpDetail.AvatarPath),
 		},
 		MCPSquareIntro: toMCPSquareIntro(mcpDetail.Intro),
@@ -263,6 +285,8 @@ func toMCPCustomInfo(ctx *gin.Context, mcpInfo *mcp_service.CustomMCPInfo) respo
 	return response.MCPInfo{
 		MCPID:         mcpInfo.McpId,
 		SSEURL:        mcpInfo.SseUrl,
+		StreamableURL: mcpInfo.StreamableUrl,
+		Transport:     mcpInfo.Transport,
 		MCPSquareInfo: toMCPSquareInfo(ctx, mcpInfo.Info, mcpInfo.AvatarPath),
 	}
 }

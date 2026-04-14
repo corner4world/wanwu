@@ -373,6 +373,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/callback/v1/skill/detail": {
+            "get": {
+                "description": "根据skillId和skillType获取技能详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "skill"
+                ],
+                "summary": "获取技能详情（供workflow回调使用）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skillId",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "skillType (builtin/custom)",
+                        "name": "skillType",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillDetailForWorkflow"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/callback/wga/sandbox/cleanup": {
             "post": {
                 "description": "清理沙箱资源",
@@ -4138,6 +4189,10 @@ const docTemplate = `{
                     "description": "hybrid_search:混合搜索， semantic_search:向量搜索， full_text_search：文本搜索",
                     "type": "string"
                 },
+                "return_meta": {
+                    "description": "是否返回元数据",
+                    "type": "boolean"
+                },
                 "rewrite_query": {
                     "description": "是否query改写",
                     "type": "boolean"
@@ -4509,8 +4564,16 @@ const docTemplate = `{
                     "description": "SSE URL",
                     "type": "string"
                 },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
                 "summary": {
                     "description": "使用概述",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
                     "type": "string"
                 }
             }
@@ -4734,6 +4797,29 @@ const docTemplate = `{
                 },
                 "skillPath": {
                     "description": "markdown地址，内部使用，不要对外",
+                    "type": "string"
+                }
+            }
+        },
+        "response.SkillDetailForWorkflow": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "objectPath": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                },
+                "skillType": {
                     "type": "string"
                 }
             }

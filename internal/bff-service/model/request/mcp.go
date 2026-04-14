@@ -9,12 +9,14 @@ func (req *MCPIDReq) Check() error {
 }
 
 type MCPCreate struct {
-	Avatar      Avatar `json:"avatar"`                     // 图标
-	MCPSquareID string `json:"mcpSquareId"`                // 广场mcpId(非空表示来源于广场)
-	Name        string `json:"name" validate:"required"`   // 名称
-	Desc        string `json:"desc" validate:"required"`   // 描述
-	From        string `json:"from" validate:"required"`   // 来源
-	SSEURL      string `json:"sseUrl" validate:"required"` // SSE URL
+	Avatar        Avatar `json:"avatar"`                   // 图标
+	MCPSquareID   string `json:"mcpSquareId"`              // 广场mcpId(非空表示来源于广场)
+	Name          string `json:"name" validate:"required"` // 名称
+	Desc          string `json:"desc" validate:"required"` // 描述
+	From          string `json:"from" validate:"required"` // 来源
+	SSEURL        string `json:"sseUrl"`                   // SSE URL
+	StreamableURL string `json:"streamableUrl"`            // Streamable HTTP URL
+	Transport     string `json:"transport"`                // 传输协议: "sse" 或 "streamable"
 }
 
 func (req *MCPCreate) Check() error {
@@ -22,12 +24,14 @@ func (req *MCPCreate) Check() error {
 }
 
 type MCPUpdate struct {
-	Avatar Avatar `json:"avatar"` // 图标
-	MCPID  string `json:"mcpId" validate:"required"`
-	Name   string `json:"name" validate:"required"`   // 名称
-	Desc   string `json:"desc" validate:"required"`   // 描述
-	From   string `json:"from" validate:"required"`   // 来源
-	SSEURL string `json:"sseUrl" validate:"required"` // SSE URL
+	Avatar        Avatar `json:"avatar"` // 图标
+	MCPID         string `json:"mcpId" validate:"required"`
+	Name          string `json:"name" validate:"required"` // 名称
+	Desc          string `json:"desc" validate:"required"` // 描述
+	From          string `json:"from" validate:"required"` // 来源
+	SSEURL        string `json:"sseUrl"`                   // SSE URL
+	StreamableURL string `json:"streamableUrl"`            // Streamable HTTP URL
+	Transport     string `json:"transport"`                // 传输协议: "sse" 或 "streamable"
 }
 
 func (req *MCPUpdate) Check() error {

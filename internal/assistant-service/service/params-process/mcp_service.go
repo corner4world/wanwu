@@ -132,9 +132,10 @@ func buildCustomMcpList(prepareParams *AgentPrepareParams, mcpTools map[string]c
 	if len(prepareParams.CustomMcpList) > 0 {
 		for _, mcpCustom := range prepareParams.CustomMcpList {
 			toolList := prepareParams.McpToolMap[mcpCustom.McpId]
+			url, transport := selectMcpUrlAndTransportByType(mcpCustom.SseUrl, mcpCustom.StreamableUrl, mcpCustom.Transport)
 			mcpTools[mcpCustom.McpId] = config.MCPToolInfo{
-				URL:          mcpCustom.SseUrl,
-				Transport:    "sse",
+				URL:          url,
+				Transport:    transport,
 				ToolNameList: toolList,
 			}
 		}
@@ -145,11 +146,29 @@ func buildMcpServerList(prepareParams *AgentPrepareParams, mcpTools map[string]c
 	if len(prepareParams.McpServerList) > 0 {
 		for _, mcpServer := range prepareParams.McpServerList {
 			toolList := prepareParams.McpToolMap[mcpServer.McpServerId]
+			url, transport := selectMcpUrlAndTransportByType(mcpServer.SseUrl, mcpServer.StreamableUrl, mcpServer.Transport)
 			mcpTools[mcpServer.McpServerId] = config.MCPToolInfo{
-				URL:          mcpServer.SseUrl,
-				Transport:    "sse",
+				URL:          url,
+				Transport:    transport,
 				ToolNameList: toolList,
 			}
 		}
+	}
+}
+
+// selectMcpUrlAndTransportByType 根据 transport 类型选择 URL
+// transport: "sse" 或 "streamable"，如果为空则根据 URL 是否存在自动选择
+func selectMcpUrlAndTransportByType(sseUrl, streamableUrl, transport string) (url, selectedTransport string) {
+	switch transport {
+	case constant.MCPTransportStreamable:
+		return streamableUrl, constant.MCPTransportStreamable
+	case constant.MCPTransportSSE:
+		return sseUrl, constant.MCPTransportSSE
+	default:
+		// 如果 transport 为空，根据 URL 是否存在自动选择
+		if streamableUrl != "" {
+			return streamableUrl, constant.MCPTransportStreamable
+		}
+		return sseUrl, constant.MCPTransportSSE
 	}
 }

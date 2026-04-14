@@ -828,6 +828,10 @@ const docTemplate = `{
             "properties": {
                 "conversationId": {
                     "type": "string"
+                },
+                "detailId": {
+                    "description": "可选，传值则删除单条对话，不传则删除全部对话",
+                    "type": "string"
                 }
             }
         },
