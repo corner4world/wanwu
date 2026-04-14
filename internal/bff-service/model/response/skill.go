@@ -24,3 +24,13 @@ type SkillInfo struct {
 	Author    string         `json:"author"`    // 作者
 	Avatar    request.Avatar `json:"avatar"`    // 图标
 }
+
+// SkillDetailForWorkflow 用于 workflow 回调接口返回 skill 详情，字段与 agent-service 的 SkillToolInfo 对齐
+type SkillDetailForWorkflow struct {
+	SkillId    string `json:"skillId"`
+	SkillType  string `json:"skillType"`
+	Name       string `json:"name"`
+	Desc       string `json:"desc"`
+	Avatar     string `json:"avatar"`
+	ObjectPath string `json:"objectPath"`
+}

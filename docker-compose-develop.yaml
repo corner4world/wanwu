@@ -392,6 +392,7 @@ services:
       WANWU_CALLBACK_CHATFLOW_LIST_URL: http://bff-service:6668/callback/v1/chatflow/list
       WANWU_CALLBACK_MCP_GET_URL: http://bff-service:6668/callback/v1/mcp
       WANWU_CALLBACK_MCP_SERVER_GET_URL: http://bff-service:6668/callback/v1/mcp/server
+      WANWU_CALLBACK_SKILL_DETAIL_URL: http://bff-service:6668/callback/v1/skill/detail
       WANWU_CALLBACK_WORKFLOW_LIST_SCHEMA_URL: http://workflow-wanwu:8999/v1/workflow/list_schema_by_wanwu
       WANWU_AGENT_API_URL: http://agent-service:8990/agent/chat/direct
       WANWU_KNOWLEDGE_SEARCH_URL: http://bff-service:6668/callback/v1/rag/search-knowledge-base
