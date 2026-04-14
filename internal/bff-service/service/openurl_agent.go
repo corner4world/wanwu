@@ -127,7 +127,7 @@ func AppUrlConversionStream(ctx *gin.Context, req request.UrlConversionStreamReq
 	chatCh, err := CallAssistantConversationStream(ctx, xCid, appUrlInfo.OrgId, request.ConversionStreamRequest{
 		AssistantId:    appUrlInfo.AppId,
 		ConversationId: req.ConversationId,
-		FileInfo:       []request.ConversionStreamFile{},
+		FileInfo:       req.FileInfo,
 		Prompt:         req.Prompt,
 	}, true)
 	if err != nil {
