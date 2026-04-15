@@ -157,3 +157,65 @@ func AssistantUrlQuestionRecommend(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, err)
 	}
 }
+
+// --- 文件上传（匿名访问） ---
+
+// UploadFile
+//
+//	@Tags			openurl.file
+//	@Summary		文件上传
+//	@Description	分片文件上传（匿名访问）
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			fileName	formData	string	true	"原始文件名"
+//	@Param			sequence	formData	int		true	"分片文件序号"
+//	@Param			chunkName	formData	string	true	"上传批次标识"
+//	@Param			files		formData	file	true	"文件"
+//	@Success		200			{object}	response.Response{data=response.UploadFileResp}
+//	@Router			/file/upload [post]
+func UploadFile(ctx *gin.Context) {
+	var req request.UploadFileReq
+	if !gin_util.BindForm(ctx, &req) {
+		return
+	}
+	resp, err := service.UploadFile(ctx, &req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// MergeFile
+//
+//	@Tags			openurl.file
+//	@Summary		文件合并
+//	@Description	合并分片文件（匿名访问）
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.MergeFileReq	true	"文件合并参数"
+//	@Success		200		{object}	response.Response{data=response.MergeFileResp}
+//	@Router			/file/merge [post]
+func MergeFile(ctx *gin.Context) {
+	var req request.MergeFileReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.MergeFile(ctx, &req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// CleanFile
+//
+//	@Tags			openurl.file
+//	@Summary		文件清除
+//	@Description	清除已上传的分片文件（匿名访问）
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.CleanFileReq	true	"文件清除参数"
+//	@Success		200		{object}	response.Response{data=response.CleanFileResp}
+//	@Router			/file/clean [post]
+func CleanFile(ctx *gin.Context) {
+	var req request.CleanFileReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.CleanFile(ctx, &req)
+	gin_util.Response(ctx, resp, err)
+}
