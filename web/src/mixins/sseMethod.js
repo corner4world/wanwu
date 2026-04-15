@@ -1,4 +1,4 @@
-import { fetchEventSource } from '../sse/index.js';
+﻿import { fetchEventSource } from '../sse/index.js';
 import { store } from '@/store/index';
 import Print from '../utils/printPlus2.js';
 import {
@@ -639,6 +639,7 @@ export default {
         this.sseApi = `${OPENURL_API}/agent/${this.sseParams.assistantId}/stream`;
         data = {
           conversationId: this.sseParams.conversationId,
+          fileInfo: this.sseParams.fileInfo,
           prompt,
         };
         headers = {

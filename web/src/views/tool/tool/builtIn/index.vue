@@ -32,31 +32,8 @@
             />
             <div class="mcp_detailBox">
               <span class="mcp_name">{{ item.name }}</span>
-              <span class="mcp_from tool_tag">
-                <label
-                  style="font-size: 11px"
-                  v-for="it in item.tags?.slice(0, 2) || []"
-                  :key="it"
-                >
-                  {{ it }}
-                </label>
-                <el-tooltip
-                  effect="light"
-                  placement="bottom"
-                  v-if="item.tags && item.tags.length > 2"
-                  popper-class="custom-tooltip"
-                >
-                  <div slot="content" class="tool_tag">
-                    <label
-                      style="font-size: 11px"
-                      v-for="it in item.tags.slice(2)"
-                      :key="it"
-                    >
-                      {{ it }}
-                    </label>
-                  </div>
-                  <label style="font-size: 11px">...</label>
-                </el-tooltip>
+              <span>
+                <overflow-tags :tags="item.tags" :min-width="170.5" />
               </span>
             </div>
           </div>
@@ -73,10 +50,11 @@
 </template>
 <script>
 import SearchInput from '@/components/searchInput.vue';
+import OverflowTags from '@/components/OverflowTags.vue';
 import { getBuiltInList } from '@/api/mcp';
 import { avatarSrc } from '@/utils/util';
 export default {
-  components: { SearchInput },
+  components: { SearchInput, OverflowTags },
   data() {
     return {
       list: [],
@@ -126,14 +104,6 @@ export default {
   margin-top: -60px;
   ::v-deep .el-empty__description p {
     color: #b3b1bc;
-  }
-}
-.tool_tag {
-  height: 22px;
-  label {
-    display: inline-block !important;
-    width: auto !important;
-    margin-right: 5px;
   }
 }
 </style>

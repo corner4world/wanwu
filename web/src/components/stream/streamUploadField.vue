@@ -363,7 +363,7 @@ export default {
         for (let i = 0; i < this.fileList.length; i++) {
           if (!this.fileList[i].uploaded) {
             // 添加标记避免重复上传
-            this.startUpload(i);
+            this.startUpload(i, this.type === 'webChat');
             this.fileList[i].uploaded = true;
           }
         }
