@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
@@ -31,7 +32,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) (*response.ListResult, error) {
+func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId, agentId string) (*response.ListResult, error) {
 	toolResp, err := mcp.GetToolSelect(ctx.Request.Context(), &mcp_service.GetToolSelectReq{
 		Identity: &mcp_service.Identity{
 			UserId: userId,
@@ -49,16 +50,39 @@ func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId string) (*respons
 		}
 	}
 
-	toolCategories, err := wga.GetAgentToolCategories(config.WgaCfg().AgentID)
+	defaultAgentId := config.WgaCfg().AgentID
+	if agentId == "" {
+		agentId = defaultAgentId
+	}
+
+	// 获取全量工具列表
+	toolCategories, err := wga.GetAgentToolCategories(defaultAgentId)
 	if err != nil {
 		return nil, err
+	}
+
+	if agentId != defaultAgentId {
+		// 获取指定agentId的工具列表
+		overrideCategories, err := wga.GetAgentToolCategories(agentId)
+		if err != nil {
+			return nil, err
+		}
+		overrideMap := make(map[string]*wga_option.ToolCategoryInfo)
+		for i := range overrideCategories {
+			overrideMap[string(overrideCategories[i].Category)] = overrideCategories[i]
+		}
+		for i := range toolCategories {
+			if overrideCat, ok := overrideMap[string(toolCategories[i].Category)]; ok {
+				toolCategories[i] = overrideCat
+			}
+		}
 	}
 
 	result := make([]response.GetGeneralAgentToolSelectResp, 0, len(toolCategories))
 	for _, tc := range toolCategories {
 		categoryResp := response.GetGeneralAgentToolSelectResp{
 			Category:  gin_util.I18nKey(ctx, string(tc.Category)),
-			Condition: string(tc.Condition),
+			Condition: util.IfElse(agentId != "", string(tc.Condition), "none"), // 如果agentId为空，则不限制工具选择
 			ToolList:  []response.ToolInfo{},
 		}
 
@@ -121,13 +145,38 @@ func GetGeneralAgentToolInfo(ctx *gin.Context, userId, orgId, toolId, toolType s
 	}, nil
 }
 
+func GetGeneralAgentUploadLimit(ctx *gin.Context, userId, orgId string) (*response.GeneralAgentUploadLimitResp, error) {
+	cfg := config.WgaCfg()
+	uploadLimit := cfg.UploadLimit
+
+	retList := make([]*response.GeneralAgentUploadLimit, 0)
+	retList = append(retList, buildGeneralAgentUploadLimit("image", uploadLimit.ImageTypes, uploadLimit.MaxImageSize))
+	retList = append(retList, buildGeneralAgentUploadLimit("file", uploadLimit.FileTypes, uploadLimit.MaxFileSize))
+
+	return &response.GeneralAgentUploadLimitResp{
+		UploadLimitList: retList,
+	}, nil
+}
+
+func buildGeneralAgentUploadLimit(fileType, extStr string, maxSize int) *response.GeneralAgentUploadLimit {
+	var extList []string
+	if extStr != "" {
+		extList = strings.Split(extStr, ";")
+	}
+	return &response.GeneralAgentUploadLimit{
+		FileType: fileType,
+		MaxSize:  maxSize,
+		ExtList:  extList,
+	}
+}
+
 func UpdateGeneralAgentConfig(ctx *gin.Context, userId, orgId string, req request.UpdateGeneralAgentConfigReq) error {
 	// 校验 assistant 配置
 	assistantList := make([]*assistant_service.WgaConfigAssistant, 0, len(req.AssistantList))
 	for _, a := range req.AssistantList {
 		assistantList = append(assistantList, &assistant_service.WgaConfigAssistant{
 			AssistantId:   a.AssistantID,
-			AssistantType: "1", // 默认单智能体
+			AssistantType: util.Int2Str(constant.AgentCategorySingle), // 默认单智能体
 		})
 	}
 	if err := checkWgaAssistantConfig(ctx, userId, orgId, assistantList); err != nil {
@@ -142,7 +191,7 @@ func UpdateGeneralAgentConfig(ctx *gin.Context, userId, orgId string, req reques
 			ToolType: t.ToolType,
 		})
 	}
-	if err := checkWgaToolConfig(ctx, userId, orgId, toolList); err != nil {
+	if err := checkWgaToolConfig(ctx, userId, orgId, "", toolList); err != nil {
 		return err
 	}
 
@@ -169,11 +218,24 @@ func UpdateGeneralAgentConfig(ctx *gin.Context, userId, orgId string, req reques
 		return err
 	}
 
+	// 校验 skill 配置
+	skillList := make([]*assistant_service.WgaConfigSkill, 0, len(req.SkillList))
+	for _, s := range req.SkillList {
+		skillList = append(skillList, &assistant_service.WgaConfigSkill{
+			SkillId:   s.SkillID,
+			SkillType: constant.SkillTypeCustom, // 固定为自定义技能
+		})
+	}
+	if err := checkWgaSkillConfig(ctx, userId, orgId, skillList); err != nil {
+		return err
+	}
+
 	_, err := assistant.UpdateWgaConfig(ctx.Request.Context(), &assistant_service.UpdateWgaConfigReq{
 		ToolList:      toolList,
 		AssistantList: assistantList,
 		McpList:       mcpList,
 		WorkflowList:  workflowList,
+		SkillList:     skillList,
 		Identity: &assistant_service.Identity{
 			UserId: userId,
 			OrgId:  orgId,
@@ -261,6 +323,36 @@ func GetGeneralAgentConfig(ctx *gin.Context, userId, orgId string) (*response.Ge
 				WorkflowID: w.WorkflowId,
 			})
 		}
+	}
+
+	// 过滤存在的 skill
+	var customSkillIds []string
+	for _, s := range resp.Config.SkillList {
+		customSkillIds = append(customSkillIds, s.SkillId)
+	}
+	validSkillIds, _ := getValidSkillIds(ctx, customSkillIds)
+	for _, s := range resp.Config.SkillList {
+		if validSkillIds[s.SkillId] {
+			result.SkillList = append(result.SkillList, request.SkillSelected{
+				SkillID: s.SkillId,
+			})
+		}
+	}
+
+	return result, nil
+}
+
+func GetGeneralAgentSubList(ctx *gin.Context) (*response.GetGeneralAgentSubListResp, error) {
+	result := &response.GetGeneralAgentSubListResp{}
+
+	// 获取wga所支持的子智能体
+	for _, agent := range config.WgaCfg().SubAgents {
+		result.WgaAgentList = append(result.WgaAgentList, response.WgaAgentInfo{
+			AgentID:     agent.AgentID,
+			AgentName:   agent.AgentName,
+			Avatar:      request.Avatar{Path: agent.AvatarPath},
+			Placeholder: agent.Placeholder,
+		})
 	}
 
 	return result, nil
@@ -511,6 +603,14 @@ func CheckGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string,
 		opts = append(opts, modelOpt)
 	}
 
+	if req.AgentID == "" {
+		// 如果agentId为空，则不限制工具配置，直接返回模型检查结果
+		return &response.GeneralAgentConfigCheckResponse{
+			Meet:      true,
+			ModelMeet: true,
+		}, nil
+	}
+
 	// 构建工具配置选项
 	toolOpts, err := buildWgaToolOptions(ctx, userId, orgId, wgaConfig.ToolList)
 	if err != nil {
@@ -518,10 +618,8 @@ func CheckGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string,
 	}
 	opts = append(opts, toolOpts...)
 
-	// FIXME check mcp、workflow、assistant 配置
-
-	// 检查配置
-	checkResult, err := wga.CheckOptions(ctx.Request.Context(), config.WgaCfg().AgentID, opts...)
+	// 检查工具配置
+	checkResult, err := wga.CheckOptions(ctx.Request.Context(), req.AgentID, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -548,10 +646,10 @@ func CheckGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string,
 		result.ToolsMeet = append(result.ToolsMeet, category)
 	}
 
-	result.Valid = result.ModelMeet
+	result.Meet = result.ModelMeet
 	for _, tc := range result.ToolsMeet {
 		if !tc.Meet {
-			result.Valid = false
+			result.Meet = false
 			break
 		}
 	}
@@ -785,21 +883,25 @@ func buildWgaModelOption(ctx *gin.Context, modelConfig *common.AppModelConfig) (
 // --- internal wga tool ---
 
 // checkWgaToolConfig 校验工具配置是否存在且是 WGA 所需的（用于运行前检查）
-func checkWgaToolConfig(ctx *gin.Context, userId, orgId string, toolList []*assistant_service.WgaConfigTool) error {
+func checkWgaToolConfig(ctx *gin.Context, userId, orgId, agentID string, toolList []*assistant_service.WgaConfigTool) error {
 	if len(toolList) == 0 {
 		return nil
 	}
 
-	// 获取 wga 允许的 tool 名称列表
-	toolCategories, err := wga.GetAgentToolCategories(config.WgaCfg().AgentID)
-	if err != nil {
-		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("get agent tool categories failed: %v", err))
-	}
-
+	// 获取 wga 允许的 tool 名称列表，仅当 agentID 存在时获取
+	var toolCategories []*wga_option.ToolCategoryInfo
 	validToolTitles := make(map[string]bool)
-	for _, tc := range toolCategories {
-		for _, t := range tc.Tools {
-			validToolTitles[t.Doc.Info.Title] = true
+	var err error
+	if agentID != "" {
+		toolCategories, err = wga.GetAgentToolCategories(agentID)
+		if err != nil {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("get agent tool categories failed: %v", err))
+		}
+
+		for _, tc := range toolCategories {
+			for _, t := range tc.Tools {
+				validToolTitles[t.Doc.Info.Title] = true
+			}
 		}
 	}
 
@@ -817,9 +919,12 @@ func checkWgaToolConfig(ctx *gin.Context, userId, orgId string, toolList []*assi
 			if err != nil {
 				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("builtin tool not found: %s", t.ToolId))
 			}
-			// 验证 tool 是否在 wga 工具列表中
-			if !validToolTitles[toolResp.Info.Name] {
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("tool not allowed for wga: %s", toolResp.Info.Name))
+
+			if agentID != "" {
+				// 验证 tool 是否在 wga 工具列表中
+				if !validToolTitles[toolResp.Info.Name] {
+					return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("tool not allowed for wga: %s", toolResp.Info.Name))
+				}
 			}
 		default:
 			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("invalid tool type: %s", t.ToolType))
@@ -1078,7 +1183,54 @@ func buildWgaWorkflowOptions(ctx *gin.Context, userId, orgId string, workflowLis
 	return opts, nil
 }
 
-// --- internal ---
+// --- internal wga skill ---
+
+// checkWgaSkillConfig 校验wga Skill配置（用于更新配置）
+func checkWgaSkillConfig(ctx *gin.Context, userId, orgId string, skillList []*assistant_service.WgaConfigSkill) error {
+	if len(skillList) == 0 {
+		return nil
+	}
+
+	var customSkillIds []string
+	for _, s := range skillList {
+		switch s.SkillType {
+		case constant.SkillTypeCustom:
+			customSkillIds = append(customSkillIds, s.SkillId)
+		default:
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("invalid skill type: %s", s.SkillType))
+		}
+	}
+
+	validIds, err := getValidSkillIds(ctx, customSkillIds)
+	if err != nil {
+		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "skill not found")
+	}
+
+	for _, s := range skillList {
+		if !validIds[s.SkillId] {
+			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("skill not found: %s", s.SkillId))
+		}
+	}
+	return nil
+}
+
+// getValidSkillIds 批量获取有效的Skill ID映射
+func getValidSkillIds(ctx *gin.Context, skillIds []string) (map[string]bool, error) {
+	if len(skillIds) == 0 {
+		return make(map[string]bool), nil
+	}
+	resp, err := mcp.GetCustomSkillDetailByIdList(ctx.Request.Context(), &mcp_service.CustomSkillDetailByIdListReq{
+		SkillIds: skillIds,
+	})
+	if err != nil {
+		return nil, err
+	}
+	validIds := make(map[string]bool)
+	for _, s := range resp.SkillDetails {
+		validIds[s.SkillId] = true
+	}
+	return validIds, nil
+}
 
 // getValidAssistantIds 批量获取有效的智能体ID映射
 // 返回: validIds - 有效ID映射, assistantInfos - 智能体信息映射, error

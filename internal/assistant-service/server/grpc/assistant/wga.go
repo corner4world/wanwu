@@ -82,6 +82,7 @@ func (s *Service) UpdateWgaConfig(ctx context.Context, req *assistant_service.Up
 	assistantListJSON, _ := json.Marshal(req.AssistantList)
 	mcpListJSON, _ := json.Marshal(req.McpList)
 	workflowListJSON, _ := json.Marshal(req.WorkflowList)
+	skillListJSON, _ := json.Marshal(req.SkillList)
 
 	config := &model.WgaConfig{
 		UserID:        req.Identity.UserId,
@@ -90,6 +91,7 @@ func (s *Service) UpdateWgaConfig(ctx context.Context, req *assistant_service.Up
 		ToolList:      string(toolListJSON),
 		McpList:       string(mcpListJSON),
 		WorkflowList:  string(workflowListJSON),
+		SkillList:     string(skillListJSON),
 	}
 
 	status := s.cli.UpdateWgaConfig(ctx, config)
@@ -171,6 +173,18 @@ func toProtoWgaConfig(m *model.WgaConfig) *assistant_service.WgaConfig {
 			for i := range workflows {
 				config.WorkflowList = append(config.WorkflowList, &assistant_service.WgaConfigWorkflow{
 					WorkflowId: workflows[i].WorkflowId,
+				})
+			}
+		}
+	}
+
+	if m.SkillList != "" {
+		var skills []assistant_service.WgaConfigSkill
+		if err := json.Unmarshal([]byte(m.SkillList), &skills); err == nil {
+			for i := range skills {
+				config.SkillList = append(config.SkillList, &assistant_service.WgaConfigSkill{
+					SkillId:   skills[i].SkillId,
+					SkillType: skills[i].SkillType,
 				})
 			}
 		}

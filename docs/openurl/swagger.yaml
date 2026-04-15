@@ -249,6 +249,15 @@ definitions:
     required:
     - conversationId
     type: object
+  request.ConversionStreamFile:
+    properties:
+      fileName:
+        type: string
+      fileSize:
+        type: integer
+      fileUrl:
+        type: string
+    type: object
   request.MemoryConfig:
     properties:
       maxHistoryLength:
@@ -305,6 +314,10 @@ definitions:
     properties:
       conversationId:
         type: string
+      fileInfo:
+        items:
+          $ref: '#/definitions/request.ConversionStreamFile'
+        type: array
       prompt:
         type: string
     required:

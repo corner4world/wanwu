@@ -37,10 +37,11 @@ func GetGeneralAgentAssistantSelect(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.ListResult{list=[]response.GetGeneralAgentToolSelectResp}}
+//	@Param			agentId	query		string	true	"智能体ID，默认为空"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.GetGeneralAgentToolSelectResp}}
 //	@Router			/general/agent/tool/select [get]
 func GetGeneralAgentToolSelect(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentToolSelect(ctx, getUserID(ctx), getOrgID(ctx))
+	resp, err := service.GetGeneralAgentToolSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("agentId"))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -96,6 +97,22 @@ func GetGeneralAgentWorkflowSelect(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
+// GetGeneralAgentSkillSelect
+//
+//	@Tags			wga
+//	@Summary		获取通用智能体skill列表
+//	@Description	获取通用智能体skill列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	query		string	false	"skill名称"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.CustomSkillDetail}}
+//	@Router			/general/agent/skill/select [get]
+func GetGeneralAgentSkillSelect(ctx *gin.Context) {
+	resp, err := service.GetCustomSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
+	gin_util.Response(ctx, resp, err)
+}
+
 // UpdateGeneralAgentConfig
 //
 //	@Tags			wga
@@ -128,6 +145,36 @@ func UpdateGeneralAgentConfig(ctx *gin.Context) {
 //	@Router			/general/agent/config [get]
 func GetGeneralAgentConfig(ctx *gin.Context) {
 	resp, err := service.GetGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx))
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentSubList
+//
+//	@Tags			wga
+//	@Summary		获取通用智能体子智能体列表
+//	@Description	获取通用智能体支持的子智能体列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.GetGeneralAgentSubListResp}
+//	@Router			/general/agent/sub/list [get]
+func GetGeneralAgentSubList(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentSubList(ctx)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentUploadLimit
+//
+//	@Tags			wga
+//	@Summary		获取通用智能体上传文件格式限制
+//	@Description	获取通用智能体所支持的上传文件格式及大小限制
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.GeneralAgentUploadLimitResp}
+//	@Router			/general/agent/upload/limit [get]
+func GetGeneralAgentUploadLimit(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentUploadLimit(ctx, getUserID(ctx), getOrgID(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 

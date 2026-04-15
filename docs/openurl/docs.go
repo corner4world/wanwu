@@ -835,6 +835,20 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ConversionStreamFile": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "fileSize": {
+                    "type": "integer"
+                },
+                "fileUrl": {
+                    "type": "string"
+                }
+            }
+        },
         "request.MemoryConfig": {
             "type": "object",
             "properties": {
@@ -919,6 +933,12 @@ const docTemplate = `{
             "properties": {
                 "conversationId": {
                     "type": "string"
+                },
+                "fileInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.ConversionStreamFile"
+                    }
                 },
                 "prompt": {
                     "type": "string"

@@ -2794,6 +2794,9 @@ definitions:
     type: object
   request.GeneralAgentConfigCheckRequest:
     properties:
+      agentId:
+        description: 子智能体ID
+        type: string
       threadId:
         description: 对话ID
         type: string
@@ -2802,6 +2805,9 @@ definitions:
     type: object
   request.GeneralAgentConversationChatReq:
     properties:
+      agentId:
+        description: 智能体ID
+        type: string
       messages:
         description: 消息
         items:
@@ -3961,6 +3967,14 @@ definitions:
     - conversationId
     - skillSaveId
     type: object
+  request.SkillSelected:
+    properties:
+      skillId:
+        description: skill ID
+        type: string
+    required:
+    - skillId
+    type: object
   request.ToolSelected:
     properties:
       toolId:
@@ -4114,6 +4128,11 @@ definitions:
         description: MCP列表
         items:
           $ref: '#/definitions/request.MCPSelected'
+        type: array
+      skillList:
+        description: 自定义skill列表
+        items:
+          $ref: '#/definitions/request.SkillSelected'
         type: array
       toolList:
         description: 工具列表
@@ -6076,6 +6095,9 @@ definitions:
     type: object
   response.GeneralAgentConfigCheckResponse:
     properties:
+      meet:
+        description: 是否符合要求
+        type: boolean
       modelMeet:
         description: 是否符合模型要求
         type: boolean
@@ -6084,9 +6106,6 @@ definitions:
         items:
           $ref: '#/definitions/response.GeneralAgentToolCategories'
         type: array
-      valid:
-        description: 是否有效
-        type: boolean
     type: object
   response.GeneralAgentConversationDetailInfo:
     properties:
@@ -6180,6 +6199,27 @@ definitions:
     required:
     - toolType
     type: object
+  response.GeneralAgentUploadLimit:
+    properties:
+      extList:
+        description: 支持的文件后缀列表
+        items:
+          type: string
+        type: array
+      fileType:
+        description: 文件类型，如：image、video、audio、document
+        type: string
+      maxSize:
+        description: 文件大小限制，单位MB
+        type: integer
+    type: object
+  response.GeneralAgentUploadLimitResp:
+    properties:
+      uploadLimitList:
+        items:
+          $ref: '#/definitions/response.GeneralAgentUploadLimit'
+        type: array
+    type: object
   response.GeneralAgentWorkspaceResp:
     properties:
       fileCount:
@@ -6211,6 +6251,11 @@ definitions:
         items:
           $ref: '#/definitions/request.MCPSelected'
         type: array
+      skillList:
+        description: 技能列表
+        items:
+          $ref: '#/definitions/request.SkillSelected'
+        type: array
       toolList:
         description: 工具列表
         items:
@@ -6231,6 +6276,14 @@ definitions:
       threadId:
         description: 对话ID
         type: string
+    type: object
+  response.GetGeneralAgentSubListResp:
+    properties:
+      wgaAgentList:
+        description: 子智能体列表
+        items:
+          $ref: '#/definitions/response.WgaAgentInfo'
+        type: array
     type: object
   response.GetGeneralAgentToolSelectResp:
     properties:
@@ -8289,6 +8342,22 @@ definitions:
       picNum:
         description: 视觉配置图片数量
         type: integer
+    type: object
+  response.WgaAgentInfo:
+    properties:
+      agentId:
+        description: 子智能体ID
+        type: string
+      agentName:
+        description: 子智能体名称
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: logo
+      placeholder:
+        description: 占位提示文本
+        type: string
     type: object
   response.WorkflowTemplateDetail:
     properties:
@@ -12286,6 +12355,62 @@ paths:
       summary: 通用智能体MCP下拉接口列表
       tags:
       - wga
+  /general/agent/skill/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.CustomSkillDetail'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取通用智能体skill列表
+      tags:
+      - wga
+  /general/agent/sub/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体支持的子智能体列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GetGeneralAgentSubListResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取通用智能体子智能体列表
+      tags:
+      - wga
   /general/agent/tool/info:
     get:
       consumes:
@@ -12324,6 +12449,12 @@ paths:
       consumes:
       - application/json
       description: 获取通用智能体工具选择，用于用户选择工具进行对话
+      parameters:
+      - description: 智能体ID，默认为空
+        in: query
+        name: agentId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -12346,6 +12477,28 @@ paths:
       security:
       - JWT: []
       summary: 通用智能体工具选择
+      tags:
+      - wga
+  /general/agent/upload/limit:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体所支持的上传文件格式及大小限制
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneralAgentUploadLimitResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取通用智能体上传文件格式限制
       tags:
       - wga
   /general/agent/workflow/select:

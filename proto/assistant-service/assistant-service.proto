@@ -69,12 +69,6 @@ service AssistantService {
   rpc AssistantConversionStream(AssistantConversionStreamReq) returns (stream AssistantConversionStreamResp) {}
   rpc MultiAssistantConversionStream(MultiAssistantConversionStreamReq) returns (stream AssistantConversionStreamResp) {}
 
-  // --- wga config ---
-  rpc GetWgaConversationConfig(GetWgaConversationConfigReq) returns (GetWgaConversationConfigResp) {}
-  rpc UpdateWgaConversationConfig(UpdateWgaConversationConfigReq) returns (google.protobuf.Empty) {}
-  rpc GetWgaConfig(GetWgaConfigReq) returns (GetWgaConfigResp) {}
-  rpc UpdateWgaConfig(UpdateWgaConfigReq) returns (google.protobuf.Empty) {}
-
   // --- custom prompt ---
   rpc CustomPromptCreate(CustomPromptCreateReq) returns (CustomPromptIDResp) {}
   rpc CustomPromptDelete(CustomPromptDeleteReq) returns (google.protobuf.Empty) {}
@@ -93,6 +87,12 @@ service AssistantService {
   rpc CreateSkillConversation(CreateSkillConversationReq) returns (CreateSkillConversationResp) {}
   rpc DeleteSkillConversation(DeleteSkillConversationReq) returns (google.protobuf.Empty) {}
   rpc GetSkillConversationList(GetSkillConversationListReq) returns (GetSkillConversationListResp) {}
+
+  // --- wga config ---
+  rpc GetWgaConversationConfig(GetWgaConversationConfigReq) returns (GetWgaConversationConfigResp) {}
+  rpc UpdateWgaConversationConfig(UpdateWgaConversationConfigReq) returns (google.protobuf.Empty) {}
+  rpc GetWgaConfig(GetWgaConfigReq) returns (GetWgaConfigResp) {}
+  rpc UpdateWgaConfig(UpdateWgaConfigReq) returns (google.protobuf.Empty) {}
 
   // --- wga conversation ---
   rpc WgaConversationCreate(WgaConversationCreateReq) returns (WgaConversationCreateResp) {}
@@ -875,6 +875,7 @@ message SkillConversationItem {
 }
 
 // --- wga conversation messages ---
+
 message WgaConversationCreateReq {
   string prompt = 1;
   common.AppModelConfig modelConfig = 2;
@@ -919,6 +920,7 @@ message WgaConversationExistsResp {
 }
 
 // --- wga config messages ---
+
 message WgaConfigTool {
   string toolId = 1;
   string toolType = 2;
@@ -938,6 +940,11 @@ message WgaConfigWorkflow {
   string workflowId = 1;
 }
 
+message WgaConfigSkill {
+  string skillId = 1;
+  string skillType = 2;
+}
+
 message WgaConversationConfig {
   string threadId = 1;
   string title = 2;
@@ -949,14 +956,15 @@ message WgaConversationConfig {
 }
 
 message WgaConfig{
-  repeated WgaConfigTool toolList = 1;
-  repeated WgaConfigAssistant assistantList = 2;
-  repeated WgaConfigMcp mcpList = 3;
-  repeated WgaConfigWorkflow workflowList = 4;
-  string userId = 5;
-  string orgId = 6;
-  int64 createdAt = 7;
-  int64 updatedAt = 8;
+  string userId = 1;
+  string orgId = 2;
+  int64 createdAt = 3;
+  int64 updatedAt = 4;
+  repeated WgaConfigTool toolList = 5;
+  repeated WgaConfigAssistant assistantList = 6;
+  repeated WgaConfigMcp mcpList = 7;
+  repeated WgaConfigWorkflow workflowList = 8;
+  repeated WgaConfigSkill skillList = 9;
 }
 
 message GetWgaConversationConfigReq {
@@ -983,9 +991,10 @@ message GetWgaConfigResp {
 }
 
 message UpdateWgaConfigReq {
-  repeated WgaConfigTool toolList = 1;
-  repeated WgaConfigAssistant assistantList = 2;
-  Identity identity = 3;
+  Identity identity = 1;
+  repeated WgaConfigTool toolList = 2;
+  repeated WgaConfigAssistant assistantList = 3;
   repeated WgaConfigMcp mcpList = 4;
   repeated WgaConfigWorkflow workflowList = 5;
+  repeated WgaConfigSkill skillList = 6;
 }
