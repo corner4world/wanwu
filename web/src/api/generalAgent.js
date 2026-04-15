@@ -66,6 +66,16 @@ export const getGeneralAgentWorkflowSelect = () => {
 };
 
 /**
+ * 获取Skills选择列表
+ */
+export const getGeneralAgentSkillSelect = () => {
+  return service({
+    url: `${BASE_URL}/skill/select`,
+    method: 'get',
+  });
+};
+
+/**
  * 更新全局配置
  * @param {Array} toolList - 工具列表 [{ toolId, toolType }]
  * @param {Array} assistantList - 智能体列表 [{ assistantId, assistantType }]

@@ -39,6 +39,14 @@
             >
               {{ $t('generalAgent.config.workflows') }}
             </div>
+            <!-- Skills选择 -->
+            <div
+              v-if="hasSkills"
+              :class="['tab-btn', { active: activeTab === 'skills' }]"
+              @click="activeTab = 'skills'"
+            >
+              {{ $t('generalAgent.config.skills') }}
+            </div>
             <!-- 智能体选择 -->
             <div
               v-if="hasAgents"
@@ -211,6 +219,7 @@ import {
   getGeneralAgentAssistantSelect,
   getGeneralAgentMcpSelect,
   getGeneralAgentWorkflowSelect,
+  getGeneralAgentSkillSelect,
   updateGeneralAgentGlobalConfig,
   getGeneralAgentGlobalConfig,
 } from '@/api/generalAgent';
@@ -227,14 +236,16 @@ export default {
   data() {
     return {
       dialogVisible: this.visible,
-      activeTab: 'tools', // 当前激活的tab: tools | mcp | workflows | assistants
+      activeTab: 'tools', // 当前激活的tab: tools | mcp | workflows | skills | assistants
       toolList: [],
       mcpList: [],
       workflowList: [],
+      skillList: [],
       assistantList: [],
       selectedTools: [],
       selectedMcps: [],
       selectedWorkflows: [],
+      selectedSkills: [],
       selectedAssistants: [],
       validationErrors: new Set(),
       // API Key 弹窗相关状态
@@ -268,6 +279,10 @@ export default {
     hasWorkflows() {
       return this.workflowList.length > 0;
     },
+    // 判断是否有Skills数据
+    hasSkills() {
+      return this.skillList.length > 0;
+    },
     // 判断是否有智能体数据
     hasAgents() {
       return this.assistantList.length > 0;
@@ -291,6 +306,14 @@ export default {
           iconClass: 'el-icon-share',
           className: 'workflow-list',
         },
+        skills: {
+          list: this.skillList,
+          idField: 'skillId',
+          nameField: 'name',
+          descField: 'desc',
+          iconClass: 'el-icon-document',
+          className: 'skill-list',
+        },
         assistants: {
           list: this.assistantList,
           idField: 'appId',
@@ -310,6 +333,7 @@ export default {
         this.fetchToolList(),
         this.fetchMcpList(),
         this.fetchWorkflowList(),
+        this.fetchSkillList(),
         this.fetchAssistantList(),
         this.fetchGlobalConfig(),
       ]);
@@ -318,7 +342,7 @@ export default {
     },
     // 自动选择第一个有数据的tab
     selectFirstAvailableTab() {
-      const tabs = ['tools', 'mcp', 'workflows', 'assistants'];
+      const tabs = ['tools', 'mcp', 'workflows', 'skills', 'assistants'];
       for (const tab of tabs) {
         if (this[`has${tab.charAt(0).toUpperCase() + tab.slice(1)}`]) {
           this.activeTab = tab;
@@ -337,6 +361,10 @@ export default {
     async fetchWorkflowList() {
       const res = await getGeneralAgentWorkflowSelect();
       this.workflowList = res?.data?.list || [];
+    },
+    async fetchSkillList() {
+      const res = await getGeneralAgentSkillSelect();
+      this.skillList = res?.data?.list || [];
     },
     async fetchAssistantList() {
       const res = await getGeneralAgentAssistantSelect();
@@ -361,6 +389,10 @@ export default {
             workflowId: workflow.workflowId,
           }),
         );
+        // 初始化已选中的Skills
+        this.selectedSkills = (res.data.skillList || []).map(skill => ({
+          skillId: skill.skillId,
+        }));
         // 初始化已选中的智能体
         this.selectedAssistants = (res.data.assistantList || []).map(
           assistant => ({
@@ -468,6 +500,16 @@ export default {
         }
       });
 
+      // 收集所有选中的Skills
+      const allSelectedSkills = [];
+      this.skillList.forEach(skill => {
+        if (this.isItemSelected(skill.skillId, 'skills')) {
+          allSelectedSkills.push({
+            skillId: skill.skillId,
+          });
+        }
+      });
+
       // 收集所有选中的智能体
       const allSelectedAssistants = [];
       this.assistantList.forEach(assistant => {
@@ -483,6 +525,7 @@ export default {
         toolList: allSelectedTools,
         mcpList: allSelectedMcps,
         workflowList: allSelectedWorkflows,
+        skillList: allSelectedSkills,
         assistantList: allSelectedAssistants,
       });
 
@@ -493,6 +536,7 @@ export default {
           tools: allSelectedTools,
           mcps: allSelectedMcps,
           workflows: allSelectedWorkflows,
+          skills: allSelectedSkills,
           assistants: allSelectedAssistants,
         });
         this.handleClose();
@@ -512,6 +556,9 @@ export default {
       if (itemType === 'workflows') {
         return this.selectedWorkflows.some(w => w.workflowId === itemId);
       }
+      if (itemType === 'skills') {
+        return this.selectedSkills.some(s => s.skillId === itemId);
+      }
       // 智能体的选中状态判断
       return this.selectedAssistants.some(a => a.assistantId === itemId);
     },
@@ -523,6 +570,8 @@ export default {
         this.handleToggleMcp(item);
       } else if (this.activeTab === 'workflows') {
         this.handleToggleWorkflow(item);
+      } else if (this.activeTab === 'skills') {
+        this.handleToggleSkill(item);
       } else {
         this.handleToggleAssistant(item);
       }
@@ -648,6 +697,22 @@ export default {
       }
     },
 
+    handleToggleSkill(skill) {
+      // Skills使用 skillId 作为标识
+      const skillId = skill.skillId;
+      // 在选中状态中切换
+      const index = this.selectedSkills.findIndex(s => s.skillId === skillId);
+      if (index > -1) {
+        // 已选中，取消选中
+        this.selectedSkills.splice(index, 1);
+      } else {
+        // 未选中，添加选中
+        this.selectedSkills.push({
+          skillId: skillId,
+        });
+      }
+    },
+
     getConditionLabel(condition) {
       const labels = {
         none: this.$t('generalAgent.config.conditionLabels.none'),
@@ -711,7 +776,7 @@ export default {
 
   .el-dialog__body {
     padding: 0;
-    max-height: 50vh;
+    height: 50vh;
     display: flex;
     flex-direction: column;
   }
@@ -811,10 +876,11 @@ export default {
     }
   }
 
-  // 合并所有列表样式（工具、MCP、工作流、智能体）
+  // 合并所有列表样式（工具、MCP、工作流、Skills、智能体）
   .tool-list,
   .mcp-list,
   .workflow-list,
+  .skill-list,
   .assistant-list {
     display: flex;
     flex-direction: column;

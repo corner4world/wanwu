@@ -1890,6 +1890,7 @@ export default {
       tools: '工具',
       mcp: 'MCP',
       workflows: '工作流',
+      skills: 'Skills',
       agents: '智能体',
       validationError: '⚠️ 不满足选择条件',
       needApiKey: '需要配置 API Key',
