@@ -50,7 +50,7 @@
           v-if="providerType && providerType.length"
           v-for="item in providerType"
           :key="item.key"
-          @click="showCreate(item)"
+          @click="setCurrentSelected(item)"
         >
           <div class="provider-card-top">
             <div class="provider-card-top-left">
@@ -134,7 +134,7 @@ export default {
     handleClose() {
       this.dialogVisible = false;
     },
-    showCreate(item) {
+    setCurrentSelected(item) {
       this.currentObj = item;
     },
     searchProviderList() {
@@ -145,7 +145,7 @@ export default {
     },
     handleConfirm() {
       this.handleClose();
-      this.$emit('showCreate', this.currentObj);
+      this.$emit('showCreate', this.currentObj, this.providerType);
     },
   },
 };
@@ -174,6 +174,7 @@ export default {
   flex-direction: column;
   justify-content: flex-start;
   box-shadow: 0px 8px 10px 4px rgba(80, 98, 161, 0.07);
+  height: 168px;
   .provider-card-top {
     display: flex;
     align-items: center;

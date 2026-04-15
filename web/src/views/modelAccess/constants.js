@@ -106,7 +106,8 @@ export const FUNC_CALLING = [
   /*{key: 'functionCall', name: 'Function call'},*/
 ];
 
-export const DEFAULT_SUPPORT = 'noSupport';
+export const SUPPORT = 'support';
+export const NO_SUPPORT = 'noSupport';
 export const SUPPORT_LIST = [
   { key: 'noSupport', name: i18n.t('modelAccess.noSupport') },
   { key: 'support', name: i18n.t('modelAccess.support') },
@@ -126,8 +127,9 @@ export const TYPE_OBJ = {
     [ZHIPU]: 'ca7d6a3***************wg0Fxc',
   },
   inferUrl: {
+    [`${MULTIMODAL_RERANK}_${QWEN}`]: 'https://dashscope.aliyuncs.com/api/v1',
     [`${MULTIMODAL_EMBEDDING}_${QWEN}`]:
-      'https://dashscope.aliyuncs.com/api/v1/services/embeddings/multimodal-embedding/multimodal-embedding',
+      'https://dashscope.aliyuncs.com/api/v1',
     [`${ASR}_${QWEN}`]: 'https://dashscope.aliyuncs.com/api/v1',
     [`${ASR}_${HUOSHAN}`]:
       'https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash',

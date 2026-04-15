@@ -90,6 +90,7 @@
             :disabled="isEdit"
             v-model="createForm.model"
             :placeholder="$t('common.input.placeholder')"
+            @blur="changeCustomModelId"
           ></el-input>
         </el-form-item>
         <el-form-item
@@ -386,7 +387,7 @@
                 {{ $t('modelAccess.testError') }}
                 <i
                   class="el-icon-refresh-right"
-                  @click="handleChangeThinking('support')"
+                  @click="handleChangeThinking(support)"
                 ></i>
               </div>
             </div>
@@ -436,7 +437,8 @@ import {
   PROVIDER_OBJ,
   FUNC_CALLING,
   DEFAULT_CALLING,
-  DEFAULT_SUPPORT,
+  SUPPORT,
+  NO_SUPPORT,
   SUPPORT_LIST,
   TYPE_OBJ,
   LLM,
@@ -485,6 +487,7 @@ export default {
       org: ORG,
       all: ALL,
       functionCalling: FUNC_CALLING,
+      support: SUPPORT,
       supportList: SUPPORT_LIST,
       supportFileTypeObj: SUPPORT_FILE_TYPE_OBJ,
       typeObj: TYPE_OBJ,
@@ -529,8 +532,8 @@ export default {
         },
         // publishDate: '',
         functionCalling: DEFAULT_CALLING,
-        visionSupport: DEFAULT_SUPPORT,
-        thinkingSupport: DEFAULT_SUPPORT,
+        visionSupport: NO_SUPPORT,
+        thinkingSupport: NO_SUPPORT,
       },
       rules: {
         model: [
@@ -636,6 +639,14 @@ export default {
       },
       immediate: false,
     },
+    'createForm.thinkingSupport': {
+      handler(val) {
+        if (val === NO_SUPPORT) {
+          this.linkStatus = '';
+        }
+      },
+      immediate: false,
+    },
     'provider.key': {
       handler(newVal) {
         if (!this.isEdit && newVal) {
@@ -673,8 +684,7 @@ export default {
     showMaxPicLimit() {
       const { modelType, visionSupport } = this.createForm || {};
       return (
-        (modelType === LLM && visionSupport === 'support') ||
-        this.isMultiModal() // this.showFileTypeLimit(IMAGE)
+        (modelType === LLM && visionSupport === SUPPORT) || this.isMultiModal() // this.showFileTypeLimit(IMAGE)
       );
     },
     showMaxVideoLimit() {
@@ -684,7 +694,7 @@ export default {
       return this.createForm.modelType === ASR;
     },
     handleChangeThinking(value) {
-      if (value === 'support') {
+      if (value === SUPPORT) {
         this.linkStatus = 'test';
         const thinkingData = this.formatSubmitData();
         testLinkThinking(thinkingData)
@@ -721,10 +731,17 @@ export default {
         ...this.createForm,
         model: modelId !== CUSTOM_MODEL_ID ? modelId : '',
         functionCalling: modelObj.functionCalling || DEFAULT_CALLING,
-        visionSupport: modelObj.visionSupport || DEFAULT_SUPPORT,
-        thinkingSupport: modelObj.thinkingSupport || DEFAULT_SUPPORT,
+        visionSupport: modelObj.visionSupport || NO_SUPPORT,
+        thinkingSupport: modelObj.thinkingSupport || NO_SUPPORT,
       };
       this.$refs.createForm.clearValidate('model');
+      // 切换列表中模型 ID 为支持深度思考时，连接状态默认成功
+      if (this.createForm.thinkingSupport === SUPPORT) {
+        this.linkStatus = 'success';
+      }
+    },
+    changeCustomModelId(value) {
+      this.createForm.thinkingSupport = NO_SUPPORT;
     },
     uploadAvatar(file, key) {
       const formData = new FormData();
@@ -759,12 +776,13 @@ export default {
           this.provider.key === OPENAI_API ? '' : defaultUrl;
       }
     },
-    openDialog(title, row) {
+    openDialog(title, row, providerType) {
       // 创建或者允许编辑时，可操作
       this.allowEdit = !row || row.allowEdit;
       this.provider = { key: title, name: PROVIDER_OBJ[title] };
+      const matchProviderType = providerType || PROVIDER_TYPE;
       const currentProvider =
-        PROVIDER_TYPE.find(item => item.key === title) || {};
+        matchProviderType.find(item => item.key === title) || {};
       this.modelType = currentProvider.children || [];
       this.createForm.modelType = this.modelType[0]
         ? this.modelType[0].key || LLM
@@ -781,6 +799,9 @@ export default {
       if (this.isEdit) {
         this.row = row || {};
         this.formatValue(row);
+        if (row.thinkingSupport === SUPPORT) {
+          this.linkStatus = 'success';
+        }
       }
     },
     clearSelectModelId() {
@@ -790,12 +811,13 @@ export default {
     },
     handleClose() {
       this.dialogVisible = false;
+      this.linkStatus = '';
       this.clearSelectModelId();
       this.formatValue({
         modelType: LLM,
         functionCalling: DEFAULT_CALLING,
-        visionSupport: DEFAULT_SUPPORT,
-        thinkingSupport: DEFAULT_SUPPORT,
+        visionSupport: NO_SUPPORT,
+        thinkingSupport: NO_SUPPORT,
         scopeType: PRIVATE,
         contextSize: 8000,
         maxTokens: 4096,
