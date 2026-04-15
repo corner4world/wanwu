@@ -41,3 +41,14 @@ type RecommendModel struct {
 	FunctionCalling string         `json:"functionCalling"`
 	ThinkingSupport string         `json:"thinkingSupport"`
 }
+
+type ModelTypeItem struct {
+	Key  string `json:"key"`
+	Name string `json:"name"`
+}
+
+type ProviderModelTypes struct {
+	Key      string           `json:"key"`
+	Name     string           `json:"name"`
+	Children []*ModelTypeItem `json:"children"`
+}

@@ -73,12 +73,12 @@ func processRerankDocuments(documents []mp_common.MultiDocument) ([]map[string]i
 	content := make([]map[string]interface{}, 0, len(documents))
 	for idx, doc := range documents {
 		item := make(map[string]interface{})
-		if doc.Text != "" {
-			item["text"] = doc.Text
-		} else if doc.Image != "" {
-			item["image"] = doc.Image
-		} else if doc.Video != "" {
-			item["video"] = doc.Video
+		if doc.Text != nil && *doc.Text != "" {
+			item["text"] = *doc.Text
+		} else if doc.Image != nil && *doc.Image != "" {
+			item["image"] = *doc.Image
+		} else if doc.Video != nil && *doc.Video != "" {
+			item["video"] = *doc.Video
 		} else {
 			return nil, fmt.Errorf("documents第%d个元素无效: image/text/video必选其一", idx+1)
 		}

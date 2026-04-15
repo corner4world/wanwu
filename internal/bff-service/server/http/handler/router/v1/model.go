@@ -17,6 +17,8 @@ func registerModel(apiV1 *gin.RouterGroup) {
 	mid.Sub("model.model_management").Reg(apiV1, "/model/list", http.MethodGet, v1.ListModels, "导入模型列表展示")
 	mid.Sub("model.model_management").Reg(apiV1, "/model/status", http.MethodPut, v1.ChangeModelStatus, "模型启用/关闭")
 	mid.Sub("model.model_management").Reg(apiV1, "/model/recommend", http.MethodGet, v1.RecommendModels, "获取推荐模型列表")
+	mid.Sub("model.model_management").Reg(apiV1, "/model/validate-thinking", http.MethodPost, v1.ValidateThinking, "深度思考校验")
+	mid.Sub("model.model_management").Reg(apiV1, "/model/import/providers", http.MethodGet, v1.ListImportProviders, "模型导入-获取供应商列表")
 
 	mid.Sub("model.model_management").Reg(apiV1, "/model/experience/llm", http.MethodPost, v1.ModelExperienceLLM, "LLM模型体验", middleware.AuthModelByModelId([]string{"modelId"}))
 	mid.Sub("model.model_management").Reg(apiV1, "/model/experience/dialog", http.MethodPost, v1.ModelExperienceSaveDialog, "保存模型体验对话", middleware.AuthModelByModelId([]string{"modelId"}))

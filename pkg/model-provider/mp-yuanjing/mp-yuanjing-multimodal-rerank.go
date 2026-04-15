@@ -68,14 +68,13 @@ func processDocuments(documents []mp_common.MultiDocument) (map[string]interface
 	content := make([]map[string]interface{}, 0, len(documents))
 	for idx, doc := range documents {
 		item := make(map[string]interface{})
-		if doc.Text != "" {
+		if doc.Text != nil && *doc.Text != "" {
 			item["type"] = "text"
-			item["text"] = doc.Text
-		} else if doc.Image != "" {
-			// 图片类型
+			item["text"] = *doc.Text
+		} else if doc.Image != nil && *doc.Image != "" {
 			item["type"] = "image_url"
 			item["image_url"] = map[string]string{
-				"url": doc.Image,
+				"url": *doc.Image,
 			}
 		} else {
 			return nil, fmt.Errorf("documents第%d个元素无效: image和text必选其一", idx+1)

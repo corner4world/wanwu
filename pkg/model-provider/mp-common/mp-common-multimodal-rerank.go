@@ -32,9 +32,9 @@ type MultiModalRerankReq struct {
 }
 
 type MultiDocument struct {
-	Text  string `json:"text,omitempty"`
-	Image string `json:"image,omitempty"`
-	Video string `json:"video,omitempty"`
+	Text  *string `json:"text,omitempty"`
+	Image *string `json:"image,omitempty"`
+	Video *string `json:"video,omitempty"`
 }
 
 func (req *MultiModalRerankReq) Check() error {

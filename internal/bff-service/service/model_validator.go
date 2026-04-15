@@ -15,6 +15,7 @@ import (
 
 	model_service "github.com/UnicomAI/wanwu/api/proto/model-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
@@ -77,12 +78,6 @@ func ValidateLLMModel(ctx *gin.Context, modelInfo *model_service.ModelInfo) erro
 	vs, ok := result["visionSupport"].(string)
 	if ok && mp_common.VSType(vs) == mp_common.VSTypeSupport {
 		visionSupportFlag = true
-	}
-
-	thinkingSupportFlag := false // ThinkingSupport 校验标识
-	ts, ok := result["thinkingSupport"].(string)
-	if ok && mp_common.ThinkingType(ts) == mp_common.ThinkingTypeSupport {
-		thinkingSupportFlag = true
 	}
 
 	// 工具调用校验
@@ -167,18 +162,7 @@ func ValidateLLMModel(ctx *gin.Context, modelInfo *model_service.ModelInfo) erro
 		}
 	}
 
-	// 深度思考校验
-	if thinkingSupportFlag {
-		if err := validateThinking(iLLM, modelInfo.Model, &stream, true); err != nil {
-			return err
-		}
-
-		if err := validateThinking(iLLM, modelInfo.Model, &stream, false); err != nil {
-			return err
-		}
-	}
-
-	if !toolCallFlag && !visionSupportFlag && !thinkingSupportFlag {
+	if !toolCallFlag && !visionSupportFlag {
 		// 执行基础校验
 		reqBase := &mp_common.LLMReq{
 			Model: modelInfo.Model,
@@ -251,14 +235,15 @@ func ValidateMultiEmbeddingModel(ctx *gin.Context, modelInfo *model_service.Mode
 		return err
 	}
 	// mock  request
+	textHello := "你好"
 	req := &mp_common.MultiModalEmbeddingReq{
 		Model: modelInfo.Model,
 		Input: []mp_common.MultiInput{
 			{
-				Text: "你好",
+				Text: &textHello,
 			},
 			{
-				Image: base64StrWithPrefix,
+				Image: &base64StrWithPrefix,
 			},
 		},
 	}
@@ -331,15 +316,16 @@ func ValidateMultiRerankModel(ctx *gin.Context, modelInfo *model_service.ModelIn
 		urlData = base64Str
 	}
 	// mock  request
+	textBeiJi := "北极"
 	req := &mp_common.MultiModalRerankReq{
 		Model: modelInfo.Model,
 		Query: "企鹅",
 		Documents: []mp_common.MultiDocument{
 			{
-				Text: "北极",
+				Text: &textBeiJi,
 			},
 			{
-				Image: urlData,
+				Image: &urlData,
 			},
 		},
 	}
@@ -619,7 +605,7 @@ func getSyncAsrReqByProvider(ctx *gin.Context, modelInfo *model_service.ModelInf
 	return req, nil
 }
 
-func validateThinking(iLLM mp.ILLM, model string, stream *bool, enableThinking bool) error {
+func validateThinking(ctx context.Context, iLLM mp.ILLM, model string, stream *bool, enableThinking bool) error {
 	temp := enableThinking
 	reqThinking := &mp_common.LLMReq{
 		Model: model,
@@ -637,7 +623,7 @@ func validateThinking(iLLM mp.ILLM, model string, stream *bool, enableThinking b
 		return err
 	}
 
-	respThinking, _, err := iLLM.ChatCompletions(context.Background(), llmReqThinking)
+	respThinking, _, err := iLLM.ChatCompletions(ctx, llmReqThinking)
 	if err != nil {
 		if enableThinking {
 			return fmt.Errorf("thinking validation (enable) failed: %v, maybe model does not support thinking functionality", err)
@@ -659,6 +645,31 @@ func validateThinking(iLLM mp.ILLM, model string, stream *bool, enableThinking b
 			openAIRespThinking.Choices[0].Message.ReasoningContent != nil && *openAIRespThinking.Choices[0].Message.ReasoningContent != "" {
 			return fmt.Errorf("model does not support turning off thinking functionality")
 		}
+	}
+	return nil
+}
+
+func ValidateThinkingModel(ctx *gin.Context, userId, orgId string, req *request.ImportOrUpdateModelRequest) error {
+	modelInfo, err := parseImportAndUpdateClientReq(userId, orgId, req)
+	if err != nil {
+		return err
+	}
+
+	llm, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
+	if err != nil {
+		return err
+	}
+	iLLM, ok := llm.(mp.ILLM)
+	if !ok {
+		return fmt.Errorf("invalid provider")
+	}
+
+	stream := false
+	if err := validateThinking(ctx.Request.Context(), iLLM, modelInfo.Model, &stream, true); err != nil {
+		return err
+	}
+	if err := validateThinking(ctx.Request.Context(), iLLM, modelInfo.Model, &stream, false); err != nil {
+		return err
 	}
 	return nil
 }

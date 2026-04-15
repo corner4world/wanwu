@@ -62,3 +62,12 @@ type RecommendModelsRequest struct {
 func (o *RecommendModelsRequest) Check() error {
 	return nil
 }
+
+type ListImportProvidersRequest struct {
+	ModelType string `json:"modelType" form:"modelType"` // 模型类型
+	Provider  string `json:"provider" form:"provider"`   // 供应商
+}
+
+func (o *ListImportProvidersRequest) Check() error {
+	return nil
+}

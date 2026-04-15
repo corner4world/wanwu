@@ -3,6 +3,8 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
+	"strings"
 
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
 
@@ -466,4 +468,115 @@ func mapToolCall(has bool) string {
 		return "toolCall"
 	}
 	return "noSupport"
+}
+
+var (
+	modelTypeNameMap = map[string]string{
+		mp.ModelTypeLLM:            mp.MTNameLLM,
+		mp.ModelTypeTextEmbedding:  mp.MTNameTextEmbedding,
+		mp.ModelTypeMultiEmbedding: mp.MTNameMultiEmbedding,
+		mp.ModelTypeTextRerank:     mp.MTNameTextRerank,
+		mp.ModelTypeMultiRerank:    mp.MTNameMultiRerank,
+		mp.ModelTypeOcr:            mp.MTNameOcr,
+		mp.ModelTypeGui:            mp.MTNameGui,
+		mp.ModelTypePdfParser:      mp.MTNamePdfParser,
+		mp.ModelTypeSyncAsr:        mp.MTNameSyncAsr,
+	}
+	providerNameMap = map[string]string{
+		mp.ProviderOpenAICompatible: mp.PNameOpenAICompatible,
+		mp.ProviderYuanJing:         mp.PNameYuanJing,
+		mp.ProviderHuoshan:          mp.PNameHuoshan,
+		mp.ProviderOllama:           mp.PNameOllama,
+		mp.ProviderQwen:             mp.PNameQwen,
+		mp.ProviderInfini:           mp.PNameInfini,
+		mp.ProviderQianfan:          mp.PNameQianfan,
+		mp.ProviderDeepSeek:         mp.PNameDeepSeek,
+		mp.ProviderJina:             mp.PNameJina,
+		mp.ProviderZhipu:            mp.PNameZhipu,
+	}
+)
+
+func ListImportProviders(ctx *gin.Context, req *request.ListImportProvidersRequest) (*response.ListResult, error) {
+	recommendModels := config.Cfg().RecommendModels
+
+	var list []*response.ProviderModelTypes
+	for _, p := range recommendModels {
+		if req.Provider != "" {
+			matched := false
+			for providerKey, displayName := range providerNameMap {
+				if strings.Contains(displayName, req.Provider) && p.Provider == providerKey {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue
+			}
+		}
+
+		var modelTypes []string
+		if len(p.Llm) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypeLLM)
+		}
+		if len(p.Embedding) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypeTextEmbedding)
+		}
+		if len(p.MultiEmbedding) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypeMultiEmbedding)
+		}
+		if len(p.Rerank) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypeTextRerank)
+		}
+		if len(p.MultiRerank) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypeMultiRerank)
+		}
+		if len(p.Ocr) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypeOcr)
+		}
+		if len(p.Gui) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypeGui)
+		}
+		if len(p.PdfParser) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypePdfParser)
+		}
+		if len(p.SyncAsr) > 0 {
+			modelTypes = append(modelTypes, mp.ModelTypeSyncAsr)
+		}
+
+		if len(modelTypes) == 0 {
+			continue
+		}
+
+		if req.ModelType != "" && !slices.Contains(modelTypes, req.ModelType) {
+			continue
+		}
+
+		children := make([]*response.ModelTypeItem, 0, len(modelTypes))
+		for _, mt := range modelTypes {
+			name := modelTypeNameMap[mt]
+			if name == "" {
+				name = mt
+			}
+			children = append(children, &response.ModelTypeItem{
+				Key:  mt,
+				Name: name,
+			})
+		}
+
+		providerName := providerNameMap[p.Provider]
+		if providerName == "" {
+			providerName = p.Provider
+		}
+
+		list = append(list, &response.ProviderModelTypes{
+			Key:      p.Provider,
+			Name:     providerName,
+			Children: children,
+		})
+	}
+
+	return &response.ListResult{
+		List:  list,
+		Total: int64(len(list)),
+	}, nil
 }

@@ -7420,6 +7420,13 @@ definitions:
       text:
         type: string
     type: object
+  response.ModelTypeItem:
+    properties:
+      key:
+        type: string
+      name:
+        type: string
+    type: object
   response.MyAppItem:
     properties:
       appId:
@@ -7540,6 +7547,17 @@ definitions:
     required:
     - name
     - templateId
+    type: object
+  response.ProviderModelTypes:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/response.ModelTypeItem'
+        type: array
+      key:
+        type: string
+      name:
+        type: string
     type: object
   response.QAHitSearchList:
     properties:
@@ -15174,6 +15192,42 @@ paths:
       summary: 模型体验
       tags:
       - model.experience
+  /model/import/providers:
+    get:
+      consumes:
+      - application/json
+      description: 根据模型类型筛选支持的供应商，不传则返回全部
+      parameters:
+      - description: 模型类型
+        in: query
+        name: modelType
+        type: string
+      - description: 供应商
+        in: query
+        name: provider
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        $ref: '#/definitions/response.ProviderModelTypes'
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 模型导入-获取供应商列表
+      tags:
+      - model
   /model/list:
     get:
       consumes:
@@ -15548,6 +15602,30 @@ paths:
       security:
       - JWT: []
       summary: 模型启用/关闭
+      tags:
+      - model
+  /model/validate-thinking:
+    post:
+      consumes:
+      - application/json
+      description: 对LLM模型进行深度思考功能校验
+      parameters:
+      - description: 模型信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.ImportOrUpdateModelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 深度思考校验
       tags:
       - model
   /oauth/app:

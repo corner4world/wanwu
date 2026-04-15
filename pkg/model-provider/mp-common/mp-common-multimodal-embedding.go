@@ -22,10 +22,10 @@ type MultiModalEmbeddingReq struct {
 	Parameters     interface{}  `json:"parameters,omitempty"`
 }
 type MultiInput struct {
-	Text  string `json:"text,omitempty"`
-	Image string `json:"image,omitempty"`
-	Audio string `json:"audio,omitempty"`
-	Video string `json:"video,omitempty"`
+	Text  *string `json:"text,omitempty"`
+	Image *string `json:"image,omitempty"`
+	Audio *string `json:"audio,omitempty"`
+	Video *string `json:"video,omitempty"`
 }
 
 func (req *MultiModalEmbeddingReq) Check() error { return nil }

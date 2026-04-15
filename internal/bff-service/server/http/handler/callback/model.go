@@ -180,29 +180,29 @@ func ModelMultiModalEmbeddings(ctx *gin.Context) {
 	// file minio url -> file base64
 	for i := range data.Input {
 		item := &data.Input[i]
-		if item.Image != "" {
-			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, item.Image)
+		if item.Image != nil && *item.Image != "" {
+			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, *item.Image)
 			if err != nil {
 				gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v image to base64 err: %v", data.Model, err)))
 				return
 			}
-			item.Image = base64StrWithPrefix
+			item.Image = &base64StrWithPrefix
 		}
-		if item.Audio != "" {
-			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, item.Image)
+		if item.Audio != nil && *item.Audio != "" {
+			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, *item.Audio)
 			if err != nil {
 				gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v audio to base64 err: %v", data.Model, err)))
 				return
 			}
-			item.Audio = base64StrWithPrefix
+			item.Audio = &base64StrWithPrefix
 		}
-		if item.Video != "" {
-			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, item.Image)
+		if item.Video != nil && *item.Video != "" {
+			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, *item.Video)
 			if err != nil {
 				gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v video to base64 err: %v", data.Model, err)))
 				return
 			}
-			item.Video = base64StrWithPrefix
+			item.Video = &base64StrWithPrefix
 		}
 	}
 	service.ModelMultiModalEmbeddings(ctx, ctx.Param("modelId"), &data)
@@ -244,13 +244,13 @@ func ModelMultiModalRerank(ctx *gin.Context) {
 	// file minio url -> file base64
 	for i := range data.Documents {
 		item := &data.Documents[i]
-		if item.Image != "" {
-			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, item.Image)
+		if item.Image != nil && *item.Image != "" {
+			_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, *item.Image)
 			if err != nil {
 				gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v image to base64 err: %v", data.Model, err)))
 				return
 			}
-			item.Image = base64StrWithPrefix
+			item.Image = &base64StrWithPrefix
 		}
 	}
 	switch queryVal := data.Query.(type) {

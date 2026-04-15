@@ -30,6 +30,29 @@ const (
 	ProviderZhipu            = "ZhiPu"
 )
 
+const (
+	MTNameLLM            = "文本生成"
+	MTNameTextEmbedding  = "文本向量化"
+	MTNameTextRerank     = "文本重排序"
+	MTNameMultiEmbedding = "多模态向量化"
+	MTNameMultiRerank    = "多模态重排序"
+	MTNameOcr            = "OCR"
+	MTNameGui            = "GUI"
+	MTNamePdfParser      = "PDF文档解析"
+	MTNameSyncAsr        = "短语音识别"
+
+	PNameOpenAICompatible = "OpenAI-API-compatible"
+	PNameYuanJing         = "联通元景"
+	PNameHuoshan          = "火山引擎"
+	PNameOllama           = "Ollama"
+	PNameQwen             = "通义千问"
+	PNameInfini           = "无问芯穹"
+	PNameQianfan          = "百度千帆"
+	PNameDeepSeek         = "DeepSeek"
+	PNameJina             = "Jina"
+	PNameZhipu            = "智谱"
+)
+
 var (
 	_callbackUrl string
 )
