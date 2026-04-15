@@ -110,6 +110,7 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 		},
 		ExcludedAgentNames: []string{
 			"Supervisor Agent",
+			"default",
 		},
 		// ResultFormatters: map[string]func(string) string{
 		// 	"bocha_comprehensive_search": WgaFormatBochaWebSearchResult,

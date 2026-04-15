@@ -13,7 +13,7 @@ prompt_relative_path: ./prompt.md
 
 tool_categories:
   - category: wga_tool_category_search
-    condition: none
+    condition: optional
     tools:
       - path: configs/microservice/mcp-service/configs/tool/bochasearch/openapi.json
         auth_required: true

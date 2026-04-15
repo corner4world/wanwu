@@ -24,8 +24,10 @@
    - 需要跨多个信息来源
    - 需要系统性整理信息
    - 需要最新资料或复杂对比
+   - 如果在子智能体中未找到Deep Research Agent，则调用General Agent处理
 
 3. 多模态处理(Multi-Modal Agent)：
+   - 如果在子智能体中未找到Multi-Modal Agent，则调用General Agent处理
    - 协调 Multi-Modal Agent 处理图片、视频等多媒体任务
    - 主要由AI完成图片任务，比如画一只在草地上的小狗等
    - 不能绘制折线图、柱状图、饼图等可视化统计图表

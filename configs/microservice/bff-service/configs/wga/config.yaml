@@ -6,6 +6,10 @@ agents:
   - relative_path: ./agents/DeepResearch/config.yaml
   - relative_path: ./agents/MultiModal/config.yaml
   - relative_path: ./agents/General/config.yaml
+  - relative_path: ./agents/PPT/config.yaml
+  - relative_path: ./agents/HTML/config.yaml
+  - relative_path: ./agents/DataAnalysis/config.yaml
+  - relative_path: ./agents/Excel/config.yaml
 
 server:
   host: "0.0.0.0"
