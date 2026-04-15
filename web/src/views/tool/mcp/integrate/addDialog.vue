@@ -37,8 +37,34 @@
               v-model="ruleForm.desc"
             ></el-input>
           </el-form-item>
-          <el-form-item label="MCP sseUrl" prop="sseUrl">
-            <el-input v-model="ruleForm.sseUrl"></el-input>
+          <el-form-item label="MCP Url" prop="transport">
+            <el-radio-group
+              v-model="ruleForm.transport"
+              @change="handleTransportChange"
+            >
+              <el-radio label="sse">SSE</el-radio>
+              <el-radio label="streamable">Streamable HTTP</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item
+            v-if="ruleForm.transport === 'sse'"
+            label="sse Url"
+            prop="sseUrl"
+          >
+            <el-input
+              v-model="ruleForm.sseUrl"
+              :placeholder="$t('tool.integrate.sseUrlMsg')"
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            v-if="ruleForm.transport === 'streamable'"
+            label="Streamable URL"
+            prop="streamableUrl"
+          >
+            <el-input
+              v-model="ruleForm.streamableUrl"
+              placeholder="Streamable HTTP URL为空"
+            ></el-input>
           </el-form-item>
           <el-form-item label=" " style="text-align: right">
             <el-button
@@ -97,6 +123,8 @@ export default {
         name: '',
         from: '',
         sseUrl: '',
+        streamableUrl: '',
+        transport: 'sse',
         desc: '',
         mcpId: '',
         avatar: {
@@ -108,7 +136,9 @@ export default {
   },
   data() {
     const validateUrl = (rule, value, callback) => {
-      if (!isValidURL(value)) {
+      if (!value) {
+        callback(new Error(this.$t('tool.integrate.sseUrlMsg')));
+      } else if (!isValidURL(value)) {
         callback(new Error(this.$t('tool.integrate.sseUrlErr')));
       } else {
         callback();
@@ -121,6 +151,8 @@ export default {
         name: '',
         from: '',
         sseUrl: '',
+        streamableUrl: '',
+        transport: 'sse',
         desc: '',
         avatar: {
           key: '',
@@ -163,6 +195,14 @@ export default {
           },
           { validator: validateUrl, trigger: 'blur' },
         ],
+        streamableUrl: [
+          {
+            required: true,
+            message: 'Streamable HTTP URL为空',
+            trigger: 'blur',
+          },
+          { validator: validateUrl, trigger: 'blur' },
+        ],
         desc: [
           {
             required: true,
@@ -182,6 +222,10 @@ export default {
     initialData: {
       handler(newVal) {
         this.ruleForm = { ...newVal };
+        // 如果没有 transport 字段，默认为 sse
+        if (!this.ruleForm.transport) {
+          this.ruleForm.transport = 'sse';
+        }
       },
       immediate: true,
     },
@@ -193,8 +237,20 @@ export default {
         }
       },
     },
+    // 监听 streamableUrl 变化
+    'ruleForm.streamableUrl': {
+      handler(newVal, oldVal) {
+        if (oldVal && newVal !== oldVal) {
+          this.mcpList = [];
+        }
+      },
+    },
   },
   methods: {
+    handleTransportChange() {
+      // 切换 transport 类型时清空工具列表
+      this.mcpList = [];
+    },
     handleCancel() {
       this.$emit('handleClose', false);
       this.$refs['ruleForm'].resetFields();
@@ -232,8 +288,14 @@ export default {
     },
     handleTools() {
       this.toolsLoading = true;
+      // 根据 transport 类型选择 URL
+      const serverUrl =
+        this.ruleForm.transport === 'streamable'
+          ? this.ruleForm.streamableUrl
+          : this.ruleForm.sseUrl;
       getTools({
-        serverUrl: this.ruleForm.sseUrl,
+        serverUrl: serverUrl,
+        transport: this.ruleForm.transport,
       })
         .then(res => {
           if (res.code === 0) this.mcpList = res.data.tools;
@@ -243,7 +305,11 @@ export default {
   },
   computed: {
     isGetMCP() {
-      return !isValidURL(this.ruleForm.sseUrl);
+      const url =
+        this.ruleForm.transport === 'streamable'
+          ? this.ruleForm.streamableUrl
+          : this.ruleForm.sseUrl;
+      return !isValidURL(url);
     },
   },
 };
