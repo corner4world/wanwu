@@ -6,21 +6,33 @@
     </div>-->
     <div style="padding: 20px">
       <div class="tabs" style="padding-bottom: 20px">
-        <div :class="['tab', { active: category === 0 }]" @click="tabClick(0)">
+        <div
+          :class="['tab', { active: category === KNOWLEDGE }]"
+          @click="tabClick(KNOWLEDGE)"
+        >
           {{ $t('menu.knowledge') }}
         </div>
-        <div :class="['tab', { active: category === 1 }]" @click="tabClick(1)">
+        <div
+          :class="['tab', { active: category === QA }]"
+          @click="tabClick(QA)"
+        >
           {{ $t('knowledgeManage.qaDatabase.title') }}
         </div>
+        <!--        <div-->
+        <!--          :class="['tab', { active: category === DB }]"-->
+        <!--          @click="tabClick(DB)"-->
+        <!--        >-->
+        <!--          {{ $t('knowledgeManage.dbDatabase.title') }}-->
+        <!--        </div>-->
       </div>
       <div class="search-box">
         <div class="no-border-input">
           <search-input
             class="cover-input-icon"
             :placeholder="
-              category === 0
-                ? $t('knowledgeManage.searchPlaceholder')
-                : $t('knowledgeManage.searchPlaceholderQa')
+              $t('knowledgeManage.searchPlaceholder', {
+                category: CATEGORY_TYPE_OBJ[category],
+              })
             "
             ref="searchInput"
             @handleSearch="getTableData"
@@ -32,7 +44,7 @@
             multiple
             @visible-change="tagChange"
             @remove-tag="removeTag"
-            v-if="category === 0"
+            v-if="category === KNOWLEDGE"
           >
             <el-option
               v-for="item in tagOptions"
@@ -46,7 +58,7 @@
             v-model="external"
             :placeholder="$t('knowledgeManage.selectExternal')"
             @visible-change="getTableData"
-            v-if="category === 0"
+            v-if="category === KNOWLEDGE"
           >
             <el-option
               v-for="item in externalOptions"
@@ -61,7 +73,7 @@
             size="mini"
             type="primary"
             @click="$router.push('/knowledge/keyword')"
-            v-if="category === 0"
+            v-if="category === KNOWLEDGE"
           >
             {{ $t('knowledgeManage.keyWordManage') }}
           </el-button>
@@ -70,7 +82,7 @@
             type="primary"
             @click="showDrawer()"
             icon="el-icon-plus"
-            v-if="category === 0"
+            v-if="category === KNOWLEDGE"
           >
             {{ $t('knowledgeManage.externalAPI.title') }}
           </el-button>
@@ -102,6 +114,15 @@ import knowledgeList from './component/knowledgeList.vue';
 import createKnowledge from './component/create.vue';
 import { qaDocExport } from '@/api/qaDatabase';
 import ExternalAPIDrawer from '@/components/externalAPIDrawer.vue';
+import {
+  ALL,
+  INTERNAL,
+  EXTERNAL,
+  KNOWLEDGE,
+  QA,
+  DB,
+  CATEGORY_TYPE_OBJ,
+} from '@/views/knowledge/constants';
 export default {
   components: {
     ExternalAPIDrawer,
@@ -116,24 +137,28 @@ export default {
   },
   data() {
     return {
+      KNOWLEDGE,
+      QA,
+      DB,
+      CATEGORY_TYPE_OBJ,
       knowledgeData: [],
       tableLoading: false,
       tagOptions: [],
       tagIds: [],
-      category: 0,
-      external: -1,
+      category: KNOWLEDGE,
+      external: ALL,
       externalOptions: [
         {
           name: this.$t('knowledgeManage.all'),
-          value: -1,
+          value: ALL,
         },
         {
           name: this.$t('knowledgeManage.internal'),
-          value: 0,
+          value: INTERNAL,
         },
         {
           name: this.$t('knowledgeManage.external'),
-          value: 1,
+          value: EXTERNAL,
         },
       ],
     };
@@ -156,9 +181,9 @@ export default {
     },
     handleRouteFrom(from) {
       if (from.path.includes('/qa/docList')) {
-        this.category = 1;
+        this.category = QA;
       } else {
-        this.category = 0;
+        this.category = KNOWLEDGE;
       }
     },
     tabClick(status) {
@@ -210,7 +235,7 @@ export default {
       const params = {
         knowledgeId: row.knowledgeId,
       };
-      const exportApi = this.category === 0 ? exportDoc : qaDocExport;
+      const exportApi = this.category === KNOWLEDGE ? exportDoc : qaDocExport;
       exportApi(params).then(res => {
         if (res.code === 0) {
           this.$message.success(this.$t('common.message.success'));

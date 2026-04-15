@@ -6,20 +6,12 @@
           <div class="create-img-wrap">
             <img
               class="create-img"
-              :src="
-                category === 0
-                  ? require('@/assets/imgs/card_create_icon_knowledge.svg')
-                  : require('@/assets/imgs/card_create_icon_rag.svg')
-              "
+              :src="categoryLabelMap.createIcon[category]"
               alt=""
             />
           </div>
           <span>
-            {{
-              category === 0
-                ? $t('knowledgeManage.createKnowledge')
-                : $t('knowledgeManage.createQaDatabase')
-            }}
+            {{ categoryLabelMap.createButton[category] }}
           </span>
         </div>
       </div>
@@ -31,57 +23,53 @@
           @click.stop="toDocList(n)"
         >
           <div
-            v-if="category === 0"
-            :class="['ribbon', n.external === 0 ? 'blue' : 'gold']"
+            v-if="category === KNOWLEDGE"
+            :class="['ribbon', n.external === INTERNAL ? 'blue' : 'gold']"
           >
             <span>
               {{
-                n.external === 0
+                n.external === INTERNAL
                   ? $t('knowledgeManage.ribbon.internal')
                   : $t('knowledgeManage.ribbon.external')
               }}
             </span>
           </div>
-          <div>
-            <img
-              class="common-card-logo ml-10"
-              :src="
-                avatarSrc(
-                  n.avatar?.path,
-                  require('@/assets/imgs/knowledgeIcon.png'),
-                )
-              "
-            />
-            <p :class="['smartDate']">
-              {{ n.docCount || 0 }}
-              {{
-                category === 0
-                  ? $t('knowledgeManage.docCountUnit')
-                  : $t('knowledgeManage.qaCountUnit')
-              }}
-            </p>
-          </div>
-          <div class="info rl">
-            <div style="display: flex">
-              <p class="name" :title="n.name">
-                {{ n.name }}
-              </p>
-              <label v-if="n.category === 2">
-                {{ $t('knowledgeManage.multiKnowledgeDatabase.label') }}
-              </label>
+          <div class="card-content">
+            <div class="card-header">
+              <img
+                class="common-card-logo ml-10"
+                :src="
+                  avatarSrc(
+                    n.avatar?.path,
+                    require('@/assets/imgs/knowledgeIcon.png'),
+                  )
+                "
+              />
+              <div class="header-info">
+                <div style="display: flex; align-items: center">
+                  <p class="name" :title="n.name">
+                    {{ n.name }}
+                  </p>
+                </div>
+                <p class="desc">
+                  <label class="desc-item">
+                    {{ n.docCount || 0 }}
+                    {{ categoryLabelMap.countUnit[category] }}
+                  </label>
+                  <label v-if="n.category === MULTIMODAL" class="desc-item">
+                    {{ $t('knowledgeManage.multiKnowledgeDatabase.label') }}
+                  </label>
+                </p>
+              </div>
             </div>
-            <el-tooltip
-              v-if="n.description"
-              popper-class="instr-tooltip tooltip-cover-arrow"
-              effect="dark"
-              :content="n.description"
-              placement="bottom-start"
-            >
-              <p class="desc">{{ n.description }}</p>
-            </el-tooltip>
+            <div class="card-description">
+              <p class="card-desc">
+                {{ n.description }}
+              </p>
+            </div>
           </div>
           <div class="tags">
-            <span v-if="category === 0">
+            <span v-if="category === KNOWLEDGE">
               <span
                 :class="['smartDate', 'tagList']"
                 v-if="formattedTagNames(n.knowledgeTagList).length === 0"
@@ -140,7 +128,7 @@
                 <el-dropdown-item
                   command="export"
                   v-if="
-                    n.external === 0 &&
+                    n.external === INTERNAL &&
                     [
                       POWER_TYPE_EDIT,
                       POWER_TYPE_ADMIN,
@@ -153,7 +141,7 @@
                 <el-dropdown-item
                   command="exportRecord"
                   v-if="
-                    n.external === 0 &&
+                    n.external === INTERNAL &&
                     [
                       POWER_TYPE_EDIT,
                       POWER_TYPE_ADMIN,
@@ -201,6 +189,12 @@ import {
   POWER_TYPE_EDIT,
   POWER_TYPE_ADMIN,
   POWER_TYPE_SYSTEM_ADMIN,
+  INTERNAL,
+  EXTERNAL,
+  KNOWLEDGE,
+  QA,
+  MULTIMODAL,
+  DB,
 } from '@/views/knowledge/constants';
 import { avatarSrc } from '@/utils/util';
 
@@ -222,7 +216,6 @@ export default {
     appData: {
       handler: function (val) {
         this.listData = val;
-        console.log('appData', val);
       },
       immediate: true,
       deep: true,
@@ -239,6 +232,29 @@ export default {
       POWER_TYPE_EDIT,
       POWER_TYPE_ADMIN,
       POWER_TYPE_SYSTEM_ADMIN,
+      INTERNAL,
+      EXTERNAL,
+      KNOWLEDGE,
+      QA,
+      MULTIMODAL,
+      DB,
+      categoryLabelMap: {
+        createButton: {
+          [KNOWLEDGE]: this.$t('knowledgeManage.createKnowledge'),
+          [QA]: this.$t('knowledgeManage.createQaDatabase'),
+          [DB]: this.$t('knowledgeManage.createDatabase'),
+        },
+        createIcon: {
+          [KNOWLEDGE]: require('@/assets/imgs/card_create_icon_knowledge.svg'),
+          [QA]: require('@/assets/imgs/card_create_icon_rag.svg'),
+          [DB]: require('@/assets/imgs/card_create_icon_rag.svg'),
+        },
+        countUnit: {
+          [KNOWLEDGE]: this.$t('knowledgeManage.docCountUnit'),
+          [QA]: this.$t('knowledgeManage.qaCountUnit'),
+          [DB]: this.$t('knowledgeManage.dbCountUnit'),
+        },
+      },
     };
   },
 
@@ -336,16 +352,18 @@ export default {
       ).then(() => {});
     },
     toDocList(n) {
-      if (n.external === 1) {
+      if (n.external === EXTERNAL) {
         this.$router.push(
           `/knowledge/hitTest?knowledgeId=${n.knowledgeId}&external=${n.external}`,
         );
         return;
       }
-      if (this.category === 0) {
+      if (this.category === KNOWLEDGE) {
         this.$router.push({ path: `/knowledge/doclist/${n.knowledgeId}` });
-      } else {
+      } else if (this.category === QA) {
         this.$router.push({ path: `/knowledge/qa/docList/${n.knowledgeId}` });
+      } else if (this.category === DB) {
+        this.$router.push({ path: `/knowledge/db/docList/${n.knowledgeId}` });
       }
 
       this.setPermissionType(n.permissionType);
@@ -367,22 +385,63 @@ export default {
   .smart {
     height: 152px;
 
-    .smartDate {
-      // text-align:center;
-      padding-top: 3px;
-      color: #888888;
+    .card-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
     }
 
-    .info {
-      padding-right: 20px;
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 8px;
+
+      .common-card-logo {
+        flex-shrink: 0;
+      }
+
+      .header-info {
+        flex: 1;
+        min-width: 0;
+
+        .name {
+          margin: 0;
+        }
+
+        .desc {
+          margin: 4px 0 0 0;
+          padding-top: 0;
+          display: flex;
+          gap: 8px;
+          align-items: center;
+
+          .desc-item {
+            margin-left: 0;
+            display: inline-block;
+          }
+        }
+      }
     }
 
-    .name {
-      white-space: nowrap;
-    }
+    .card-description {
+      margin-bottom: 8px;
+      min-height: 36px;
 
-    .desc {
-      padding-top: 5px;
+      .card-desc {
+        width: 100%;
+        display: -webkit-box;
+        text-overflow: ellipsis;
+        color: #5d5d5d;
+        font-weight: 400;
+        overflow: hidden;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        font-size: 13px;
+        height: 36px;
+        word-wrap: break-word;
+      }
     }
 
     .tagList {
@@ -396,10 +455,6 @@ export default {
 
     .tagList:hover {
       color: $color;
-    }
-
-    .tag-knowledge {
-      background: #826fff !important;
     }
   }
 }

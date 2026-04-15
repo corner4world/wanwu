@@ -254,6 +254,12 @@ const constantRoutes = [
         meta: { perm: [PERMS.KNOWLEDGE] },
       },
       {
+        path: '/knowledge/db/docList/:id',
+        component: resolve =>
+          require(['@/views/knowledge/dbDatabase/docList.vue'], resolve),
+        meta: { perm: [PERMS.KNOWLEDGE] },
+      },
+      {
         path: '/knowledge/fileUpload',
         component: resolve =>
           require([
