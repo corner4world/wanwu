@@ -114,12 +114,20 @@ func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Mess
 	for _, tc := range a.cfg.ToolCategories {
 		for _, toolCfg := range tc.Tools {
 			var auth *openapi3_util.Auth
-			for _, toolOpt := range a.options.Tools {
-				if toolOpt.Title == toolCfg.Doc.Info.Title {
-					if converted, err := toolOpt.APIAuth.ToOpenapiAuth(); err == nil {
-						auth = converted
+			if toolCfg.AuthRequired {
+				// 需要鉴权的工具：必须在 options.Tools 中找到匹配项并获取认证信息
+				var matched bool
+				for _, toolOpt := range a.options.Tools {
+					if toolOpt.Title == toolCfg.Doc.Info.Title {
+						matched = true
+						if converted, err := toolOpt.APIAuth.ToOpenapiAuth(); err == nil {
+							auth = converted
+						}
+						break
 					}
-					break
+				}
+				if !matched {
+					continue
 				}
 			}
 			var operationIDs []string
