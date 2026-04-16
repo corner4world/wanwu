@@ -844,7 +844,7 @@ export default {
             this.getHeaderConfig(),
           );
         } else {
-          res = await delConversation({
+          res = await clearConversation({
             conversationId: this.conversationId,
             detailId: qaId,
           });
