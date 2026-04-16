@@ -77,15 +77,16 @@ func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Mess
 	}
 	opts = append(opts, wga_sandbox_option.WithInstruction(instruction))
 
-	// 传递技能
-	if len(a.cfg.Skills) > 0 {
-		skills := make([]wga_sandbox_option.Skill, len(a.cfg.Skills))
-		for i, skill := range a.cfg.Skills {
-			skills[i] = wga_sandbox_option.Skill{
-				Dir: skill.Dir,
-			}
-		}
-		opts = append(opts, wga_sandbox_option.WithSkills(skills))
+	// 传递技能（配置文件 + 运行时）
+	var allSkills []wga_sandbox_option.Skill
+	for _, skill := range a.cfg.Skills {
+		allSkills = append(allSkills, wga_sandbox_option.Skill{Dir: skill.Dir})
+	}
+	for _, skill := range a.options.Skills {
+		allSkills = append(allSkills, wga_sandbox_option.Skill{Dir: skill.Dir})
+	}
+	if len(allSkills) > 0 {
+		opts = append(opts, wga_sandbox_option.WithSkills(allSkills))
 	}
 
 	if a.options.Workspace.InputDir != "" {
@@ -154,8 +155,8 @@ func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Mess
 		mcps := make([]wga_sandbox_option.MCP, len(a.options.MCPs))
 		for i, mcp := range a.options.MCPs {
 			mcps[i] = wga_sandbox_option.MCP{
-				Name:   mcp.Name,
-				SSEURL: mcp.SSEURL,
+				Name: mcp.Name,
+				URL:  mcp.URL,
 			}
 		}
 		opts = append(opts, wga_sandbox_option.WithMCPs(mcps))

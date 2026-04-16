@@ -88,14 +88,18 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 
 	runID := uuid.NewString()
 
+	if req.AgentID == "" {
+		req.AgentID = config.WgaCfg().AgentID
+	}
+
 	// 构建 WGA 选项
-	opts, err := buildWgaRunOptions(ctx, userId, orgId, req.ThreadID, runID, userInputMessage)
+	opts, err := buildWgaRunOptions(ctx, userId, orgId, req.AgentID, req.ThreadID, runID, userInputMessage)
 	if err != nil {
 		return err
 	}
 
 	// 运行 WGA
-	_, iter, err := wga.Run(ctx.Request.Context(), config.WgaCfg().AgentID, opts...)
+	_, iter, err := wga.Run(ctx.Request.Context(), req.AgentID, opts...)
 	if err != nil {
 		return err
 	}
@@ -110,6 +114,7 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 		},
 		ExcludedAgentNames: []string{
 			"Supervisor Agent",
+			"default",
 		},
 		// ResultFormatters: map[string]func(string) string{
 		// 	"bocha_comprehensive_search": WgaFormatBochaWebSearchResult,
@@ -252,7 +257,7 @@ func filterWgaHistoryMessages(ctx *gin.Context, userId, orgId, threadId string) 
 	return messages, nil
 }
 
-func buildWgaRunOptions(ctx *gin.Context, userID, orgID, threadID, runID string, userInputMessage *request.GeneralAgentConversationMessage) ([]wga_option.Option, error) {
+func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runID string, userInputMessage *request.GeneralAgentConversationMessage) ([]wga_option.Option, error) {
 	// 获取 WGA 配置
 	wgaConfigResp, err := assistant.GetWgaConfig(ctx.Request.Context(), &assistant_service.GetWgaConfigReq{
 		Identity: &assistant_service.Identity{
@@ -299,7 +304,7 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, threadID, runID string,
 
 	// 校验并构建工具配置选项
 	if wgaConfig != nil && len(wgaConfig.ToolList) > 0 {
-		if err := checkWgaToolConfig(ctx, userID, orgID, wgaConfig.ToolList); err != nil {
+		if err := checkWgaToolConfig(ctx, userID, orgID, agentID, wgaConfig.ToolList); err != nil {
 			return nil, err
 		}
 		toolOpts, err := buildWgaToolOptions(ctx, userID, orgID, wgaConfig.ToolList)
@@ -343,6 +348,18 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, threadID, runID string,
 			return nil, err
 		}
 		opts = append(opts, assistantOpts...)
+	}
+
+	// 校验并构建Skills配置选项
+	if wgaConfig != nil && len(wgaConfig.SkillList) > 0 {
+		if err := checkWgaSkillConfig(ctx, userID, orgID, wgaConfig.SkillList); err != nil {
+			return nil, err
+		}
+		skillOpts, err := buildWgaSkillOptions(ctx, userID, orgID, threadID, runID, wgaConfig.SkillList)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, skillOpts...)
 	}
 
 	// 持久化存储

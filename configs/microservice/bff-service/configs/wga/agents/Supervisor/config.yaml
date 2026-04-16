@@ -39,6 +39,8 @@ tool_categories:
           - operation_id: tavily_image_search
           - operation_id: tavily_date_search
 
+skills:
+
 sub_agents:
   - relative_path: ../DeepResearch/config.yaml
   - relative_path: ../MultiModal/config.yaml

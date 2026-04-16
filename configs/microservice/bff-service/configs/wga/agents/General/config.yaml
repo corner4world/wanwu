@@ -36,9 +36,7 @@ tool_categories:
 
 skills:
   # - dir: configs/microservice/bff-service/configs/agent-skills/anthropics
-  # - dir: configs/microservice/bff-service/configs/agent-skills/kimi/kimi-pdf
-  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/minimax-docx
-  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/pptx-generator
-  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/frontend-dev
+  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax
+  # - dir: configs/microservice/bff-service/configs/agent-skills/wanwu
  
 sub_agents:

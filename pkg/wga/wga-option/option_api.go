@@ -10,6 +10,7 @@ type Option = option.Option
 type ModelConfig = option.ModelConfig
 type ToolConfig = option.ToolConfig
 type ExtraTool = option.ExtraTool
+type Skill = option.Skill
 type MCP = option.MCP
 type RunSession = option.RunSession
 
@@ -37,6 +38,11 @@ func WithExtraTool(tool ExtraTool) Option {
 // WithMCP 添加 MCP 服务器。
 func WithMCP(mcp MCP) Option {
 	return option.WithMCP(mcp)
+}
+
+// WithSkill 添加技能（非配置文件中的技能）。
+func WithSkill(skill Skill) Option {
+	return option.WithSkill(skill)
 }
 
 // WithInputDir 设置输入目录。

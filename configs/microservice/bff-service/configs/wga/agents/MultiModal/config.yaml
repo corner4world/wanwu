@@ -18,7 +18,7 @@ prompt_relative_path: ./prompt.md
 
 tool_categories:
   - category: wga_tool_category_multimodal
-    condition: none
+    condition: optional
     tools:
       - path: configs/microservice/mcp-service/configs/tool/tongyiqwen/openapi.json
         auth_required: true
@@ -42,7 +42,6 @@ tool_categories:
         auth_required: true
         operations:
           - operation_id: tavily_basic_search
-          
 
 skills:
 

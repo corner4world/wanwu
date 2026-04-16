@@ -87,15 +87,16 @@ func Run(ctx context.Context, id string, opts ...option.Option) (wga_option.RunS
 	if err := options.CheckMessages(); err != nil {
 		return wga_option.RunSession{}, nil, err
 	}
-	toolCategories, err := options.CheckTools(agentCfg)
-	if err != nil {
-		return wga_option.RunSession{}, nil, err
-	}
-	for _, tc := range toolCategories {
-		if !tc.Meet {
-			return wga_option.RunSession{}, nil, fmt.Errorf("tool category (%s) condition (%s) not meet", tc.Category, tc.Condition)
-		}
-	}
+	// 暂不在 Run 阶段进行工具检查，由业务层决定是否调用 CheckOptions 进行工具检查；wga 内部不加载配置无效的工具
+	// toolCategories, err := options.CheckTools(agentCfg)
+	// if err != nil {
+	// 	return wga_option.RunSession{}, nil, err
+	// }
+	// for _, tc := range toolCategories {
+	// 	if !tc.Meet {
+	// 		return wga_option.RunSession{}, nil, fmt.Errorf("tool category (%s) condition (%s) not meet", tc.Category, tc.Condition)
+	// 	}
+	// }
 	agent, err := factory.NewAgent(ctx, agentCfg, options)
 	if err != nil {
 		return wga_option.RunSession{}, nil, err

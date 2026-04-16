@@ -5,6 +5,7 @@ type UpdateGeneralAgentConfigReq struct {
 	AssistantList []AssistantSelected `json:"assistantList"` // 智能体列表
 	MCPList       []MCPSelected       `json:"mcpList"`       // MCP列表
 	WorkflowList  []WorkflowSelected  `json:"workflowList"`  // 工作流列表
+	SkillList     []SkillSelected     `json:"skillList"`     // 自定义skill列表
 }
 
 func (c *UpdateGeneralAgentConfigReq) Check() error { return nil }
@@ -16,6 +17,10 @@ type MCPSelected struct {
 
 type WorkflowSelected struct {
 	WorkflowID string `json:"workflowId" validate:"required"` // 工作流ID
+}
+
+type SkillSelected struct {
+	SkillID string `json:"skillId" validate:"required"` // skill ID
 }
 
 type GetGeneralAgentConversationConfigReq struct {
@@ -51,6 +56,7 @@ type GetGeneralAgentConversationDetailReq struct {
 func (c *GetGeneralAgentConversationDetailReq) Check() error { return nil }
 
 type GeneralAgentConfigCheckRequest struct {
+	AgentID  string `json:"agentId"`                                      // 子智能体ID
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
 }
 
@@ -73,6 +79,7 @@ type AssistantSelected struct {
 func (c *UpdateGeneralAgentConversationConfigReq) Check() error { return nil }
 
 type GeneralAgentConversationChatReq struct {
+	AgentID  string                            `json:"agentId"`                      // 智能体ID
 	ThreadID string                            `json:"threadId" validate:"required"` // 对话ID
 	Messages []GeneralAgentConversationMessage `json:"messages" validate:"required"` // 消息
 }

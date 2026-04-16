@@ -42,10 +42,15 @@ type ExtraTool struct {
 	APIAuth        *util.ApiAuthWebRequest // API 认证（可选）
 }
 
+// Skill 技能配置。
+type Skill struct {
+	Dir string // skill 目录路径（相对程序运行目录）
+}
+
 // MCP MCP 服务器配置。
 type MCP struct {
-	Name   string // MCP 名称
-	SSEURL string // MCP SSE 服务器地址
+	Name string // MCP 名称
+	URL  string // MCP SSE/STREAMABLE 服务器地址
 }
 
 // WorkspaceConfig 工作空间配置。
@@ -83,6 +88,7 @@ type Options struct {
 	Model      ModelConfig     // 模型配置
 	Tools      []ToolConfig    // 工具配置列表（配置文件工具的认证）
 	ExtraTools []ExtraTool     // 额外工具列表（运行时传入）
+	Skills     []Skill         // 技能列表（运行时传入）
 	MCPs       []MCP           // MCP 服务器列表
 	Messages   []adk.Message   // 历史消息 + 当前问题（最后一条 User 消息）
 }
@@ -218,10 +224,21 @@ func WithMCP(mcp MCP) Option {
 		if mcp.Name == "" {
 			return fmt.Errorf("mcp name is required")
 		}
-		if mcp.SSEURL == "" {
-			return fmt.Errorf("mcp [%s] sse url is required", mcp.Name)
+		if mcp.URL == "" {
+			return fmt.Errorf("mcp [%s] url is required", mcp.Name)
 		}
 		opts.MCPs = append(opts.MCPs, mcp)
+		return nil
+	})
+}
+
+// WithSkill 添加技能（非配置文件中的技能）。
+func WithSkill(skill Skill) Option {
+	return optionFunc(func(opts *Options) error {
+		if skill.Dir == "" {
+			return fmt.Errorf("skill dir is required")
+		}
+		opts.Skills = append(opts.Skills, skill)
 		return nil
 	})
 }

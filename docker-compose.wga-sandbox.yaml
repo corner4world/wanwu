@@ -31,8 +31,6 @@ services:
       - ./configs/microservice/bff-service/configs/agent-skills/minimax/minimax-docx:/home/root/.claude/skills/minimax-docx
       - ./configs/microservice/bff-service/configs/agent-skills/minimax/pptx-generator:/home/root/.claude/skills/pptx-generator
       - ./configs/microservice/bff-service/configs/agent-skills/wanwu/pdf:/home/root/.claude/skills/pdf
-      # - ./configs/microservice/bff-service/configs/agent-skills/kimi/kimi-pdf:/home/root/.claude/skills/kimi-pdf
-      # - ./configs/microservice/bff-service/configs/agent-skills/kimi/kimi-xlsx:/home/root/.claude/skills/kimi-xlsx
     environment:
       USER: root
       # COZELOOP_ENABLED: ${COZELOOP_ENABLED}

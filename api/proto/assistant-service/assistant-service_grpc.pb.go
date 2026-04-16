@@ -65,10 +65,6 @@ const (
 	AssistantService_GetConversationDetailList_FullMethodName           = "/assistant_service.AssistantService/GetConversationDetailList"
 	AssistantService_AssistantConversionStream_FullMethodName           = "/assistant_service.AssistantService/AssistantConversionStream"
 	AssistantService_MultiAssistantConversionStream_FullMethodName      = "/assistant_service.AssistantService/MultiAssistantConversionStream"
-	AssistantService_GetWgaConversationConfig_FullMethodName            = "/assistant_service.AssistantService/GetWgaConversationConfig"
-	AssistantService_UpdateWgaConversationConfig_FullMethodName         = "/assistant_service.AssistantService/UpdateWgaConversationConfig"
-	AssistantService_GetWgaConfig_FullMethodName                        = "/assistant_service.AssistantService/GetWgaConfig"
-	AssistantService_UpdateWgaConfig_FullMethodName                     = "/assistant_service.AssistantService/UpdateWgaConfig"
 	AssistantService_CustomPromptCreate_FullMethodName                  = "/assistant_service.AssistantService/CustomPromptCreate"
 	AssistantService_CustomPromptDelete_FullMethodName                  = "/assistant_service.AssistantService/CustomPromptDelete"
 	AssistantService_CustomPromptUpdate_FullMethodName                  = "/assistant_service.AssistantService/CustomPromptUpdate"
@@ -82,6 +78,10 @@ const (
 	AssistantService_CreateSkillConversation_FullMethodName             = "/assistant_service.AssistantService/CreateSkillConversation"
 	AssistantService_DeleteSkillConversation_FullMethodName             = "/assistant_service.AssistantService/DeleteSkillConversation"
 	AssistantService_GetSkillConversationList_FullMethodName            = "/assistant_service.AssistantService/GetSkillConversationList"
+	AssistantService_GetWgaConversationConfig_FullMethodName            = "/assistant_service.AssistantService/GetWgaConversationConfig"
+	AssistantService_UpdateWgaConversationConfig_FullMethodName         = "/assistant_service.AssistantService/UpdateWgaConversationConfig"
+	AssistantService_GetWgaConfig_FullMethodName                        = "/assistant_service.AssistantService/GetWgaConfig"
+	AssistantService_UpdateWgaConfig_FullMethodName                     = "/assistant_service.AssistantService/UpdateWgaConfig"
 	AssistantService_WgaConversationCreate_FullMethodName               = "/assistant_service.AssistantService/WgaConversationCreate"
 	AssistantService_WgaConversationDelete_FullMethodName               = "/assistant_service.AssistantService/WgaConversationDelete"
 	AssistantService_WgaConversationList_FullMethodName                 = "/assistant_service.AssistantService/WgaConversationList"
@@ -145,11 +145,6 @@ type AssistantServiceClient interface {
 	GetConversationDetailList(ctx context.Context, in *GetConversationDetailListReq, opts ...grpc.CallOption) (*GetConversationDetailListResp, error)
 	AssistantConversionStream(ctx context.Context, in *AssistantConversionStreamReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AssistantConversionStreamResp], error)
 	MultiAssistantConversionStream(ctx context.Context, in *MultiAssistantConversionStreamReq, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AssistantConversionStreamResp], error)
-	// --- wga config ---
-	GetWgaConversationConfig(ctx context.Context, in *GetWgaConversationConfigReq, opts ...grpc.CallOption) (*GetWgaConversationConfigResp, error)
-	UpdateWgaConversationConfig(ctx context.Context, in *UpdateWgaConversationConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetWgaConfig(ctx context.Context, in *GetWgaConfigReq, opts ...grpc.CallOption) (*GetWgaConfigResp, error)
-	UpdateWgaConfig(ctx context.Context, in *UpdateWgaConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// --- custom prompt ---
 	CustomPromptCreate(ctx context.Context, in *CustomPromptCreateReq, opts ...grpc.CallOption) (*CustomPromptIDResp, error)
 	CustomPromptDelete(ctx context.Context, in *CustomPromptDeleteReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -166,6 +161,11 @@ type AssistantServiceClient interface {
 	CreateSkillConversation(ctx context.Context, in *CreateSkillConversationReq, opts ...grpc.CallOption) (*CreateSkillConversationResp, error)
 	DeleteSkillConversation(ctx context.Context, in *DeleteSkillConversationReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetSkillConversationList(ctx context.Context, in *GetSkillConversationListReq, opts ...grpc.CallOption) (*GetSkillConversationListResp, error)
+	// --- wga config ---
+	GetWgaConversationConfig(ctx context.Context, in *GetWgaConversationConfigReq, opts ...grpc.CallOption) (*GetWgaConversationConfigResp, error)
+	UpdateWgaConversationConfig(ctx context.Context, in *UpdateWgaConversationConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetWgaConfig(ctx context.Context, in *GetWgaConfigReq, opts ...grpc.CallOption) (*GetWgaConfigResp, error)
+	UpdateWgaConfig(ctx context.Context, in *UpdateWgaConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// --- wga conversation ---
 	WgaConversationCreate(ctx context.Context, in *WgaConversationCreateReq, opts ...grpc.CallOption) (*WgaConversationCreateResp, error)
 	WgaConversationDelete(ctx context.Context, in *WgaConversationDeleteReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -649,46 +649,6 @@ func (c *assistantServiceClient) MultiAssistantConversionStream(ctx context.Cont
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type AssistantService_MultiAssistantConversionStreamClient = grpc.ServerStreamingClient[AssistantConversionStreamResp]
 
-func (c *assistantServiceClient) GetWgaConversationConfig(ctx context.Context, in *GetWgaConversationConfigReq, opts ...grpc.CallOption) (*GetWgaConversationConfigResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetWgaConversationConfigResp)
-	err := c.cc.Invoke(ctx, AssistantService_GetWgaConversationConfig_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *assistantServiceClient) UpdateWgaConversationConfig(ctx context.Context, in *UpdateWgaConversationConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AssistantService_UpdateWgaConversationConfig_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *assistantServiceClient) GetWgaConfig(ctx context.Context, in *GetWgaConfigReq, opts ...grpc.CallOption) (*GetWgaConfigResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetWgaConfigResp)
-	err := c.cc.Invoke(ctx, AssistantService_GetWgaConfig_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *assistantServiceClient) UpdateWgaConfig(ctx context.Context, in *UpdateWgaConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AssistantService_UpdateWgaConfig_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *assistantServiceClient) CustomPromptCreate(ctx context.Context, in *CustomPromptCreateReq, opts ...grpc.CallOption) (*CustomPromptIDResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CustomPromptIDResp)
@@ -819,6 +779,46 @@ func (c *assistantServiceClient) GetSkillConversationList(ctx context.Context, i
 	return out, nil
 }
 
+func (c *assistantServiceClient) GetWgaConversationConfig(ctx context.Context, in *GetWgaConversationConfigReq, opts ...grpc.CallOption) (*GetWgaConversationConfigResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWgaConversationConfigResp)
+	err := c.cc.Invoke(ctx, AssistantService_GetWgaConversationConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assistantServiceClient) UpdateWgaConversationConfig(ctx context.Context, in *UpdateWgaConversationConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AssistantService_UpdateWgaConversationConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assistantServiceClient) GetWgaConfig(ctx context.Context, in *GetWgaConfigReq, opts ...grpc.CallOption) (*GetWgaConfigResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWgaConfigResp)
+	err := c.cc.Invoke(ctx, AssistantService_GetWgaConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *assistantServiceClient) UpdateWgaConfig(ctx context.Context, in *UpdateWgaConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AssistantService_UpdateWgaConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *assistantServiceClient) WgaConversationCreate(ctx context.Context, in *WgaConversationCreateReq, opts ...grpc.CallOption) (*WgaConversationCreateResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(WgaConversationCreateResp)
@@ -916,11 +916,6 @@ type AssistantServiceServer interface {
 	GetConversationDetailList(context.Context, *GetConversationDetailListReq) (*GetConversationDetailListResp, error)
 	AssistantConversionStream(*AssistantConversionStreamReq, grpc.ServerStreamingServer[AssistantConversionStreamResp]) error
 	MultiAssistantConversionStream(*MultiAssistantConversionStreamReq, grpc.ServerStreamingServer[AssistantConversionStreamResp]) error
-	// --- wga config ---
-	GetWgaConversationConfig(context.Context, *GetWgaConversationConfigReq) (*GetWgaConversationConfigResp, error)
-	UpdateWgaConversationConfig(context.Context, *UpdateWgaConversationConfigReq) (*emptypb.Empty, error)
-	GetWgaConfig(context.Context, *GetWgaConfigReq) (*GetWgaConfigResp, error)
-	UpdateWgaConfig(context.Context, *UpdateWgaConfigReq) (*emptypb.Empty, error)
 	// --- custom prompt ---
 	CustomPromptCreate(context.Context, *CustomPromptCreateReq) (*CustomPromptIDResp, error)
 	CustomPromptDelete(context.Context, *CustomPromptDeleteReq) (*emptypb.Empty, error)
@@ -937,6 +932,11 @@ type AssistantServiceServer interface {
 	CreateSkillConversation(context.Context, *CreateSkillConversationReq) (*CreateSkillConversationResp, error)
 	DeleteSkillConversation(context.Context, *DeleteSkillConversationReq) (*emptypb.Empty, error)
 	GetSkillConversationList(context.Context, *GetSkillConversationListReq) (*GetSkillConversationListResp, error)
+	// --- wga config ---
+	GetWgaConversationConfig(context.Context, *GetWgaConversationConfigReq) (*GetWgaConversationConfigResp, error)
+	UpdateWgaConversationConfig(context.Context, *UpdateWgaConversationConfigReq) (*emptypb.Empty, error)
+	GetWgaConfig(context.Context, *GetWgaConfigReq) (*GetWgaConfigResp, error)
+	UpdateWgaConfig(context.Context, *UpdateWgaConfigReq) (*emptypb.Empty, error)
 	// --- wga conversation ---
 	WgaConversationCreate(context.Context, *WgaConversationCreateReq) (*WgaConversationCreateResp, error)
 	WgaConversationDelete(context.Context, *WgaConversationDeleteReq) (*emptypb.Empty, error)
@@ -1087,18 +1087,6 @@ func (UnimplementedAssistantServiceServer) AssistantConversionStream(*AssistantC
 func (UnimplementedAssistantServiceServer) MultiAssistantConversionStream(*MultiAssistantConversionStreamReq, grpc.ServerStreamingServer[AssistantConversionStreamResp]) error {
 	return status.Errorf(codes.Unimplemented, "method MultiAssistantConversionStream not implemented")
 }
-func (UnimplementedAssistantServiceServer) GetWgaConversationConfig(context.Context, *GetWgaConversationConfigReq) (*GetWgaConversationConfigResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetWgaConversationConfig not implemented")
-}
-func (UnimplementedAssistantServiceServer) UpdateWgaConversationConfig(context.Context, *UpdateWgaConversationConfigReq) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateWgaConversationConfig not implemented")
-}
-func (UnimplementedAssistantServiceServer) GetWgaConfig(context.Context, *GetWgaConfigReq) (*GetWgaConfigResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetWgaConfig not implemented")
-}
-func (UnimplementedAssistantServiceServer) UpdateWgaConfig(context.Context, *UpdateWgaConfigReq) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateWgaConfig not implemented")
-}
 func (UnimplementedAssistantServiceServer) CustomPromptCreate(context.Context, *CustomPromptCreateReq) (*CustomPromptIDResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CustomPromptCreate not implemented")
 }
@@ -1137,6 +1125,18 @@ func (UnimplementedAssistantServiceServer) DeleteSkillConversation(context.Conte
 }
 func (UnimplementedAssistantServiceServer) GetSkillConversationList(context.Context, *GetSkillConversationListReq) (*GetSkillConversationListResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSkillConversationList not implemented")
+}
+func (UnimplementedAssistantServiceServer) GetWgaConversationConfig(context.Context, *GetWgaConversationConfigReq) (*GetWgaConversationConfigResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWgaConversationConfig not implemented")
+}
+func (UnimplementedAssistantServiceServer) UpdateWgaConversationConfig(context.Context, *UpdateWgaConversationConfigReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWgaConversationConfig not implemented")
+}
+func (UnimplementedAssistantServiceServer) GetWgaConfig(context.Context, *GetWgaConfigReq) (*GetWgaConfigResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWgaConfig not implemented")
+}
+func (UnimplementedAssistantServiceServer) UpdateWgaConfig(context.Context, *UpdateWgaConfigReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWgaConfig not implemented")
 }
 func (UnimplementedAssistantServiceServer) WgaConversationCreate(context.Context, *WgaConversationCreateReq) (*WgaConversationCreateResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WgaConversationCreate not implemented")
@@ -1967,78 +1967,6 @@ func _AssistantService_MultiAssistantConversionStream_Handler(srv interface{}, s
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type AssistantService_MultiAssistantConversionStreamServer = grpc.ServerStreamingServer[AssistantConversionStreamResp]
 
-func _AssistantService_GetWgaConversationConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetWgaConversationConfigReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AssistantServiceServer).GetWgaConversationConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AssistantService_GetWgaConversationConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssistantServiceServer).GetWgaConversationConfig(ctx, req.(*GetWgaConversationConfigReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AssistantService_UpdateWgaConversationConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateWgaConversationConfigReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AssistantServiceServer).UpdateWgaConversationConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AssistantService_UpdateWgaConversationConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssistantServiceServer).UpdateWgaConversationConfig(ctx, req.(*UpdateWgaConversationConfigReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AssistantService_GetWgaConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetWgaConfigReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AssistantServiceServer).GetWgaConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AssistantService_GetWgaConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssistantServiceServer).GetWgaConfig(ctx, req.(*GetWgaConfigReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AssistantService_UpdateWgaConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateWgaConfigReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AssistantServiceServer).UpdateWgaConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AssistantService_UpdateWgaConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssistantServiceServer).UpdateWgaConfig(ctx, req.(*UpdateWgaConfigReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AssistantService_CustomPromptCreate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CustomPromptCreateReq)
 	if err := dec(in); err != nil {
@@ -2269,6 +2197,78 @@ func _AssistantService_GetSkillConversationList_Handler(srv interface{}, ctx con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AssistantServiceServer).GetSkillConversationList(ctx, req.(*GetSkillConversationListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssistantService_GetWgaConversationConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWgaConversationConfigReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssistantServiceServer).GetWgaConversationConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AssistantService_GetWgaConversationConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssistantServiceServer).GetWgaConversationConfig(ctx, req.(*GetWgaConversationConfigReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssistantService_UpdateWgaConversationConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWgaConversationConfigReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssistantServiceServer).UpdateWgaConversationConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AssistantService_UpdateWgaConversationConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssistantServiceServer).UpdateWgaConversationConfig(ctx, req.(*UpdateWgaConversationConfigReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssistantService_GetWgaConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWgaConfigReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssistantServiceServer).GetWgaConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AssistantService_GetWgaConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssistantServiceServer).GetWgaConfig(ctx, req.(*GetWgaConfigReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AssistantService_UpdateWgaConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateWgaConfigReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AssistantServiceServer).UpdateWgaConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AssistantService_UpdateWgaConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AssistantServiceServer).UpdateWgaConfig(ctx, req.(*UpdateWgaConfigReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2525,22 +2525,6 @@ var AssistantService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AssistantService_GetConversationDetailList_Handler,
 		},
 		{
-			MethodName: "GetWgaConversationConfig",
-			Handler:    _AssistantService_GetWgaConversationConfig_Handler,
-		},
-		{
-			MethodName: "UpdateWgaConversationConfig",
-			Handler:    _AssistantService_UpdateWgaConversationConfig_Handler,
-		},
-		{
-			MethodName: "GetWgaConfig",
-			Handler:    _AssistantService_GetWgaConfig_Handler,
-		},
-		{
-			MethodName: "UpdateWgaConfig",
-			Handler:    _AssistantService_UpdateWgaConfig_Handler,
-		},
-		{
 			MethodName: "CustomPromptCreate",
 			Handler:    _AssistantService_CustomPromptCreate_Handler,
 		},
@@ -2591,6 +2575,22 @@ var AssistantService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSkillConversationList",
 			Handler:    _AssistantService_GetSkillConversationList_Handler,
+		},
+		{
+			MethodName: "GetWgaConversationConfig",
+			Handler:    _AssistantService_GetWgaConversationConfig_Handler,
+		},
+		{
+			MethodName: "UpdateWgaConversationConfig",
+			Handler:    _AssistantService_UpdateWgaConversationConfig_Handler,
+		},
+		{
+			MethodName: "GetWgaConfig",
+			Handler:    _AssistantService_GetWgaConfig_Handler,
+		},
+		{
+			MethodName: "UpdateWgaConfig",
+			Handler:    _AssistantService_UpdateWgaConfig_Handler,
 		},
 		{
 			MethodName: "WgaConversationCreate",

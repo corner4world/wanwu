@@ -52,6 +52,7 @@
     "pptxjs": "^0.0.0",
     "pptxtojson": "^2.0.0",
     "qiankun": "^2.10.16",
+    "sharp": "^0.34.5",
     "smoothscroll-polyfill": "^0.4.4",
     "throttle-debounce": "^5.0.0",
     "vue": "^2.6.11",

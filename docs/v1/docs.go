@@ -6572,6 +6572,109 @@ const docTemplate = `{
                 }
             }
         },
+        "/general/agent/skill/select": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "获取通用智能体skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.CustomSkillDetail"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/sub/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体支持的子智能体列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "获取通用智能体子智能体列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GetGeneralAgentSubListResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/general/agent/tool/info": {
             "get": {
                 "security": [
@@ -6646,6 +6749,15 @@ const docTemplate = `{
                     "wga"
                 ],
                 "summary": "通用智能体工具选择",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "智能体ID，默认为空",
+                        "name": "agentId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -6674,6 +6786,46 @@ const docTemplate = `{
                                                     }
                                                 }
                                             ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/upload/limit": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体所支持的上传文件格式及大小限制",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "获取通用智能体上传文件格式限制",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GeneralAgentUploadLimitResp"
                                         }
                                     }
                                 }
@@ -21128,6 +21280,10 @@ const docTemplate = `{
                 "threadId"
             ],
             "properties": {
+                "agentId": {
+                    "description": "子智能体ID",
+                    "type": "string"
+                },
                 "threadId": {
                     "description": "对话ID",
                     "type": "string"
@@ -21141,6 +21297,10 @@ const docTemplate = `{
                 "threadId"
             ],
             "properties": {
+                "agentId": {
+                    "description": "智能体ID",
+                    "type": "string"
+                },
                 "messages": {
                     "description": "消息",
                     "type": "array",
@@ -22826,6 +22986,18 @@ const docTemplate = `{
                 }
             }
         },
+        "request.SkillSelected": {
+            "type": "object",
+            "required": [
+                "skillId"
+            ],
+            "properties": {
+                "skillId": {
+                    "description": "skill ID",
+                    "type": "string"
+                }
+            }
+        },
         "request.ToolSelected": {
             "type": "object",
             "required": [
@@ -23048,6 +23220,13 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/request.MCPSelected"
+                    }
+                },
+                "skillList": {
+                    "description": "自定义skill列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.SkillSelected"
                     }
                 },
                 "toolList": {
@@ -25987,6 +26166,10 @@ const docTemplate = `{
         "response.GeneralAgentConfigCheckResponse": {
             "type": "object",
             "properties": {
+                "meet": {
+                    "description": "是否符合要求",
+                    "type": "boolean"
+                },
                 "modelMeet": {
                     "description": "是否符合模型要求",
                     "type": "boolean"
@@ -25997,10 +26180,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/response.GeneralAgentToolCategories"
                     }
-                },
-                "valid": {
-                    "description": "是否有效",
-                    "type": "boolean"
                 }
             }
         },
@@ -26138,6 +26317,37 @@ const docTemplate = `{
                 }
             }
         },
+        "response.GeneralAgentUploadLimit": {
+            "type": "object",
+            "properties": {
+                "extList": {
+                    "description": "支持的文件后缀列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fileType": {
+                    "description": "文件类型，如：image、video、audio、document",
+                    "type": "string"
+                },
+                "maxSize": {
+                    "description": "文件大小限制，单位MB",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.GeneralAgentUploadLimitResp": {
+            "type": "object",
+            "properties": {
+                "uploadLimitList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.GeneralAgentUploadLimit"
+                    }
+                }
+            }
+        },
         "response.GeneralAgentWorkspaceResp": {
             "type": "object",
             "properties": {
@@ -26184,6 +26394,13 @@ const docTemplate = `{
                         "$ref": "#/definitions/request.MCPSelected"
                     }
                 },
+                "skillList": {
+                    "description": "技能列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.SkillSelected"
+                    }
+                },
                 "toolList": {
                     "description": "工具列表",
                     "type": "array",
@@ -26214,6 +26431,18 @@ const docTemplate = `{
                 "threadId": {
                     "description": "对话ID",
                     "type": "string"
+                }
+            }
+        },
+        "response.GetGeneralAgentSubListResp": {
+            "type": "object",
+            "properties": {
+                "wgaAgentList": {
+                    "description": "子智能体列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WgaAgentInfo"
+                    }
                 }
             }
         },
@@ -29298,6 +29527,31 @@ const docTemplate = `{
                 "picNum": {
                     "description": "视觉配置图片数量",
                     "type": "integer"
+                }
+            }
+        },
+        "response.WgaAgentInfo": {
+            "type": "object",
+            "properties": {
+                "agentId": {
+                    "description": "子智能体ID",
+                    "type": "string"
+                },
+                "agentName": {
+                    "description": "子智能体名称",
+                    "type": "string"
+                },
+                "avatar": {
+                    "description": "logo",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "placeholder": {
+                    "description": "占位提示文本",
+                    "type": "string"
                 }
             }
         },

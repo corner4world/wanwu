@@ -10,6 +10,18 @@ type GetGeneralAgentConfigResp struct {
 	AssistantList []request.AssistantSelected `json:"assistantList"` // 智能体列表
 	MCPList       []request.MCPSelected       `json:"mcpList"`       // MCP列表
 	WorkflowList  []request.WorkflowSelected  `json:"workflowList"`  // 工作流列表
+	SkillList     []request.SkillSelected     `json:"skillList"`     // 技能列表
+}
+
+type WgaAgentInfo struct {
+	AgentID     string         `json:"agentId"`     // 子智能体ID
+	AgentName   string         `json:"agentName"`   // 子智能体名称
+	Avatar      request.Avatar `json:"avatar"`      // logo
+	Placeholder string         `json:"placeholder"` // 占位提示文本
+}
+
+type GetGeneralAgentSubListResp struct {
+	WgaAgentList []WgaAgentInfo `json:"wgaAgentList"` // 子智能体列表
 }
 
 type GetGeneralAgentConversationConfigResp struct {
@@ -39,7 +51,7 @@ type GeneralAgentToolInfoResp struct {
 }
 
 type GeneralAgentConfigCheckResponse struct {
-	Valid     bool                         `json:"valid"`     // 是否有效
+	Meet      bool                         `json:"meet"`      // 是否符合要求
 	ModelMeet bool                         `json:"modelMeet"` // 是否符合模型要求
 	ToolsMeet []GeneralAgentToolCategories `json:"toolsMeet"` // 工具是否符合要求
 }
@@ -82,6 +94,16 @@ type GeneralAgentConversationWorkspaceInfo struct {
 	FileCount int32  `json:"fileCount"`
 	TotalSize int64  `json:"totalSize"`
 	IsDisplay bool   `json:"isDisplay"`
+}
+
+type GeneralAgentUploadLimitResp struct {
+	UploadLimitList []*GeneralAgentUploadLimit `json:"uploadLimitList"`
+}
+
+type GeneralAgentUploadLimit struct {
+	FileType string   `json:"fileType"` // 文件类型，如：image、video、audio、document
+	MaxSize  int      `json:"maxSize"`  // 文件大小限制，单位MB
+	ExtList  []string `json:"extList"`  // 支持的文件后缀列表
 }
 
 type GeneralAgentCopilotRuntimeInfoAgent struct {

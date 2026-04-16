@@ -16,8 +16,11 @@ func registerWGA(apiV1 *gin.RouterGroup) {
 	mid.Sub("wga").Reg(apiV1, "/general/agent/tool/info", http.MethodGet, v1.GetGeneralAgentToolInfo, "通用智能体工具详情")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/mcp/select", http.MethodGet, v1.GetGeneralAgentMCPSelect, "通用智能体MCP下拉接口列表")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/workflow/select", http.MethodGet, v1.GetGeneralAgentWorkflowSelect, "通用智能体Workflow下拉接口列表")
+	mid.Sub("wga").Reg(apiV1, "/general/agent/skill/select", http.MethodGet, v1.GetGeneralAgentSkillSelect, "通用智能体skill下拉接口列表")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/config", http.MethodPut, v1.UpdateGeneralAgentConfig, "修改通用智能体配置")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/config", http.MethodGet, v1.GetGeneralAgentConfig, "通用智能体配置")
+	mid.Sub("wga").Reg(apiV1, "/general/agent/sub/list", http.MethodGet, v1.GetGeneralAgentSubList, "通用智能体子智能体列表")
+	mid.Sub("wga").Reg(apiV1, "/general/agent/upload/limit", http.MethodGet, v1.GetGeneralAgentUploadLimit, "通用智能体上传文件格式限制")
 
 	// 通用智能体配置相关接口
 	mid.Sub("wga").Reg(apiV1, "/general/agent/conversation", http.MethodPost, v1.CreateGeneralAgentConversation, "创建通用智能体对话")
