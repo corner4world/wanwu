@@ -442,6 +442,163 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/file/clean": {
+            "post": {
+                "description": "清除已上传的分片文件（匿名访问）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl.file"
+                ],
+                "summary": "文件清除",
+                "parameters": [
+                    {
+                        "description": "文件清除参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CleanFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CleanFileResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/file/merge": {
+            "post": {
+                "description": "合并分片文件（匿名访问）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl.file"
+                ],
+                "summary": "文件合并",
+                "parameters": [
+                    {
+                        "description": "文件合并参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.MergeFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.MergeFileResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/file/upload": {
+            "post": {
+                "description": "分片文件上传（匿名访问）",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl.file"
+                ],
+                "summary": "文件上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "原始文件名",
+                        "name": "fileName",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分片文件序号",
+                        "name": "sequence",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "上传批次标识",
+                        "name": "chunkName",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "文件",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.UploadFileResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -820,6 +977,18 @@ const docTemplate = `{
                 }
             }
         },
+        "request.CleanFileReq": {
+            "type": "object",
+            "required": [
+                "chunkName"
+            ],
+            "properties": {
+                "chunkName": {
+                    "description": "上传批次标识",
+                    "type": "string"
+                }
+            }
+        },
         "request.ConversationIdRequest": {
             "type": "object",
             "required": [
@@ -835,11 +1004,54 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ConversionStreamFile": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "fileSize": {
+                    "type": "integer"
+                },
+                "fileUrl": {
+                    "type": "string"
+                }
+            }
+        },
         "request.MemoryConfig": {
             "type": "object",
             "properties": {
                 "maxHistoryLength": {
                     "type": "integer"
+                }
+            }
+        },
+        "request.MergeFileReq": {
+            "type": "object",
+            "required": [
+                "chunkName",
+                "fileName"
+            ],
+            "properties": {
+                "chunkName": {
+                    "description": "上传批次标识",
+                    "type": "string"
+                },
+                "chunkTotal": {
+                    "description": "分片总数",
+                    "type": "integer"
+                },
+                "fileName": {
+                    "description": "原始文件名",
+                    "type": "string"
+                },
+                "fileSize": {
+                    "description": "原始文件大小",
+                    "type": "integer"
+                },
+                "isExpired": {
+                    "description": "minio存储文件是否过期 0:过期，1:不过期",
+                    "type": "boolean"
                 }
             }
         },
@@ -919,6 +1131,12 @@ const docTemplate = `{
             "properties": {
                 "conversationId": {
                     "type": "string"
+                },
+                "fileInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.ConversionStreamFile"
+                    }
                 },
                 "prompt": {
                     "type": "string"
@@ -1362,6 +1580,15 @@ const docTemplate = `{
                 }
             }
         },
+        "response.CleanFileResp": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "0:清除失败，1：已完成",
+                    "type": "integer"
+                }
+            }
+        },
         "response.ConversationCreateResp": {
             "type": "object",
             "properties": {
@@ -1467,6 +1694,23 @@ const docTemplate = `{
                 }
             }
         },
+        "response.MergeFileResp": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "description": "合并后文件名(在minio中的文件名)",
+                    "type": "string"
+                },
+                "filePath": {
+                    "description": "minio文件的完整路径",
+                    "type": "string"
+                },
+                "originalFileName": {
+                    "description": "原始文件名",
+                    "type": "string"
+                }
+            }
+        },
         "response.RecommendConfig": {
             "type": "object",
             "properties": {
@@ -1545,6 +1789,15 @@ const docTemplate = `{
                 "timeCost": {
                     "description": "耗时",
                     "type": "string"
+                }
+            }
+        },
+        "response.UploadFileResp": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "0:上传失败，1：上传成功",
+                    "type": "integer"
                 }
             }
         },
