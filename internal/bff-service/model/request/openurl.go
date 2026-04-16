@@ -8,6 +8,7 @@ func (c *UrlConversationCreateRequest) Check() error { return nil }
 
 type UrlConversationIdRequest struct {
 	ConversationId string `json:"conversationId" form:"conversationId"  validate:"required"`
+	DetailId       string `json:"detailId" form:"detailId"` // 可选，传值则删除单条对话，不传则清空全部对话
 }
 
 func (c *UrlConversationIdRequest) Check() error { return nil }

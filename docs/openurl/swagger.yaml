@@ -339,6 +339,16 @@ definitions:
     required:
     - prompt
     type: object
+  request.UrlConversationIdRequest:
+    properties:
+      conversationId:
+        type: string
+      detailId:
+        description: 可选，传值则删除单条对话，不传则清空全部对话
+        type: string
+    required:
+    - conversationId
+    type: object
   request.UrlConversionStreamRequest:
     properties:
       conversationId:
@@ -905,6 +915,40 @@ paths:
       security:
       - JWT: []
       summary: 创建智能体对话
+      tags:
+      - openurl
+  /agent/{suffix}/conversation/clear:
+    delete:
+      consumes:
+      - application/json
+      description: 清空智能体对话ES数据，不删除会话ID
+      parameters:
+      - description: 临时唯一标识
+        in: header
+        name: X-Client-ID
+        required: true
+        type: string
+      - description: Url后缀
+        in: path
+        name: suffix
+        required: true
+        type: string
+      - description: 智能体对话清空参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UrlConversationIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 清空智能体对话
       tags:
       - openurl
   /agent/{suffix}/conversation/detail:

@@ -56,6 +56,26 @@ func UrlConversationDelete(ctx *gin.Context, userId, suffix string, req request.
 	return nil
 }
 
+func UrlConversationClear(ctx *gin.Context, userId, suffix string, req request.UrlConversationIdRequest) error {
+	appUrlInfo, err := getAppUrlInfoAndCheck(ctx, suffix)
+	if err != nil {
+		return err
+	}
+	// 清空已发布智能体的对话ES数据（不删除会话ID）
+	_, err = assistant.ClearConversationES(ctx.Request.Context(), &assistant_service.ClearConversationESReq{
+		ConversationId: req.ConversationId,
+		DetailId:       req.DetailId,
+		Identity: &assistant_service.Identity{
+			UserId: userId,
+			OrgId:  appUrlInfo.OrgId,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetAppUrlInfo(ctx *gin.Context, suffix string) (*response.AppUrlConfig, error) {
 	appUrlInfo, err := getAppUrlInfoAndCheck(ctx, suffix)
 	if err != nil {

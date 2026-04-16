@@ -179,6 +179,59 @@
                 }
             }
         },
+        "/agent/{suffix}/conversation/clear": {
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "清空智能体对话ES数据，不删除会话ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl"
+                ],
+                "summary": "清空智能体对话",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "临时唯一标识",
+                        "name": "X-Client-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Url后缀",
+                        "name": "suffix",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "智能体对话清空参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UrlConversationIdRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/agent/{suffix}/conversation/detail": {
             "get": {
                 "security": [
@@ -1110,6 +1163,21 @@
             ],
             "properties": {
                 "prompt": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UrlConversationIdRequest": {
+            "type": "object",
+            "required": [
+                "conversationId"
+            ],
+            "properties": {
+                "conversationId": {
+                    "type": "string"
+                },
+                "detailId": {
+                    "description": "可选，传值则删除单条对话，不传则清空全部对话",
                     "type": "string"
                 }
             }

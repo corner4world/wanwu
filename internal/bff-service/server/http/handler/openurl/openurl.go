@@ -73,6 +73,28 @@ func UrlConversationDelete(ctx *gin.Context) {
 	gin_util.Response(ctx, nil, err)
 }
 
+// UrlConversationClear
+//
+//	@Tags			openurl
+//	@Summary		清空智能体对话
+//	@Description	清空智能体对话ES数据，不删除会话ID
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Client-ID							header		string								true	"临时唯一标识"
+//	@Param			suffix								path		string								true	"Url后缀"
+//	@Param			data								body		request.UrlConversationIdRequest	true	"智能体对话清空参数"
+//	@Success		200									{object}	response.Response
+//	@Router			/agent/{suffix}/conversation/clear 	[delete]
+func UrlConversationClear(ctx *gin.Context) {
+	var req request.UrlConversationIdRequest
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.UrlConversationClear(ctx, ctx.GetHeader("X-Client-ID"), ctx.Param("suffix"), req)
+	gin_util.Response(ctx, nil, err)
+}
+
 // GetUrlConversationList
 //
 //	@Tags			openurl

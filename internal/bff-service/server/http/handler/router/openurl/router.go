@@ -15,6 +15,7 @@ func Register(openUrl *gin.RouterGroup) {
 	// --- conversation ---
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation", http.MethodPost, openurl.UrlConversationCreate, "创建智能体对话")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation", http.MethodDelete, openurl.UrlConversationDelete, "删除智能体对话")
+	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation/clear", http.MethodDelete, openurl.UrlConversationClear, "清空智能体对话")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation/list", http.MethodGet, openurl.GetUrlConversationList, "获取智能体对话列表")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation/detail", http.MethodGet, openurl.GetUrlConversationDetailList, "智能体对话详情历史列表")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/stream", http.MethodPost, openurl.AssistantUrlConversionStream, "智能体流式问答")
