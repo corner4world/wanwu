@@ -11,6 +11,7 @@
   overflow: hidden;
   background: #0d0d0d;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  font-family: $font-mono;
   font-size: 14px;
   color: #c9d1d9;
   border: none;
@@ -22,6 +23,32 @@
 
   code {
     display: block !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    line-height: 1 !important;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    border: none;
+
+    &::before,
+    &::after {
+      content: none;
+    }
+  }
+}
+
+// FilePreviewDrawer 专用 - 全屏预览场景的代码块重置
+@mixin code-block-reset-fullscreen {
+  padding: 0 !important;
+  background: #0d0d0d !important;
+
+  code {
+    display: flex !important;
+    flex-direction: column;
+    height: 100%;
     border-radius: 0 !important;
     background: transparent !important;
     line-height: 1 !important;
@@ -70,6 +97,7 @@
   margin-left: auto;
   font-size: 12px;
   color: #888;
+  font-family: $font-mono;
   text-transform: lowercase;
   padding: 2px 8px;
   background: rgba(255, 255, 255, 0.08);
@@ -83,6 +111,7 @@
   border-radius: 5px;
   color: #888;
   font-size: 12px;
+  font-family: $font-sans;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
@@ -102,11 +131,27 @@
   background: #0d0d0d;
 }
 
+// FilePreviewDrawer 专用 - 全屏预览场景的代码内容样式
+@mixin code-content-fullscreen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  background: #0d0d0d;
+  overflow: auto;
+}
+
 @mixin code-lines-base {
   margin: 0;
   padding: 0 20px 0 56px;
   list-style: none;
   counter-reset: line-counter;
+  font-family: $font-mono;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #c9d1d9;
+  background: transparent;
   white-space: pre;
 
   .code-line {
@@ -125,6 +170,49 @@
       text-align: right;
       color: #484f58;
       font-size: 12px;
+      font-family: $font-mono;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .code-line-content {
+      display: inline;
+    }
+  }
+}
+
+// FilePreviewDrawer 专用 - 全屏预览场景的代码行样式
+@mixin code-lines-fullscreen {
+  margin: 0;
+  padding: 0 20px 0 56px;
+  list-style: none;
+  counter-reset: line-counter;
+  font-family: $font-mono;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #c9d1d9;
+  background: transparent;
+  white-space: pre;
+  flex: 1;
+  min-height: 100%;
+
+  .code-line {
+    display: block;
+    margin: 0;
+    padding: 0;
+    min-height: 1.65em;
+    counter-increment: line-counter;
+    list-style: none;
+
+    .code-line-num {
+      display: inline-block;
+      width: 36px;
+      margin-left: -44px;
+      margin-right: 8px;
+      text-align: right;
+      color: #484f58;
+      font-size: 12px;
+      font-family: $font-mono;
       user-select: none;
       pointer-events: none;
     }
@@ -287,5 +375,77 @@
     accent-color: #8b5cf6;
     width: 16px;
     height: 16px;
+  }
+}
+
+// 完整的代码块样式（StreamMarkdown.vue 使用）
+@mixin complete-code-block-stream {
+  pre.code-block {
+    @include code-block-base;
+    @include code-block-reset;
+
+    .code-header {
+      @include code-header-base;
+    }
+
+    .code-dots {
+      @include code-dots-base;
+    }
+
+    .code-lang {
+      @include code-lang-base;
+    }
+
+    .code-copy-btn {
+      @include code-copy-btn-base;
+    }
+
+    .code-content {
+      @include code-content-base;
+    }
+
+    .code-lines {
+      @include code-lines-base;
+    }
+  }
+}
+
+// 完整的代码块样式（FilePreviewDrawer.vue 全屏预览使用）
+@mixin complete-code-block-fullscreen {
+  pre.code-block {
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    overflow: hidden;
+    background: #0d0d0d;
+    font-family: $font-mono;
+    font-size: 14px;
+    color: #c9d1d9;
+    border: none;
+    @include code-block-reset-fullscreen;
+
+    .code-header {
+      @include code-header-base;
+    }
+
+    .code-dots {
+      @include code-dots-base;
+    }
+
+    .code-lang {
+      @include code-lang-base;
+    }
+
+    .code-copy-btn {
+      @include code-copy-btn-base;
+    }
+
+    .code-content {
+      @include code-content-fullscreen;
+    }
+
+    .code-lines {
+      @include code-lines-fullscreen;
+    }
   }
 }

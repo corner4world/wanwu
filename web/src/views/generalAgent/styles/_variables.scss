@@ -1,11 +1,6 @@
 // Typography
-$font-sans:
-  -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-  'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial,
-  sans-serif;
-$font-mono:
-  'JetBrains Mono', 'SF Mono', 'Fira Code', Monaco, Consolas, 'Liberation Mono',
-  monospace;
+$font-sans: NotoSansSC;
+$font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Source Han Mono', 'Roboto Mono', 'Noto Sans Mono', monospace;
 
 // Text Colors
 $text-primary: #1f2937;

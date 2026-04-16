@@ -2094,7 +2094,7 @@ export default {
       config: '配置',
       uploadFile: '上传文件',
       footer: '通用智能体 · 内容由 AI 生成，仅供参考',
-      placeholder: '选择一款模型,和我对话吧',
+      placeholder: '选择一款模型，和我对话吧',
     },
     message: {
       reasoning: '【思考过程】\n',
@@ -2146,6 +2146,7 @@ export default {
       tools: '工具',
       mcp: 'MCP',
       workflows: '工作流',
+      skills: 'Skills',
       agents: '智能体',
       validationError: '⚠️ 不满足选择条件',
       needApiKey: '需要配置 API Key',
@@ -2173,6 +2174,7 @@ export default {
       createConversationFailed: '创建对话失败，请重试',
       chatRequestFailed: '对话请求失败',
       sendMessageFailed: '发送消息失败: ',
+      modelNotAvailable: '选择的模型暂不可用，请切换模型',
     },
     activityBlock: {
       steps: '个步骤',
@@ -2199,18 +2201,6 @@ export default {
       keyboardHint: '按 ← → 键翻页',
       element: '元素',
       parseFailed: '无法解析此 PPT 文件',
-    },
-    modeManager: {
-      research: '深度研究',
-      researchPlaceholder: '选择一款模型,告诉我想要研究的内容,获取研究报告',
-      analysis: '数据分析',
-      analysisPlaceholder: '选择一款模型,上传excel或csv文件,进行数据分析',
-      ppt: '创建ppt',
-      pptPlaceholder: '选择一款模型,告诉我想要生成的PPT主题或内容',
-      excel: '创建excel',
-      excelPlaceholder: '选择一款模型,告诉我想要生成的EXCEL主题或内容',
-      web: '创建网页',
-      webPlaceholder: '选择一款模型,告诉我想要生成的网页主题或内容',
     },
     index: {
       newConversation: '新对话',

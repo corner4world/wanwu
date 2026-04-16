@@ -82,10 +82,14 @@ export function highlightCode(code, lang) {
  */
 export const md = MarkdownIt({
   html: true,
+  linkify: true, // 启用自动链接识别,将纯文本URL转换为可点击链接
   highlight: function (str, lang) {
     return highlightCode(str, lang);
   },
 });
+
+// 禁用模糊链接匹配，避免文件名被误识别为链接
+md.linkify.set({ fuzzyLink: false });
 
 md.use(mk, { throwOnError: false, errorColor: '#000000', output: 'mathml' });
 

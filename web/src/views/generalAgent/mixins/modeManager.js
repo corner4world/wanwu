@@ -2,61 +2,42 @@
  * 模式选择管理 Mixin - 管理深度研究、PPT等模式选择
  */
 
+import { getGeneralAgentSubList } from '@/api/generalAgent';
+import { avatarSrc } from '@/utils/util';
+
 export default {
   data() {
     return {
       selectedModes: [],
-      modeOptions: null, // 在 created 中初始化以支持 i18n
+      modeOptions: {}, // 从接口获取的可选模式列表
     };
   },
 
   created() {
-    // 在 created 钩子中初始化 modeOptions，确保 $t 可用
-    this.modeOptions = {
-      research: {
-        label: this.$t('generalAgent.modeManager.research'),
-        icon: 'el-icon-aim',
-        value: 'research',
-        placeholder: this.$t('generalAgent.modeManager.researchPlaceholder'),
-      },
-      analysis: {
-        label: this.$t('generalAgent.modeManager.analysis'),
-        icon: 'el-icon-data-analysis',
-        value: 'analysis',
-        placeholder: this.$t('generalAgent.modeManager.analysisPlaceholder'),
-      },
-      ppt: {
-        label: this.$t('generalAgent.modeManager.ppt'),
-        icon: 'el-icon-document',
-        value: 'ppt',
-        placeholder: this.$t('generalAgent.modeManager.pptPlaceholder'),
-      },
-      excel: {
-        label: this.$t('generalAgent.modeManager.excel'),
-        icon: 'el-icon-s-grid',
-        value: 'excel',
-        placeholder: this.$t('generalAgent.modeManager.excelPlaceholder'),
-      },
-      web: {
-        label: this.$t('generalAgent.modeManager.web'),
-        icon: 'el-icon-monitor',
-        value: 'web',
-        placeholder: this.$t('generalAgent.modeManager.webPlaceholder'),
-      },
-      // video: {
-      //   label: '创建视频',
-      //   icon: 'el-icon-video-camera',
-      //   value: 'video',
-      // },
-      // skill: {
-      //   label: '创建skill',
-      //   icon: 'el-icon-cpu',
-      //   value: 'skill',
-      // },
-    };
+    // 初始化空对象，后续通过接口填充
+    this.modeOptions = {};
   },
 
   methods: {
+    /**
+     * 获取可选模式列表
+     */
+    async fetchModeOptions() {
+      const res = await getGeneralAgentSubList();
+      if (res.code === 0 && res.data?.wgaAgentList) {
+        // 将接口返回的数据转换为 modeOptions 格式
+        this.modeOptions = res.data.wgaAgentList.reduce((acc, agent) => {
+          acc[agent.agentId] = {
+            label: agent.agentName,
+            value: agent.agentId,
+            placeholder: agent.placeholder,
+            avatar: avatarSrc(agent.avatar?.path),
+          };
+          return acc;
+        }, {});
+      }
+    },
+
     /**
      * 添加模式
      */

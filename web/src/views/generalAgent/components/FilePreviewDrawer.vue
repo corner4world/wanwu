@@ -190,7 +190,6 @@ import PptPreview from './PptPreview.vue';
 import { md, highlightCode } from '../utils/markdown';
 import VueOfficeDocx from '@vue-office/docx';
 import '@vue-office/docx/lib/index.css';
-import { downloadGeneralAgentWorkspace } from '@/api/generalAgent';
 import { resDownloadFile, getFileType } from '@/utils/util';
 import * as XLSX from 'xlsx';
 
@@ -452,22 +451,18 @@ export default {
 
     // 下载文件
     async handleDownload() {
-      if (!this.file || !this.filePath || !this.threadId || !this.runId) {
+      if (!this.file || !this.blob) {
         return;
       }
 
       try {
-        const blob = await downloadGeneralAgentWorkspace({
-          threadId: this.threadId,
-          runId: this.runId,
-          path: this.filePath,
-        });
-
-        resDownloadFile(blob, this.file.name);
-        this.$message.success(this.$t('common.info.save'));
+        resDownloadFile(this.blob, this.file.name);
+        this.$message.success(
+          this.$t('generalAgent.workspace.downloadSuccess'),
+        );
       } catch (error) {
         console.error('下载文件失败:', error);
-        this.$message.error(this.$t('knowledgeManage.fileDownloadFailed'));
+        this.$message.error(this.$t('generalAgent.workspace.downloadFailed'));
       }
     },
 
@@ -906,7 +901,7 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/assets/showDocs/showdoc.scss';
-@import '../styles/_variables.scss';
+@import '../styles/_markdown-common.scss';
 
 // 代码文件预览样式
 .preview-text-wrapper {
@@ -952,330 +947,9 @@ export default {
 }
 
 .markdown-body {
-  font-size: 16px;
-  line-height: 1.85;
-  color: $text-primary;
-  font-family: $font-sans;
-
   ::v-deep {
-    // 标题
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      margin: 24px 0 12px;
-      font-weight: 600;
-      line-height: 1.35;
-      color: $text-primary;
-      font-family: $font-sans;
-
-      &:first-child {
-        margin-top: 0;
-      }
-    }
-
-    h1 {
-      font-size: 1.6em;
-    }
-
-    h2 {
-      font-size: 1.4em;
-    }
-
-    h3 {
-      font-size: 1.2em;
-    }
-
-    h4 {
-      font-size: 1.1em;
-    }
-
-    // 段落
-    p {
-      margin: 0 0 16px;
-      line-height: 1.85;
-      font-size: 16px;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-
-    // 列表
-    ul,
-    ol {
-      margin: 0 0 16px;
-      padding-left: 24px;
-      font-size: 16px;
-
-      li {
-        margin: 6px 0;
-        line-height: 1.75;
-        font-size: 16px;
-      }
-    }
-
-    // 引用
-    blockquote {
-      margin: 16px 0;
-      padding: 12px 16px;
-      border-left: 4px solid #8b5cf6;
-      background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-      color: $text-secondary;
-      border-radius: 0 8px 8px 0;
-
-      p:last-child {
-        margin-bottom: 0;
-      }
-    }
-
-    // 行内代码
-    code:not([class*='hljs']):not(.line-li) {
-      padding: 3px 7px;
-      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-      border: 1px solid #d1d5db;
-      border-radius: 5px;
-      font-family: $font-mono;
-      font-size: 0.88em;
-      color: #be185d;
-    }
-
-    // ============================================================
-    // Mac Shell 风格代码块
-    // 需要覆盖 showdoc.scss 中的以下冲突样式：
-    // .markdown-body pre { padding: 16px; background: #f7f7f7; }
-    // .markdown-body pre code { display: inline; line-height: inherit; }
-    // .markdown-body code { border-radius: 3px; background: rgba(0,0,0,0.04); }
-    // .markdown-body code:before/after { content: '\A0'; }
-    // ============================================================
-    pre.code-block {
-      margin: 0;
-      padding: 0;
-      border-radius: 0;
-      overflow: hidden;
-      background: #0d0d0d;
-      font-family: $font-mono;
-      font-size: 14px;
-      color: #c9d1d9;
-      border: none;
-      height: 100%;
-
-      // 覆盖 showdoc.scss: .markdown-body pre { padding: 16px; background: #f7f7f7; }
-      padding: 0 !important;
-      background: #0d0d0d !important;
-
-      code {
-        // 覆盖 showdoc.scss: .markdown-body pre code { display: inline; }
-        display: flex !important;
-        flex-direction: column;
-        height: 100%;
-        // 覆盖 showdoc.scss: .markdown-body code { border-radius: 3px; }
-        border-radius: 0 !important;
-        // 覆盖 showdoc.scss: .markdown-body code { background: rgba(0,0,0,0.04); }
-        background: transparent !important;
-        // 覆盖 showdoc.scss: .markdown-body pre code { line-height: inherit; }
-        line-height: 1 !important;
-        // 其他重置
-        padding: 0;
-        margin: 0;
-        font-family: inherit;
-        font-size: inherit;
-        color: inherit;
-        border: none;
-
-        // 覆盖 showdoc.scss: .markdown-body code:before/after { content: '\A0'; }
-        &::before,
-        &::after {
-          content: none;
-        }
-      }
-    }
-
-    // 代码块头部（红黄绿点 + 语言标签 + 复制按钮）
-    .code-header {
-      display: flex;
-      align-items: center;
-      padding: 10px 14px;
-      background: #1a1a1a;
-      border-bottom: 1px solid #333;
-      gap: 8px;
-    }
-
-    .code-dots {
-      width: 36px;
-      height: 12px;
-      flex-shrink: 0;
-
-      &::before {
-        content: '';
-        display: block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #ff5f57;
-        box-shadow:
-          14px 0 0 #febc2e,
-          28px 0 0 #28c840;
-      }
-    }
-
-    .code-lang {
-      margin-left: auto;
-      font-size: 12px;
-      color: #888;
-      font-family: $font-mono;
-      text-transform: lowercase;
-      padding: 2px 8px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 4px;
-    }
-
-    .code-copy-btn {
-      padding: 4px 10px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 5px;
-      color: #888;
-      font-size: 12px;
-      font-family: $font-sans;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      flex-shrink: 0;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.15);
-        color: #bbb;
-        border-color: rgba(255, 255, 255, 0.25);
-      }
-    }
-
-    // 代码内容区域
-    .code-content {
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      padding: 16px 0;
-      background: #0d0d0d;
-      overflow: auto;
-    }
-
-    // 代码行号和内容
-    .code-lines {
-      margin: 0;
-      padding: 0 20px 0 56px;
-      list-style: none;
-      counter-reset: line-counter;
-      font-family: $font-mono;
-      font-size: 14px;
-      line-height: 1.65;
-      color: #c9d1d9;
-      background: transparent;
-      white-space: pre;
-      flex: 1;
-      min-height: 100%;
-
-      .code-line {
-        display: block;
-        margin: 0;
-        padding: 0;
-        min-height: 1.65em;
-        counter-increment: line-counter;
-        list-style: none;
-
-        .code-line-num {
-          display: inline-block;
-          width: 36px;
-          margin-left: -44px;
-          margin-right: 8px;
-          text-align: right;
-          color: #484f58;
-          font-size: 12px;
-          font-family: $font-mono;
-          user-select: none;
-          pointer-events: none;
-        }
-
-        .code-line-content {
-          display: inline;
-        }
-      }
-    }
-
-    // 链接
-    a {
-      color: #8b5cf6;
-      text-decoration: none;
-      font-weight: 500;
-
-      &:hover {
-        color: #7c3aed;
-        text-decoration: underline;
-      }
-    }
-
-    // 图片
-    img {
-      max-width: 100%;
-      border-radius: 10px;
-      margin: 14px 0;
-    }
-
-    // 表格
-    table {
-      margin: 16px 0;
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 15px;
-      border-radius: 10px;
-      overflow: hidden;
-
-      th,
-      td {
-        padding: 12px 16px;
-        border: 1px solid #e5e7eb;
-        text-align: left;
-      }
-
-      th {
-        background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
-        font-weight: 600;
-        color: $text-primary;
-      }
-
-      td {
-        background: #fff;
-      }
-
-      tr:nth-child(even) td {
-        background: #f9fafb;
-      }
-    }
-
-    hr {
-      margin: 24px 0;
-      border: none;
-      height: 1px;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        #e5e7eb 20%,
-        #e5e7eb 80%,
-        transparent 100%
-      );
-    }
-
-    strong {
-      font-weight: 600;
-      color: $text-primary;
-    }
-
-    em {
-      font-style: italic;
-      color: $text-secondary;
-    }
+    @include markdown-content-base;
+    @include complete-code-block-fullscreen;
   }
 }
 </style>
