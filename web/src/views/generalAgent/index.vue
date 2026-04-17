@@ -238,7 +238,7 @@
               <div class="toolbar-right">
                 <StreamUploadField
                   :fileTypeArr="['doc/*', 'md', 'image/*']"
-                  type="agentChat"
+                  type="wga"
                   @setFileId="handleSetFileId"
                 >
                   <template #default="{ openDialog }">
