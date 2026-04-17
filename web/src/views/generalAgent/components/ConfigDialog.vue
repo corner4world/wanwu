@@ -39,6 +39,14 @@
             >
               {{ $t('generalAgent.config.workflows') }}
             </div>
+            <!-- Skills选择 -->
+            <div
+              v-if="hasSkills"
+              :class="['tab-btn', { active: activeTab === 'skills' }]"
+              @click="activeTab = 'skills'"
+            >
+              {{ $t('generalAgent.config.skills') }}
+            </div>
             <!-- 智能体选择 -->
             <div
               v-if="hasAgents"
@@ -62,18 +70,18 @@
               >
                 <div class="category-header">
                   <span class="category-name">{{ category.category }}</span>
-                  <el-tag
-                    size="mini"
-                    :type="getConditionType(category.condition)"
-                  >
-                    {{ getConditionLabel(category.condition) }}
-                  </el-tag>
                   <span
                     v-if="validationErrors.has(categoryIndex)"
                     class="error-tip"
                   >
                     {{ $t('generalAgent.config.validationError') }}
                   </span>
+                  <el-tag
+                    size="mini"
+                    :type="getConditionType(category.condition)"
+                  >
+                    {{ getConditionLabel(category.condition) }}
+                  </el-tag>
                 </div>
                 <div class="tool-list">
                   <div
@@ -162,7 +170,7 @@
       </div>
 
       <div slot="footer" class="dialog-footer">
-        <el-button @click="handleCancel">
+        <el-button @click="handleClose">
           {{ $t('generalAgent.config.cancel') }}
         </el-button>
         <el-button type="primary" @click="handleConfirm">
@@ -211,6 +219,7 @@ import {
   getGeneralAgentAssistantSelect,
   getGeneralAgentMcpSelect,
   getGeneralAgentWorkflowSelect,
+  getGeneralAgentSkillSelect,
   updateGeneralAgentGlobalConfig,
   getGeneralAgentGlobalConfig,
 } from '@/api/generalAgent';
@@ -223,18 +232,24 @@ export default {
       type: Boolean,
       default: false,
     },
+    agentId: {
+      type: String,
+      default: '',
+    },
   },
   data() {
     return {
       dialogVisible: this.visible,
-      activeTab: 'tools', // 当前激活的tab: tools | mcp | workflows | assistants
+      activeTab: 'tools', // 当前激活的tab: tools | mcp | workflows | skills | assistants
       toolList: [],
       mcpList: [],
       workflowList: [],
+      skillList: [],
       assistantList: [],
       selectedTools: [],
       selectedMcps: [],
       selectedWorkflows: [],
+      selectedSkills: [],
       selectedAssistants: [],
       validationErrors: new Set(),
       // API Key 弹窗相关状态
@@ -268,6 +283,10 @@ export default {
     hasWorkflows() {
       return this.workflowList.length > 0;
     },
+    // 判断是否有Skills数据
+    hasSkills() {
+      return this.skillList.length > 0;
+    },
     // 判断是否有智能体数据
     hasAgents() {
       return this.assistantList.length > 0;
@@ -291,6 +310,14 @@ export default {
           iconClass: 'el-icon-share',
           className: 'workflow-list',
         },
+        skills: {
+          list: this.skillList,
+          idField: 'skillId',
+          nameField: 'name',
+          descField: 'desc',
+          iconClass: 'el-icon-document',
+          className: 'skill-list',
+        },
         assistants: {
           list: this.assistantList,
           idField: 'appId',
@@ -310,6 +337,7 @@ export default {
         this.fetchToolList(),
         this.fetchMcpList(),
         this.fetchWorkflowList(),
+        this.fetchSkillList(),
         this.fetchAssistantList(),
         this.fetchGlobalConfig(),
       ]);
@@ -318,7 +346,7 @@ export default {
     },
     // 自动选择第一个有数据的tab
     selectFirstAvailableTab() {
-      const tabs = ['tools', 'mcp', 'workflows', 'assistants'];
+      const tabs = ['tools', 'mcp', 'workflows', 'skills', 'assistants'];
       for (const tab of tabs) {
         if (this[`has${tab.charAt(0).toUpperCase() + tab.slice(1)}`]) {
           this.activeTab = tab;
@@ -327,7 +355,7 @@ export default {
       }
     },
     async fetchToolList() {
-      const res = await getGeneralAgentToolSelect();
+      const res = await getGeneralAgentToolSelect({ agentId: this.agentId });
       this.toolList = res?.data?.list || [];
     },
     async fetchMcpList() {
@@ -337,6 +365,10 @@ export default {
     async fetchWorkflowList() {
       const res = await getGeneralAgentWorkflowSelect();
       this.workflowList = res?.data?.list || [];
+    },
+    async fetchSkillList() {
+      const res = await getGeneralAgentSkillSelect();
+      this.skillList = res?.data?.list || [];
     },
     async fetchAssistantList() {
       const res = await getGeneralAgentAssistantSelect();
@@ -361,6 +393,10 @@ export default {
             workflowId: workflow.workflowId,
           }),
         );
+        // 初始化已选中的Skills
+        this.selectedSkills = (res.data.skillList || []).map(skill => ({
+          skillId: skill.skillId,
+        }));
         // 初始化已选中的智能体
         this.selectedAssistants = (res.data.assistantList || []).map(
           assistant => ({
@@ -370,51 +406,52 @@ export default {
       }
     },
     handleClose() {
+      this.validationErrors.clear();
       this.$emit('update:visible', false);
     },
 
-    handleCancel() {
+    // 验证工具选择并处理错误状态
+    validateTools() {
+      if (!this.hasTools) {
+        this.validationErrors.clear();
+        return true;
+      }
+
+      const errors = new Set();
+
+      // 验证每个分类的选择条件
+      this.toolList.forEach((category, index) => {
+        const selectedInCategory = category.toolList.filter(tool =>
+          this.isItemSelected(tool.toolId, 'tools'),
+        ).length;
+        const totalInCategory = category.toolList.length;
+
+        // 验证 condition
+        if (
+          (category.condition === 'required' &&
+            selectedInCategory !== totalInCategory) ||
+          (category.condition === 'optional' && selectedInCategory < 1)
+        ) {
+          errors.add(index);
+        }
+      });
+
+      // 处理验证结果
+      if (errors.size > 0) {
+        this.activeTab = 'tools';
+        this.validationErrors = errors;
+        this.$message.warning(this.$t('generalAgent.config.validationWarning'));
+        return false;
+      }
+
+      // 验证通过，清除错误状态
       this.validationErrors.clear();
-      this.handleClose();
+      return true;
     },
 
     async handleConfirm() {
-      if (this.hasTools) {
-        const errors = new Set();
-
-        // 验证每个分类的选择条件
-        this.toolList.forEach((category, index) => {
-          const selectedInCategory = category.toolList.filter(tool => {
-            return this.isItemSelected(tool.toolId, 'tools');
-          }).length;
-          const totalInCategory = category.toolList.length;
-
-          // 验证 condition
-          if (
-            category.condition === 'required' &&
-            selectedInCategory !== totalInCategory
-          ) {
-            errors.add(index);
-          } else if (
-            category.condition === 'optional' &&
-            selectedInCategory < 1
-          ) {
-            errors.add(index);
-          }
-          // none 类型不做限制
-        });
-
-        if (errors.size > 0) {
-          this.activeTab = 'tools';
-          this.validationErrors = errors;
-          this.$message.warning(
-            this.$t('generalAgent.config.validationWarning'),
-          );
-          return;
-        }
-
-        // 验证通过,清除错误状态
-        this.validationErrors.clear();
+      if (!this.validateTools()) {
+        return;
       }
 
       // 收集所有选中的工具（遍历所有分类）
@@ -468,6 +505,16 @@ export default {
         }
       });
 
+      // 收集所有选中的Skills
+      const allSelectedSkills = [];
+      this.skillList.forEach(skill => {
+        if (this.isItemSelected(skill.skillId, 'skills')) {
+          allSelectedSkills.push({
+            skillId: skill.skillId,
+          });
+        }
+      });
+
       // 收集所有选中的智能体
       const allSelectedAssistants = [];
       this.assistantList.forEach(assistant => {
@@ -483,6 +530,7 @@ export default {
         toolList: allSelectedTools,
         mcpList: allSelectedMcps,
         workflowList: allSelectedWorkflows,
+        skillList: allSelectedSkills,
         assistantList: allSelectedAssistants,
       });
 
@@ -493,6 +541,7 @@ export default {
           tools: allSelectedTools,
           mcps: allSelectedMcps,
           workflows: allSelectedWorkflows,
+          skills: allSelectedSkills,
           assistants: allSelectedAssistants,
         });
         this.handleClose();
@@ -512,6 +561,9 @@ export default {
       if (itemType === 'workflows') {
         return this.selectedWorkflows.some(w => w.workflowId === itemId);
       }
+      if (itemType === 'skills') {
+        return this.selectedSkills.some(s => s.skillId === itemId);
+      }
       // 智能体的选中状态判断
       return this.selectedAssistants.some(a => a.assistantId === itemId);
     },
@@ -523,6 +575,8 @@ export default {
         this.handleToggleMcp(item);
       } else if (this.activeTab === 'workflows') {
         this.handleToggleWorkflow(item);
+      } else if (this.activeTab === 'skills') {
+        this.handleToggleSkill(item);
       } else {
         this.handleToggleAssistant(item);
       }
@@ -648,6 +702,22 @@ export default {
       }
     },
 
+    handleToggleSkill(skill) {
+      // Skills使用 skillId 作为标识
+      const skillId = skill.skillId;
+      // 在选中状态中切换
+      const index = this.selectedSkills.findIndex(s => s.skillId === skillId);
+      if (index > -1) {
+        // 已选中，取消选中
+        this.selectedSkills.splice(index, 1);
+      } else {
+        // 未选中，添加选中
+        this.selectedSkills.push({
+          skillId: skillId,
+        });
+      }
+    },
+
     getConditionLabel(condition) {
       const labels = {
         none: this.$t('generalAgent.config.conditionLabels.none'),
@@ -711,7 +781,7 @@ export default {
 
   .el-dialog__body {
     padding: 0;
-    max-height: 50vh;
+    height: 50vh;
     display: flex;
     flex-direction: column;
   }
@@ -811,10 +881,11 @@ export default {
     }
   }
 
-  // 合并所有列表样式（工具、MCP、工作流、智能体）
+  // 合并所有列表样式（工具、MCP、工作流、Skills、智能体）
   .tool-list,
   .mcp-list,
   .workflow-list,
+  .skill-list,
   .assistant-list {
     display: flex;
     flex-direction: column;

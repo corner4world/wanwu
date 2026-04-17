@@ -1,5 +1,5 @@
 import request from '@/utils/request';
-import { SERVICE_API } from '@/utils/requestConstants';
+import { SERVICE_API, OPENURL_API } from '@/utils/requestConstants';
 
 export const uploadChunks = (data, config) => {
   //切片上传
@@ -11,6 +11,17 @@ export const uploadChunks = (data, config) => {
     cancelToken: config,
   });
 };
+export const uploadChunksOpen = (data, config) => {
+  //切片上传公开
+  return request({
+    url: `${OPENURL_API}/file/upload`,
+    method: 'post',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    data,
+    cancelToken: config,
+  });
+};
+
 export const checkChunks = data => {
   //检测切片
   return request({
@@ -27,10 +38,28 @@ export const mergeChunks = data => {
     data,
   });
 };
+
+export const mergeChunksOpen = data => {
+  //合并切片公开
+  return request({
+    url: `${OPENURL_API}/file/merge`,
+    method: 'post',
+    data,
+  });
+};
 export const clearChunks = data => {
   //清除切片
   return request({
     url: `${SERVICE_API}/file/clean`,
+    method: 'post',
+    data,
+  });
+};
+
+export const clearChunksOpen = data => {
+  //清除切片公开
+  return request({
+    url: `${OPENURL_API}/file/clean`,
     method: 'post',
     data,
   });

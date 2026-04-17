@@ -44,7 +44,7 @@
               :class="['tab', { active: tabActive === 1 }]"
               @click="tabClick(1)"
             >
-              {{ $t('tool.square.sseUrl') }}
+              {{ transportLabel }}
             </div>
           </div>
         </div>
@@ -104,9 +104,9 @@
 
         <div class="tool bg-border" v-if="tabActive === 1">
           <div class="tool-item">
-            <p class="title">SSE URL:</p>
+            <p class="title">{{ urlLabel }}</p>
             <div class="sse-url" style="display: flex">
-              <div class="tool-item-bg sse-url__input">{{ detail.sseUrl }}</div>
+              <div class="tool-item-bg sse-url__input">{{ displayUrl }}</div>
               <el-button
                 v-if="isFromSquare"
                 class="sse-url__bt"
@@ -255,6 +255,23 @@ export default {
       recommendList: [],
       dialogVisible: false,
     };
+  },
+  computed: {
+    transportLabel() {
+      return this.detail.transport === 'streamable'
+        ? 'Streamable HTTP URL及工具'
+        : this.$t('tool.square.sseUrl');
+    },
+    urlLabel() {
+      return this.detail.transport === 'streamable'
+        ? 'Streamable HTTP:'
+        : 'SSE URL:';
+    },
+    displayUrl() {
+      return this.detail.transport === 'streamable'
+        ? this.detail.streamableUrl
+        : this.detail.sseUrl;
+    },
   },
   watch: {
     $route: {

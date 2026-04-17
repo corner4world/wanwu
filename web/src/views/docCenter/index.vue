@@ -377,14 +377,15 @@ export default {
   }
 }
 .doc-header {
-  padding: 20px 0;
+  padding: 20px 50px;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  width: 100%;
   .doc-header__left {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30%;
+    width: 380px;
     span {
       font-size: 18px;
       margin-left: 18px;
@@ -393,9 +394,8 @@ export default {
     }
   }
   .doc-header__right {
-    width: 60%;
-    display: flex;
-    align-items: center;
+    width: calc(100% - 600px);
+    text-align: center;
   }
   .top-search-input ::v-deep {
     .el-input__inner {

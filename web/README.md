@@ -1,14 +1,14 @@
 #### 安装依赖
 
-npm install
+pnpm install
 
 #### 启动
 
-npm run serve
+pnpm run serve
 
 #### 打包
 
-npm run build
+pnpm run build
 
 ```
 commit 的类型：

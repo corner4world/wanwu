@@ -1,3 +1,5 @@
+import { i18n } from '@/lang';
+
 // 初始化标志常量
 export const INITIAL = -1;
 export const ALL = -1;
@@ -53,3 +55,10 @@ export const KNOWLEDGE = 0;
 export const QA = 1;
 export const MULTIMODAL = 2;
 export const MIX_MULTIMODAL = 3;
+export const DB = 3;
+
+export const CATEGORY_TYPE_OBJ = {
+  [KNOWLEDGE]: i18n.t('knowledgeManage.knowledge'),
+  [QA]: i18n.t('knowledgeManage.qaDatabase.title'),
+  [DB]: i18n.t('knowledgeManage.dbDatabase.title'),
+};

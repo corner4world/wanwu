@@ -8,7 +8,7 @@
       />
       <div class="mcp_detailBox">
         <span class="mcp_name">{{ info.name }}</span>
-        <span class="mcp_from">
+        <span class="mcp_from from_tag">
           <label>{{ $t('tempSquare.author') }}：{{ info.author }}</label>
         </span>
       </div>

@@ -537,7 +537,7 @@
             <div></div>
           </div>
           <!--停止生成 重新生成 点赞   session code 是0时不可操作-->
-          <div class="answer-operation">
+          <div class="answer-operation gap-10px">
             <div class="opera-left">
               <span
                 v-if="
@@ -571,6 +571,14 @@
             >
               <img :src="require('@/assets/imgs/copy-icon.png')" />
             </div>
+            <svg-icon
+              v-if="
+                chatType === 'agent' && (n.finish === 1 || sessionStatus !== 0)
+              "
+              icon-class="trash"
+              class="del-icon"
+              @click="handleDelConversation(n)"
+            />
             <!--提示话术-->
             <div class="answer-operation-tip">
               {{ $t('agent.answerOperationTip') }}
@@ -1607,6 +1615,12 @@ export default {
         });
       }
     },
+    // 删除单条会话
+    async handleDelConversation(n) {
+      if (n.detailId || n.id) {
+        this.$emit('delConversationQA', n.detailId || n.id);
+      }
+    },
   },
 };
 </script>
@@ -1933,7 +1947,6 @@ export default {
         // flex: 1;
         cursor: pointer;
         display: inline-flex;
-        padding-left: 10px;
         img {
           width: 20px;
           height: 20px;
@@ -1956,7 +1969,7 @@ export default {
         }
       }
       .answer-operation-tip {
-        padding: 0 0 4px 10px;
+        padding-bottom: 4px;
         font-size: 12px;
         color: #999;
       }
@@ -2234,5 +2247,15 @@ img.failed::after {
 
 .reasoning-area {
   margin-bottom: 8px;
+}
+
+.del-icon {
+  cursor: pointer;
+  color: rgb(155, 155, 155);
+  font-size: 16px;
+}
+
+.gap-10px {
+  gap: 10px;
 }
 </style>

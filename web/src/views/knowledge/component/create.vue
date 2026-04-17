@@ -80,11 +80,7 @@
           </div>
         </div>
         <el-form-item
-          :label="
-            category === KNOWLEDGE
-              ? $t('knowledgeManage.knowledgeAvatar')
-              : $t('knowledgeManage.qaDatabase.avatar')
-          "
+          :label="categoryLabelMap['avatar'][category]"
           prop="avatar"
         >
           <upload-avatar
@@ -92,14 +88,7 @@
             :default-avatar="require('@/assets/imgs/knowledgeIcon.png')"
           />
         </el-form-item>
-        <el-form-item
-          :label="
-            category === KNOWLEDGE
-              ? $t('knowledgeManage.knowledgeName')
-              : $t('knowledgeManage.qaDatabase.name')
-          "
-          prop="name"
-        >
+        <el-form-item :label="categoryLabelMap['name'][category]" prop="name">
           <el-input
             v-model="ruleForm.name"
             :placeholder="$t('knowledgeManage.categoryNameRules')"
@@ -108,11 +97,7 @@
           ></el-input>
         </el-form-item>
         <el-form-item
-          :label="
-            category === KNOWLEDGE
-              ? $t('knowledgeManage.desc')
-              : $t('knowledgeManage.qaDatabase.desc')
-          "
+          :label="categoryLabelMap['desc'][category]"
           prop="description"
         >
           <el-input
@@ -376,6 +361,7 @@ import {
   KNOWLEDGE,
   QA,
   MULTIMODAL,
+  DB,
 } from '@/views/knowledge/constants';
 import uploadAvatar from '@/components/uploadAvatar.vue';
 
@@ -406,6 +392,7 @@ export default {
       KNOWLEDGE,
       QA,
       MULTIMODAL,
+      DB,
       dialogVisible: false,
       tabActive: INTERNAL,
       localCategory: this.category,
@@ -489,6 +476,23 @@ export default {
       },
       isEdit: false,
       knowledgeId: '',
+      categoryLabelMap: {
+        avatar: {
+          [KNOWLEDGE]: this.$t('knowledgeManage.knowledgeAvatar'),
+          [QA]: this.$t('knowledgeManage.qaDatabase.avatar'),
+          [DB]: this.$t('knowledgeManage.dbDatabase.avatar'),
+        },
+        name: {
+          [KNOWLEDGE]: this.$t('knowledgeManage.knowledgeName'),
+          [QA]: this.$t('knowledgeManage.qaDatabase.name'),
+          [DB]: this.$t('knowledgeManage.dbDatabase.name'),
+        },
+        desc: {
+          [KNOWLEDGE]: this.$t('knowledgeManage.desc'),
+          [QA]: this.$t('knowledgeManage.qaDatabase.desc'),
+          [DB]: this.$t('knowledgeManage.dbDatabase.desc'),
+        },
+      },
     };
   },
   watch: {
@@ -543,11 +547,17 @@ export default {
         } else {
           return this.$t('knowledgeManage.createKnowledge');
         }
-      } else {
+      } else if (this.category === QA) {
         if (this.isEdit) {
           return this.$t('knowledgeManage.qaDatabase.editInfo');
         } else {
           return this.$t('knowledgeManage.qaDatabase.createKnowledge');
+        }
+      } else if (this.category === DB) {
+        if (this.isEdit) {
+          return this.$t('knowledgeManage.dbDatabase.editInfo');
+        } else {
+          return this.$t('knowledgeManage.dbDatabase.createKnowledge');
         }
       }
     },

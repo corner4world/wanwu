@@ -204,6 +204,14 @@
                 </i>
                 {{ searchItem.title }}
               </span>
+              <svg-icon
+                v-if="
+                  searchItem.meta_data && searchItem.meta_data.download_link
+                "
+                icon-class="download"
+                class="download-icon"
+                @click="handleDownloadknowledgeFile(searchItem)"
+              />
             </div>
 
             <el-collapse-transition>
@@ -228,7 +236,7 @@
 
 <script>
 import { md } from '@/mixins/markdown-it';
-import { avatarSrc } from '@/utils/util';
+import { avatarSrc, fetchDownload } from '@/utils/util';
 import Knowlege from './knowlege.vue';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
 
@@ -292,6 +300,11 @@ export default {
     // 根据 ID 从全量子会话列表中查找数据
     findSubById(id) {
       return (this.allSubConversions || []).find(item => item.id === id);
+    },
+    // 下载知识库文件
+    handleDownloadknowledgeFile(knowledgeItem) {
+      const { download_link, file_name } = knowledgeItem.meta_data;
+      fetchDownload(download_link, file_name);
     },
   },
 };
@@ -566,6 +579,10 @@ export default {
     margin-bottom: 2px;
     transform: scale(0.8);
     font-style: normal;
+  }
+  .download-icon {
+    cursor: pointer;
+    color: rgb(102, 102, 102);
   }
 }
 </style>

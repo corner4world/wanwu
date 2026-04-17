@@ -90,6 +90,7 @@
             :disabled="isEdit"
             v-model="createForm.model"
             :placeholder="$t('common.input.placeholder')"
+            @blur="changeCustomModelId"
           ></el-input>
         </el-form-item>
         <el-form-item
@@ -353,8 +354,9 @@
           <el-select
             v-model="createForm.thinkingSupport"
             :placeholder="$t('common.select.placeholder')"
-            :disabled="!allowEdit"
+            :disabled="!allowEdit || linkStatus === 'test'"
             style="width: 100%"
+            @change="handleChangeThinking"
           >
             <el-option
               v-for="item in supportList"
@@ -363,6 +365,33 @@
               :value="item.key"
             ></el-option>
           </el-select>
+          <div
+            class="thinking-link-test"
+            v-if="createForm.thinkingSupport === 'support'"
+          >
+            <div class="left-test">
+              <i class="el-icon-link"></i>
+              <span>{{ $t('modelAccess.linkText') }}</span>
+            </div>
+            <div class="right-result">
+              <div v-if="linkStatus === 'test'">
+                <i class="el-icon-loading"></i>
+                {{ $t('modelAccess.testing') }}
+              </div>
+              <div v-if="linkStatus === 'success'" class="test-success">
+                <i class="el-icon-success"></i>
+                {{ $t('modelAccess.testSuccess') }}
+              </div>
+              <div v-if="linkStatus === 'error'" class="test-error">
+                <i class="el-icon-error"></i>
+                {{ $t('modelAccess.testError') }}
+                <i
+                  class="el-icon-refresh-right"
+                  @click="handleChangeThinking(support)"
+                ></i>
+              </div>
+            </div>
+          </div>
         </el-form-item>
         <!--<el-form-item :label="$t('modelAccess.table.publishTime')" prop="publishDate">
           <el-date-picker
@@ -382,7 +411,12 @@
         <el-button @click="handleClose">
           {{ $t('common.button.cancel') }}
         </el-button>
-        <el-button :loading="loading" type="primary" @click="handleSubmit">
+        <el-button
+          :disabled="['test', 'error'].includes(linkStatus)"
+          :loading="loading"
+          type="primary"
+          @click="handleSubmit"
+        >
           {{ $t('common.button.confirm') }}
         </el-button>
       </span>
@@ -390,7 +424,12 @@
   </div>
 </template>
 <script>
-import { addModel, editModel, fetchModelIdList } from '@/api/modelAccess';
+import {
+  addModel,
+  editModel,
+  fetchModelIdList,
+  testLinkThinking,
+} from '@/api/modelAccess';
 import { uploadAvatar } from '@/api/user';
 import { avatarSrc, getModelDefaultIcon } from '@/utils/util';
 import {
@@ -398,7 +437,8 @@ import {
   PROVIDER_OBJ,
   FUNC_CALLING,
   DEFAULT_CALLING,
-  DEFAULT_SUPPORT,
+  SUPPORT,
+  NO_SUPPORT,
   SUPPORT_LIST,
   TYPE_OBJ,
   LLM,
@@ -447,6 +487,7 @@ export default {
       org: ORG,
       all: ALL,
       functionCalling: FUNC_CALLING,
+      support: SUPPORT,
       supportList: SUPPORT_LIST,
       supportFileTypeObj: SUPPORT_FILE_TYPE_OBJ,
       typeObj: TYPE_OBJ,
@@ -467,6 +508,7 @@ export default {
       modelIdList: [DEFAULT_MODEL_ITEM],
       currentModelId: '',
       modelObjStr: '',
+      linkStatus: '',
       createForm: {
         model: '',
         displayName: '',
@@ -490,8 +532,8 @@ export default {
         },
         // publishDate: '',
         functionCalling: DEFAULT_CALLING,
-        visionSupport: DEFAULT_SUPPORT,
-        thinkingSupport: DEFAULT_SUPPORT,
+        visionSupport: NO_SUPPORT,
+        thinkingSupport: NO_SUPPORT,
       },
       rules: {
         model: [
@@ -597,6 +639,14 @@ export default {
       },
       immediate: false,
     },
+    'createForm.thinkingSupport': {
+      handler(val) {
+        if (val === NO_SUPPORT) {
+          this.linkStatus = '';
+        }
+      },
+      immediate: false,
+    },
     'provider.key': {
       handler(newVal) {
         if (!this.isEdit && newVal) {
@@ -634,8 +684,7 @@ export default {
     showMaxPicLimit() {
       const { modelType, visionSupport } = this.createForm || {};
       return (
-        (modelType === LLM && visionSupport === 'support') ||
-        this.isMultiModal() // this.showFileTypeLimit(IMAGE)
+        (modelType === LLM && visionSupport === SUPPORT) || this.isMultiModal() // this.showFileTypeLimit(IMAGE)
       );
     },
     showMaxVideoLimit() {
@@ -643,6 +692,25 @@ export default {
     },
     showMaxAudioLimit() {
       return this.createForm.modelType === ASR;
+    },
+    handleChangeThinking(value) {
+      if (value === SUPPORT) {
+        this.linkStatus = 'test';
+        const thinkingData = this.formatSubmitData();
+        testLinkThinking(thinkingData)
+          .then(res => {
+            if (res.code === 0) {
+              this.linkStatus = 'success';
+            } else {
+              this.linkStatus = 'error';
+            }
+          })
+          .catch(() => {
+            this.linkStatus = 'error';
+          });
+      } else {
+        this.linkStatus = '';
+      }
     },
     getModelIdList() {
       fetchModelIdList({
@@ -663,10 +731,17 @@ export default {
         ...this.createForm,
         model: modelId !== CUSTOM_MODEL_ID ? modelId : '',
         functionCalling: modelObj.functionCalling || DEFAULT_CALLING,
-        visionSupport: modelObj.visionSupport || DEFAULT_SUPPORT,
-        thinkingSupport: modelObj.thinkingSupport || DEFAULT_SUPPORT,
+        visionSupport: modelObj.visionSupport || NO_SUPPORT,
+        thinkingSupport: modelObj.thinkingSupport || NO_SUPPORT,
       };
       this.$refs.createForm.clearValidate('model');
+      // 切换列表中模型 ID 为支持深度思考时，连接状态默认成功
+      if (this.createForm.thinkingSupport === SUPPORT) {
+        this.linkStatus = 'success';
+      }
+    },
+    changeCustomModelId(value) {
+      this.createForm.thinkingSupport = NO_SUPPORT;
     },
     uploadAvatar(file, key) {
       const formData = new FormData();
@@ -701,12 +776,13 @@ export default {
           this.provider.key === OPENAI_API ? '' : defaultUrl;
       }
     },
-    openDialog(title, row) {
+    openDialog(title, row, providerType) {
       // 创建或者允许编辑时，可操作
       this.allowEdit = !row || row.allowEdit;
       this.provider = { key: title, name: PROVIDER_OBJ[title] };
+      const matchProviderType = providerType || PROVIDER_TYPE;
       const currentProvider =
-        PROVIDER_TYPE.find(item => item.key === title) || {};
+        matchProviderType.find(item => item.key === title) || {};
       this.modelType = currentProvider.children || [];
       this.createForm.modelType = this.modelType[0]
         ? this.modelType[0].key || LLM
@@ -723,6 +799,9 @@ export default {
       if (this.isEdit) {
         this.row = row || {};
         this.formatValue(row);
+        if (row.thinkingSupport === SUPPORT) {
+          this.linkStatus = 'success';
+        }
       }
     },
     clearSelectModelId() {
@@ -732,12 +811,13 @@ export default {
     },
     handleClose() {
       this.dialogVisible = false;
+      this.linkStatus = '';
       this.clearSelectModelId();
       this.formatValue({
         modelType: LLM,
         functionCalling: DEFAULT_CALLING,
-        visionSupport: DEFAULT_SUPPORT,
-        thinkingSupport: DEFAULT_SUPPORT,
+        visionSupport: NO_SUPPORT,
+        thinkingSupport: NO_SUPPORT,
         scopeType: PRIVATE,
         contextSize: 8000,
         maxTokens: 4096,
@@ -753,66 +833,70 @@ export default {
         this.$refs.createForm.clearValidate();
       }
     },
+    formatSubmitData() {
+      const {
+        apiKey,
+        appKey,
+        accessKey,
+        endpointUrl,
+        functionCalling,
+        modelType,
+        visionSupport,
+        thinkingSupport,
+        contextSize,
+        maxTokens,
+        /*maxTextLength,
+        maxVideoClipSize,
+        supportFileTypes,*/
+        maxImageSize,
+        maxAsrFileSize,
+      } = this.createForm;
+      const form = {
+        ...this.createForm,
+        provider: this.provider.key || '',
+        config: {
+          endpointUrl,
+          ...(this.provider.key !== OLLAMA &&
+            !this.showAppAndAccessKey() && { apiKey }),
+          ...(modelType === LLM && {
+            functionCalling,
+            maxTokens,
+            thinkingSupport,
+          }),
+          ...(this.showVision() && { visionSupport }),
+          ...(this.showContextSize() && { contextSize }),
+          ...(this.showMaxAudioLimit() && { maxAsrFileSize }),
+          ...(this.showMaxPicLimit() && { maxImageSize }),
+          ...(this.showAppAndAccessKey() && { appKey, accessKey }),
+          /*...(this.showMaxVideoLimit() && { maxVideoClipSize }),
+          ...(this.isMultiModal() && { supportFileTypes, maxTextLength }),*/
+        },
+      };
+      const deleteKeys = [
+        'apiKey',
+        'appKey',
+        'accessKey',
+        'endpointUrl',
+        'functionCalling',
+        'visionSupport',
+        'thinkingSupport',
+        'contextSize',
+        'maxTokens',
+        /*'maxTextLength',
+        'maxVideoClipSize',
+        'supportFileTypes',*/
+        'maxImageSize',
+        'maxAsrFileSize',
+      ];
+      deleteKeys.forEach(key => {
+        delete form[key];
+      });
+      return form;
+    },
     handleSubmit() {
       this.$refs.createForm.validate(async valid => {
         if (valid) {
-          const {
-            apiKey,
-            appKey,
-            accessKey,
-            endpointUrl,
-            functionCalling,
-            modelType,
-            visionSupport,
-            thinkingSupport,
-            contextSize,
-            maxTokens,
-            /*maxTextLength,
-            maxVideoClipSize,
-            supportFileTypes,*/
-            maxImageSize,
-            maxAsrFileSize,
-          } = this.createForm;
-          const form = {
-            ...this.createForm,
-            provider: this.provider.key || '',
-            config: {
-              endpointUrl,
-              ...(this.provider.key !== OLLAMA &&
-                !this.showAppAndAccessKey() && { apiKey }),
-              ...(modelType === LLM && {
-                functionCalling,
-                maxTokens,
-                thinkingSupport,
-              }),
-              ...(this.showVision() && { visionSupport }),
-              ...(this.showContextSize() && { contextSize }),
-              ...(this.showMaxAudioLimit() && { maxAsrFileSize }),
-              ...(this.showMaxPicLimit() && { maxImageSize }),
-              ...(this.showAppAndAccessKey() && { appKey, accessKey }),
-              /*...(this.showMaxVideoLimit() && { maxVideoClipSize }),
-              ...(this.isMultiModal() && { supportFileTypes, maxTextLength }),*/
-            },
-          };
-          const deleteKeys = [
-            'apiKey',
-            'appKey',
-            'accessKey',
-            'endpointUrl',
-            'functionCalling',
-            'visionSupport',
-            'thinkingSupport',
-            'contextSize',
-            'maxTokens',
-            /*'maxTextLength',
-            'maxVideoClipSize',
-            'supportFileTypes',*/
-            'maxImageSize',
-            'maxAsrFileSize',
-          ];
-          deleteKeys.forEach(key => {
-            delete form[key];
-          });
+          const form = this.formatSubmitData();
 
           try {
             this.loading = true;
@@ -856,6 +940,38 @@ export default {
   .embedding-tip {
     color: #f56c6c;
     line-height: 16px;
+  }
+  .thinking-link-test {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+    .left-test {
+      border-radius: 4px;
+      border: 1px solid #dcdfe6;
+      padding: 2px 10px;
+      height: 30px;
+      line-height: 24px;
+      margin-right: 10px;
+      .el-icon-link {
+        transform: rotate(45deg);
+        font-size: 16px;
+        color: #1cc78d;
+        margin-right: 3px;
+      }
+    }
+    .right-result {
+      .test-success {
+        color: #67c23a;
+      }
+      .test-error {
+        color: #f56c6c;
+        .el-icon-refresh-right {
+          cursor: pointer;
+          color: #606266;
+          margin-left: 5px;
+        }
+      }
+    }
   }
 }
 .dialog-title-wrapper {

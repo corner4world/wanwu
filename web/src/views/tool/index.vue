@@ -179,6 +179,14 @@ export default {
               text-overflow: ellipsis;
               white-space: nowrap;
             }
+            &.from_tag {
+              overflow: hidden;
+              label {
+                display: inline-block;
+                width: auto;
+                max-width: 100%;
+              }
+            }
           }
         }
 

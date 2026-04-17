@@ -208,13 +208,11 @@ export default {
       loading: false,
       dialogVisible: false,
       fileUrl: '',
-      imgConfig: ['jpeg', 'PNG', 'png', 'JPG', 'jpg', 'bmp', 'webp'],
-      audioConfig: ['mp3', 'wav'],
       tipsArr: '',
       tipsObj: {
-        'image/*': ['.jpg', '.jpeg', '.png'],
-        'audio/*': ['.wav', '.mp3'],
-        'doc/*': ['.txt', '.csv', '.xlsx', '.docx', '.html', '.pptx', '.pdf'],
+        'image/*': ['jpg', 'jpeg', 'png'],
+        'audio/*': ['wav', 'mp3'],
+        'doc/*': ['txt', 'csv', 'xlsx', 'docx', 'html', 'pptx', 'pdf'],
       },
       fileInfo: [],
       lastFileType: '',
@@ -260,7 +258,10 @@ export default {
         this.tipsArr = '';
         let tips_arr = [];
         fileTypeArr.forEach(item => {
-          tips_arr = tips_arr.concat(this.tipsObj[item]);
+          const extensions = (this.tipsObj[item] || [item]).map(
+            ext => '.' + ext,
+          );
+          tips_arr = tips_arr.concat(extensions);
         });
         this.tipsArr = tips_arr.join(', ');
       }
@@ -287,9 +288,9 @@ export default {
       let fileType = filename.split('.')[filename.split('.').length - 1];
       this.imgUrl = '';
 
-      if (
-        ['jpeg', 'PNG', 'png', 'JPG', 'jpg', 'bmp', 'webp'].includes(fileType)
-      ) {
+      const fileTypeLower = fileType.toLowerCase();
+
+      if (this.tipsObj['image/*'].includes(fileTypeLower)) {
         this.fileType = 'image/*';
         if (file.url) {
           this.imgUrl = file.url;
@@ -297,12 +298,10 @@ export default {
           this.imgUrl = URL.createObjectURL(file.raw);
         }
       }
-      if (['mp3', 'wav'].includes(fileType)) {
+      if (this.tipsObj['audio/*'].includes(fileTypeLower)) {
         this.fileType = 'audio/*';
       }
-      if (
-        ['txt', 'csv', 'xlsx', 'docx', 'html', 'pptx', 'pdf'].includes(fileType)
-      ) {
+      if ([...this.tipsObj['doc/*'], 'md'].includes(fileTypeLower)) {
         this.fileType = 'doc/*';
       }
 
@@ -363,7 +362,7 @@ export default {
         for (let i = 0; i < this.fileList.length; i++) {
           if (!this.fileList[i].uploaded) {
             // 添加标记避免重复上传
-            this.startUpload(i);
+            this.startUpload(i, this.type === 'webChat');
             this.fileList[i].uploaded = true;
           }
         }

@@ -24,6 +24,7 @@
             @queryCopy="queryCopy"
             @handleRecommendClick="handleRecommendClick"
             @sub-conversion-toggle="onSubConversionToggle"
+            @delConversationQA="handleDelConversationQA"
             :defaultUrl="editForm.avatar.path"
           />
         </div>
@@ -103,6 +104,7 @@ import {
   getConversationDraftHistory,
   delConversationDraft,
   clearConversation,
+  openurlConverDel,
 } from '@/api/agent';
 import sseMethod from '@/mixins/sseMethod';
 import { md } from '@/mixins/markdown-it';
@@ -793,10 +795,20 @@ export default {
           this.clearHistory();
         }
       } else if (this.chatType === 'chat') {
-        // 探索广场页面清空对话，需要调用后端接口清除ES数据
-        const res = await clearConversation({
-          conversationId: this.conversationId,
-        });
+        let res = null;
+        if (this.type === 'webChat') {
+          res = await openurlConverDel(
+            {
+              conversationId: this.conversationId,
+            },
+            this.editForm.assistantId,
+            this.getHeaderConfig(),
+          );
+        } else {
+          res = await clearConversation({
+            conversationId: this.conversationId,
+          });
+        }
         if (res.code === 0) {
           this.clearHistory();
         }
@@ -812,6 +824,55 @@ export default {
     // 处理子会话手动切换
     onSubConversionToggle({ id, isOpen }) {
       this.setSubConversionUserToggle(id, isOpen);
+    },
+    // 删除单条会话(sse使用detailId，历史记录使用id)
+    async handleDelConversationQA(qaId) {
+      let res = null;
+      if (this.chatType === 'test') {
+        res = await delConversationDraft({
+          assistantId: this.editForm.assistantId,
+          detailId: qaId,
+        });
+      } else if (this.chatType === 'chat') {
+        if (this.type === 'webChat') {
+          res = await openurlConverDel(
+            {
+              conversationId: this.conversationId,
+              detailId: qaId,
+            },
+            this.editForm.assistantId,
+            this.getHeaderConfig(),
+          );
+        } else {
+          res = await clearConversation({
+            conversationId: this.conversationId,
+            detailId: qaId,
+          });
+        }
+      } else {
+        throw new Error('不支持的会话类型');
+      }
+
+      if (res && res.code === 0) {
+        const sessionCom = this.$refs['session-com'];
+        if (!sessionCom) return;
+
+        const history = sessionCom.getSessionData().history || [];
+
+        if (history.length > 0) {
+          const lastItem = history[history.length - 1];
+          if (lastItem.detailId === qaId || lastItem.id === qaId) {
+            this.stopBtShow = false;
+          }
+        }
+
+        const nextHistory = history.filter(
+          item => item.detailId !== qaId && item.id !== qaId,
+        );
+
+        this.echo = !nextHistory.length;
+        sessionCom.replaceHistory(nextHistory);
+      }
     },
   },
   mounted() {

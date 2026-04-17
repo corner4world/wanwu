@@ -56,6 +56,7 @@
         :appData="listData"
         :isShowPublished="true"
         :isShowTool="true"
+        :isDev="true"
         @reloadData="getTableData"
       />
       <CreateTotalDialog ref="createTotalDialog" />

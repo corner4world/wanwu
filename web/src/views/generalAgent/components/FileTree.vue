@@ -58,7 +58,13 @@
       >
         <div class="file-item-main" @click="handleFileClick(file)">
           <i :class="getFileIconClass(file)"></i>
-          <span class="file-name">{{ file.name }}</span>
+          <el-tooltip
+            :content="file.name"
+            placement="top"
+            popper-class="file-name-tooltip"
+          >
+            <span class="file-name">{{ file.name }}</span>
+          </el-tooltip>
           <span v-if="!isDirectory(file)" class="file-size">
             {{ formatSize(file.size) }}
           </span>

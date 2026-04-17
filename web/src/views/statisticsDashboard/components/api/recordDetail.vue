@@ -13,7 +13,7 @@
       </p>
       <p>
         <label>{{ 'API Key' }}:</label>
-        <span>{{ row.apiKey }}</span>
+        <span>{{ row.apiKey ? row.apiKey.slice(0, 6) + '******' : '--' }}</span>
       </p>
       <!--<p>
         <label>{{ $t('statisticsDashboard.model') }}:</label>
@@ -89,7 +89,7 @@
       </p>
       <p>
         <label>{{ 'API Key' }}:</label>
-        <span>{{ row.apiKey }}</span>
+        <span>{{ row.apiKey ? row.apiKey.slice(0, 6) + '******' : '--' }}</span>
       </p>
       <!--<p>
         <label>{{ $t('statisticsDashboard.model') }}:</label>

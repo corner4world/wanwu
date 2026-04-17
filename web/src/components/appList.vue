@@ -35,13 +35,19 @@
               :src="avatarSrc(n.avatar.path)"
               :key="`${i}-${n.appId}-avatar`"
             ></el-image>
-            <p class="name-wrap" :title="n.name">
-              <span class="name">{{ n.name }}</span>
-              <i
-                v-if="isShowPublished && n.publishType"
-                class="el-icon-success published-icon"
-              />
-            </p>
+            <div class="info-right">
+              <p class="name-wrap" :title="n.name">
+                <span class="name">{{ n.name }}</span>
+                <i
+                  v-if="isShowPublished && n.publishType"
+                  class="el-icon-success published-icon"
+                />
+              </p>
+              <!-- 未发布的开发状态显示版本号 -->
+              <div v-if="isDev" class="info-tag">
+                {{ n.publishType ? n.version : $t('common.state.draft') }}
+              </div>
+            </div>
           </div>
           <el-tooltip
             v-if="n.desc"
@@ -240,6 +246,7 @@ export default {
       type: String,
       default: '',
     },
+    isDev: false,
   },
   watch: {
     appData: {

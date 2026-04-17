@@ -102,13 +102,42 @@
           <span>{{ res.segmentImportStatus || '-' }}</span>
         </el-descriptions-item>
         <el-descriptions-item :label="$t('knowledgeManage.parsingMethod')">
-          <span>
-            {{
-              res.docAnalyzerText && res.docAnalyzerText.length > 0
-                ? res.docAnalyzerText.join(', ')
-                : '-'
-            }}
-          </span>
+          <div class="keyword-tags">
+            <template v-if="res.docAnalyzerText?.length">
+              <template v-for="(item, index) in res.docAnalyzerText">
+                <span>
+                  {{ item.text }}
+                </span>
+                <el-tooltip
+                  v-if="item.displayName"
+                  effect="light"
+                  placement="top"
+                  popper-class="custom-tooltip"
+                  style="pointer-events: auto !important"
+                >
+                  <div slot="content" class="tooltip-content">
+                    <span>
+                      {{ item.displayName }}
+                    </span>
+                    <template v-if="item.tags?.length">
+                      <el-tag
+                        v-for="(tag, tagIndex) in item.tags"
+                        :key="'tag-' + tagIndex"
+                        size="small"
+                        color="#E6F0FF"
+                        class="keyword-tag"
+                      >
+                        {{ tag.text }}
+                      </el-tag>
+                    </template>
+                  </div>
+                  <i class="el-icon-question question-icon" />
+                </el-tooltip>
+                <span v-if="index < res.docAnalyzerText.length - 1">;</span>
+              </template>
+            </template>
+            <span v-else>-</span>
+          </div>
         </el-descriptions-item>
       </el-descriptions>
 
@@ -996,6 +1025,7 @@ export default {
 };
 </script>
 <style lang="scss">
+@import '@/style/customTooltip.scss';
 .disable-clicks * {
   pointer-events: none;
 }
@@ -1351,5 +1381,23 @@ export default {
       }
     }
   }
+}
+
+.keyword-tags {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tooltip-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tooltip-content .keyword-tag {
+  margin: 2px 4px 2px 0;
+  color: #1a56db;
 }
 </style>

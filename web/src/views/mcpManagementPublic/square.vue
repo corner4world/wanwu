@@ -51,7 +51,7 @@
                       />
                       <div class="mcp_detailBox">
                         <span class="mcp_name">{{ item.name }}</span>
-                        <span class="mcp_from">
+                        <span class="mcp_from from_tag">
                           <label>
                             {{ item.from }}
                           </label>
@@ -269,6 +269,14 @@ export default {
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
+                      }
+                      &.from_tag {
+                        overflow: hidden;
+                        label {
+                          display: inline-block;
+                          width: auto;
+                          max-width: 100%;
+                        }
                       }
                     }
                   }

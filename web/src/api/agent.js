@@ -403,6 +403,17 @@ export const OpenurlStream = (data, suffix, config = {}) => {
     isOpenUrl: true,
   });
 };
+
+//智能体openurl删除会话
+export const openurlConverDel = (data, suffix, config = {}) => {
+  return service({
+    url: `${OPENURL_API}/agent/${suffix}/conversation/clear`,
+    method: 'delete',
+    data,
+    ...config,
+    isOpenUrl: true,
+  });
+};
 //更新博查rerank模型
 export const updateRerank = data => {
   return service({
@@ -450,7 +461,7 @@ export const getConversationDraftHistory = params => {
   });
 };
 
-// 清空草稿智能会话
+// 清空/删除草稿智能会话
 export const delConversationDraft = data => {
   return service({
     url: `${USER_API}/assistant/conversation/draft`,

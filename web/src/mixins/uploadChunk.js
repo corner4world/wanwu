@@ -1,4 +1,11 @@
-import { uploadChunks, mergeChunks, clearChunks } from '@/api/chunkFile';
+import {
+  uploadChunks,
+  mergeChunks,
+  clearChunks,
+  uploadChunksOpen,
+  mergeChunksOpen,
+  clearChunksOpen,
+} from '@/api/chunkFile';
 import axios from 'axios';
 import { i18n } from '@/lang';
 export default {
@@ -23,6 +30,7 @@ export default {
       cancelSources: [], // 存储每个请求的取消令牌源
       resList: [], //记录返回成功的文件name
       uuid: '', //生成当前文件的uuid
+      isOpenUrl: false, // 是否使用 Open 系列接口
     };
   },
   created() {
@@ -36,8 +44,9 @@ export default {
     this.cancelAllRequests();
   },
   methods: {
-    async startUpload(fileIndex = 0) {
+    async startUpload(fileIndex = 0, isOpenUrl = false) {
       //开始上传切片
+      this.isOpenUrl = isOpenUrl;
       this.isStop = false;
       this.fileIndex = fileIndex;
       this.file = this.fileList[this.fileIndex];
@@ -126,7 +135,10 @@ export default {
         chunkName: hash,
         version: 0,
       };
-      clearChunks(formData).then(res => {
+      const clearRequest = this.isOpenUrl
+        ? clearChunksOpen(formData)
+        : clearChunks(formData);
+      clearRequest.then(res => {
         if (res.code === 0 && res.data.status === 1) {
           this.$message.success(i18n.t('fileChunk.fileClear'));
           this.fileList.splice(index, 1);
@@ -154,7 +166,9 @@ export default {
       formData.append('sequence', chunkData.index + 1); //拆分小文件的序号
       formData.append('version', 0);
       try {
-        const res = await uploadChunks(formData, config); // 传递 AbortSigna
+        const res = this.isOpenUrl
+          ? await uploadChunksOpen(formData, config)
+          : await uploadChunks(formData, config); // 传递 AbortSigna
         if (res.code === 0 && res.data.status === 1) {
           this.uploadedChunks++; //用来判断执行成功的切片的数量
           if (
@@ -217,7 +231,10 @@ export default {
           isExpired: false,
         };
 
-        await mergeChunks(formData).then(res => {
+        const mergeRequest = this.isOpenUrl
+          ? mergeChunksOpen(formData)
+          : mergeChunks(formData);
+        await mergeRequest.then(res => {
           if (res.code === 0) {
             this.$message.success(
               `${this.file.name}` + i18n.t('fileChunk.uploadFinish'),

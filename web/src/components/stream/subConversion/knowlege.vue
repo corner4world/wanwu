@@ -19,6 +19,14 @@
         <p class="doc-title" :title="knowledgeItem.title">
           {{ knowledgeItem.title }}
         </p>
+        <svg-icon
+          v-if="
+            knowledgeItem.meta_data && knowledgeItem.meta_data.download_link
+          "
+          icon-class="download"
+          class="download-icon"
+          @click="handleDownloadknowledgeFile(knowledgeItem)"
+        />
       </div>
       <div class="knowledge-meta">
         <span class="pill-tag kb-name" v-if="knowledgeItem.user_kb_name">
@@ -52,7 +60,7 @@
 </template>
 
 <script>
-import { formatScore } from '@/utils/util';
+import { formatScore, fetchDownload } from '@/utils/util';
 import { md } from '@/mixins/markdown-it';
 export default {
   props: {
@@ -129,6 +137,11 @@ export default {
     toggleExpand(index) {
       this.$set(this.expandedMap, index, !this.expandedMap[index]);
     },
+    // 下载知识库文件
+    handleDownloadknowledgeFile(knowledgeItem) {
+      const { download_link, file_name } = knowledgeItem.meta_data;
+      fetchDownload(download_link, file_name);
+    },
   },
 };
 </script>
@@ -181,7 +194,13 @@ export default {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        flex: 1;
+        flex: 0 1 auto;
+      }
+
+      .download-icon {
+        flex-shrink: 0;
+        cursor: pointer;
+        color: rgb(102, 102, 102);
       }
     }
 

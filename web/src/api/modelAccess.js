@@ -19,6 +19,24 @@ export const getModelDetail = params => {
   });
 };
 
+// 获取模型供应商列表
+export const fetchProviderList = params => {
+  return service({
+    url: `${USER_API}/model/import/providers`,
+    method: 'get',
+    params,
+  });
+};
+
+// 支持深度思考开关连接测试接口
+export const testLinkThinking = data => {
+  return service({
+    url: `${USER_API}/model/validate-thinking`,
+    method: 'post',
+    data,
+  });
+};
+
 // 创建
 export const addModel = data => {
   return service({

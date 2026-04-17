@@ -804,3 +804,26 @@ export function getFileIconClass(file) {
 
   return iconMap[ext] || 'el-icon-document';
 }
+
+// fetch请求下载（强制重命名）
+export async function fetchDownload(url, filename = '') {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('文件下载失败');
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error('下载出错:', error);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+  }
+}

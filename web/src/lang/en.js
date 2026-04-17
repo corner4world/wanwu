@@ -279,6 +279,9 @@ export default {
       informationSecurity: '信息安全',
       other: '其他',
     },
+    state: {
+      draft: '草稿',
+    },
   },
   docDownload: {
     title: '文档下载',
@@ -534,14 +537,23 @@ export default {
     public: '公有模型',
     private: '我的模型',
     custom: '自定义',
+    linkText: '连接测试',
+    testing: '测试中',
+    testSuccess: '连接成功',
+    testError: '连接失败',
     type: {
+      llm: '文本生成',
+      textRerank: '文本重排序',
+      textEmbedding: '文本向量化',
+      multiRerank: '多模态重排序',
+      multiEmbedding: '多模态向量化',
+      pdfParser: 'PDF文档解析',
+      asr: '短语音识别',
       yuanjing: '联通元景',
       qwen: '通义千问',
       huoshan: '火山引擎',
       infini: '无问芯穹',
       qianfan: '百度千帆',
-      pdfParser: '文档解析服务',
-      asr: '语音识别模型',
       zhipu: '智谱',
     },
     table: {
@@ -595,6 +607,7 @@ export default {
       edit: '编辑模型',
       select: '选择文件',
       title: '供应商选择',
+      providerName: '请输入供应商名称',
     },
     hint: {
       urlError: 'URL格式不正确',
@@ -1880,6 +1893,7 @@ export default {
       tools: '工具',
       mcp: 'MCP',
       workflows: '工作流',
+      skills: 'Skills',
       agents: '智能体',
       validationError: '⚠️ 不满足选择条件',
       needApiKey: '需要配置 API Key',
@@ -1900,13 +1914,14 @@ export default {
       },
     },
     error: {
-      modelListLoading: '模型列表加载中，请稍后重试',
-      createFailed: '创建对话失败：未返回对话ID',
-      createError: '创建对话失败',
-      conversationIdNotExist: '对话ID不存在，请刷新页面重试',
-      createConversationFailed: '创建对话失败，请重试',
-      chatRequestFailed: '对话请求失败',
-      sendMessageFailed: '发送消息失败: ',
+      modelListLoading: 'Model list is loading, please try again later',
+      createFailed: 'Failed to create conversation: no conversation ID returned',
+      createError: 'Failed to create conversation',
+      conversationIdNotExist: 'Conversation ID does not exist, please refresh the page and try again',
+      createConversationFailed: 'Failed to create conversation, please try again',
+      chatRequestFailed: 'Chat request failed',
+      sendMessageFailed: 'Failed to send message: ',
+      modelNotAvailable: 'The selected model is currently unavailable, please switch to another model',
     },
     activityBlock: {
       steps: 'steps',
@@ -1933,23 +1948,6 @@ export default {
       keyboardHint: 'Use ← → keys to navigate',
       element: 'Element',
       parseFailed: 'Unable to parse this PPT file',
-    },
-    modeManager: {
-      research: 'Deep Research',
-      researchPlaceholder:
-        'Select a model and tell me what you want to research to get a report',
-      analysis: 'Data Analysis',
-      analysisPlaceholder:
-        'Select a model, upload Excel or CSV files for data analysis',
-      ppt: 'Create PPT',
-      pptPlaceholder:
-        'Select a model and tell me the PPT topic or content you want to generate',
-      excel: 'Create Excel',
-      excelPlaceholder:
-        'Select a model and tell me the Excel topic or content you want to generate',
-      web: 'Create Web Page',
-      webPlaceholder:
-        'Select a model and tell me the web page topic or content you want to generate',
     },
     index: {
       newConversation: 'New Conversation',

@@ -398,8 +398,9 @@ export default {
     preInsert() {
       this.$refs.createSelectDialog.openDialog();
     },
-    showCreate(item) {
-      this.$refs.createDialog && this.$refs.createDialog.openDialog(item.key);
+    showCreate(item, providerType) {
+      this.$refs.createDialog &&
+        this.$refs.createDialog.openDialog(item.key, null, providerType);
     },
     preUpdate(row) {
       const { modelId, provider } = row || {};
