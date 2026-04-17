@@ -39,7 +39,7 @@
                     />
                     <div class="mcp_detailBox">
                       <span class="mcp_name">{{ item.name }}</span>
-                      <span class="mcp_from">
+                      <span class="mcp_from from_tag">
                         <label>
                           {{ $t('tempSquare.author') }}：{{ item.author }}
                         </label>
