@@ -24,7 +24,7 @@
 </div>
 
 
-The **Yuanjing Wanwu AI Agent Platform** is an **enterprise-oriented**, **one-stop**, and **commercial-license-friendly** **agent development platform**, dedicated to providing enterprises with secure, efficient, and compliant one-stop AI solutions. With the core philosophy of "open technology and collaborative ecosystem building," we integrate cutting-edge technologies such as large language models and business process automation to build an AI engineering platform with a complete functional system covering full-lifecycle model management, MCP, web search, **universal agent & Skills orchestration**, enterprise knowledge base construction, and complex workflow orchestration. The platform has now fully upgraded to a **"Universal Agent + Vertical Scenario Skills" dual-engine development platform**. While ensuring enterprise data security and privacy protection, it significantly lowers the application threshold of AI technology, helping enterprises accelerate their digital transformation processes to achieve cost reduction, efficiency enhancement, and business innovation.
+The **Yuanjing Wanwu AI Agent Platform** is an **enterprise-oriented**, **one-stop**, and **commercial-license-friendly** **agent development platform**, dedicated to providing enterprises with secure, efficient, and compliant one-stop AI solutions. With the core philosophy of "open technology and collaborative ecosystem building," we integrate cutting-edge technologies such as large language models and business process automation to build an AI engineering platform with a complete functional system covering full-lifecycle model management, MCP, web search, **General agent & Skills orchestration**, enterprise knowledge base construction, and complex workflow orchestration. The platform has now fully upgraded to a **"General Agent + Vertical Scenario Skills" dual-engine development platform**. While ensuring enterprise data security and privacy protection, it significantly lowers the application threshold of AI technology, helping enterprises accelerate their digital transformation processes to achieve cost reduction, efficiency enhancement, and business innovation.
 
 ------
 
@@ -91,17 +91,17 @@ The **Yuanjing Wanwu AI Agent Platform** is an **enterprise-oriented**, **one-st
 
 ▸ Integrates **multi-modal retrieval**, **cascading segmentation** and **adaptive segmentation**, significantly improves the accuracy of Q&A
 
-#### **6. Universal Agent & Skills Orchestration Framework** 
+#### **6. General Agent & Skills Orchestration Framework** 
 
-▸ **Dual-Engine Mode**: Breaks the limitation of traditional agents "having a brain but no hands," upgrading to a "Universal Agent + Vertical Scenario Skills" dual-engine platform to create an enterprise-level super agent that is both "knowledgeable" and "professional" 
+▸ **Dual-Engine Mode**: Breaks the limitation of traditional agents "having a brain but no hands," upgrading to a "General Agent + Vertical Scenario Skills" dual-engine platform to create an enterprise-level super agent that is both "knowledgeable" and "professional" 
 
-▸ **Almighty Brain**: The universal agent, as the core engine, has now demonstrated professional analyst-level multi-step reasoning and information integration capabilities in complex scenarios like deep research and data analysis 
+▸ **Almighty Brain**: The general agent, as the core engine, has now demonstrated professional analyst-level multi-step reasoning and information integration capabilities in complex scenarios like deep research and data analysis 
 
 ▸ **Minimalist Skill Building**: Supports **"one-sentence Skill creation"**. No code is required; just describe your needs in natural language to automatically generate vertical scenario skills, turning business experience into a dedicated "toolbox" 
 
 ▸ **Zero-Code Orchestration Closed Loop**: The **industry's first to support zero-code Skill calling during agent development**. Directly associate Skills in the visual interface to achieve a perfect closed loop from "intent recognition" to "skill execution" 
 
-▸ **On-Demand Toolbox**: Flexibly configure and call built-in tools, Skills, MCP, workflows, and other agents, making AI not only "think" but also "act" ▸ **Read Hundreds of Pages in Seconds**: Supports uploading various files; the universal agent can quickly parse them and conduct precise deep Q&A and interaction based on the files 
+▸ **On-Demand Toolbox**: Flexibly configure and call built-in tools, Skills, MCP, workflows, and other agents, making AI not only "think" but also "act" ▸ **Read Hundreds of Pages in Seconds**: Supports uploading various files; the general agent can quickly parse them and conduct precise deep Q&A and interaction based on the files 
 
 ▸ **Unified Workspace**: Provides a unified destination for outcomes, neatly displaying all interactively generated files with support for online preview and one-click download 
 
@@ -118,17 +118,17 @@ The **Yuanjing Wanwu AI Agent Platform** is an **enterprise-oriented**, **one-st
 |                     Function                     | Wanwu |             Dify.AI             |          Fastgpt           |             Ragflow             |    Coze open source version     |
 | :----------------------------------------------: | :---: | :-----------------------------: | :------------------------: | :-----------------------------: | :-----------------------------: |
 |                   Model import                   |   ✅   |                ✅                |     ❌(Built-in models)     |                ✅                |       ❌(Built-in models)        |
-|                    RAG engine                    |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
-|                       MCP                        |   ✅   |                ✅                |             ✅              | ✅(Need to install tools to use) |                ❌                |
 |                Direct OCR import                 |   ✅   |                ❌                |             ❌              |                ❌                |                ❌                |
-|                Search enhancement                |   ✅   | ✅(Need to install tools to use) |             ✅              | ✅(Need to install tools to use) |                ✅                |
+|                    RAG engine                    |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
+|                     GraphRAG                     |   ✅   |                ❌                |             ❌              |                ✅                |                ❌                |
+| General Agent & Skills Orchestration Framework |   ✅   |                ❌                |             ❌              |                ❌                |                ❌                |
 |                      Agent                       |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
 |                     Workflow                     |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
+|                       MCP                        |   ✅   |                ✅                |             ✅              | ✅(Need to install tools to use) |                ❌                |
+|                Search enhancement                |   ✅   | ✅(Need to install tools to use) |             ✅              | ✅(Need to install tools to use) |                ✅                |
 |                 Local deployment                 |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
-|                 license friendly                 |   ✅   |   ❌(Commercially restricted)    | ❌(Commercially restricted) |      Not fully open source      |                ✅                |
-|                     GraphRAG                     |   ✅   |                ❌                |             ❌              |                ✅                |                ❌                |
 |                   Multi-tenant                   |   ✅   |   ❌(Commercially restricted)    | ❌(Commercially restricted) |                ✅                | ✅(Users are not interconnected) |
-| Universal Agent & Skills Orchestration Framework |   ✅   |                ❌                |             ❌              |                ❌                |                ❌                |
+|                 license friendly                 |   ✅   |   ❌(Commercially restricted)    | ❌(Commercially restricted) |      Not fully open source      |                ✅                |
 > As of August 1, 2025.
 
 ------
@@ -297,7 +297,7 @@ To help you quickly get started with this project, we strongly recommend that yo
 
 | Feature                                                      | Detailed Description                                         |
 | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| [Universal Agent](https://github.com/UnicomAI/wanwu/tree/main/configs/microservice/bff-service/static/manual/8.%e9%80%9a%e7%94%a8%e6%99%ba%e8%83%bd%e4%bd%93) | The platform deeply integrates advanced capabilities such as deep research and data analysis, achieving a comprehensive leap from simple Q&A to complex business processing, creating your all-around AI digital assistant. |
+| [General Agent](https://github.com/UnicomAI/wanwu/tree/main/configs/microservice/bff-service/static/manual/8.%e9%80%9a%e7%94%a8%e6%99%ba%e8%83%bd%e4%bd%93) | The platform deeply integrates advanced capabilities such as deep research and data analysis, achieving a comprehensive leap from simple Q&A to complex business processing, creating your all-around AI digital assistant. |
 | [Model Management](https://github.com/UnicomAI/wanwu/blob/main/configs/microservice/bff-service/static/manual/1.%E6%A8%A1%E5%9E%8B%E7%AE%A1%E7%90%86.md) | Supports users to import LLM, Embedding, and Rerank models from various model providers, including Unicom Yuanjing, OpenAI-API-compatible, Ollama, Tongyi Qianwen, and Volcano Engine. [Model Import Methods - Detailed Version](https://github.com/UnicomAI/wanwu/blob/main/configs/microservice/bff-service/static/manual/%E6%A8%A1%E5%9E%8B%E5%AF%BC%E5%85%A5%E6%96%B9%E5%BC%8F-%E8%AF%A6%E7%BB%86%E7%89%88.md) |
 | [Knowledge Base](https://github.com/UnicomAI/wanwu/tree/main/configs/microservice/bff-service/static/manual/2.%E7%9F%A5%E8%AF%86%E5%BA%93) | In terms of document parsing capabilities: supports uploading of 12 file types and URL parsing; Supports private deployment and integration for document parsing via two methods: OCR and [a proprietary MinerU model (for scenarios like titles, tables, and formulas)](https://github.com/UnicomAI/DocParserServer/tree/main) ; document segmentation settings support both general segmentation and parent-child segmentation. In terms of optimization capabilities: supports metadata management 、Graph RAG and metadata filtering queries, supports adding, deleting, and modifying segmented content, supports setting keyword tags for segments to improve recall performance, supports segment enable/disable operations, and supports hit testing. In terms of retrieval capabilities: supports multiple retrieval modes including vector search, full-text search, and hybrid search. In terms of Q&A capabilities: supports automatic citation of sources and generating answers with both text and images.<br |
 | [Resource Library](https://github.com/UnicomAI/wanwu/blob/main/configs/microservice/bff-service/static/manual/3.%E5%B7%A5%E5%85%B7%E5%B9%BF%E5%9C%BA.md) | Supports importing your own MCP services or custom tools or skills for use in workflows and agents. |
