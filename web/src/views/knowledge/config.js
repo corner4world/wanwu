@@ -234,10 +234,6 @@ export const KNOWLEDGE_STATUS_OPTIONS = [
 
 export const QA_STATUS_OPTIONS = [
   {
-    label: i18n.t('knowledgeManage.all'),
-    value: ALL,
-  },
-  {
     label: i18n.t('knowledgeManage.communityReport.taskFinished'),
     value: QA_STATUS_FINISHED,
   },

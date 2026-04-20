@@ -68,8 +68,8 @@ export const qaDocImport = data => {
 export const getQaPairList = data => {
   return service({
     url: `${USER_API}/knowledge/qa/pair/list`,
-    method: 'get',
-    params: data,
+    method: 'post',
+    data,
   });
 };
 

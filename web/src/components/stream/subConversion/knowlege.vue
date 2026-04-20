@@ -164,8 +164,14 @@ export default {
     padding: 10px;
     border-radius: 6px;
 
-    img {
-      width: 80% !important;
+    img,
+    ::v-deep img {
+      align-self: center;
+      width: 100% !important;
+      max-height: 50vh;
+      min-height: 50px;
+      background: #ccc;
+      object-fit: contain;
     }
 
     .knowledge-header {
