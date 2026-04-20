@@ -8956,6 +8956,10 @@ paths:
         in: query
         name: name
         type: string
+      - description: skill类型(builtin/custom)
+        in: query
+        name: skillType
+        type: string
       produces:
       - application/json
       responses:
@@ -15284,7 +15288,6 @@ paths:
       description: 获取模型体验对话记录列表
       parameters:
       - description: 模型体验对话ID
-        format: int32
         in: query
         name: modelExperienceId
         required: true

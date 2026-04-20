@@ -778,6 +778,12 @@ const docTemplate = `{
                         "description": "skill名称",
                         "name": "name",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "skill类型(builtin/custom)",
+                        "name": "skillType",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -11475,7 +11481,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "format": "int32",
                         "description": "模型体验对话ID",
                         "name": "modelExperienceId",
                         "in": "query",
