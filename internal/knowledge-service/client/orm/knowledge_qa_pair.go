@@ -164,10 +164,10 @@ func DeleteKnowledgeQAPair(ctx context.Context, knowledgeId string, qaPairIds []
 }
 
 // GetQAPairList 查询问答库问答对列表
-func GetQAPairList(ctx context.Context, userId, orgId, knowledgeId, name string, status int, qaPairIds []string, pageSize int32, pageNum int32) ([]*model.KnowledgeQAPair, int64, error) {
+func GetQAPairList(ctx context.Context, userId, orgId, knowledgeId, name string, status []int32, qaPairIds []string, pageSize int32, pageNum int32) ([]*model.KnowledgeQAPair, int64, error) {
 	tx := sqlopt.SQLOptions(sqlopt.WithPermit(orgId, userId),
 		sqlopt.WithKnowledgeID(knowledgeId),
-		sqlopt.WithStatus(status),
+		sqlopt.WithQAStatusList(status),
 		sqlopt.LikeQuestion(name),
 		sqlopt.WithQAPairIDsNonEmpty(qaPairIds),
 		sqlopt.WithDelete(0)).
