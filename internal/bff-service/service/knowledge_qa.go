@@ -103,7 +103,7 @@ func GetKnowledgeQAPairList(ctx *gin.Context, userId, orgId string, r *request.K
 	resp, err := knowledgeBaseQA.GetQAPairList(ctx.Request.Context(), &knowledgebase_qa_service.GetQAPairListReq{
 		KnowledgeId: r.KnowledgeId,
 		Name:        strings.TrimSpace(r.Name),
-		Status:      int32(r.Status),
+		Status:      r.Status,
 		PageSize:    int32(r.PageSize),
 		PageNum:     int32(r.PageNo),
 		UserId:      userId,

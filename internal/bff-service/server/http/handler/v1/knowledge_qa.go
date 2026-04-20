@@ -101,11 +101,11 @@ func DeleteKnowledgeQAPair(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			data	query		request.KnowledgeQAPairListReq	true	"问答对列表查询请求参数"
 //	@Success		200		{object}	response.Response{data=response.KnowledgeQAPairPageResult}
-//	@Router			/knowledge/qa/pair/list [get]
+//	@Router			/knowledge/qa/pair/list [post]
 func GetKnowledgeQAPairList(ctx *gin.Context) {
 	userId, orgId := getUserID(ctx), getOrgID(ctx)
 	var req request.KnowledgeQAPairListReq
-	if !gin_util.BindQuery(ctx, &req) {
+	if !gin_util.Bind(ctx, &req) {
 		return
 	}
 	resp, err := service.GetKnowledgeQAPairList(ctx, userId, orgId, &req)

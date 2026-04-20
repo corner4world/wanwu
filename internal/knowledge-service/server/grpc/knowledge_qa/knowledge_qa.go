@@ -116,7 +116,7 @@ func (s *Service) GetQAPairList(ctx context.Context, req *knowledgebase_qa_servi
 		}
 	}
 	list, total, err := orm.GetQAPairList(ctx, "", "", req.KnowledgeId,
-		req.Name, int(req.Status), qaPairIdList, req.PageSize, req.PageNum)
+		req.Name, req.Status, qaPairIdList, req.PageSize, req.PageNum)
 	if err != nil {
 		log.Errorf("select QA pairs failed err: (%v) req:(%v)", err, req)
 		return nil, util.ErrCode(errs.Code_KnowledgeQAPairsSelectFailed)

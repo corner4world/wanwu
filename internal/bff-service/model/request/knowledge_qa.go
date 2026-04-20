@@ -1,10 +1,10 @@
 package request
 
 type KnowledgeQAPairListReq struct {
-	KnowledgeId string `json:"knowledgeId" form:"knowledgeId" validate:"required"`
-	Name        string `json:"name" form:"name"`
-	Status      int    `json:"status" form:"status"`
-	MetaValue   string `json:"metaValue" form:"metaValue"`
+	KnowledgeId string  `json:"knowledgeId" form:"knowledgeId" validate:"required"`
+	Name        string  `json:"name" form:"name"`
+	Status      []int32 `json:"status" form:"status"` // -1：全部 0:待处理 1:导入中 2:导入成功 3:导入失败
+	MetaValue   string  `json:"metaValue" form:"metaValue"`
 	PageSearch
 	CommonCheck
 }
