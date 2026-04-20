@@ -154,46 +154,50 @@ func CheckCustomSkill(ctx *gin.Context, userId, orgId, zipUrl string) (*response
 	}, nil
 }
 
-func GetSkillSelect(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
+func GetSkillSelect(ctx *gin.Context, userId, orgId, name, skillType string) (*response.ListResult, error) {
 	var allSkills []*response.SkillInfo
 
 	// 内建 skills
-	for _, skillsCfg := range config.Cfg().AgentSkills {
-		if name != "" && !strings.Contains(skillsCfg.Name, name) {
-			continue
+	if skillType == "" || skillType == constant.SkillTypeBuiltIn {
+		for _, skillsCfg := range config.Cfg().AgentSkills {
+			if name != "" && !strings.Contains(skillsCfg.Name, name) {
+				continue
+			}
+			iconUrl := config.Cfg().DefaultIcon.SkillIcon
+			if skillsCfg.Avatar != "" {
+				iconUrl = skillsCfg.Avatar
+			}
+			allSkills = append(allSkills, &response.SkillInfo{
+				SkillId:   skillsCfg.SkillId,
+				SkillName: skillsCfg.Name,
+				SkillType: constant.SkillTypeBuiltIn,
+				Desc:      skillsCfg.Desc,
+				Author:    skillsCfg.Author,
+				Avatar:    request.Avatar{Path: iconUrl},
+			})
 		}
-		iconUrl := config.Cfg().DefaultIcon.SkillIcon
-		if skillsCfg.Avatar != "" {
-			iconUrl = skillsCfg.Avatar
-		}
-		allSkills = append(allSkills, &response.SkillInfo{
-			SkillId:   skillsCfg.SkillId,
-			SkillName: skillsCfg.Name,
-			SkillType: constant.SkillTypeBuiltIn,
-			Desc:      skillsCfg.Desc,
-			Author:    skillsCfg.Author,
-			Avatar:    request.Avatar{Path: iconUrl},
-		})
 	}
 
 	// 自定义 skills
-	customResp, err := mcp.CustomSkillGetList(ctx.Request.Context(), &mcp_service.CustomSkillGetListReq{
-		Name:     name,
-		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, skill := range customResp.List {
-		allSkills = append(allSkills, &response.SkillInfo{
-			SkillId:   skill.SkillId,
-			SkillName: skill.Name,
-			SkillType: constant.SkillTypeCustom,
-			Desc:      skill.Desc,
-			Author:    skill.Author,
-			Avatar:    cacheSkillAvatar(ctx, skill.Avatar),
+	if skillType == "" || skillType == constant.SkillTypeCustom {
+		customResp, err := mcp.CustomSkillGetList(ctx.Request.Context(), &mcp_service.CustomSkillGetListReq{
+			Name:     name,
+			Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 		})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, skill := range customResp.List {
+			allSkills = append(allSkills, &response.SkillInfo{
+				SkillId:   skill.SkillId,
+				SkillName: skill.Name,
+				SkillType: constant.SkillTypeCustom,
+				Desc:      skill.Desc,
+				Author:    skill.Author,
+				Avatar:    cacheSkillAvatar(ctx, skill.Avatar),
+			})
+		}
 	}
 
 	return &response.ListResult{

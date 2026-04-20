@@ -169,10 +169,11 @@ func CheckCustomSkill(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			name	query		string	false	"skill名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SkillInfo}}
+//	@Param			name		query		string	false	"skill名称"
+//	@Param			skillType	query		string	false	"skill类型(builtin/custom)"
+//	@Success		200			{object}	response.Response{data=response.ListResult{list=[]response.SkillInfo}}
 //	@Router			/agent/skill/select [get]
 func GetSkillSelect(ctx *gin.Context) {
-	resp, err := service.GetSkillSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
+	resp, err := service.GetSkillSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"), ctx.Query("skillType"))
 	gin_util.Response(ctx, resp, err)
 }
