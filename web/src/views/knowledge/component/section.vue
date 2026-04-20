@@ -1401,3 +1401,14 @@ export default {
   color: #1a56db;
 }
 </style>
+
+<style lang="scss" scoped>
+.tagList .tagList-item {
+  padding: 2px 4px;
+  background: rgb(225, 225, 225);
+  border-radius: 10px;
+  &:hover {
+    background: $tag_bg;
+  }
+}
+</style>

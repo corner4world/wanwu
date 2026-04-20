@@ -276,6 +276,7 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    min-height: 27px;
 
     .del-icon {
       color: $color;
