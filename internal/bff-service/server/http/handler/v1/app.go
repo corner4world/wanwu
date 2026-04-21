@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
+	"github.com/UnicomAI/wanwu/pkg/constant"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/gin-gonic/gin"
 )
@@ -45,6 +46,46 @@ func GetAppSpaceAppList(ctx *gin.Context) {
 		return
 	}
 	resp, err := service.GetAppSpaceAppList(ctx, getUserID(ctx), getOrgID(ctx), req.Name, req.AppType)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetRagAppSpaceAppList
+//
+//	@Tags			rag
+//	@Summary		获取文本问答应用列表
+//	@Description	获取文本问答应用列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	query		string	false	"应用名(模糊查询)"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AppBriefInfo}}
+//	@Router			/appspace/rag/list [get]
+func GetRagAppSpaceAppList(ctx *gin.Context) {
+	var req request.GetAppSpaceAppListRequest
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.GetAppSpaceAppList(ctx, getUserID(ctx), getOrgID(ctx), req.Name, constant.AppTypeRag)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetAgentAppSpaceAppList
+//
+//	@Tags			assistant
+//	@Summary		获取智能体应用列表
+//	@Description	获取智能体应用列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	query		string	false	"应用名(模糊查询)"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AppBriefInfo}}
+//	@Router			/appspace/assistant/list [get]
+func GetAgentAppSpaceAppList(ctx *gin.Context) {
+	var req request.GetAppSpaceAppListRequest
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.GetAppSpaceAppList(ctx, getUserID(ctx), getOrgID(ctx), req.Name, constant.AppTypeAgent)
 	gin_util.Response(ctx, resp, err)
 }
 

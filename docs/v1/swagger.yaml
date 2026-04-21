@@ -9605,6 +9605,40 @@ paths:
       summary: 回滚应用到指定版本
       tags:
       - common
+  /appspace/assistant/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取智能体应用列表
+      parameters:
+      - description: 应用名(模糊查询)
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.AppBriefInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取智能体应用列表
+      tags:
+      - assistant
   /appspace/chatflow:
     post:
       consumes:
@@ -9969,6 +10003,40 @@ paths:
       security:
       - JWT: []
       summary: 获取草稿RAG信息
+      tags:
+      - rag
+  /appspace/rag/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取文本问答应用列表
+      parameters:
+      - description: 应用名(模糊查询)
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.AppBriefInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取文本问答应用列表
       tags:
       - rag
   /appspace/workflow:
@@ -13947,7 +14015,7 @@ paths:
       tags:
       - knowledge.qa
   /knowledge/qa/pair/list:
-    get:
+    post:
       consumes:
       - application/json
       description: 获取问答对列表
@@ -13969,9 +14037,13 @@ paths:
         name: pageSize
         required: true
         type: integer
-      - in: query
+      - collectionFormat: csv
+        description: -1：全部 0:待处理 1:导入中 2:导入成功 3:导入失败
+        in: query
+        items:
+          type: integer
         name: status
-        type: integer
+        type: array
       produces:
       - application/json
       responses:
@@ -15288,6 +15360,7 @@ paths:
       description: 获取模型体验对话记录列表
       parameters:
       - description: 模型体验对话ID
+        format: int32
         in: query
         name: modelExperienceId
         required: true
