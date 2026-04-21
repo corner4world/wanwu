@@ -242,7 +242,12 @@
 </template>
 <script>
 import { getRerankList, getMultiRerankList } from '@/api/modelAccess';
-import { QA, MULTIMODAL, MIX_MULTIMODAL } from '@/views/knowledge/constants';
+import {
+  KNOWLEDGE,
+  QA,
+  MULTIMODAL,
+  MIX_MULTIMODAL,
+} from '@/views/knowledge/constants';
 import ModelSelect from '@/components/modelSelect.vue';
 export default {
   components: { ModelSelect },
@@ -434,7 +439,7 @@ export default {
         ...item,
         showContent: item.value === n.value ? !item.showContent : false,
       }));
-      if (this.category === QA) {
+      if (this.category === KNOWLEDGE) {
         this.formInline.knowledgeMatchParams.priorityMatch =
           n.value !== 'mix' ? 0 : 1;
       } else {
