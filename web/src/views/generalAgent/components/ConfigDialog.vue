@@ -13,8 +13,7 @@
       </div>
 
       <div class="dialog-body">
-        <div class="drawer-section">
-          <!-- 切换按钮组 -->
+        <div class="top-area">
           <div class="tab-buttons">
             <div
               v-if="hasTools"
@@ -56,114 +55,123 @@
               {{ $t('generalAgent.config.agents') }}
             </div>
           </div>
-
-          <div class="config-content">
-            <!-- 工具列表 - 按分类展示 -->
-            <div v-if="activeTab === 'tools'" class="tool-categories">
-              <div
-                v-for="(category, categoryIndex) in toolList"
-                :key="category.category"
-                class="tool-category"
-                :class="{
-                  'validation-error': validationErrors.has(categoryIndex),
-                }"
-              >
-                <div class="category-header">
-                  <span class="category-name">{{ category.category }}</span>
-                  <span
-                    v-if="validationErrors.has(categoryIndex)"
-                    class="error-tip"
-                  >
-                    {{ $t('generalAgent.config.validationError') }}
-                  </span>
-                  <el-tag
-                    size="mini"
-                    :type="getConditionType(category.condition)"
-                  >
-                    {{ getConditionLabel(category.condition) }}
-                  </el-tag>
-                </div>
-                <div class="tool-list">
-                  <div
-                    v-for="tool in category.toolList"
-                    :key="tool.toolId"
-                    :class="[
-                      'tool-item',
-                      {
-                        selected: isItemSelected(tool.toolId),
-                      },
-                    ]"
-                    @click="handleToggleItem(tool)"
-                  >
-                    <div class="tool-avatar">
-                      <img
-                        v-if="tool.avatar?.path"
-                        :src="avatarSrc(tool.avatar.path)"
-                      />
-                      <i v-else class="el-icon-setting"></i>
-                    </div>
-                    <div class="tool-info">
-                      <div class="tool-name">{{ tool.toolName }}</div>
-                      <div class="tool-desc">{{ tool.desc }}</div>
-                      <!-- API Key 提示 -->
-                      <div
-                        v-if="
-                          tool.needApiKeyInput &&
-                          (!tool.apiKey || tool.apiKey === '')
-                        "
-                        class="api-key-tip"
-                      >
-                        <i class="el-icon-warning"></i>
-                        {{ $t('generalAgent.config.needApiKey') }}
-                      </div>
-                    </div>
-                    <el-checkbox
-                      :value="isItemSelected(tool.toolId)"
-                      @click.native.stop
-                      @change="handleToggleItem(tool)"
+          <!-- 搜索框 - 仅在非tools tab显示 -->
+          <div v-if="activeTab !== 'tools'" class="search-box">
+            <el-input
+              v-model="searchKeyword"
+              :placeholder="$t('common.input.searchPlaceholder')"
+              prefix-icon="el-icon-search"
+              clearable
+              size="small"
+            />
+          </div>
+        </div>
+        <div class="config-content">
+          <!-- 工具列表 - 按分类展示 -->
+          <div v-if="activeTab === 'tools'" class="tool-categories">
+            <div
+              v-for="(category, categoryIndex) in toolList"
+              :key="category.category"
+              class="tool-category"
+              :class="{
+                'validation-error': validationErrors.has(categoryIndex),
+              }"
+            >
+              <div class="category-header">
+                <span class="category-name">{{ category.category }}</span>
+                <span
+                  v-if="validationErrors.has(categoryIndex)"
+                  class="error-tip"
+                >
+                  {{ $t('generalAgent.config.validationError') }}
+                </span>
+                <el-tag
+                  size="mini"
+                  :type="getConditionType(category.condition)"
+                >
+                  {{ getConditionLabel(category.condition) }}
+                </el-tag>
+              </div>
+              <div class="tool-list">
+                <div
+                  v-for="tool in category.toolList"
+                  :key="tool.toolId"
+                  :class="[
+                    'tool-item',
+                    {
+                      selected: isItemSelected(tool.toolId),
+                    },
+                  ]"
+                  @click="handleToggleItem(tool)"
+                >
+                  <div class="tool-avatar">
+                    <img
+                      v-if="tool.avatar?.path"
+                      :src="avatarSrc(tool.avatar.path)"
                     />
+                    <i v-else class="el-icon-setting"></i>
                   </div>
+                  <div class="tool-info">
+                    <div class="tool-name">{{ tool.toolName }}</div>
+                    <div class="tool-desc">{{ tool.desc }}</div>
+                    <!-- API Key 提示 -->
+                    <div
+                      v-if="
+                        tool.needApiKeyInput &&
+                        (!tool.apiKey || tool.apiKey === '')
+                      "
+                      class="api-key-tip"
+                    >
+                      <i class="el-icon-warning"></i>
+                      {{ $t('generalAgent.config.needApiKey') }}
+                    </div>
+                  </div>
+                  <el-checkbox
+                    :value="isItemSelected(tool.toolId)"
+                    @click.native.stop
+                    @change="handleToggleItem(tool)"
+                  />
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- MCP/工作流/智能体列表 - 统一渲染 -->
+          <!-- MCP/工作流/智能体列表 - 统一渲染 -->
+          <div
+            v-else-if="activeTab !== 'tools'"
+            :class="currentListConfig.className"
+          >
             <div
-              v-else-if="activeTab !== 'tools'"
-              :class="currentListConfig.className"
+              v-for="item in filteredList"
+              :key="item[currentListConfig.idField]"
+              :class="[
+                'tool-item',
+                {
+                  selected: isItemSelected(item[currentListConfig.idField]),
+                },
+              ]"
+              @click="handleToggleItem(item)"
             >
-              <div
-                v-for="item in currentListConfig.list"
-                :key="item[currentListConfig.idField]"
-                :class="[
-                  'tool-item',
-                  {
-                    selected: isItemSelected(item[currentListConfig.idField]),
-                  },
-                ]"
-                @click="handleToggleItem(item)"
-              >
-                <div class="tool-avatar">
-                  <img
-                    v-if="item.avatar?.path"
-                    :src="avatarSrc(item.avatar.path)"
-                  />
-                  <i v-else :class="currentListConfig.iconClass"></i>
-                </div>
-                <div class="tool-info">
-                  <div class="tool-name">
-                    {{ item[currentListConfig.nameField] }}
-                  </div>
-                  <div class="tool-desc">
-                    {{ item[currentListConfig.descField] }}
-                  </div>
-                </div>
-                <el-checkbox
-                  :value="isItemSelected(item[currentListConfig.idField])"
-                  @click.native.stop
-                  @change="handleToggleItem(item)"
+              <div class="tool-avatar">
+                <img
+                  v-if="item.avatar?.path"
+                  :src="avatarSrc(item.avatar.path)"
                 />
+                <i v-else :class="currentListConfig.iconClass"></i>
               </div>
+              <div class="tool-info">
+                <div class="tool-name">
+                  {{ item[currentListConfig.nameField] }}
+                </div>
+                <div class="tool-desc">
+                  {{ item[currentListConfig.descField] }}
+                </div>
+              </div>
+              <el-checkbox
+                :value="isItemSelected(item[currentListConfig.idField])"
+                @click.native.stop
+                @change="handleToggleItem(item)"
+              />
             </div>
           </div>
         </div>
@@ -257,6 +265,8 @@ export default {
       currentTool: null,
       apiKeyValue: '',
       submitting: false,
+      // 搜索关键词
+      searchKeyword: '',
     };
   },
   mounted() {
@@ -328,6 +338,18 @@ export default {
         },
       };
       return configs[this.activeTab] || {};
+    },
+    // 过滤后的列表（支持搜索）
+    filteredList() {
+      if (!this.searchKeyword) {
+        return this.currentListConfig.list || [];
+      }
+      const keyword = this.searchKeyword.toLowerCase();
+      const nameField = this.currentListConfig.nameField;
+      return (this.currentListConfig.list || []).filter(item => {
+        const name = item[nameField]?.toLowerCase() || '';
+        return name.includes(keyword);
+      });
     },
   },
   methods: {
@@ -787,63 +809,67 @@ export default {
   }
 
   .dialog-body {
-    overflow-y: auto;
-    padding: 16px 20px;
+    padding: 16px 20px 0 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .top-area {
+      background: #fff;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      .tab-buttons {
+        display: flex;
+        gap: 12px;
+
+        .tab-btn {
+          padding: 8px 20px;
+          border-radius: 8px;
+          font-size: 14px;
+          color: #666;
+          background: #fff;
+          border: 1px solid #e4e7ed;
+          cursor: pointer;
+          transition: all 0.2s;
+          user-select: none;
+
+          &:hover {
+            border-color: #409eff;
+            color: #409eff;
+          }
+
+          &.active {
+            background: #409eff;
+            border-color: #409eff;
+            color: #fff;
+            font-weight: 500;
+          }
+        }
+      }
+
+      .search-box {
+        margin-left: auto;
+
+        .el-input {
+          max-width: 300px;
+        }
+      }
+    }
+    .config-content {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
   }
 
   .dialog-footer {
+    padding-top: 16px;
     text-align: right;
-    padding: 16px 20px;
     border-top: 1px solid #e5e5e5;
-  }
-
-  .drawer-section {
-    margin-bottom: 24px;
-
-    .tab-buttons {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-
-      .tab-btn {
-        padding: 8px 20px;
-        border-radius: 8px;
-        font-size: 14px;
-        color: #666;
-        background: #fff;
-        border: 1px solid #e4e7ed;
-        cursor: pointer;
-        transition: all 0.2s;
-        user-select: none;
-
-        &:hover {
-          border-color: #409eff;
-          color: #409eff;
-        }
-
-        &.active {
-          background: #409eff;
-          border-color: #409eff;
-          color: #fff;
-          font-weight: 500;
-        }
-      }
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      font-size: 14px;
-      font-weight: 500;
-      color: #1a1a1a;
-
-      i {
-        font-size: 16px;
-        color: #10a37f;
-      }
-    }
   }
 
   .tool-categories {
