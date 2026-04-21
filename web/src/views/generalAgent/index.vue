@@ -206,13 +206,11 @@
 
             <!-- 输入框 -->
             <div class="input-wrapper">
-              <el-input
+              <MentionInput
+                ref="mentionInput"
                 v-model="inputMessage"
-                type="textarea"
-                :rows="1"
-                :autosize="{ minRows: 1, maxRows: 6 }"
                 :placeholder="inputPlaceholder"
-                @keydown.enter.native="handleKeyDown"
+                @keydown-enter="handleKeyDown"
                 :disabled="isStreaming"
               />
             </div>
@@ -359,6 +357,7 @@ import MessageItem from './components/MessageItem.vue';
 import WorkspacePanel from './components/WorkspacePanel.vue';
 import FilePreviewDrawer from './components/FilePreviewDrawer.vue';
 import ConfigDialog from './components/ConfigDialog.vue';
+import MentionInput from './components/MentionInput.vue';
 import ModelSelect from '@/components/modelSelect.vue';
 import StreamUploadField from '@/components/stream/streamUploadField.vue';
 import {
@@ -394,6 +393,7 @@ export default {
     WorkspacePanel,
     FilePreviewDrawer,
     ConfigDialog: ConfigDialog,
+    MentionInput,
     ModelSelect,
     StreamUploadField,
   },
@@ -864,6 +864,7 @@ export default {
 
       this.inputMessage = '';
       this.clearFiles();
+      this.$refs.mentionInput?.clear();
       this.$nextTick(() => this.scrollToBottom());
 
       await this.startStreaming(userMessage);
