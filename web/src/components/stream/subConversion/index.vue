@@ -58,6 +58,7 @@
         "
         :conversion="conversion"
         :parents-index="parentsIndex"
+        @handleDocLink="handleDocLink"
       />
       <!-- 分段/嵌套内容序列化渲染渲染 -->
       <template
@@ -170,7 +171,7 @@
             v-if="(conversion.citationsTagList || []).includes(searchIndex + 1)"
             class="search-list-item"
           >
-            <div class="serach-list-item">
+            <div class="search-list-item-content">
               <span @click="collapseClick(searchItem, searchIndex)">
                 <i
                   :class="[
@@ -181,37 +182,40 @@
                 ></i>
                 {{ $t('agent.source') }}：
               </span>
-
-              <a
-                v-if="searchItem.link"
-                :href="searchItem.link"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="link"
-              >
-                {{ searchItem.link }}
-              </a>
-
-              <span v-if="searchItem.title">
-                <i
-                  class="subTag"
-                  data-citation-type="sub"
-                  :data-pid="conversion.id"
-                  :data-parents-index="parentsIndex"
-                  :data-collapse="searchItem.collapse ? 'true' : 'false'"
+              <div class="flex items-center gap-2px">
+                <a
+                  v-if="searchItem.link"
+                  :href="searchItem.link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="link"
                 >
-                  {{ searchIndex + 1 }}
-                </i>
-                {{ searchItem.title }}
-              </span>
-              <svg-icon
-                v-if="
-                  searchItem.meta_data && searchItem.meta_data.download_link
-                "
-                icon-class="download"
-                class="download-icon"
-                @click="handleDownloadknowledgeFile(searchItem)"
-              />
+                  {{ searchItem.link }}
+                </a>
+
+                <span v-if="searchItem.title" class="flex gap-2px items-center">
+                  <i
+                    class="subTag"
+                    data-citation-type="sub"
+                    :data-pid="conversion.id"
+                    :data-parents-index="parentsIndex"
+                    :data-collapse="searchItem.collapse ? 'true' : 'false'"
+                  >
+                    {{ searchIndex + 1 }}
+                  </i>
+                  <span class="doc-title" @click="handleDocLink(searchItem)">
+                    {{ searchItem.title }}
+                  </span>
+                </span>
+                <svg-icon
+                  v-if="
+                    searchItem.meta_data && searchItem.meta_data.download_link
+                  "
+                  icon-class="download"
+                  class="download-icon"
+                  @click="handleDownloadknowledgeFile(searchItem)"
+                />
+              </div>
             </div>
 
             <el-collapse-transition>
@@ -239,6 +243,7 @@ import { md } from '@/mixins/markdown-it';
 import { avatarSrc, fetchDownload } from '@/utils/util';
 import Knowlege from './knowlege.vue';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
+import { getDocByName } from '@/api/knowledge';
 
 export default {
   name: 'SubConversion',
@@ -305,6 +310,32 @@ export default {
     handleDownloadknowledgeFile(knowledgeItem) {
       const { download_link, file_name } = knowledgeItem.meta_data;
       fetchDownload(download_link, file_name);
+    },
+    // 根据知识库文档链接获取文档信息并跳转
+    async handleDocLink(knowledgeItem) {
+      const { kb_name, meta_data } = knowledgeItem;
+      if (kb_name && meta_data && meta_data.file_name) {
+        try {
+          const res = await getDocByName({
+            knowledgeName: kb_name,
+            docName: meta_data.file_name,
+          });
+          if (res.code === 0) {
+            const docInfo = res.data;
+            const targetRoute = this.$router.resolve({
+              path: '/knowledge/section',
+              query: docInfo,
+            });
+            window.open(targetRoute.href, '_blank');
+          } else {
+            this.$message.error(res.msg);
+          }
+        } catch (error) {
+          throw error;
+        }
+      } else {
+        this.$message.warning(this.$t('knowledgeManage.searchInfo.noParams'));
+      }
     },
   },
 };
@@ -550,9 +581,16 @@ export default {
     .snippet {
       padding: 5px 14px;
     }
+    .doc-title {
+      &:hover {
+        color: $color;
+      }
+    }
   }
 }
-.serach-list-item {
+.search-list-item-content {
+  display: flex;
+  align-items: center;
   .link:hover {
     color: $color !important;
   }
@@ -584,5 +622,8 @@ export default {
     cursor: pointer;
     color: rgb(102, 102, 102);
   }
+}
+.gap-2px {
+  gap: 2px;
 }
 </style>

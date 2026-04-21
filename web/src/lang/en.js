@@ -1238,6 +1238,9 @@ export default {
       finished: '导出成功',
       failed: '导出失败',
     },
+    searchInfo: {
+      noParams: '没有可用参数',
+    },
   },
   knowledgeSelect: {
     title: '选择知识库',
@@ -1915,13 +1918,17 @@ export default {
     },
     error: {
       modelListLoading: 'Model list is loading, please try again later',
-      createFailed: 'Failed to create conversation: no conversation ID returned',
+      createFailed:
+        'Failed to create conversation: no conversation ID returned',
       createError: 'Failed to create conversation',
-      conversationIdNotExist: 'Conversation ID does not exist, please refresh the page and try again',
-      createConversationFailed: 'Failed to create conversation, please try again',
+      conversationIdNotExist:
+        'Conversation ID does not exist, please refresh the page and try again',
+      createConversationFailed:
+        'Failed to create conversation, please try again',
       chatRequestFailed: 'Chat request failed',
       sendMessageFailed: 'Failed to send message: ',
-      modelNotAvailable: 'The selected model is currently unavailable, please switch to another model',
+      modelNotAvailable:
+        'The selected model is currently unavailable, please switch to another model',
     },
     activityBlock: {
       steps: 'steps',

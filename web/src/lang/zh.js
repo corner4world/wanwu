@@ -1365,6 +1365,9 @@ export default {
       },
       warning: '请先选择组织',
     },
+    searchInfo: {
+      noParams: '没有可用参数',
+    },
   },
   knowledgeSelect: {
     title: '选择知识库',

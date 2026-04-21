@@ -501,3 +501,12 @@ export const getExternalList = data => {
     params: data,
   });
 };
+
+// 根据知识库名称和文档名称获取文档信息
+export const getDocByName = data => {
+  return service({
+    url: `${USER_API}/knowledge/doc/by/name`,
+    method: 'get',
+    params: data,
+  });
+};

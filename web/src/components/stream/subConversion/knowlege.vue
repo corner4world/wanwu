@@ -16,7 +16,11 @@
         >
           {{ knowledgeIndex + 1 }}
         </span>
-        <p class="doc-title" :title="knowledgeItem.title">
+        <p
+          class="doc-title"
+          :title="knowledgeItem.title"
+          @click="$emit('handleDocLink', knowledgeItem)"
+        >
           {{ knowledgeItem.title }}
         </p>
         <svg-icon
@@ -62,6 +66,7 @@
 <script>
 import { formatScore, fetchDownload } from '@/utils/util';
 import { md } from '@/mixins/markdown-it';
+
 export default {
   props: {
     /**
@@ -201,6 +206,10 @@ export default {
         overflow: hidden;
         text-overflow: ellipsis;
         flex: 0 1 auto;
+        cursor: pointer;
+        &:hover {
+          color: $color;
+        }
       }
 
       .download-icon {
