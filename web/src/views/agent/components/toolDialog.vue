@@ -66,6 +66,13 @@
                       {{ tagMap[item.appType] }}
                     </span>
                   </div>
+                  <div
+                    v-if="type === AGENT_TOOL_TYPE.SKILL && item.author"
+                    class="tool-author"
+                  >
+                    <el-divider direction="vertical"></el-divider>
+                    <span>{{ item.author }}</span>
+                  </div>
                 </div>
                 <div>
                   <el-button
