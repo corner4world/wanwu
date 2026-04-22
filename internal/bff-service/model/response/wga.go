@@ -119,3 +119,17 @@ type GeneralAgentCopilotRuntimeInfoResp struct {
 	AudioFileTranscriptionEnabled bool                                           `json:"audioFileTranscriptionEnabled"`
 	A2UIEnabled                   bool                                           `json:"a2uiEnabled,omitempty"`
 }
+
+type GeneralAgentResourceSelectItem struct {
+	ID     string         `json:"id"`     // ID
+	Name   string         `json:"name"`   // 名称
+	Desc   string         `json:"desc"`   // 描述
+	Avatar request.Avatar `json:"avatar"` // 头像
+	Type   string         `json:"type"`   // 类型
+	Author string         `json:"author"` // 作者
+}
+
+type GeneralAgentResourceSelectList struct {
+	ListType string                            `json:"listType"` // 列表类型: mcp, workflow, skill, assistant
+	List     []*GeneralAgentResourceSelectItem `json:"list"`     // 列表项
+}

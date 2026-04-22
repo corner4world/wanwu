@@ -17,6 +17,7 @@ func registerWGA(apiV1 *gin.RouterGroup) {
 	mid.Sub("wga").Reg(apiV1, "/general/agent/mcp/select", http.MethodGet, v1.GetGeneralAgentMCPSelect, "通用智能体MCP下拉接口列表")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/workflow/select", http.MethodGet, v1.GetGeneralAgentWorkflowSelect, "通用智能体Workflow下拉接口列表")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/skill/select", http.MethodGet, v1.GetGeneralAgentSkillSelect, "通用智能体skill下拉接口列表")
+	mid.Sub("wga").Reg(apiV1, "/general/agent/resource/select", http.MethodGet, v1.GetGeneralAgentResourceSelect, "通用智能体资源选择列表")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/config", http.MethodPut, v1.UpdateGeneralAgentConfig, "修改通用智能体配置")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/config", http.MethodGet, v1.GetGeneralAgentConfig, "通用智能体配置")
 	mid.Sub("wga").Reg(apiV1, "/general/agent/sub/list", http.MethodGet, v1.GetGeneralAgentSubList, "通用智能体子智能体列表")

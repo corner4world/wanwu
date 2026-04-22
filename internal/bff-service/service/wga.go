@@ -7,7 +7,9 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
@@ -33,6 +35,8 @@ import (
 	wga_option "github.com/UnicomAI/wanwu/pkg/wga/wga-option"
 	"github.com/gin-gonic/gin"
 )
+
+var resourceNameRegex = regexp.MustCompile(`@([\p{Han}a-zA-Z0-9_-]+)`)
 
 func GetGeneralAgentToolSelect(ctx *gin.Context, userId, orgId, agentId string) (*response.ListResult, error) {
 	toolResp, err := mcp.GetToolSelect(ctx.Request.Context(), &mcp_service.GetToolSelectReq{
@@ -1377,4 +1381,266 @@ func calculateWgaFileTreeTotalSize(files []response.GeneralAgentFileInfo) int64 
 		}
 	}
 	return total
+}
+
+// --- internal wga resource ---
+
+func GetGeneralAgentResourceSelect(ctx *gin.Context, userId, orgId string, name string) ([]*response.GeneralAgentResourceSelectList, error) {
+	result := make([]*response.GeneralAgentResourceSelectList, 0, 4)
+
+	// 并发获取四种资源列表
+	var wg sync.WaitGroup
+	var mcpErr, workflowErr, skillErr, assistantErr error
+	var mcpList []response.MCPSelect
+	var workflowList []*response.ExplorationAppInfo
+	var skillList []*response.SkillInfo
+	var assistantList []*response.ExplorationAppInfo
+
+	// 获取 MCP 列表
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer util.PrintPanicStack()
+		resp, err := GetMCPSelect(ctx, userId, orgId, name)
+		if err != nil {
+			mcpErr = err
+			return
+		}
+		if list, ok := resp.List.([]response.MCPSelect); ok {
+			mcpList = list
+		}
+	}()
+
+	// 获取 Workflow 列表
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer util.PrintPanicStack()
+		resp, err := GetWorkflowSelect(ctx, userId, orgId, request.GetExplorationAppListRequest{Name: name})
+		if err != nil {
+			workflowErr = err
+			return
+		}
+		if list, ok := resp.List.([]*response.ExplorationAppInfo); ok {
+			workflowList = list
+		}
+	}()
+
+	// 获取 Skill 列表
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer util.PrintPanicStack()
+		resp, err := GetSkillSelect(ctx, userId, orgId, name, constant.SkillTypeCustom)
+		if err != nil {
+			skillErr = err
+			return
+		}
+		if list, ok := resp.List.([]*response.SkillInfo); ok {
+			skillList = list
+		}
+	}()
+
+	// 获取 Assistant 列表
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer util.PrintPanicStack()
+		resp, err := GetAssistantSelect(ctx, userId, orgId, request.GetExplorationAppListRequest{Name: name})
+		if err != nil {
+			assistantErr = err
+			return
+		}
+		if list, ok := resp.List.([]*response.ExplorationAppInfo); ok {
+			assistantList = list
+		}
+	}()
+
+	wg.Wait()
+
+	// 检查错误
+	if mcpErr != nil {
+		return nil, mcpErr
+	}
+	if workflowErr != nil {
+		return nil, workflowErr
+	}
+	if skillErr != nil {
+		return nil, skillErr
+	}
+	if assistantErr != nil {
+		return nil, assistantErr
+	}
+
+	// 构建 MCP 列表
+	mcpItems := make([]*response.GeneralAgentResourceSelectItem, 0, len(mcpList))
+	for _, item := range mcpList {
+		mcpItems = append(mcpItems, &response.GeneralAgentResourceSelectItem{
+			ID:     item.MCPID,
+			Name:   item.Name,
+			Desc:   item.Description,
+			Avatar: item.Avatar,
+			Type:   item.Type,
+		})
+	}
+	result = append(result, &response.GeneralAgentResourceSelectList{
+		ListType: "mcp",
+		List:     mcpItems,
+	})
+
+	// 构建 Workflow 列表
+	workflowItems := make([]*response.GeneralAgentResourceSelectItem, 0, len(workflowList))
+	for _, item := range workflowList {
+		workflowItems = append(workflowItems, &response.GeneralAgentResourceSelectItem{
+			ID:     item.AppId,
+			Name:   item.Name,
+			Desc:   item.Desc,
+			Avatar: item.Avatar,
+			Type:   item.AppType,
+		})
+	}
+	result = append(result, &response.GeneralAgentResourceSelectList{
+		ListType: "workflow",
+		List:     workflowItems,
+	})
+
+	// 构建 Skill 列表
+	skillItems := make([]*response.GeneralAgentResourceSelectItem, 0, len(skillList))
+	for _, item := range skillList {
+		skillItems = append(skillItems, &response.GeneralAgentResourceSelectItem{
+			ID:     item.SkillId,
+			Name:   item.SkillName,
+			Desc:   item.Desc,
+			Avatar: item.Avatar,
+			Type:   item.SkillType,
+			Author: item.Author,
+		})
+	}
+	result = append(result, &response.GeneralAgentResourceSelectList{
+		ListType: "skill",
+		List:     skillItems,
+	})
+
+	// 构建 Assistant 列表
+	assistantItems := make([]*response.GeneralAgentResourceSelectItem, 0, len(assistantList))
+	for _, item := range assistantList {
+		assistantItems = append(assistantItems, &response.GeneralAgentResourceSelectItem{
+			ID:     item.AppId,
+			Name:   item.Name,
+			Desc:   item.Desc,
+			Avatar: item.Avatar,
+			Type:   item.AppType,
+		})
+	}
+	result = append(result, &response.GeneralAgentResourceSelectList{
+		ListType: "assistant",
+		List:     assistantItems,
+	})
+
+	return result, nil
+}
+
+// parseResourceMentions 从用户消息中解析 @ 提及的资源名称
+// 格式: @资源名称 后面跟空格或消息结束
+// 支持: "@mcp1 @workflow2 请帮我处理" -> ["mcp1", "workflow2"]
+// 返回: 提取到的资源名称列表（去重后）
+func parseResourceMentions(content interface{}) []string {
+	var text string
+	switch v := content.(type) {
+	case string:
+		text = v
+	case []interface{}:
+		// 处理多部分消息，提取文本部分
+		for _, item := range v {
+			if m, ok := item.(map[string]interface{}); ok {
+				if typ, _ := m["type"].(string); typ == "text" {
+					if t, _ := m["text"].(string); t != "" {
+						text += t + " "
+					}
+				}
+			}
+		}
+	}
+
+	// 使用正则提取 @name 格式，支持中文、英文、数字、下划线、连字符
+	matches := resourceNameRegex.FindAllStringSubmatch(text, -1)
+
+	// 去重
+	seen := make(map[string]bool)
+	var names []string
+	for _, m := range matches {
+		if len(m) > 1 && !seen[m[1]] {
+			seen[m[1]] = true
+			names = append(names, m[1])
+		}
+	}
+
+	return names
+}
+
+// MentionResources @提及的资源列表
+type MentionResources struct {
+	McpList       []*assistant_service.WgaConfigMcp
+	WorkflowList  []*assistant_service.WgaConfigWorkflow
+	SkillList     []*assistant_service.WgaConfigSkill
+	AssistantList []*assistant_service.WgaConfigAssistant
+}
+
+// fetchMentionResources 获取@提及的资源列表
+// 通过名称搜索下拉资源列表，返回各类型的资源列表
+func fetchMentionResources(ctx *gin.Context, userID, orgID string, mentionNames []string) *MentionResources {
+	result := &MentionResources{
+		McpList:       make([]*assistant_service.WgaConfigMcp, 0),
+		WorkflowList:  make([]*assistant_service.WgaConfigWorkflow, 0),
+		SkillList:     make([]*assistant_service.WgaConfigSkill, 0),
+		AssistantList: make([]*assistant_service.WgaConfigAssistant, 0),
+	}
+
+	if len(mentionNames) == 0 {
+		return result
+	}
+
+	// 对每个名称调用搜索接口
+	for _, name := range mentionNames {
+		searchResult, err := GetGeneralAgentResourceSelect(ctx, userID, orgID, name)
+		if err != nil {
+			log.Warnf("[wga] search resources by name '%s' failed: %v", name, err)
+			continue
+		}
+
+		// 遍历资源列表，按类型收集
+		for _, group := range searchResult {
+			switch group.ListType {
+			case "mcp":
+				for _, item := range group.List {
+					result.McpList = append(result.McpList, &assistant_service.WgaConfigMcp{
+						McpId:   item.ID,
+						McpType: item.Type,
+					})
+				}
+			case "workflow":
+				for _, item := range group.List {
+					result.WorkflowList = append(result.WorkflowList, &assistant_service.WgaConfigWorkflow{
+						WorkflowId: item.ID,
+					})
+				}
+			case "skill":
+				for _, item := range group.List {
+					result.SkillList = append(result.SkillList, &assistant_service.WgaConfigSkill{
+						SkillId:   item.ID,
+						SkillType: constant.SkillTypeCustom,
+					})
+				}
+			case "assistant":
+				for _, item := range group.List {
+					result.AssistantList = append(result.AssistantList, &assistant_service.WgaConfigAssistant{
+						AssistantId:   item.ID,
+						AssistantType: util.Int2Str(constant.AgentCategorySingle),
+					})
+				}
+			}
+		}
+	}
+
+	return result
 }

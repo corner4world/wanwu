@@ -6578,6 +6578,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/general/agent/resource/select": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体资源选择列表，包括MCP、Workflow、Skill、智能体四种类型",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "通用智能体资源选择列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GeneralAgentResourceSelectList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/general/agent/skill/select": {
             "get": {
                 "security": [
@@ -9237,7 +9277,7 @@ const docTemplate = `{
             }
         },
         "/knowledge/qa/pair/list": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "JWT": []
@@ -9283,7 +9323,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "-1：全部 0:待处理 1:导入中 2:导入成功 3:导入失败",
                         "name": "status",
                         "in": "query"
                     }
@@ -26268,6 +26313,55 @@ const docTemplate = `{
                 },
                 "type": {
                     "description": "\"file\" or \"directory\"",
+                    "type": "string"
+                }
+            }
+        },
+        "response.GeneralAgentResourceSelectItem": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "description": "作者",
+                    "type": "string"
+                },
+                "avatar": {
+                    "description": "头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "desc": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "类型",
+                    "type": "string"
+                }
+            }
+        },
+        "response.GeneralAgentResourceSelectList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "列表项",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.GeneralAgentResourceSelectItem"
+                    }
+                },
+                "listType": {
+                    "description": "列表类型: mcp, workflow, skill, assistant",
                     "type": "string"
                 }
             }

@@ -413,3 +413,18 @@ func GeneralAgentConversationChat(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, err)
 	}
 }
+
+// GetGeneralAgentResourceSelect
+//
+//	@Tags			wga
+//	@Summary		通用智能体资源选择列表
+//	@Description	获取通用智能体资源选择列表，包括MCP、Workflow、Skill、智能体四种类型
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.GeneralAgentResourceSelectList}
+//	@Router			/general/agent/resource/select [get]
+func GetGeneralAgentResourceSelect(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentResourceSelect(ctx, getUserID(ctx), getOrgID(ctx), "")
+	gin_util.Response(ctx, resp, err)
+}

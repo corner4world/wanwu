@@ -270,6 +270,13 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 	}
 	wgaConfig := wgaConfigResp.Config
 
+	// 解析用户消息中的 @提及资源
+	var mentionResources *MentionResources
+	if userInputMessage != nil {
+		mentionNames := parseResourceMentions(userInputMessage.Content)
+		mentionResources = fetchMentionResources(ctx, userID, orgID, mentionNames)
+	}
+
 	// 获取 WGA Conversation 配置
 	wgaConversationConfigResp, err := assistant.GetWgaConversationConfig(ctx.Request.Context(), &assistant_service.GetWgaConversationConfigReq{
 		ThreadId: threadID,
@@ -322,48 +329,112 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 		opts = append(opts, toolOpts...)
 	}
 
-	// 校验并构建工作流配置选项
-	if wgaConfig != nil && len(wgaConfig.WorkflowList) > 0 {
-		if err := checkWgaWorkflowConfig(ctx, userID, orgID, wgaConfig.WorkflowList); err != nil {
+	// 校验并构建工作流配置选项（追加@提及的工作流）
+	workflowList := make([]*assistant_service.WgaConfigWorkflow, 0)
+	if wgaConfig != nil {
+		workflowList = append(workflowList, wgaConfig.WorkflowList...)
+	}
+	if mentionResources != nil {
+		workflowList = append(workflowList, mentionResources.WorkflowList...)
+	}
+	if len(workflowList) > 0 {
+		// 去重
+		seen := make(map[string]bool)
+		dedupedList := make([]*assistant_service.WgaConfigWorkflow, 0, len(workflowList))
+		for _, w := range workflowList {
+			if !seen[w.WorkflowId] {
+				seen[w.WorkflowId] = true
+				dedupedList = append(dedupedList, w)
+			}
+		}
+		if err := checkWgaWorkflowConfig(ctx, userID, orgID, dedupedList); err != nil {
 			return nil, err
 		}
-		workflowOpts, err := buildWgaWorkflowOptions(ctx, userID, orgID, wgaConfig.WorkflowList)
+		workflowOpts, err := buildWgaWorkflowOptions(ctx, userID, orgID, dedupedList)
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts, workflowOpts...)
 	}
 
-	// 校验并构建MCP配置选项
-	if wgaConfig != nil && len(wgaConfig.McpList) > 0 {
-		if err := checkWgaMCPConfig(ctx, userID, orgID, wgaConfig.McpList); err != nil {
+	// 校验并构建MCP配置选项（追加@提及的MCP）
+	mcpList := make([]*assistant_service.WgaConfigMcp, 0)
+	if wgaConfig != nil {
+		mcpList = append(mcpList, wgaConfig.McpList...)
+	}
+	if mentionResources != nil {
+		mcpList = append(mcpList, mentionResources.McpList...)
+	}
+	if len(mcpList) > 0 {
+		// 去重
+		seen := make(map[string]bool)
+		dedupedList := make([]*assistant_service.WgaConfigMcp, 0, len(mcpList))
+		for _, m := range mcpList {
+			if !seen[m.McpId] {
+				seen[m.McpId] = true
+				dedupedList = append(dedupedList, m)
+			}
+		}
+		if err := checkWgaMCPConfig(ctx, userID, orgID, dedupedList); err != nil {
 			return nil, err
 		}
-		mcpOpts, err := buildWgaMCPOptions(ctx, userID, orgID, wgaConfig.McpList)
+		mcpOpts, err := buildWgaMCPOptions(ctx, userID, orgID, dedupedList)
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts, mcpOpts...)
 	}
 
-	// 校验并构建智能体配置选项
-	if wgaConfig != nil && len(wgaConfig.AssistantList) > 0 {
-		if err := checkWgaAssistantConfig(ctx, userID, orgID, wgaConfig.AssistantList); err != nil {
+	// 校验并构建智能体配置选项（追加@提及的智能体）
+	assistantList := make([]*assistant_service.WgaConfigAssistant, 0)
+	if wgaConfig != nil {
+		assistantList = append(assistantList, wgaConfig.AssistantList...)
+	}
+	if mentionResources != nil {
+		assistantList = append(assistantList, mentionResources.AssistantList...)
+	}
+	if len(assistantList) > 0 {
+		// 去重
+		seen := make(map[string]bool)
+		dedupedList := make([]*assistant_service.WgaConfigAssistant, 0, len(assistantList))
+		for _, a := range assistantList {
+			if !seen[a.AssistantId] {
+				seen[a.AssistantId] = true
+				dedupedList = append(dedupedList, a)
+			}
+		}
+		if err := checkWgaAssistantConfig(ctx, userID, orgID, dedupedList); err != nil {
 			return nil, err
 		}
-		assistantOpts, err := buildWgaAssistantOptions(ctx, userID, orgID, wgaConfig.AssistantList)
+		assistantOpts, err := buildWgaAssistantOptions(ctx, userID, orgID, dedupedList)
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts, assistantOpts...)
 	}
 
-	// 校验并构建Skills配置选项
-	if wgaConfig != nil && len(wgaConfig.SkillList) > 0 {
-		if err := checkWgaSkillConfig(ctx, userID, orgID, wgaConfig.SkillList); err != nil {
+	// 校验并构建Skills配置选项（追加@提及的Skills）
+	skillList := make([]*assistant_service.WgaConfigSkill, 0)
+	if wgaConfig != nil {
+		skillList = append(skillList, wgaConfig.SkillList...)
+	}
+	if mentionResources != nil {
+		skillList = append(skillList, mentionResources.SkillList...)
+	}
+	if len(skillList) > 0 {
+		// 去重
+		seen := make(map[string]bool)
+		dedupedList := make([]*assistant_service.WgaConfigSkill, 0, len(skillList))
+		for _, s := range skillList {
+			if !seen[s.SkillId] {
+				seen[s.SkillId] = true
+				dedupedList = append(dedupedList, s)
+			}
+		}
+		if err := checkWgaSkillConfig(ctx, userID, orgID, dedupedList); err != nil {
 			return nil, err
 		}
-		skillOpts, err := buildWgaSkillOptions(ctx, userID, orgID, threadID, runID, wgaConfig.SkillList)
+		skillOpts, err := buildWgaSkillOptions(ctx, userID, orgID, threadID, runID, dedupedList)
 		if err != nil {
 			return nil, err
 		}

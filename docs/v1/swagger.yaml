@@ -6164,6 +6164,39 @@ definitions:
         description: '"file" or "directory"'
         type: string
     type: object
+  response.GeneralAgentResourceSelectItem:
+    properties:
+      author:
+        description: 作者
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 头像
+      desc:
+        description: 描述
+        type: string
+      id:
+        description: ID
+        type: string
+      name:
+        description: 名称
+        type: string
+      type:
+        description: 类型
+        type: string
+    type: object
+  response.GeneralAgentResourceSelectList:
+    properties:
+      list:
+        description: 列表项
+        items:
+          $ref: '#/definitions/response.GeneralAgentResourceSelectItem'
+        type: array
+      listType:
+        description: '列表类型: mcp, workflow, skill, assistant'
+        type: string
+    type: object
   response.GeneralAgentToolCategories:
     properties:
       category:
@@ -12376,6 +12409,28 @@ paths:
       summary: 通用智能体MCP下拉接口列表
       tags:
       - wga
+  /general/agent/resource/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体资源选择列表，包括MCP、Workflow、Skill、智能体四种类型
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneralAgentResourceSelectList'
+              type: object
+      security:
+      - JWT: []
+      summary: 通用智能体资源选择列表
+      tags:
+      - wga
   /general/agent/skill/select:
     get:
       consumes:
@@ -13947,7 +14002,7 @@ paths:
       tags:
       - knowledge.qa
   /knowledge/qa/pair/list:
-    get:
+    post:
       consumes:
       - application/json
       description: 获取问答对列表
@@ -13969,9 +14024,13 @@ paths:
         name: pageSize
         required: true
         type: integer
-      - in: query
+      - collectionFormat: csv
+        description: -1：全部 0:待处理 1:导入中 2:导入成功 3:导入失败
+        in: query
+        items:
+          type: integer
         name: status
-        type: integer
+        type: array
       produces:
       - application/json
       responses:
