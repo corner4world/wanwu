@@ -322,6 +322,13 @@ type KnowledgeExternalListReq struct {
 	CommonCheck
 }
 
+// GetDocByKnowledgeNameAndDocNameReq 根据知识库名称和文档名称获取文档信息请求
+type GetDocByKnowledgeNameAndDocNameReq struct {
+	KnowledgeName string `json:"knowledgeName" form:"knowledgeName" validate:"required"` // 知识库名称
+	DocName       string `json:"docName" form:"docName" validate:"required"`             // 文档名称
+	CommonCheck
+}
+
 func (c *UpdateMetaValueReq) Check() error {
 	for _, v := range c.MetaValueList {
 		if v.Option == "" {

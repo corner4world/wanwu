@@ -202,3 +202,13 @@ type KnowledgeExternalBriefInfo struct {
 type CreateKnowledgeExternalResp struct {
 	KnowledgeId string `json:"knowledgeId"` //知识库id
 }
+
+// GetDocByKnowledgeNameAndDocNameResp 根据知识库名称和文档名称获取文档信息响应
+type GetDocByKnowledgeNameAndDocNameResp struct {
+	KnowledgeId   string `json:"knowledgeId"`   // 知识库ID
+	KnowledgeName string `json:"knowledgeName"` // 知识库名称
+	DocId         string `json:"id"`            // 文档ID
+	DocType       string `json:"type"`          // 文档类型
+	DocName       string `json:"name"`          // 文档名称
+	Disable       bool   `json:"disable"`       // 禁用模式，默认false
+}

@@ -85,6 +85,18 @@ func (s *Service) SelectKnowledgeDetailByName(ctx context.Context, req *knowledg
 	return buildKnowledgeInfo(knowledgeInfo), nil
 }
 
+// SelectKnowledgeIdByRagName 根据ragName获取知识库ID
+func (s *Service) SelectKnowledgeIdByRagName(ctx context.Context, req *knowledgebase_service.SelectKnowledgeIdByRagNameReq) (*knowledgebase_service.SelectKnowledgeIdByRagNameResp, error) {
+	knowledgeInfo, err := orm.SelectKnowledgeByRagName(ctx, req.RagName, req.UserId, req.OrgId)
+	if err != nil {
+		log.Errorf(fmt.Sprintf("根据ragName获取知识库ID失败(%v)  参数(%v)", err, req))
+		return nil, err
+	}
+	return &knowledgebase_service.SelectKnowledgeIdByRagNameResp{
+		KnowledgeId: knowledgeInfo.KnowledgeId,
+	}, nil
+}
+
 func (s *Service) SelectKnowledgeDetailByIdList(ctx context.Context, req *knowledgebase_service.KnowledgeDetailSelectListReq) (*knowledgebase_service.KnowledgeDetailSelectListResp, error) {
 	if len(req.KnowledgeIds) == 0 {
 		return buildKnowledgeInfoList([]*model.KnowledgeBase{}), nil
@@ -230,6 +242,30 @@ func (s *Service) UpdateKnowledgeMetaValue(ctx context.Context, req *knowledgeba
 	default:
 		return updateKnowledgeMetaValue(ctx, req)
 	}
+}
+
+// GetDocByKnowledgeNameAndDocName 根据知识库名称和文档名称获取文档信息
+func (s *Service) GetDocByKnowledgeNameAndDocName(ctx context.Context, req *knowledgebase_service.GetDocByKnowledgeNameAndDocNameReq) (*knowledgebase_service.GetDocByKnowledgeNameAndDocNameResp, error) {
+	// 1. 根据知识库名称查询知识库信息
+	knowledgeInfo, err := orm.SelectKnowledgeByRagName(ctx, req.KnowledgeName, "", "")
+	if err != nil {
+		log.Errorf(fmt.Sprintf("根据名称获取知识库详情失败(%v)  参数(%v)", err, req))
+		return nil, err
+	}
+	// 2. 根据知识库ID和文档名称查询文档信息
+	doc, err := orm.GetDocByKnowledgeIdAndDocName(ctx, "", "", knowledgeInfo.KnowledgeId, req.DocName)
+	if err != nil {
+		log.Errorf(fmt.Sprintf("根据知识库ID和文档名称获取文档信息失败(%v)  参数(%v)", err, req))
+		return nil, util.ErrCode(errs.Code_KnowledgeDocSearchFail)
+	}
+	// 3. 返回结果
+	return &knowledgebase_service.GetDocByKnowledgeNameAndDocNameResp{
+		KnowledgeId:   knowledgeInfo.KnowledgeId,
+		KnowledgeName: knowledgeInfo.Name,
+		DocId:         doc.DocId,
+		DocType:       doc.FileType,
+		DocName:       doc.Name,
+	}, nil
 }
 
 func updateQAMetaValue(ctx context.Context, req *knowledgebase_service.UpdateKnowledgeMetaValueReq) (*emptypb.Empty, error) {
