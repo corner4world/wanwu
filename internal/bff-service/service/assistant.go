@@ -925,6 +925,7 @@ func GetConversationDetailList(ctx *gin.Context, userId, orgId string, req reque
 			FileSize:            item.FileSize,
 			FileName:            item.FileName,
 			SubConversationList: buildSubConversationList(item.SubConversationList),
+			ResponseFiles:       transResponseFiles(item.ResponseFiles),
 		}
 
 		// 将SearchList从string转换为interface{}
@@ -1359,6 +1360,29 @@ func transRequestFiles(files []*assistant_service.RequestFile) []response.Assist
 			FileName: file.FileName,
 			FileSize: file.FileSize,
 			FileUrl:  file.FileUrl,
+		})
+	}
+	return result
+}
+
+func transResponseFiles(files []*assistant_service.AgentFile) []*response.AgentResponseFile {
+	if files == nil {
+		return nil
+	}
+	var result []*response.AgentResponseFile
+	for _, file := range files {
+		var metadata = &response.AgentFileMeta{}
+		if file.Metadata != nil {
+			metadata.Desc = file.Metadata.Desc
+			metadata.CreateAt = file.Metadata.CreateAt
+			metadata.Name = file.Metadata.Name
+		}
+		result = append(result, &response.AgentResponseFile{
+			FileName: file.Name,
+			FileSize: int64(file.Size),
+			FileUrl:  file.FileUrl,
+			FileType: file.FileType,
+			MetaData: metadata,
 		})
 	}
 	return result

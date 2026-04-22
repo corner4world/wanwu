@@ -11,6 +11,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg"
 	_ "github.com/UnicomAI/wanwu/internal/agent-service/pkg/minio"
 	_ "github.com/UnicomAI/wanwu/internal/agent-service/pkg/model-provider"
+	_ "github.com/UnicomAI/wanwu/internal/agent-service/pkg/tool-init"
 	_ "github.com/UnicomAI/wanwu/internal/agent-service/server/http/router"
 )
 

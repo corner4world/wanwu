@@ -34,6 +34,7 @@ type ConversationResp struct {
 	FullResponse         *strings.Builder
 	SearchList           *string
 	ConversationEventMap map[string]*ConversationResp
+	ResponseFiles        []*model.AgentFile
 	Error                error
 }
 
@@ -86,14 +87,15 @@ func (cr *ConversationResp) ResponseList() []*model.ConversationResponse {
 }
 
 type AgentChatResp struct {
-	Code       int                 `json:"code"`
-	Message    string              `json:"message"`
-	Order      int                 `json:"order"`
-	Response   string              `json:"response"`
-	SearchList []interface{}       `json:"search_list"`
-	Finish     int                 `json:"finish"`
-	EventType  int                 `json:"eventType"`
-	EventData  *model.SubEventData `json:"eventData"`
+	Code          int                 `json:"code"`
+	Message       string              `json:"message"`
+	Order         int                 `json:"order"`
+	Response      string              `json:"response"`
+	SearchList    []interface{}       `json:"search_list"`
+	Finish        int                 `json:"finish"`
+	EventType     int                 `json:"eventType"`
+	EventData     *model.SubEventData `json:"eventData"`
+	ResponseFiles []*model.AgentFile  `json:"responseFiles"`
 }
 
 type EventBuilder interface {
@@ -110,6 +112,8 @@ func BuildConversationResp(conversationResp *ConversationResp, strLine string) e
 	if agentChatResp == nil {
 		return nil
 	}
+	//下载文件值
+	conversationResp.ResponseFiles = agentChatResp.ResponseFiles
 	builder := builderMap[agentChatResp.EventType]
 	if builder == nil {
 		return fmt.Errorf("no builder found event type %d", agentChatResp.EventType)

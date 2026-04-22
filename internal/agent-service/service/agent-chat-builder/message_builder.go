@@ -38,7 +38,7 @@ func BuildChatMessage(req *request.AgentChatContext, respContext *response.Agent
 		if content.Empty() {
 			continue
 		}
-		resp, err1 := response.BuildAgentChatResp(req, chatMessage, content.ContentList, content.SubEventData, content.NotStop, respContext.Order)
+		resp, err1 := response.BuildAgentChatResp(req, chatMessage, content.ContentList, content.SubEventData, content.NotStop, respContext)
 		if err1 != nil {
 			return nil, err1
 		}

@@ -31,7 +31,7 @@ func EnioAgentEventIteratorReader(iter *adk.AsyncIterator[*adk.AgentEvent], resp
 		}
 		if event.Err != nil {
 			log.Errorf("agent event result error %v", event.Err)
-			errResp := &safe_go_util.IteratorError[string]{Err: event.Err, ErrMsg: response.AgentChatFailResp(req.AgentChatReq.DetailId), OutputMessage: true}
+			errResp := &safe_go_util.IteratorError[string]{Err: event.Err, ErrMsg: response.AgentChatFailResp(req.AgentChatReq.DetailId, event.Err), OutputMessage: true}
 			return safe_go_util.IteratorResponseErr[*adk.AgentEvent, string](errResp)
 		}
 		return safe_go_util.IteratorReaderResponse[*adk.AgentEvent, string]{Data: event}

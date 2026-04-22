@@ -3,6 +3,9 @@ package agent_chat_builder
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"path/filepath"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -17,6 +20,8 @@ const (
 	toolParamsEndFormat   = "\n```\n\n"
 	toolEndFormat         = "\n\n<<<\n工具%s调用结果：\n %s \n>>>\n\n"
 	toolEndJsonFormat     = "\n\n```工具%s调用结果：\n %s \n```\n\n"
+
+	unknownFileSize = -1 // 未知文件大小
 )
 
 type ToolMessageContent struct {
@@ -289,6 +294,11 @@ func buildNewContentByStep(respContext *response.AgentChatRespContext, req *requ
 		if len(chatMessage.Content) > 0 {
 			var toolResult string
 			if json.Valid([]byte(chatMessage.Content)) {
+				// 尝试从JSON中提取文件URL和文件名
+				fileList := extractFilesFromJSON(chatMessage.Content)
+				if len(fileList) > 0 {
+					respContext.DownloadContext.AddDownloadFile(toolId, fileList)
+				}
 				toolResult = fmt.Sprintf(toolEndJsonFormat, "", chatMessage.Content)
 			} else {
 				toolResult = fmt.Sprintf(toolEndFormat, "", chatMessage.Content)
@@ -360,4 +370,155 @@ func buildToolAvatar(toolName string, toolMap map[string]*request.ToolConfig, to
 		return response.BuildDefaultAvatarByType(toolEventType)
 	}
 	return toolConfig.Avatar
+}
+
+// extractFilesFromJSON 从JSON内容中提取文件URL和文件名
+// 支持多种JSON格式：
+// 1. 单个文件: {"output": "http://xxx/file.txt"} 或 {"url": "http://xxx/file.txt"}
+// 2. 文件对象: {"file_url": "http://xxx", "file_name": "name.txt"} 或类似字段
+// 3. 文件数组: {"files": [...]} 或直接是数组
+// 4. 嵌套对象中包含文件URL
+func extractFilesFromJSON(content string) []*response.DownloadFileInfo {
+	var fileList []*response.DownloadFileInfo
+
+	var data interface{}
+	if err := json.Unmarshal([]byte(content), &data); err != nil {
+		return fileList
+	}
+
+	// 递归提取文件
+	extractFilesFromValue(data, &fileList)
+
+	return fileList
+}
+
+// extractFilesFromValue 递归从值中提取文件信息
+func extractFilesFromValue(data interface{}, fileList *[]*response.DownloadFileInfo) {
+	switch v := data.(type) {
+	case map[string]interface{}:
+		// 尝试从当前对象提取文件
+		if info := extractFileInfoFromMap(v); info != nil {
+			*fileList = append(*fileList, info)
+		}
+		// 递归处理所有值
+		for _, val := range v {
+			extractFilesFromValue(val, fileList)
+		}
+	case []interface{}:
+		for _, item := range v {
+			extractFilesFromValue(item, fileList)
+		}
+	}
+}
+
+// extractFileInfoFromMap 从map中提取文件信息
+func extractFileInfoFromMap(m map[string]interface{}) *response.DownloadFileInfo {
+	// 常见的URL字段名
+	urlKeys := []string{"output", "url", "file_url", "fileUrl", "file_url_path", "downloadUrl", "download_url", "path", "link"}
+	// 常见的文件名字段名
+	nameKeys := []string{"file_name", "fileName", "name", "filename", "file", "title"}
+
+	var fileURL, fileName string
+
+	// 提取URL
+	for _, key := range urlKeys {
+		if val, ok := m[key]; ok {
+			if str, ok := val.(string); ok && isValidFileURL(str) {
+				fileURL = str
+				break
+			}
+		}
+	}
+
+	// 如果没找到URL，尝试查找看起来像URL的字符串值
+	if fileURL == "" {
+		for _, val := range m {
+			if str, ok := val.(string); ok && isValidFileURL(str) && !isLikelyNameField(str) {
+				fileURL = str
+				break
+			}
+		}
+	}
+
+	// 提取文件名
+	for _, key := range nameKeys {
+		if val, ok := m[key]; ok {
+			if str, ok := val.(string); ok && str != "" {
+				fileName = str
+				break
+			}
+		}
+	}
+
+	// 如果找到了URL
+	if fileURL != "" {
+		// 如果没有文件名，从URL中提取
+		if fileName == "" {
+			fileName = extractFileNameFromURL(fileURL)
+		}
+		return &response.DownloadFileInfo{
+			FileName: fileName,
+			FilePath: fileURL,
+			FileSize: unknownFileSize, // 文件大小未知
+			CreateAt: time.Now().Format("2006-01-02 15:04:05"),
+		}
+	}
+
+	return nil
+}
+
+// isValidFileURL 检查字符串是否是有效的文件URL
+func isValidFileURL(s string) bool {
+	if len(s) < 5 {
+		return false
+	}
+	// 检查是否是HTTP/HTTPS URL
+	if strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://") {
+		// 尝试解析URL
+		parsedURL, err := url.Parse(s)
+		if err != nil {
+			return false
+		}
+		// 检查是否有路径部分（包含文件名）
+		path := parsedURL.Path
+		if path != "" && path != "/" {
+			// 检查路径是否包含文件扩展名
+			ext := filepath.Ext(path)
+			return ext != ""
+		}
+	}
+	return false
+}
+
+// isLikelyNameField 检查字符串是否可能是名称字段值（而非URL）
+func isLikelyNameField(s string) bool {
+	// 简单判断：如果字符串很短且不包含常见URL特征
+	return len(s) < 10 && !strings.Contains(s, "/") && !strings.Contains(s, ".")
+}
+
+// extractFileNameFromURL 从URL中提取文件名
+func extractFileNameFromURL(fileURL string) string {
+	parsedURL, err := url.Parse(fileURL)
+	if err != nil {
+		return ""
+	}
+
+	path := parsedURL.Path
+	if path == "" || path == "/" {
+		return ""
+	}
+
+	// 获取路径的最后一部分
+	fileName := filepath.Base(path)
+
+	// 如果有查询参数中的文件名，优先使用
+	if queryName := parsedURL.Query().Get("filename"); queryName != "" {
+		fileName = queryName
+	} else if queryName := parsedURL.Query().Get("name"); queryName != "" {
+		fileName = queryName
+	} else if queryName := parsedURL.Query().Get("file"); queryName != "" {
+		fileName = queryName
+	}
+
+	return fileName
 }

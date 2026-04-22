@@ -277,6 +277,9 @@ func createHTTPHandler(serverURL, path, method string, auth *openapi3_util.Auth,
 		resp, err := agent_http_client.GetClient().Client.Do(req)
 		respBody, err := buildResult(resp, err)
 		http_client.LogHttpRequest(ctx, "request_tool_call", method, requestURL, arguments, respBody, err, start)
+		//if err != nil {
+		//	return "", err
+		//}
 
 		return respBody, nil
 	}

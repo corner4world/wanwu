@@ -173,7 +173,6 @@ func (s *Service) GetConversationDetailList(ctx context.Context, req *assistant_
 			SysPrompt:            detail.SysPrompt,
 			Response:             detail.Response,
 			SearchList:           detail.SearchList,
-			QaType:               detail.QaType,
 			CreatedBy:            detail.UserId, // 使用CreatedBy字段映射UserId
 			CreatedAt:            detail.CreatedAt,
 			UpdatedAt:            detail.UpdatedAt,
@@ -182,6 +181,7 @@ func (s *Service) GetConversationDetailList(ctx context.Context, req *assistant_
 			FileName:             detail.FileName,
 			SubConversationList:  buildSubConversationList(detail.SubConversationDetailList, len(detail.ResponseList) == 0),
 			ConversationResponse: buildConversationResponse(detail.Response, detail.ResponseList, len(detail.SubConversationDetailList)),
+			ResponseFiles:        transAgentFiles(detail.ResponseFiles),
 		})
 	}
 
@@ -260,6 +260,38 @@ func transRequestFiles(files []model.FileInfo) []*assistant_service.RequestFile 
 			FileName: file.FileName,
 			FileSize: file.FileSize,
 			FileUrl:  replacedUrl,
+		})
+	}
+	return result
+}
+
+// transAgentFiles 将 model.AgentFile 转换为 assistant_service.AgentFile
+func transAgentFiles(files []*model.AgentFile) []*assistant_service.AgentFile {
+	if files == nil {
+		return nil
+	}
+
+	var result []*assistant_service.AgentFile
+	for _, file := range files {
+		if file == nil {
+			continue
+		}
+
+		var metadata *assistant_service.AgentMeta
+		if file.Metadata != nil {
+			metadata = &assistant_service.AgentMeta{
+				Desc:     file.Metadata.Desc,
+				CreateAt: file.Metadata.CreateAt,
+				Name:     file.Metadata.Name,
+			}
+		}
+
+		result = append(result, &assistant_service.AgentFile{
+			Name:     file.Name,
+			Size:     int32(file.Size),
+			FileUrl:  file.FileUrl,
+			FileType: file.FileType,
+			Metadata: metadata,
 		})
 	}
 	return result

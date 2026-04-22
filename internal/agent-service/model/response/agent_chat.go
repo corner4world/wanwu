@@ -69,19 +69,17 @@ func NewAgentChatRespContext(multiAgent bool, mainAgentName string, order int) *
 }
 
 type AgentChatResp struct {
-	Code           int             `json:"code"`
-	Message        string          `json:"message"`
-	Response       string          `json:"response"`
-	DetailId       string          `json:"detailId"`
-	Order          int             `json:"order"` //顺序
-	EventType      AgentEventType  `json:"eventType"`
-	EventData      *SubEventData   `json:"eventData"`
-	GenFileUrlList []interface{}   `json:"gen_file_url_list"`
-	History        []interface{}   `json:"history"`
-	Finish         int             `json:"finish"`
-	Usage          *AgentChatUsage `json:"usage"`
-	SearchList     []interface{}   `json:"search_list"`
-	QaType         int             `json:"qa_type"`
+	Code          int             `json:"code"`
+	Message       string          `json:"message"`
+	Response      string          `json:"response"`
+	DetailId      string          `json:"detailId"`
+	Order         int             `json:"order"` //顺序
+	EventType     AgentEventType  `json:"eventType"`
+	EventData     *SubEventData   `json:"eventData"`
+	ResponseFiles []*AgentFile    `json:"responseFiles"`
+	Finish        int             `json:"finish"`
+	Usage         *AgentChatUsage `json:"usage"`
+	SearchList    []interface{}   `json:"search_list"`
 }
 
 type AgentChatUsage struct {
@@ -90,13 +88,13 @@ type AgentChatUsage struct {
 	TotalTokens      int `json:"total_tokens"`
 }
 
-func BuildAgentChatResp(req *request.AgentChatContext, chatMessage *schema.Message, contentList []string, subAgentEventData *SubEventData, notStop bool, order int) ([]string, error) {
+func BuildAgentChatResp(req *request.AgentChatContext, chatMessage *schema.Message, contentList []string, subAgentEventData *SubEventData, notStop bool, respContext *AgentChatRespContext) ([]string, error) {
 	var outputList = make([]string, 0)
 	if len(contentList) == 0 && subAgentEventData != nil {
-		return buildSubAgentEventInfo(req, chatMessage, subAgentEventData, order)
+		return buildSubAgentEventInfo(req, chatMessage, subAgentEventData, respContext.Order)
 	}
 	for _, content := range contentList {
-		var agentChatResp = AgentChatSuccessResp(req, chatMessage, subAgentEventData, content, notStop, order)
+		var agentChatResp = AgentChatSuccessResp(req, chatMessage, subAgentEventData, content, notStop, respContext)
 		respString, err := buildRespString(agentChatResp)
 		if err != nil {
 			return nil, err
@@ -106,28 +104,31 @@ func BuildAgentChatResp(req *request.AgentChatContext, chatMessage *schema.Messa
 	return outputList, nil
 }
 
-func AgentChatSuccessResp(req *request.AgentChatContext, chatMessage *schema.Message, subAgentEventData *SubEventData, content string, notStop bool, order int) *AgentChatResp {
+func AgentChatSuccessResp(req *request.AgentChatContext, chatMessage *schema.Message, subAgentEventData *SubEventData, content string, notStop bool, respContext *AgentChatRespContext) *AgentChatResp {
+	agentFinish := buildFinish(chatMessage, notStop)
+	if agentFinish == finish {
+		log.Infof("finish agent: %v", respContext.DownloadContext.DownloadList)
+	}
 	return &AgentChatResp{
-		Code:           agentSuccessCode,
-		Message:        "success",
-		DetailId:       req.AgentChatReq.DetailId,
-		Response:       content,
-		EventType:      buildEventType(subAgentEventData),
-		EventData:      subAgentEventData,
-		GenFileUrlList: []interface{}{},
-		History:        []interface{}{},
-		QaType:         buildQaType(req),
-		SearchList:     buildSearchList(req),
-		Finish:         buildFinish(chatMessage, notStop),
-		Usage:          buildUsage(chatMessage),
-		Order:          order,
+		Code:          agentSuccessCode,
+		Message:       "success",
+		DetailId:      req.AgentChatReq.DetailId,
+		Response:      content,
+		EventType:     buildEventType(subAgentEventData),
+		EventData:     subAgentEventData,
+		SearchList:    buildSearchList(req),
+		Finish:        agentFinish,
+		Usage:         buildUsage(chatMessage),
+		Order:         respContext.Order,
+		ResponseFiles: respContext.DownloadContext.ResponseFiles(agentFinish),
 	}
 }
-func AgentChatFailResp(detailId string) string {
+func AgentChatFailResp(detailId string, err error) string {
+	errMsg := buildErrMsg(err)
 	var agentChatResp = &AgentChatResp{
 		Code:     agentFailCode,
-		Message:  "智能体处理异常，请稍后重试",
-		Response: "智能体处理异常，请稍后重试",
+		Message:  errMsg,
+		Response: errMsg,
 		DetailId: detailId,
 		Finish:   finish,
 	}
@@ -137,6 +138,17 @@ func AgentChatFailResp(detailId string) string {
 		return ""
 	}
 	return respString
+}
+
+func buildErrMsg(err error) string {
+	errMsg := err.Error()
+	if strings.Contains(errMsg, "[direct]") { // 判断是否为直接返回错误
+		return strings.ReplaceAll(errMsg, "[direct]", "")
+	}
+	if strings.Contains(errMsg, "chat completions err") { // 判断是否为墨子模型错误
+		return "模型调用异常，请检查后重试"
+	}
+	return "智能体处理异常，请稍后重试"
 }
 
 func buildRespString(agentChatResp *AgentChatResp) (string, error) {
@@ -202,11 +214,4 @@ func buildSearchList(req *request.AgentChatContext) []interface{} {
 		}
 	}
 	return retList
-}
-
-func buildQaType(req *request.AgentChatContext) int {
-	if req.KnowledgeHitData == nil {
-		return 0
-	}
-	return 1
 }

@@ -162,13 +162,14 @@ func buildConversationDetail(req *ConversationParams, conversationResp *conversa
 		Prompt:                    req.Query,
 		FileInfo:                  req.FileInfo,
 		ResponseList:              conversationResp.ResponseList(),
-		Response:                  conversationResp.Response(), //todo 联调完删除
+		Response:                  conversationResp.Response(),
 		SearchList:                conversationResp.References(),
 		UserId:                    req.UserId,
 		OrgId:                     req.OrgId,
 		CreatedAt:                 nowMilli,
 		UpdatedAt:                 nowMilli,
 		SubConversationDetailList: buildSubConversationDetailList(conversationResp),
+		ResponseFiles:             conversationResp.ResponseFiles,
 	}
 }
 
@@ -187,13 +188,21 @@ func buildSubConversationDetailList(conversationResp *conversation.ConversationR
 	})
 	var retList []*model.SubConversationDetail
 	for _, subConversationResp := range dataList {
+		eventData := subConversationResp.EventData
+		if eventData == nil {
+			continue
+		}
+		if eventData.Status != model.EventEndStatus &&
+			eventData.Status != model.EventFailStatus {
+			eventData.Status = model.EventEndStatus // 暂定设置成结束状态
+		}
 		retList = append(retList, &model.SubConversationDetail{
-			BusinessId:       subConversationResp.EventData.Id,
+			BusinessId:       eventData.Id,
 			ConversationType: buildConversationType(subConversationResp.EventType),
 			Order:            subConversationResp.Order,
 			Content:          subConversationResp.Response(),
 			SearchList:       subConversationResp.References(),
-			EventData:        subConversationResp.EventData,
+			EventData:        eventData,
 		})
 	}
 	return retList

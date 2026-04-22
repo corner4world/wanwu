@@ -74,8 +74,8 @@ func rebuildSkillMessage(respContext *response.AgentChatRespContext, chatMessage
 		if len(message.Extra) > 0 {
 			fileListData := message.Extra["fileList"]
 			if fileListData != nil {
-				fileList, ok := fileListData.([]*response.DownloadFileInfo)
-				if ok {
+				fileList := response.ParseDownloadFileInfoList(fileListData)
+				if len(fileList) > 0 {
 					respContext.DownloadContext.AddDownloadFile(respContext.SkillChatContext.SkillId, fileList)
 				}
 			}

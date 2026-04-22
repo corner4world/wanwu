@@ -156,18 +156,16 @@ func EndSubAgent(agentInfo *AgentInfo, timeCost string, order int, eventType int
 func buildSubAgentEventInfo(respContext *request.AgentChatContext, chatMessage *schema.Message, subAgentEventData *SubEventData, order int) ([]string, error) {
 	var outputList = make([]string, 0)
 	var agentChatResp = &AgentChatResp{
-		Code:           agentSuccessCode,
-		DetailId:       respContext.AgentChatReq.DetailId,
-		Message:        "success",
-		Response:       "",
-		Order:          order,
-		EventType:      buildEventType(subAgentEventData),
-		EventData:      subAgentEventData,
-		GenFileUrlList: []interface{}{},
-		History:        []interface{}{},
-		SearchList:     buildSubAgentSearchList(subAgentEventData, respContext),
-		Finish:         buildFinish(chatMessage, true),
-		Usage:          buildUsage(chatMessage),
+		Code:       agentSuccessCode,
+		DetailId:   respContext.AgentChatReq.DetailId,
+		Message:    "success",
+		Response:   "",
+		Order:      order,
+		EventType:  buildEventType(subAgentEventData),
+		EventData:  subAgentEventData,
+		SearchList: buildSubAgentSearchList(subAgentEventData, respContext),
+		Finish:     buildFinish(chatMessage, true),
+		Usage:      buildUsage(chatMessage),
 	}
 	respString, err := buildRespString(agentChatResp)
 	if err != nil {

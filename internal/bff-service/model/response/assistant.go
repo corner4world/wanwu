@@ -113,6 +113,7 @@ type ConversationDetailInfo struct {
 	FileSize            int64                   `json:"fileSize"`
 	FileName            string                  `json:"fileName"`
 	SubConversationList []*SubConversation      `json:"subConversationList"`
+	ResponseFiles       []*AgentResponseFile    `json:"responseFiles"`
 }
 
 type SubConversation struct {
@@ -149,19 +150,19 @@ type AssistantCreateResp struct {
 // --- conversation sse ---
 
 type ConversationSSEData struct {
-	Code           int                      `json:"code"`
-	Message        string                   `json:"message"`
-	Response       string                   `json:"response"`
-	Order          int                      `json:"order"`
-	EventType      int                      `json:"eventType"`
-	EventData      interface{}              `json:"eventData"`
-	GenFileUrlList []interface{}            `json:"gen_file_url_list"`
-	History        []interface{}            `json:"history"`
-	Finish         int                      `json:"finish"`
-	Usage          ConversationSSEUsage     `json:"usage"`
-	SearchList     []interface{}            `json:"search_list"`
-	QaType         int                      `json:"qa_type"`
-	ResponseFiles  []*AssistantResponseFile `json:"responseFiles"`
+	Code           int                  `json:"code"`
+	Message        string               `json:"message"`
+	Response       string               `json:"response"`
+	Order          int                  `json:"order"`
+	EventType      int                  `json:"eventType"`
+	EventData      interface{}          `json:"eventData"`
+	GenFileUrlList []interface{}        `json:"gen_file_url_list"`
+	History        []interface{}        `json:"history"`
+	Finish         int                  `json:"finish"`
+	Usage          ConversationSSEUsage `json:"usage"`
+	SearchList     []interface{}        `json:"search_list"`
+	QaType         int                  `json:"qa_type"`
+	ResponseFiles  []*AgentResponseFile `json:"responseFiles"`
 }
 type ConversationSSEUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
@@ -178,6 +179,22 @@ type AssistantResponseFile struct {
 	// 扩展信息：
 	// skill => {"name":"技能名称", "desc":"技能描述", "author":"技能作者", "avatar":{"path":"技能图标"}, "inResource": bool, "expiredAt": "过期时间7天", "skillSaveId": "保存的技能ID"}
 	MetaData map[string]interface{} `json:"metadata"`
+}
+
+type AgentResponseFile struct {
+	FileName string `json:"name"`
+	FileSize int64  `json:"size"`
+	FileUrl  string `json:"fileUrl"`
+	FileType string `json:"fileType"`
+
+	// 扩展信息：
+	MetaData *AgentFileMeta `json:"metadata"`
+}
+
+type AgentFileMeta struct {
+	Name     string `json:"name"`
+	Desc     string `json:"desc"`
+	CreateAt string `json:"createAt"`
 }
 
 // --- assistant template ---

@@ -634,6 +634,7 @@ message ConversionDetailInfo{
   int64 fileSize = 16;
   repeated SubConversation SubConversationList = 17;//子会话相关
   repeated ConversationResponse ConversationResponse = 18;//主会话详情
+  repeated AgentFile responseFiles = 19;//响应文件列表
 }
 
 message SubConversation {
@@ -653,6 +654,20 @@ message RequestFile {
   string FileName = 1;
   int64 FileSize = 2;
   string FileUrl = 3;
+}
+
+message AgentMeta {
+  string desc = 1;
+  string createAt = 2;
+  string name = 3;
+}
+
+message AgentFile {
+  string name = 1;
+  int32 size = 2;
+  string fileUrl = 3;
+  string fileType = 4;
+  AgentMeta metadata = 5;
 }
 
 message AssistantConversionStreamReq {

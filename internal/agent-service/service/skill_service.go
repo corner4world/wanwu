@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/response"
@@ -204,7 +206,7 @@ func (s *SkillExecutor) runStream(runnerType wga_sandbox_option.RunnerType) (*sc
 	_, jsonCh, err := wga_sandbox.Run(s.ctx, skillOpts...)
 	if err != nil {
 		log.Errorf("skillTool strem run error: %v", err)
-		return nil, err
+		return nil, errors.New(agent_util.WgaErr)
 	}
 
 	safe_go_util.SafeGo(func() {
@@ -295,6 +297,7 @@ func uploadResultFile(outputDir string) ([]*response.DownloadFileInfo, error) {
 			FileName: fileName,
 			FilePath: minioPath,
 			FileSize: fileSize,
+			CreateAt: util.Time2Str(time.Now().UnixMilli()),
 		})
 	}
 	return fileList, nil
