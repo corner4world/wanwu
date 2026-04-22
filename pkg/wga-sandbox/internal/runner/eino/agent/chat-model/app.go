@@ -94,7 +94,7 @@ func NewApp(ctx context.Context, cfg shared.AppConfig) (*App, error) {
 }
 
 func (a *App) Query(ctx context.Context, messages []adk.Message) *adk.AsyncIterator[*adk.AgentEvent] {
-	log.Printf("[App] Query with %d messages | Workspace: %s", len(messages), a.workspace)
+	log.Printf("[App] Query with %d messages | Workspace: %s", len(messages), shared.SanitizeForLog(a.workspace))
 	return a.runner.Run(ctx, messages)
 }
 

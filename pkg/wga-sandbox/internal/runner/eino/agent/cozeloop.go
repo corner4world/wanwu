@@ -8,6 +8,8 @@ import (
 	ccb "github.com/cloudwego/eino-ext/callbacks/cozeloop"
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/coze-dev/cozeloop-go"
+
+	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/runner/eino/agent/shared"
 )
 
 var (
@@ -57,7 +59,7 @@ func Init() error {
 	// Add API base URL for local deployment if specified
 	if apiBaseURL != "" {
 		opts = append(opts, cozeloop.WithAPIBaseURL(apiBaseURL))
-		log.Printf("[CozeLoop] Using custom API base URL: %s", apiBaseURL)
+		log.Printf("[CozeLoop] Using custom API base URL: %s", shared.SanitizeForLog(apiBaseURL))
 	}
 
 	var err error
