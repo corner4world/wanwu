@@ -169,7 +169,17 @@ export default {
         appType: this.type === 'all' ? '' : this.type,
         ...(searchInput.value && { name: searchInput.value }),
       };
-      getAppSpaceList(searchInfo)
+      let reqAppType = '';
+      if (this.type === 'all') {
+        reqAppType = 'app';
+      } else if (this.type === 'agent') {
+        reqAppType = 'assistant';
+      } else if (this.type === 'workflow' || this.type === 'chatflow') {
+        reqAppType = 'workflow';
+      } else {
+        reqAppType = this.type;
+      }
+      getAppSpaceList(reqAppType, searchInfo)
         .then(res => {
           this.loading = false;
           this.listData = res.data ? res.data.list || [] : [];

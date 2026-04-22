@@ -34,10 +34,10 @@ export const getApiKeyRoot = params => {
   });
 };
 
-// 获取智能体/文本问答/工作流列表
-export const getAppSpaceList = params => {
+// 获取智能体(assistant)/文本问答(rag)/工作流列表(workflow)
+export const getAppSpaceList = (appType = 'app', params) => {
   return request({
-    url: `${USER_API}/appspace/app/list`,
+    url: `${USER_API}/appspace/${appType}/list`,
     method: 'get',
     params,
   });
