@@ -315,6 +315,15 @@ func WithName(name string) SQLOption {
 	})
 }
 
+func WithRagName(name string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(name) > 0 {
+			return db.Where("rag_name = ?", name)
+		}
+		return db
+	})
+}
+
 func WithoutID(id uint32) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		if id != 0 {

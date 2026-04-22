@@ -105,6 +105,19 @@ func SelectKnowledgeByName(ctx context.Context, knowledgeName, userId, orgId str
 	return &knowledge, nil
 }
 
+// SelectKnowledgeByRagName 查询知识库信息
+func SelectKnowledgeByRagName(ctx context.Context, knowledgeRagName, userId, orgId string) (*model.KnowledgeBase, error) {
+	var knowledge model.KnowledgeBase
+	err := sqlopt.SQLOptions(sqlopt.WithPermit(orgId, userId), sqlopt.WithRagName(knowledgeRagName), sqlopt.WithDelete(0)).
+		Apply(db.GetHandle(ctx), &model.KnowledgeBase{}).
+		First(&knowledge).Error
+	if err != nil {
+		log.Errorf("SelectKnowledgeByRagName userId %s err: %v", userId, err)
+		return nil, util.ErrCode(errs.Code_KnowledgeBaseAccessDenied)
+	}
+	return &knowledge, nil
+}
+
 // SelectKnowledgeByIdNoDeleteCheck 查询知识库信息
 func SelectKnowledgeByIdNoDeleteCheck(ctx context.Context, knowledgeId, userId, orgId string) (*model.KnowledgeBase, error) {
 	var knowledge model.KnowledgeBase

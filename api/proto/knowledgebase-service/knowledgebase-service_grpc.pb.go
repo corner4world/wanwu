@@ -20,32 +20,34 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	KnowledgeBaseService_SelectKnowledgeList_FullMethodName            = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeList"
-	KnowledgeBaseService_SelectKnowledgeListByIdList_FullMethodName    = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeListByIdList"
-	KnowledgeBaseService_SelectKnowledgeDetailById_FullMethodName      = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeDetailById"
-	KnowledgeBaseService_SelectKnowledgeDetailByIdList_FullMethodName  = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeDetailByIdList"
-	KnowledgeBaseService_SelectKnowledgeDetailByName_FullMethodName    = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeDetailByName"
-	KnowledgeBaseService_CreateKnowledge_FullMethodName                = "/knowledgebase_service.KnowledgeBaseService/CreateKnowledge"
-	KnowledgeBaseService_UpdateKnowledge_FullMethodName                = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledge"
-	KnowledgeBaseService_DeleteKnowledge_FullMethodName                = "/knowledgebase_service.KnowledgeBaseService/DeleteKnowledge"
-	KnowledgeBaseService_KnowledgeHit_FullMethodName                   = "/knowledgebase_service.KnowledgeBaseService/KnowledgeHit"
-	KnowledgeBaseService_GetKnowledgeMetaSelect_FullMethodName         = "/knowledgebase_service.KnowledgeBaseService/GetKnowledgeMetaSelect"
-	KnowledgeBaseService_GetKnowledgeMetaValueList_FullMethodName      = "/knowledgebase_service.KnowledgeBaseService/GetKnowledgeMetaValueList"
-	KnowledgeBaseService_UpdateKnowledgeMetaValue_FullMethodName       = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledgeMetaValue"
-	KnowledgeBaseService_UpdateKnowledgeStatus_FullMethodName          = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledgeStatus"
-	KnowledgeBaseService_GetKnowledgeGraph_FullMethodName              = "/knowledgebase_service.KnowledgeBaseService/GetKnowledgeGraph"
-	KnowledgeBaseService_GetExportRecordList_FullMethodName            = "/knowledgebase_service.KnowledgeBaseService/GetExportRecordList"
-	KnowledgeBaseService_DeleteExportRecord_FullMethodName             = "/knowledgebase_service.KnowledgeBaseService/DeleteExportRecord"
-	KnowledgeBaseService_SelectKnowledgeExternalAPIList_FullMethodName = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeExternalAPIList"
-	KnowledgeBaseService_SelectKnowledgeExternalAPIInfo_FullMethodName = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeExternalAPIInfo"
-	KnowledgeBaseService_CreateKnowledgeExternalAPI_FullMethodName     = "/knowledgebase_service.KnowledgeBaseService/CreateKnowledgeExternalAPI"
-	KnowledgeBaseService_UpdateKnowledgeExternalAPI_FullMethodName     = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledgeExternalAPI"
-	KnowledgeBaseService_DeleteKnowledgeExternalAPI_FullMethodName     = "/knowledgebase_service.KnowledgeBaseService/DeleteKnowledgeExternalAPI"
-	KnowledgeBaseService_SelectKnowledgeExternalList_FullMethodName    = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeExternalList"
-	KnowledgeBaseService_SelectKnowledgeExternalInfo_FullMethodName    = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeExternalInfo"
-	KnowledgeBaseService_CreateKnowledgeExternal_FullMethodName        = "/knowledgebase_service.KnowledgeBaseService/CreateKnowledgeExternal"
-	KnowledgeBaseService_UpdateKnowledgeExternal_FullMethodName        = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledgeExternal"
-	KnowledgeBaseService_DeleteKnowledgeExternal_FullMethodName        = "/knowledgebase_service.KnowledgeBaseService/DeleteKnowledgeExternal"
+	KnowledgeBaseService_SelectKnowledgeList_FullMethodName             = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeList"
+	KnowledgeBaseService_SelectKnowledgeListByIdList_FullMethodName     = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeListByIdList"
+	KnowledgeBaseService_SelectKnowledgeDetailById_FullMethodName       = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeDetailById"
+	KnowledgeBaseService_SelectKnowledgeDetailByIdList_FullMethodName   = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeDetailByIdList"
+	KnowledgeBaseService_SelectKnowledgeDetailByName_FullMethodName     = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeDetailByName"
+	KnowledgeBaseService_SelectKnowledgeIdByRagName_FullMethodName      = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeIdByRagName"
+	KnowledgeBaseService_CreateKnowledge_FullMethodName                 = "/knowledgebase_service.KnowledgeBaseService/CreateKnowledge"
+	KnowledgeBaseService_UpdateKnowledge_FullMethodName                 = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledge"
+	KnowledgeBaseService_DeleteKnowledge_FullMethodName                 = "/knowledgebase_service.KnowledgeBaseService/DeleteKnowledge"
+	KnowledgeBaseService_KnowledgeHit_FullMethodName                    = "/knowledgebase_service.KnowledgeBaseService/KnowledgeHit"
+	KnowledgeBaseService_GetKnowledgeMetaSelect_FullMethodName          = "/knowledgebase_service.KnowledgeBaseService/GetKnowledgeMetaSelect"
+	KnowledgeBaseService_GetKnowledgeMetaValueList_FullMethodName       = "/knowledgebase_service.KnowledgeBaseService/GetKnowledgeMetaValueList"
+	KnowledgeBaseService_UpdateKnowledgeMetaValue_FullMethodName        = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledgeMetaValue"
+	KnowledgeBaseService_UpdateKnowledgeStatus_FullMethodName           = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledgeStatus"
+	KnowledgeBaseService_GetKnowledgeGraph_FullMethodName               = "/knowledgebase_service.KnowledgeBaseService/GetKnowledgeGraph"
+	KnowledgeBaseService_GetExportRecordList_FullMethodName             = "/knowledgebase_service.KnowledgeBaseService/GetExportRecordList"
+	KnowledgeBaseService_DeleteExportRecord_FullMethodName              = "/knowledgebase_service.KnowledgeBaseService/DeleteExportRecord"
+	KnowledgeBaseService_SelectKnowledgeExternalAPIList_FullMethodName  = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeExternalAPIList"
+	KnowledgeBaseService_SelectKnowledgeExternalAPIInfo_FullMethodName  = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeExternalAPIInfo"
+	KnowledgeBaseService_CreateKnowledgeExternalAPI_FullMethodName      = "/knowledgebase_service.KnowledgeBaseService/CreateKnowledgeExternalAPI"
+	KnowledgeBaseService_UpdateKnowledgeExternalAPI_FullMethodName      = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledgeExternalAPI"
+	KnowledgeBaseService_DeleteKnowledgeExternalAPI_FullMethodName      = "/knowledgebase_service.KnowledgeBaseService/DeleteKnowledgeExternalAPI"
+	KnowledgeBaseService_SelectKnowledgeExternalList_FullMethodName     = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeExternalList"
+	KnowledgeBaseService_SelectKnowledgeExternalInfo_FullMethodName     = "/knowledgebase_service.KnowledgeBaseService/SelectKnowledgeExternalInfo"
+	KnowledgeBaseService_CreateKnowledgeExternal_FullMethodName         = "/knowledgebase_service.KnowledgeBaseService/CreateKnowledgeExternal"
+	KnowledgeBaseService_UpdateKnowledgeExternal_FullMethodName         = "/knowledgebase_service.KnowledgeBaseService/UpdateKnowledgeExternal"
+	KnowledgeBaseService_DeleteKnowledgeExternal_FullMethodName         = "/knowledgebase_service.KnowledgeBaseService/DeleteKnowledgeExternal"
+	KnowledgeBaseService_GetDocByKnowledgeNameAndDocName_FullMethodName = "/knowledgebase_service.KnowledgeBaseService/GetDocByKnowledgeNameAndDocName"
 )
 
 // KnowledgeBaseServiceClient is the client API for KnowledgeBaseService service.
@@ -62,6 +64,8 @@ type KnowledgeBaseServiceClient interface {
 	SelectKnowledgeDetailByIdList(ctx context.Context, in *KnowledgeDetailSelectListReq, opts ...grpc.CallOption) (*KnowledgeDetailSelectListResp, error)
 	// 获取知识库详情
 	SelectKnowledgeDetailByName(ctx context.Context, in *KnowledgeDetailSelectReq, opts ...grpc.CallOption) (*KnowledgeInfo, error)
+	// 根据ragName获取知识库ID
+	SelectKnowledgeIdByRagName(ctx context.Context, in *SelectKnowledgeIdByRagNameReq, opts ...grpc.CallOption) (*SelectKnowledgeIdByRagNameResp, error)
 	// 新增知识库
 	CreateKnowledge(ctx context.Context, in *CreateKnowledgeReq, opts ...grpc.CallOption) (*CreateKnowledgeResp, error)
 	// 修改知识库
@@ -104,6 +108,8 @@ type KnowledgeBaseServiceClient interface {
 	UpdateKnowledgeExternal(ctx context.Context, in *UpdateKnowledgeExternalReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 删除外部知识库
 	DeleteKnowledgeExternal(ctx context.Context, in *DeleteKnowledgeExternalReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// 根据知识库名称和文档名称获取文档信息
+	GetDocByKnowledgeNameAndDocName(ctx context.Context, in *GetDocByKnowledgeNameAndDocNameReq, opts ...grpc.CallOption) (*GetDocByKnowledgeNameAndDocNameResp, error)
 }
 
 type knowledgeBaseServiceClient struct {
@@ -158,6 +164,16 @@ func (c *knowledgeBaseServiceClient) SelectKnowledgeDetailByName(ctx context.Con
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(KnowledgeInfo)
 	err := c.cc.Invoke(ctx, KnowledgeBaseService_SelectKnowledgeDetailByName_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *knowledgeBaseServiceClient) SelectKnowledgeIdByRagName(ctx context.Context, in *SelectKnowledgeIdByRagNameReq, opts ...grpc.CallOption) (*SelectKnowledgeIdByRagNameResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SelectKnowledgeIdByRagNameResp)
+	err := c.cc.Invoke(ctx, KnowledgeBaseService_SelectKnowledgeIdByRagName_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -374,6 +390,16 @@ func (c *knowledgeBaseServiceClient) DeleteKnowledgeExternal(ctx context.Context
 	return out, nil
 }
 
+func (c *knowledgeBaseServiceClient) GetDocByKnowledgeNameAndDocName(ctx context.Context, in *GetDocByKnowledgeNameAndDocNameReq, opts ...grpc.CallOption) (*GetDocByKnowledgeNameAndDocNameResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDocByKnowledgeNameAndDocNameResp)
+	err := c.cc.Invoke(ctx, KnowledgeBaseService_GetDocByKnowledgeNameAndDocName_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KnowledgeBaseServiceServer is the server API for KnowledgeBaseService service.
 // All implementations must embed UnimplementedKnowledgeBaseServiceServer
 // for forward compatibility.
@@ -388,6 +414,8 @@ type KnowledgeBaseServiceServer interface {
 	SelectKnowledgeDetailByIdList(context.Context, *KnowledgeDetailSelectListReq) (*KnowledgeDetailSelectListResp, error)
 	// 获取知识库详情
 	SelectKnowledgeDetailByName(context.Context, *KnowledgeDetailSelectReq) (*KnowledgeInfo, error)
+	// 根据ragName获取知识库ID
+	SelectKnowledgeIdByRagName(context.Context, *SelectKnowledgeIdByRagNameReq) (*SelectKnowledgeIdByRagNameResp, error)
 	// 新增知识库
 	CreateKnowledge(context.Context, *CreateKnowledgeReq) (*CreateKnowledgeResp, error)
 	// 修改知识库
@@ -430,6 +458,8 @@ type KnowledgeBaseServiceServer interface {
 	UpdateKnowledgeExternal(context.Context, *UpdateKnowledgeExternalReq) (*emptypb.Empty, error)
 	// 删除外部知识库
 	DeleteKnowledgeExternal(context.Context, *DeleteKnowledgeExternalReq) (*emptypb.Empty, error)
+	// 根据知识库名称和文档名称获取文档信息
+	GetDocByKnowledgeNameAndDocName(context.Context, *GetDocByKnowledgeNameAndDocNameReq) (*GetDocByKnowledgeNameAndDocNameResp, error)
 	mustEmbedUnimplementedKnowledgeBaseServiceServer()
 }
 
@@ -454,6 +484,9 @@ func (UnimplementedKnowledgeBaseServiceServer) SelectKnowledgeDetailByIdList(con
 }
 func (UnimplementedKnowledgeBaseServiceServer) SelectKnowledgeDetailByName(context.Context, *KnowledgeDetailSelectReq) (*KnowledgeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SelectKnowledgeDetailByName not implemented")
+}
+func (UnimplementedKnowledgeBaseServiceServer) SelectKnowledgeIdByRagName(context.Context, *SelectKnowledgeIdByRagNameReq) (*SelectKnowledgeIdByRagNameResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SelectKnowledgeIdByRagName not implemented")
 }
 func (UnimplementedKnowledgeBaseServiceServer) CreateKnowledge(context.Context, *CreateKnowledgeReq) (*CreateKnowledgeResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateKnowledge not implemented")
@@ -517,6 +550,9 @@ func (UnimplementedKnowledgeBaseServiceServer) UpdateKnowledgeExternal(context.C
 }
 func (UnimplementedKnowledgeBaseServiceServer) DeleteKnowledgeExternal(context.Context, *DeleteKnowledgeExternalReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteKnowledgeExternal not implemented")
+}
+func (UnimplementedKnowledgeBaseServiceServer) GetDocByKnowledgeNameAndDocName(context.Context, *GetDocByKnowledgeNameAndDocNameReq) (*GetDocByKnowledgeNameAndDocNameResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDocByKnowledgeNameAndDocName not implemented")
 }
 func (UnimplementedKnowledgeBaseServiceServer) mustEmbedUnimplementedKnowledgeBaseServiceServer() {}
 func (UnimplementedKnowledgeBaseServiceServer) testEmbeddedByValue()                              {}
@@ -625,6 +661,24 @@ func _KnowledgeBaseService_SelectKnowledgeDetailByName_Handler(srv interface{}, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(KnowledgeBaseServiceServer).SelectKnowledgeDetailByName(ctx, req.(*KnowledgeDetailSelectReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KnowledgeBaseService_SelectKnowledgeIdByRagName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SelectKnowledgeIdByRagNameReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KnowledgeBaseServiceServer).SelectKnowledgeIdByRagName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KnowledgeBaseService_SelectKnowledgeIdByRagName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KnowledgeBaseServiceServer).SelectKnowledgeIdByRagName(ctx, req.(*SelectKnowledgeIdByRagNameReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1007,6 +1061,24 @@ func _KnowledgeBaseService_DeleteKnowledgeExternal_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KnowledgeBaseService_GetDocByKnowledgeNameAndDocName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDocByKnowledgeNameAndDocNameReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KnowledgeBaseServiceServer).GetDocByKnowledgeNameAndDocName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KnowledgeBaseService_GetDocByKnowledgeNameAndDocName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KnowledgeBaseServiceServer).GetDocByKnowledgeNameAndDocName(ctx, req.(*GetDocByKnowledgeNameAndDocNameReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KnowledgeBaseService_ServiceDesc is the grpc.ServiceDesc for KnowledgeBaseService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1033,6 +1105,10 @@ var KnowledgeBaseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SelectKnowledgeDetailByName",
 			Handler:    _KnowledgeBaseService_SelectKnowledgeDetailByName_Handler,
+		},
+		{
+			MethodName: "SelectKnowledgeIdByRagName",
+			Handler:    _KnowledgeBaseService_SelectKnowledgeIdByRagName_Handler,
 		},
 		{
 			MethodName: "CreateKnowledge",
@@ -1117,6 +1193,10 @@ var KnowledgeBaseService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteKnowledgeExternal",
 			Handler:    _KnowledgeBaseService_DeleteKnowledgeExternal_Handler,
+		},
+		{
+			MethodName: "GetDocByKnowledgeNameAndDocName",
+			Handler:    _KnowledgeBaseService_GetDocByKnowledgeNameAndDocName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -118,12 +118,44 @@ func AuthKnowledge(fieldName string, permissionType int32) func(ctx *gin.Context
 	}
 }
 
+// AuthKnowledgeRagName 校验知识库权限
+func AuthKnowledgeRagName(fieldName string, permissionType int32) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		defer util.PrintPanicStack()
+		//1.获取value值
+		value := getFieldValue(ctx, fieldName)
+		if len(value) == 0 {
+			gin_util.ResponseErrWithStatus(ctx, http.StatusBadRequest, errors.New("knowledgeId is required"))
+			ctx.Abort()
+			return
+		}
+		//2.校验用户授权权限
+		knowledgeId, err := searchKnowledgeIdByRagName(ctx, value)
+		if err != nil {
+			gin_util.ResponseErrWithStatus(ctx, http.StatusBadRequest, err)
+			ctx.Abort()
+			return
+		}
+		err = knowledgeGrantUser(ctx, knowledgeId, permissionType)
+		//3.返回结果
+		if err != nil {
+			gin_util.ResponseErrWithStatus(ctx, http.StatusBadRequest, err)
+			ctx.Abort()
+			return
+		}
+	}
+}
+
 func searchKnowledgeId(ctx *gin.Context, docId string) (string, error) {
 	docInfo, err := service.GetDocDetail(ctx, "", "", docId)
 	if err != nil {
 		return "", err
 	}
 	return docInfo.KnowledgeId, nil
+}
+
+func searchKnowledgeIdByRagName(ctx *gin.Context, ragName string) (string, error) {
+	return service.SelectKnowledgeIdByRagName(ctx, ragName)
 }
 
 func searchKnowledgeIdByQAPairId(ctx *gin.Context, qaPairId string) (string, error) {

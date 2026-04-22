@@ -123,4 +123,7 @@ func registerKnowledge(apiV1 *gin.RouterGroup) {
 	mid.Sub("resource.knowledge").Reg(apiV1, "/knowledge/external", http.MethodPut, v1.UpdateKnowledgeExternal, "编辑外部知识库", middleware.AuthKnowledge("knowledgeId", middleware.KnowledgeEdit))
 	mid.Sub("resource.knowledge").Reg(apiV1, "/knowledge/external", http.MethodDelete, v1.DeleteKnowledgeExternal, "删除外部知识库", middleware.AuthKnowledge("knowledgeId", middleware.KnowledgeEdit))
 
+	// 根据知识库名称和文档名称获取文档信息
+	mid.Sub("resource.knowledge").Reg(apiV1, "/knowledge/doc/by/name", http.MethodGet, v1.GetDocByKnowledgeNameAndDocName, "根据知识库名称和文档名称获取文档信息", middleware.AuthKnowledgeRagName("knowledgeName", middleware.KnowledgeView))
+
 }
