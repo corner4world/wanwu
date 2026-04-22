@@ -172,12 +172,14 @@ export default {
       let reqAppType = '';
       if (this.type === 'all') {
         reqAppType = 'app';
-      } else if (this.type === 'agent') {
+      } else if (this.type === AGENT) {
         reqAppType = 'assistant';
-      } else if (this.type === 'workflow' || this.type === 'chatflow') {
+        delete searchInfo.appType;
+      } else if (this.type === WORKFLOW || this.type === CHAT) {
         reqAppType = 'workflow';
       } else {
         reqAppType = this.type;
+        delete searchInfo.appType;
       }
       getAppSpaceList(reqAppType, searchInfo)
         .then(res => {

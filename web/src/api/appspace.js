@@ -34,7 +34,18 @@ export const getApiKeyRoot = params => {
   });
 };
 
-// 获取智能体(assistant)/文本问答(rag)/工作流列表(workflow)
+/**
+ * 获取应用开发列表（智能体/文本问答/工作流）
+ * * @param {'app' | 'assistant' | 'rag' | 'workflow'} appType - 应用类型：
+ * - 'app': 默认应用
+ * - 'assistant': 智能体
+ * - 'rag': 文本问答
+ * - 'workflow': 工作流
+ * @param {Object} params - 查询参数
+ * @param {string} [params.name] - 搜索名称（通用）
+ * @param {string} [params.appType] - 仅在 appType 为 'workflow'| 'app' 时透传该参数
+ * @returns {Promise}
+ */
 export const getAppSpaceList = (appType = 'app', params) => {
   return request({
     url: `${USER_API}/appspace/${appType}/list`,
