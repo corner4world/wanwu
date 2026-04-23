@@ -117,6 +117,7 @@ export default {
     noData: '暂无匹配内容',
   },
   common: {
+    all: '全部',
     create: '+创建',
     fileUpload: {
       fileSizeError: '文件大小不能为空',

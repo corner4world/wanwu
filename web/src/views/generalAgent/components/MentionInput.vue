@@ -36,7 +36,15 @@
               />
             </div>
             <div class="item-info">
-              <div class="item-name">{{ item.name }}</div>
+              <div class="item-name-wrapper">
+                <span class="item-name">{{ item.name }}</span>
+                <span
+                  v-if="popoverTab === 'all' && item._resourceType"
+                  class="tag"
+                >
+                  {{ $t(`generalAgent.config.${item._resourceType}`) }}
+                </span>
+              </div>
               <div class="item-desc">{{ item.desc }}</div>
             </div>
           </div>
@@ -98,14 +106,36 @@ export default {
       );
     },
 
+    // 合并所有资源列表为"全部"
+    allResourcesList() {
+      const allList = [];
+      this.availableResourceTypes.forEach(type => {
+        const list = this.resourceList[type] || [];
+        // 为每个item添加type标识
+        const itemsWithType = list.map(item => ({
+          ...item,
+          _resourceType: type,
+        }));
+        allList.push(...itemsWithType);
+      });
+      return allList;
+    },
+
     currentConfig() {
       const type = this.popoverTab;
-      if (!type || !this.resourceList[type]) {
+      if (!type) {
         return {};
       }
 
+      // "all"类型返回所有资源的总和
+      if (type === 'all') {
+        return {
+          list: this.allResourcesList,
+        };
+      }
+
       return {
-        list: this.resourceList[type],
+        list: this.resourceList[type] || [],
       };
     },
 
@@ -146,10 +176,17 @@ export default {
     avatarSrc,
 
     initTabs() {
-      this.tabs = this.availableResourceTypes.map(type => ({
-        key: type,
-        label: this.$t(`generalAgent.config.${type}`),
-      }));
+      // 第一列为"全部"选项
+      this.tabs = [
+        {
+          key: 'all',
+          label: this.$t('common.all'),
+        },
+        ...this.availableResourceTypes.map(type => ({
+          key: type,
+          label: this.$t(`generalAgent.config.${type}`),
+        })),
+      ];
 
       if (this.tabs.length > 0 && !this.popoverTab) {
         this.popoverTab = this.tabs[0].key;
@@ -277,7 +314,15 @@ export default {
         );
 
         this.$nextTick(() => {
-          this.$refs.configPopover?.updatePopper();
+          // 如果"全部"列表的搜索结果为空,则隐藏popover
+          if (
+            this.popoverTab === 'all' &&
+            this.currentFilteredList.length === 0
+          ) {
+            this.showConfigPopover = false;
+          } else {
+            this.$refs.configPopover?.updatePopper();
+          }
         });
       } else {
         this.resetMentionState();
@@ -379,6 +424,7 @@ export default {
 </script>
 
 <style lang="scss">
+@import '@/style/tag';
 .x-sender-container {
   position: relative;
   * {
@@ -520,14 +566,20 @@ export default {
           flex: 1;
           min-width: 0;
 
-          .item-name {
-            font-size: 13px;
-            font-weight: 500;
-            color: #1a1a1a;
+          .item-name-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             margin-bottom: 2px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+
+            .item-name {
+              font-size: 13px;
+              font-weight: 500;
+              color: #1a1a1a;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
           }
 
           .item-desc {
