@@ -7,6 +7,8 @@ import { i18n } from './lang';
 import './router/permission';
 import './assets/icons';
 import '@/assets/icons/iconfont.js';
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
 
 // Vue 2 需要安装 composition-api 插件以支持 vue-office 组件
 import VueCompositionAPI from '@vue/composition-api';

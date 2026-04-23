@@ -6,17 +6,10 @@ module.exports = {
         targets: {
           browsers: ['> 1%', 'last 2 versions', 'not dead'],
         },
-        useBuiltIns: 'usage',
+        useBuiltIns: 'entry',
         corejs: 3,
-        modules: false,
-        debug: false,
       },
     ],
   ],
   plugins: [['@babel/plugin-transform-optional-chaining', { loose: false }]],
-  env: {
-    production: {
-      plugins: [],
-    },
-  },
 };
