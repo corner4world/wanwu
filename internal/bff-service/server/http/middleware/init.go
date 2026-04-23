@@ -27,7 +27,13 @@ func Init(r *gin.Engine) {
 	mid.NewSub("common", "", route.PermNeedEnable, false, false, JWTUser, CheckUserEnable)
 
 	// --- wga ---
-	mid.NewSub("wga", "", route.PermNeedEnable, false, false, JWTUser, CheckUserEnable)
+	mid.NewSub("wga", "通用智能体", route.PermNeedCheck, true, true, JWTUser, CheckUserPerm)
+
+	// wga.skill_management
+	mid.Sub("wga").NewSub("wanwu_bot", "WanwuBot", route.PermNeedCheck, true, true)
+
+	// OpenClaw
+	mid.Sub("wga").NewSub("openclaw", "OpenClaw", route.PermNeedCheck, true, true)
 
 	// --- model ---
 	mid.NewSub("model", "模型服务", route.PermNeedCheck, true, true, JWTUser, CheckUserPerm)
