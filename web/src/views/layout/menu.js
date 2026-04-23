@@ -133,6 +133,12 @@ export const menuList = [
         path: '/templateSquare',
         perm: PERMS.TEMPLATE,
       },
+      {
+        name: i18n.t('menu.skillSquare'),
+        index: 'square-skillSquare',
+        path: '/skillSquare',
+        perm: PERMS.SKILL_SQUARE,
+      },
     ],
   },
   {

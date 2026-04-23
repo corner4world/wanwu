@@ -16,29 +16,40 @@
     <div class="card-des">{{ info.desc }}</div>
     <div class="card-bottom" style="justify-content: flex-end">
       <div class="card-bottom-right">
-        <el-tooltip
-          v-if="type === 3"
-          :content="$t('tempSquare.skills.sendCustom')"
-          placement="top"
+        <slot
+          name="operations"
+          v-bind="{
+            info,
+            type,
+            downloadTemplate,
+            sendToResource,
+            handleDelete,
+          }"
         >
-          <i class="el-icon-s-promotion" @click.stop="sendToResource"></i>
-        </el-tooltip>
+          <el-tooltip
+            v-if="type === 3"
+            :content="$t('tempSquare.skills.sendCustom')"
+            placement="top"
+          >
+            <i class="el-icon-s-promotion" @click.stop="sendToResource"></i>
+          </el-tooltip>
 
-        <el-tooltip :content="$t('tempSquare.download')" placement="top">
-          <i class="el-icon-download" @click.stop="downloadTemplate"></i>
-        </el-tooltip>
+          <el-tooltip :content="$t('tempSquare.download')" placement="top">
+            <i class="el-icon-download" @click.stop="downloadTemplate"></i>
+          </el-tooltip>
 
-        <!-- 自定义类型显示更多操作 -->
-        <el-dropdown v-if="type == 2" placement="bottom">
-          <span class="el-dropdown-link">
-            <i class="el-icon-more" @click.stop />
-          </span>
-          <el-dropdown-menu slot="dropdown" style="margin-top: -10px">
-            <el-dropdown-item @click.native="handleDelete">
-              {{ $t('common.button.delete') }}
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </el-dropdown>
+          <!-- 自定义类型显示更多操作 -->
+          <el-dropdown v-if="type == 2" placement="bottom">
+            <span class="el-dropdown-link">
+              <i class="el-icon-more" @click.stop />
+            </span>
+            <el-dropdown-menu slot="dropdown" style="margin-top: -10px">
+              <el-dropdown-item @click.native="handleDelete">
+                {{ $t('common.button.delete') }}
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
+        </slot>
       </div>
     </div>
   </div>
@@ -64,6 +75,11 @@ export default {
   methods: {
     avatarSrc,
     handleClick() {
+      const hasClickListener = this.$listeners && this.$listeners.click;
+      if (hasClickListener) {
+        this.$emit('click', this.info);
+        return;
+      }
       if (![1, 2].includes(this.type)) return;
       const path = '/skill/detail';
       const type = this.type === 2 ? SKILLCUSTOM : SKILL;

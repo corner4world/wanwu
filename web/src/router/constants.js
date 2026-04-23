@@ -25,6 +25,7 @@ export const PERMS = {
   EXPLORE: 'exploration.app', // 探索广场-应用广场
   MCP: 'exploration.mcp', // 探索广场-MCP广场
   TEMPLATE: 'exploration.template', // 探索广场-模板广场
+  SKILL_SQUARE: 'exploration.skill', // 探索广场-Skill广场
 
   OPERATION: 'operation', // 运营管理
   STATISTIC: 'operation.statistic_client', // 运营管理-统计分析

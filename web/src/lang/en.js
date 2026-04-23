@@ -105,6 +105,7 @@ export default {
     about: '关于',
     helpDoc: '帮助文档',
     back: '返回',
+    skillSquare: 'Skill广场',
   },
   header: {
     title: '智能体平台',
@@ -322,6 +323,18 @@ export default {
     private: '私密',
     multiAgent: '多智能体',
     singleAgent: '单智能体',
+  },
+  skillSpace: {
+    search: '按照skill名称搜索',
+    toResource: '发送到资源库',
+    isShared: '已发送到资源库',
+    list: {
+      moreText: '点击发现更多Skills',
+    },
+    detail: {
+      backText: '返回Skill广场',
+      otherSkill: '其他Skill查看',
+    },
   },
   uploadDialog: {
     title: '文件上传',
