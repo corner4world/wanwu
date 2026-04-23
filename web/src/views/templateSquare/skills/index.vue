@@ -4,10 +4,10 @@
       <!-- tabs -->
       <div class="tabs" style="margin: 0 20px">
         <div :class="['tab', { active: tabActive === 0 }]" @click="tabClick(0)">
-          {{ $t('tempSquare.skills.app.builtIn') }}
+          {{ $t('tempSquare.skills.app.myAdded') }}
         </div>
         <div :class="['tab', { active: tabActive === 1 }]" @click="tabClick(1)">
-          {{ $t('tempSquare.skills.app.custom') }}
+          {{ $t('tempSquare.skills.app.myCreated') }}
         </div>
       </div>
 
@@ -24,7 +24,7 @@ export default {
     return {
       tabActive: 0,
       toolTabObj: {
-        builtIn: 0,
+        added: 0,
         custom: 1,
       },
     };

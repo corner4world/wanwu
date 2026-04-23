@@ -28,10 +28,10 @@
         >
           <el-tooltip
             v-if="type === 3"
-            :content="$t('tempSquare.skills.sendCustom')"
+            :content="$t('tempSquare.skills.save')"
             placement="top"
           >
-            <i class="el-icon-s-promotion" @click.stop="sendToResource"></i>
+            <i class="el-icon-collection" @click.stop="sendToResource"></i>
           </el-tooltip>
 
           <el-tooltip :content="$t('tempSquare.download')" placement="top">
@@ -39,7 +39,7 @@
           </el-tooltip>
 
           <!-- 自定义类型显示更多操作 -->
-          <el-dropdown v-if="type == 2" placement="bottom">
+          <el-dropdown v-if="[1, 2].includes(type)" placement="bottom">
             <span class="el-dropdown-link">
               <i class="el-icon-more" @click.stop />
             </span>

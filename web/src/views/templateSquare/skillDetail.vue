@@ -96,7 +96,7 @@
         </div>
       </div>
 
-      <div class="right-recommend">
+      <div v-if="recommendList.length" class="right-recommend">
         <!-- 右侧标题也可以扩展成插槽，以支持更多定制化 -->
         <slot name="recommend-title">
           <p style="margin: 20px 0; color: #333">

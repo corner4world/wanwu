@@ -84,7 +84,8 @@ export default {
     },
     async getRecommendList() {
       const res = await getSquareSkillList();
-      this.recommendList = res.data?.list || [];
+      this.recommendList =
+        res.data.list.filter(item => item.skillId !== this.skillId) || [];
     },
     async handleDownload(item) {
       const res = await downloadSquareSkill({ skillId: item.skillId });

@@ -717,14 +717,14 @@ export default {
     skills: {
       name: 'skill',
       app: {
-        builtIn: '内置',
-        custom: '自定义',
+        myAdded: '我添加的',
+        myCreated: '我创建的',
         addText: '创建自定义Skills',
         moreText: '点击发现更多Skills',
       },
       createSlogan: '一句话创建Skills',
       createPlaceholder: '选择一款模型，告诉我想要生成什么Skill吧',
-      sendCustom: '发送到资源库',
+      save: '保存',
       noModelIdTips: '请选择一个模型',
       deleteHint:
         '删除后，历史引用了本skills的智能体将自动取消引用，且此操作不可撤回,确定要删除吗？',

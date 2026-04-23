@@ -99,7 +99,7 @@
         </div>
       </div>
 
-      <div class="right-recommend">
+      <div v-if="recommendList.length" class="right-recommend">
         <p style="margin: 20px 0; color: #333">
           {{ $t('tempSquare.otherTemp') }}
         </p>
@@ -129,13 +129,13 @@ import {
   downloadWorkflow,
   getWorkflowRecommendsList,
   getWorkflowTempInfo,
-  getSkillTempInfo,
-  getSkillTempList,
-  downloadSkill,
   getCustomSkillInfo,
   getCustomSkillList,
-  downloadCustomSkill,
 } from '@/api/templateSquare';
+import {
+  getJoinerSkillList,
+  getJoinerSkillDetail,
+} from '@/api/skillResource/added';
 import { SKILL, WORKFLOW, SKILLCUSTOM } from './constants';
 import { avatarSrc, directDownload, resDownloadFile } from '@/utils/util';
 import CreateWorkflow from '@/components/createApp/createWorkflow.vue';
@@ -164,6 +164,7 @@ export default {
     $route: {
       handler() {
         this.initData();
+        this.getRecommendList();
       },
       // 深度观察监听
       deep: true,
@@ -195,7 +196,7 @@ export default {
       } else if (this.type === SKILLCUSTOM) {
         res = await getCustomSkillInfo({ skillId: this.templateSquareId });
       } else {
-        res = await getSkillTempInfo({ skillId: this.templateSquareId });
+        res = await getJoinerSkillDetail({ skillId: this.templateSquareId });
       }
       this.detail = res.data || {};
     },
@@ -208,9 +209,15 @@ export default {
       } else if (this.type === SKILLCUSTOM) {
         res = await getCustomSkillList();
       } else {
-        res = await getSkillTempList();
+        res = await getJoinerSkillList();
       }
-      this.recommendList = res.data.list || [];
+      if (this.type === SKILLCUSTOM || this.type === SKILL) {
+        this.recommendList = res.data.list
+          ? res.data.list.filter(item => item.skillId !== this.templateSquareId)
+          : [];
+      } else {
+        this.recommendList = res.data.list || [];
+      }
     },
     copyTemplate(item) {
       this.$refs.cloneWorkflowDialog.openDialog(item);
@@ -224,7 +231,8 @@ export default {
         await this.handleDownloadCustomSkill(item);
         return;
       } else {
-        res = await downloadSkill({ skillId: item.skillId });
+        await this.handleDownloadAddedSkill(item);
+        return;
       }
       resDownloadFile(res, `${item.name}${isWorkflow ? '.json' : '.zip'}`);
     },
@@ -264,6 +272,12 @@ export default {
     handleDownloadCustomSkill(skillInfo) {
       const { zipUrl } = skillInfo;
       directDownload(zipUrl);
+    },
+    // 已添加skills下载
+    handleDownloadAddedSkill(skillInfo) {
+      if (skillInfo.downloadUrl) {
+        directDownload(skillInfo.downloadUrl);
+      }
     },
   },
 };
