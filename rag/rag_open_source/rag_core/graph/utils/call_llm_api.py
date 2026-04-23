@@ -24,7 +24,7 @@ class LLMCompletionCall:
             self.llm_api_key = llm_api_key
         if not self.llm_api_key:
             raise ValueError("LLM API key not provided")
-        self.llm_timeout = int(os.getenv("LLM_TIMEOUT", "60"))
+        self.llm_timeout = int(os.getenv("LLM_TIMEOUT", "300"))
         self.llm_max_retries = int(os.getenv("LLM_MAX_RETRIES", "3"))
         # self.client = OpenAI(base_url=self.llm_base_url, api_key=self.llm_api_key)
 
@@ -47,6 +47,7 @@ class LLMCompletionCall:
                     "model": self.llm_model,
                     "temperature": self.temperature,
                     "stream": False,
+                    "enable_thinking": False,
                     "messages": [{"role": "user", "content": content}],
                 }
                 response = requests.post(self.llm_base_url, json=llm_data, headers=headers, verify=False, timeout=self.llm_timeout)
