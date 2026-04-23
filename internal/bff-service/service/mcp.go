@@ -342,7 +342,7 @@ func toToolAction(tool *common.ToolAction) *protocol.Tool {
 	}
 	for k, v := range tool.InputSchema.GetProperties() {
 		ret.InputSchema.Properties[k] = &protocol.Property{
-			Type:        protocol.DataType(v.Type),
+			Type:        protocol.PropertyType{protocol.DataType(v.Type)},
 			Description: v.Description,
 		}
 	}

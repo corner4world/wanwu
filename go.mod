@@ -6,7 +6,7 @@ replace github.com/getkin/kin-openapi => github.com/getkin/kin-openapi v0.118.0
 
 require (
 	github.com/IBM/sarama v1.43.2
-	github.com/ThinkInAIXYZ/go-mcp v0.2.22
+	github.com/ThinkInAIXYZ/go-mcp v0.2.26
 	github.com/ag-ui-protocol/ag-ui/sdks/community/go v0.0.0-20260313163727-d5d9573cef5b
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/cloudwego/eino v0.7.37

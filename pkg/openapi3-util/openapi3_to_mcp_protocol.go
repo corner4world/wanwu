@@ -120,7 +120,7 @@ func Parameter2MCPProtocolProperty(parameter *openapi3.Parameter) *protocol.Prop
 
 	dataType := ParameterType2MCPProtocolDataType(parameter)
 	ret := &protocol.Property{
-		Type:        dataType,
+		Type:        protocol.PropertyType{dataType},
 		Description: parameter.Description,
 		Required:    parameter.Schema.Value.Required,
 		// todo enum
@@ -163,7 +163,7 @@ func Schema2MCPProtocolProperty(schema *openapi3.Schema) *protocol.Property {
 
 	dataType := SchemaType2MCPProtocolDataType(schema)
 	ret := &protocol.Property{
-		Type:        dataType,
+		Type:        protocol.PropertyType{dataType},
 		Description: schema.Description,
 		Required:    schema.Required,
 		// todo enum

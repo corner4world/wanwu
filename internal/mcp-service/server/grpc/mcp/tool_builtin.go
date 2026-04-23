@@ -138,7 +138,7 @@ func convertBuiltInInputSchema(schema *protocol.InputSchema) *common.ToolActionI
 
 	for field, prop := range schema.Properties {
 		properties[field] = &common.ToolActionInputSchemaValue{
-			Type:        string(prop.Type),
+			Type:        propertyTypeToString(prop.Type),
 			Description: prop.Description,
 		}
 	}
@@ -158,4 +158,18 @@ func toBuiltinToolApiAuth(builtinToolCfg config.ToolConfig, apiKey string) *comm
 		ApiKeyQueryParam:   builtinToolCfg.ApiKeyQueryParam,
 		ApiKeyValue:        apiKey,
 	}
+}
+
+func propertyTypeToString(pt protocol.PropertyType) string {
+	if len(pt) == 0 {
+		return ""
+	}
+	if len(pt) == 1 {
+		return string(pt[0])
+	}
+	result := string(pt[0])
+	for _, t := range pt[1:] {
+		result += "," + string(t)
+	}
+	return result
 }
