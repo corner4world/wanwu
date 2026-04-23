@@ -113,8 +113,8 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 			"transfer_to_agent": "正在交给专业智能体",
 		},
 		ExcludedAgentNames: []string{
-			"Supervisor Agent",
-			"default",
+			config.WgaCfg().AgentID,     // 排除主智能体，避免生成冗余的切换智能体提示
+			ag_ui_util.DefaultAgentName, // 排除default，避免生成冗余的切换智能体提示
 		},
 		// ResultFormatters: map[string]func(string) string{
 		// 	"bocha_comprehensive_search": WgaFormatBochaWebSearchResult,
