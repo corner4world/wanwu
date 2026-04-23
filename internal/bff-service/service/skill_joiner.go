@@ -1,6 +1,8 @@
 package service
 
 import (
+	"net/url"
+
 	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
@@ -54,6 +56,7 @@ func toJoinerSkillDetail(ctx *gin.Context, skill *mcp_service.AcquiredSkill) *re
 	if skill == nil {
 		return nil
 	}
+	filePath, _ := url.JoinPath(config.Cfg().Minio.DownloadURL, skill.ObjectPath)
 	return &response.JoinerSkillDetail{
 		SkillId:       skill.AcquiredSkillId,
 		Name:          skill.Name,
@@ -61,6 +64,6 @@ func toJoinerSkillDetail(ctx *gin.Context, skill *mcp_service.AcquiredSkill) *re
 		Author:        skill.Author,
 		Desc:          skill.Desc,
 		SkillMarkdown: config.FixFrontMatterFormat(skill.Markdown),
-		DownloadUrl:   buildAccessFilePath(skill.ObjectPath),
+		DownloadUrl:   filePath,
 	}
 }
