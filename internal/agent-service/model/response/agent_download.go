@@ -1,9 +1,10 @@
 package response
 
 import (
-	"github.com/UnicomAI/wanwu/pkg/log"
 	"path/filepath"
 	"strings"
+
+	"github.com/UnicomAI/wanwu/pkg/log"
 )
 
 var MaxDownloadFileCount = 3

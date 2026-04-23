@@ -10,6 +10,71 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetGeneralAgentSubList
+//
+//	@Tags			wga
+//	@Summary		获取通用智能体子智能体列表
+//	@Description	获取通用智能体支持的子智能体列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.GetGeneralAgentSubListResp}
+//	@Router			/general/agent/sub/list [get]
+func GetGeneralAgentSubList(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentSubList(ctx)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentUploadLimit
+//
+//	@Tags			wga
+//	@Summary		获取通用智能体上传文件格式限制
+//	@Description	获取通用智能体所支持的上传文件格式及大小限制
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.GeneralAgentUploadLimitResp}
+//	@Router			/general/agent/upload/limit [get]
+func GetGeneralAgentUploadLimit(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentUploadLimit(ctx, getUserID(ctx), getOrgID(ctx))
+	gin_util.Response(ctx, resp, err)
+}
+
+// UpdateGeneralAgentConfig
+//
+//	@Tags			wga
+//	@Summary		修改通用智能体配置
+//	@Description	更新通用智能体工具配置
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.UpdateGeneralAgentConfigReq	true	"更新通用智能体配置请求参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/general/agent/config [put]
+func UpdateGeneralAgentConfig(ctx *gin.Context) {
+	var req request.UpdateGeneralAgentConfigReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.UpdateGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, nil, err)
+}
+
+// GetGeneralAgentConfig
+//
+//	@Tags			wga
+//	@Summary		获取通用智能体配置
+//	@Description	获取通用智能体配置
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.GetGeneralAgentConfigResp}
+//	@Router			/general/agent/config [get]
+func GetGeneralAgentConfig(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx))
+	gin_util.Response(ctx, resp, err)
+}
+
 // GetGeneralAgentAssistantSelect
 //
 //	@Tags			wga
@@ -113,68 +178,18 @@ func GetGeneralAgentSkillSelect(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
-// UpdateGeneralAgentConfig
+// GetGeneralAgentResourceSelect
 //
 //	@Tags			wga
-//	@Summary		修改通用智能体配置
-//	@Description	更新通用智能体工具配置
+//	@Summary		通用智能体资源选择列表
+//	@Description	获取通用智能体资源选择列表，包括MCP、Workflow、Skill、智能体四种类型
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			data	body		request.UpdateGeneralAgentConfigReq	true	"更新通用智能体配置请求参数"
-//	@Success		200		{object}	response.Response
-//	@Router			/general/agent/config [put]
-func UpdateGeneralAgentConfig(ctx *gin.Context) {
-	var req request.UpdateGeneralAgentConfigReq
-	if !gin_util.Bind(ctx, &req) {
-		return
-	}
-	err := service.UpdateGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
-	gin_util.Response(ctx, nil, err)
-}
-
-// GetGeneralAgentConfig
-//
-//	@Tags			wga
-//	@Summary		获取通用智能体配置
-//	@Description	获取通用智能体配置
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.GetGeneralAgentConfigResp}
-//	@Router			/general/agent/config [get]
-func GetGeneralAgentConfig(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx))
-	gin_util.Response(ctx, resp, err)
-}
-
-// GetGeneralAgentSubList
-//
-//	@Tags			wga
-//	@Summary		获取通用智能体子智能体列表
-//	@Description	获取通用智能体支持的子智能体列表
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.GetGeneralAgentSubListResp}
-//	@Router			/general/agent/sub/list [get]
-func GetGeneralAgentSubList(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentSubList(ctx)
-	gin_util.Response(ctx, resp, err)
-}
-
-// GetGeneralAgentUploadLimit
-//
-//	@Tags			wga
-//	@Summary		获取通用智能体上传文件格式限制
-//	@Description	获取通用智能体所支持的上传文件格式及大小限制
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.GeneralAgentUploadLimitResp}
-//	@Router			/general/agent/upload/limit [get]
-func GetGeneralAgentUploadLimit(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentUploadLimit(ctx, getUserID(ctx), getOrgID(ctx))
+//	@Success		200	{object}	response.Response{data=response.GeneralAgentResourceSelectList}
+//	@Router			/general/agent/resource/select [get]
+func GetGeneralAgentResourceSelect(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentResourceSelect(ctx, getUserID(ctx), getOrgID(ctx), "")
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -412,19 +427,4 @@ func GeneralAgentConversationChat(ctx *gin.Context) {
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 	}
-}
-
-// GetGeneralAgentResourceSelect
-//
-//	@Tags			wga
-//	@Summary		通用智能体资源选择列表
-//	@Description	获取通用智能体资源选择列表，包括MCP、Workflow、Skill、智能体四种类型
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.GeneralAgentResourceSelectList}
-//	@Router			/general/agent/resource/select [get]
-func GetGeneralAgentResourceSelect(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentResourceSelect(ctx, getUserID(ctx), getOrgID(ctx), "")
-	gin_util.Response(ctx, resp, err)
 }
