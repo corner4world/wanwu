@@ -115,21 +115,22 @@ The **Yuanjing Wanwu AI Agent Platform** is an **enterprise-oriented**, **one-st
 ------
 
 ### &#x1F4E2; Function Comparison
-|                     Function                     | Wanwu |             Dify.AI             |          Fastgpt           |             Ragflow             |    Coze open source version     |
-| :----------------------------------------------: | :---: | :-----------------------------: | :------------------------: | :-----------------------------: | :-----------------------------: |
-|                   Model import                   |   ✅   |                ✅                |     ❌(Built-in models)     |                ✅                |       ❌(Built-in models)        |
-|                Direct OCR import                 |   ✅   |                ❌                |             ❌              |                ❌                |                ❌                |
-|                    RAG engine                    |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
-|                     GraphRAG                     |   ✅   |                ❌                |             ❌              |                ✅                |                ❌                |
+|                    Function                    | Wanwu |             Dify.AI             |          Fastgpt           |             Ragflow             |    Coze open source version     |
+| :--------------------------------------------: | :---: | :-----------------------------: | :------------------------: | :-----------------------------: | :-----------------------------: |
+|                  Model import                  |   ✅   |                ✅                |     ❌(Built-in models)     |                ✅                |       ❌(Built-in models)        |
+|               Direct OCR import                |   ✅   |                ❌                |             ❌              |                ❌                |                ❌                |
+|                   RAG engine                   |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
+|                    GraphRAG                    |   ✅   |                ❌                |             ❌              |                ✅                |                ❌                |
+|    Multi-Agent Orchestration & Development     |   ✅   |                ❌                |             ✅              |                ✅                |                ❌                |
 | General Agent & Skills Orchestration Framework |   ✅   |                ❌                |             ❌              |                ❌                |                ❌                |
-|                      Agent                       |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
-|                     Workflow                     |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
-|                       MCP                        |   ✅   |                ✅                |             ✅              | ✅(Need to install tools to use) |                ❌                |
-|                Search enhancement                |   ✅   | ✅(Need to install tools to use) |             ✅              | ✅(Need to install tools to use) |                ✅                |
-|                 Local deployment                 |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
-|                   Multi-tenant                   |   ✅   |   ❌(Commercially restricted)    | ❌(Commercially restricted) |                ✅                | ✅(Users are not interconnected) |
-|                 license friendly                 |   ✅   |   ❌(Commercially restricted)    | ❌(Commercially restricted) |      Not fully open source      |                ✅                |
-> As of August 1, 2025.
+|                     Agent                      |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
+|                    Workflow                    |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
+|                      MCP                       |   ✅   |                ✅                |             ✅              | ✅(Need to install tools to use) |                ❌                |
+|               Search enhancement               |   ✅   | ✅(Need to install tools to use) |             ✅              | ✅(Need to install tools to use) |                ✅                |
+|                Local deployment                |   ✅   |                ✅                |             ✅              |                ✅                |                ✅                |
+|                  Multi-tenant                  |   ✅   |   ❌(Commercially restricted)    | ❌(Commercially restricted) |                ✅                | ✅(Users are not interconnected) |
+|                license friendly                |   ✅   |   ❌(Commercially restricted)    | ❌(Commercially restricted) |      Not fully open source      |                ✅                |
+> As of April 22, 2026.
 
 ------
 
