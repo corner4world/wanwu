@@ -117,7 +117,7 @@ const constantRoutes = [
       {
         path: '/skill/detail',
         component: resolve =>
-          require(['@/views/templateSquare/tempDetail.vue'], resolve),
+          require(['@/views/templateSquare/skills/detail.vue'], resolve),
         meta: { perm: [PERMS.SKILL] },
       },
       {
@@ -342,6 +342,17 @@ const constantRoutes = [
         path: '/templateSquare/detail',
         component: resolve =>
           require(['@/views/templateSquare/tempDetail.vue'], resolve),
+      },
+      {
+        path: '/skillSquare',
+        component: resolve => require(['@/views/skillSquare'], resolve),
+        meta: { perm: [PERMS.SKILL_SQUARE] },
+      },
+      {
+        path: '/skillSquare/detail',
+        component: resolve =>
+          require(['@/views/skillSquare/detail.vue'], resolve),
+        meta: { perm: [PERMS.SKILL_SQUARE] },
       },
       {
         path: '/userCenter/*',

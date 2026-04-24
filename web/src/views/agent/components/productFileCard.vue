@@ -11,7 +11,7 @@
     </div>
     <div class="card-footer">
       <div class="card-footer-left">
-        <span class="card-size">{{ fileSize }}</span>
+        <span v-if="this.info.size >= 0" class="card-size">{{ fileSize }}</span>
       </div>
       <div class="card-footer-right">
         <el-tooltip :content="$t('tempSquare.download')" placement="top">
@@ -37,11 +37,7 @@ export default {
   },
   computed: {
     fileSize() {
-      return this.info.size < 0
-        ? '-- KB'
-        : this.info.size === 0
-          ? '0 KB'
-          : filterSize(this.info.size);
+      return this.info.size === 0 ? '0 KB' : filterSize(this.info.size);
     },
   },
   methods: {

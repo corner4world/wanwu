@@ -199,6 +199,13 @@ export default {
             trigger: 'blur',
           },
         ],
+        author: [
+          {
+            required: true,
+            message: this.$t('tempSquare.skills.form.authorPlaceholder'),
+            trigger: 'blur',
+          },
+        ],
         zipUrl: [
           {
             required: true,

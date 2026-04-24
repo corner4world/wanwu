@@ -21,12 +21,8 @@
                   :info="item"
                   :type="1"
                   @download="handleDownload"
+                  @delete="handleDelete"
                 />
-                <div class="card card-item-more" @click="handleLinkMore()">
-                  <div class="card-content">
-                    <span>{{ $t('tempSquare.skills.app.moreText') }}</span>
-                  </div>
-                </div>
               </div>
             </div>
             <div v-else class="empty">
@@ -40,9 +36,12 @@
 </template>
 <script>
 import SkillCard from './card.vue';
-import { resDownloadFile } from '@/utils/util';
+import { directDownload } from '@/utils/util';
 import SearchInput from '@/components/searchInput.vue';
-import { getSkillTempList, downloadSkill } from '@/api/templateSquare';
+import {
+  getJoinerSkillList,
+  deleteJoinerSkill,
+} from '@/api/skillResource/added';
 
 export default {
   components: { SearchInput, SkillCard },
@@ -67,7 +66,7 @@ export default {
         name: searchInput.value,
       };
 
-      getSkillTempList(params)
+      getJoinerSkillList(params)
         .then(res => {
           const { list } = res.data || {};
           this.list = list || [];
@@ -76,13 +75,17 @@ export default {
         .catch(() => (this.loading = false));
     },
     handleDownload(info) {
-      downloadSkill({ skillId: info.skillId }).then(response => {
-        resDownloadFile(response, `${info.name}.zip`);
-        this.doGetSkillTempList();
-      });
+      if (info.downloadUrl) {
+        directDownload(info.downloadUrl);
+      }
     },
-    handleLinkMore() {
-      window.open('https://clawhub.ai/skills?sort=downloads', '_blank');
+    async handleDelete(info) {
+      try {
+        await deleteJoinerSkill({ skillId: info.skillId });
+        this.doGetSkillTempList();
+      } catch (error) {
+        console.error('Error deleting skill:', error);
+      }
     },
   },
 };

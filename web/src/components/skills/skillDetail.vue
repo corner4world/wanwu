@@ -3,22 +3,20 @@
     class="tempSquare-detail page-wrapper"
     :style="isPublic ? `background: ${bgColor}; min-height: 100%` : ''"
   >
-    <span class="back" @click="back">
-      {{
-        $t('menu.back') +
-        (type === workflow ? $t('menu.templateSquare') : $t('menu.resource'))
-      }}
+    <!-- 返回按钮，点击抛出 back 事件 -->
+    <span class="back" @click="$emit('back')">
+      <!-- 可通过 prop 灵活定义返回按钮文字 -->
+      <slot name="back-text">
+        {{ backText || $t('menu.back') }}
+      </slot>
     </span>
+
     <div class="tempSquare-title">
       <div class="tempSquare-title-left">
         <img
           class="logo"
           v-if="detail.avatar && detail.avatar.path"
-          :src="
-            type === workflow
-              ? detail.avatar.path
-              : avatarSrc(detail.avatar.path)
-          "
+          :src="avatarSrc(detail.avatar.path)"
         />
         <div :class="['info', { fold: foldStatus }]">
           <p class="name">{{ detail.name }}</p>
@@ -35,20 +33,20 @@
           <p v-else class="desc">{{ detail.desc }}</p>
         </div>
       </div>
-      <div style="margin-left: 10px">
+      <div style="margin-left: 10px; flex-shrink: 0">
+        <!-- 默认的下载按钮，点击时将当前 detail 抛出，由外部调用具体 API 或者下载逻辑 -->
         <el-button
-          v-if="type === workflow"
           type="primary"
           size="mini"
-          @click="copyTemplate(detail)"
+          @click="$emit('download', detail)"
         >
-          {{ $t('tempSquare.copy') }}
-        </el-button>
-        <el-button type="primary" size="mini" @click="downloadTemplate(detail)">
           {{ $t('tempSquare.download') }}
         </el-button>
+        <!-- 预留插槽，如果是工作流页面可能需要增加一些像“克隆”一样的按钮 -->
+        <slot name="extra-buttons"></slot>
       </div>
     </div>
+
     <div class="tempSquare-main">
       <div class="left-info">
         <div class="tabs">
@@ -86,120 +84,92 @@
               <div class="item-desc" v-html="parseTxt(detail.note)"></div>
             </div>
           </div>
+          <div class="overview bg-border" v-if="detail.skillMarkdown">
+            <div class="overview-item">
+              <div class="item-desc">
+                <div class="tempSquare-markdown">
+                  <MdRender :content="detail.skillMarkdown" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div v-if="recommendList.length" class="right-recommend">
-        <p style="margin: 20px 0; color: #333">
-          {{ $t('tempSquare.otherTemp') }}
-        </p>
+        <!-- 右侧标题也可以扩展成插槽，以支持更多定制化 -->
+        <slot name="recommend-title">
+          <p style="margin: 20px 0; color: #333">
+            {{ $t('skillSpace.detail.otherSkill') }}
+          </p>
+        </slot>
         <div
           class="recommend-item"
           v-for="(item, i) in recommendList"
           :key="`${i}rc`"
-          @click="handleClick(item)"
+          @click="$emit('click-recommend', item)"
         >
           <img
             class="logo"
             v-if="item.avatar && item.avatar.path"
-            :src="
-              type === workflow ? item.avatar.path : avatarSrc(item.avatar.path)
-            "
+            :src="avatarSrc(item.avatar.path)"
           />
           <p class="name">{{ item.name }}</p>
           <p class="intro">{{ item.desc }}</p>
         </div>
       </div>
     </div>
-    <CreateWorkflow type="clone" ref="cloneWorkflowDialog" />
   </div>
 </template>
+
 <script>
-import {
-  downloadWorkflow,
-  getWorkflowRecommendsList,
-  getWorkflowTempInfo,
-} from '@/api/templateSquare';
-import { WORKFLOW } from './constants';
-import { avatarSrc, directDownload, resDownloadFile } from '@/utils/util';
-import CreateWorkflow from '@/components/createApp/createWorkflow.vue';
+// 这里不导入任何 API 文件，仅仅作为一个单纯的展示组件 (Dump Component)
+import { avatarSrc } from '@/utils/util';
 import MdRender from '@/components/mdRender.vue';
 
 export default {
-  components: { CreateWorkflow, MdRender },
-  data() {
-    return {
-      basePath: this.$basePath,
-      isPublic: true,
-      bgColor:
+  name: 'SkillDetail',
+  components: { MdRender },
+  props: {
+    // 详情主数据
+    detail: {
+      type: Object,
+      default: () => ({}),
+    },
+    // 右侧推荐列表数据
+    recommendList: {
+      type: Array,
+      default: () => [],
+    },
+    // 是否为公开分享页面（控制一些背景等视觉样式）
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
+    // 公开页面的背景由于有时需要自定义，所以提升为 prop
+    bgColor: {
+      type: String,
+      default:
         'linear-gradient(1deg, rgb(247, 252, 255) 50%, rgb(233, 246, 254) 98%)',
-      type: '',
-      workflow: WORKFLOW,
-      isFromSquare: true,
-      templateSquareId: '',
-      detail: {},
-      foldStatus: false,
-      tabActive: 0,
-      recommendList: [],
-      dialogVisible: false,
-    };
-  },
-  watch: {
-    $route: {
-      handler() {
-        this.initData();
-        this.getRecommendList();
-      },
-      // 深度观察监听
-      deep: true,
+    },
+    // 返回按钮文本
+    backText: {
+      type: String,
+      default: '',
     },
   },
-  created() {
-    this.isPublic = this.$route.path.includes('/public/');
+  data() {
+    return {
+      foldStatus: false,
+      tabActive: 0,
+    };
   },
+  // 可以在挂载时发起事件，通知父组件初始化数据
   mounted() {
-    this.initData();
-    this.getRecommendList();
+    this.$emit('init');
   },
   methods: {
     avatarSrc,
-    initData() {
-      const { type, templateSquareId } = this.$route.query || {};
-      this.templateSquareId = templateSquareId;
-      this.type = type || WORKFLOW;
-      this.getDetailData();
-
-      // 滚动到顶部
-      const main = document.querySelector('.el-main > .page-container');
-      if (main) main.scrollTop = 0;
-    },
-    async getDetailData() {
-      const res = await getWorkflowTempInfo({
-        templateId: this.templateSquareId,
-      });
-      this.detail = res.data || {};
-    },
-    async getRecommendList() {
-      const res = await getWorkflowRecommendsList({
-        templateId: this.templateSquareId,
-      });
-      this.recommendList = res.data.list || [];
-    },
-    copyTemplate(item) {
-      this.$refs.cloneWorkflowDialog.openDialog(item);
-    },
-    async downloadTemplate(item) {
-      const res = await downloadWorkflow({ templateId: item.templateId });
-      resDownloadFile(res, `${item.name}.json`);
-    },
-    getPath() {
-      return this.isPublic ? '/public/templateSquare' : '/templateSquare';
-    },
-    handleClick(val) {
-      this.$router.push(
-        `${this.getPath()}/detail?templateSquareId=${val.templateId}`,
-      );
-    },
     // 解析文本，遇到.换行等
     parseTxt(txt) {
       if (!txt) return '';
@@ -215,13 +185,16 @@ export default {
     fold() {
       this.foldStatus = !this.foldStatus;
     },
-    back() {
-      this.$router.push({ path: this.getPath() });
-    },
   },
 };
 </script>
+
 <style lang="scss" scoped>
 @import '@/style/tabs.scss';
 @import '@/style/tempSquare-detail.scss';
+.tempSquare-markdown {
+  ::v-deep .code-header {
+    padding: 0 0 5px 0;
+  }
+}
 </style>

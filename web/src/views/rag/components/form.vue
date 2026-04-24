@@ -748,7 +748,7 @@ export default {
           };
           appPublish(data).then(res => {
             if (res.code === 0) {
-              this.$router.push({ path: '/explore' });
+              this.$router.push({ path: '/explore', query: { type: 'rag' } });
             }
           });
         }
