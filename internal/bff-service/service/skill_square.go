@@ -32,7 +32,10 @@ func GetSquareSkillList(ctx *gin.Context, userId, orgId, name string) (*response
 		joinerResp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
 			Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 		})
-		if err == nil && joinerResp != nil {
+		if err != nil {
+			return nil, err
+		}
+		if joinerResp != nil {
 			for _, skill := range joinerResp.List {
 				sharedMap[skill.SquareSkillId] = true
 			}
@@ -71,7 +74,10 @@ func ShareSquareSkill(ctx *gin.Context, userId, orgId, skillId string) error {
 	// 将内置skill打包上传到MinIO永久路径
 	var objectPath string
 	zipData, err := skillsCfg.AgentSkillZipToBytes(skillId)
-	if err == nil && len(zipData) > 0 {
+	if err != nil {
+		return err
+	}
+	if len(zipData) > 0 {
 		fileName, _, uploadErr := minio.UploadFileCommon(ctx.Request.Context(), bytes.NewReader(zipData), customSkillFileType, -1, true)
 		if uploadErr == nil {
 			objectPath = filepath.Join(minio.BucketFileUpload, minio.DirFileNotExpire, fileName)
@@ -104,7 +110,10 @@ func GetSquareSkillDetail(ctx *gin.Context, userId, orgId, skillId string) (*res
 	joinerResp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
 		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
-	if err == nil && joinerResp != nil {
+	if err != nil {
+		return nil, err
+	}
+	if joinerResp != nil {
 		for _, skill := range joinerResp.List {
 			if skill.SquareSkillId == skillId {
 				isShared = true
