@@ -552,7 +552,6 @@ export function Img2Md(htmlString, escapeHtml = true) {
 }
 
 export function goTo(path = '', back = false) {
-  console.log('goTo', path, back);
   if (back) {
     router.back();
   } else if (path) {

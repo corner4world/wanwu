@@ -2100,7 +2100,7 @@ export default {
       config: '配置',
       uploadFile: '上传文件',
       footer: '通用智能体 · 内容由 AI 生成，仅供参考',
-      placeholder: '选择一款模型，和我对话吧',
+      placeholder: '选择一款模型，和我对话吧。可以试试@，快捷调用工具',
     },
     message: {
       reasoning: '【思考过程】\n',
