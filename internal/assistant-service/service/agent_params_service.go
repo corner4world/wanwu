@@ -3,6 +3,8 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strconv"
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	"github.com/UnicomAI/wanwu/api/proto/common"
@@ -183,14 +185,53 @@ func buildModelParams(params map[string]interface{}, modelParams *assistant_serv
 }
 
 func toDouble(data interface{}) *float64 {
+	log.Infof("toDouble, dataType: %v", reflect.TypeOf(data))
 	if data == nil {
 		return nil
 	}
-	f, ok := data.(float64)
-	if !ok {
+	f, err := toFloat64(data)
+	if err != nil {
 		return nil
 	}
 	return &f
+}
+
+func toFloat64(v interface{}) (float64, error) {
+	switch val := v.(type) {
+	case float64:
+		return val, nil
+	case float32:
+		return float64(val), nil
+	case int:
+		return float64(val), nil
+	case int8:
+		return float64(val), nil
+	case int16:
+		return float64(val), nil
+	case int32:
+		return float64(val), nil
+	case int64:
+		return float64(val), nil
+	case uint:
+		return float64(val), nil
+	case uint8:
+		return float64(val), nil
+	case uint16:
+		return float64(val), nil
+	case uint32:
+		return float64(val), nil
+	case uint64:
+		return float64(val), nil
+	case string:
+		// 尝试将字符串解析为 float64
+		f, err := strconv.ParseFloat(val, 64)
+		if err != nil {
+			return 0, fmt.Errorf("无法解析字符串 '%s' 为 float64: %w", val, err)
+		}
+		return f, nil
+	default:
+		return 0, fmt.Errorf("不支持的类型 %T", v)
+	}
 }
 
 // 0 为false，1 为true，不传时为 nil
