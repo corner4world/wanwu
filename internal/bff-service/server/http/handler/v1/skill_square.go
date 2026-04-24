@@ -56,7 +56,7 @@ func ShareSquareSkill(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			skillId	query		string	true	"skill ID"
-//	@Success		200		{object}	response.Response{data=response.SkillDetail}
+//	@Success		200		{object}	response.Response{data=response.SquareSkillDetailInfo}
 //	@Router			/square/skills/detail [get]
 func GetSquareSkillDetail(ctx *gin.Context) {
 	resp, err := service.GetSquareSkillDetail(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))

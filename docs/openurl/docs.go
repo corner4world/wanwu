@@ -1225,6 +1225,45 @@ const docTemplate = `{
                 }
             }
         },
+        "response.AgentFileMeta": {
+            "type": "object",
+            "properties": {
+                "createAt": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AgentResponseFile": {
+            "type": "object",
+            "properties": {
+                "fileType": {
+                    "type": "string"
+                },
+                "fileUrl": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "扩展信息：",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/response.AgentFileMeta"
+                        }
+                    ]
+                },
+                "name": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
         "response.AppUrlConfig": {
             "type": "object",
             "properties": {
@@ -1703,6 +1742,12 @@ const docTemplate = `{
                 },
                 "response": {
                     "type": "string"
+                },
+                "responseFiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AgentResponseFile"
+                    }
                 },
                 "responseList": {
                     "type": "array",

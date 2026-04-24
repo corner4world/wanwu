@@ -3580,15 +3580,16 @@
         "protocol.Property": {
             "type": "object",
             "properties": {
+                "default": {
+                    "description": "Default specifies the default value for the property."
+                },
                 "description": {
                     "description": "Description is the description of the schema.",
                     "type": "string"
                 },
                 "enum": {
                     "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "items": {}
                 },
                 "items": {
                     "description": "Items specifies which data type an array contains, if the schema type is Array.",
@@ -3612,7 +3613,10 @@
                     }
                 },
                 "type": {
-                    "$ref": "#/definitions/protocol.DataType"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/protocol.DataType"
+                    }
                 }
             }
         },

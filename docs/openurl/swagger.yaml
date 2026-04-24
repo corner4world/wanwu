@@ -371,6 +371,30 @@ definitions:
     required:
     - query
     type: object
+  response.AgentFileMeta:
+    properties:
+      createAt:
+        type: string
+      desc:
+        type: string
+      name:
+        type: string
+    type: object
+  response.AgentResponseFile:
+    properties:
+      fileType:
+        type: string
+      fileUrl:
+        type: string
+      metadata:
+        allOf:
+        - $ref: '#/definitions/response.AgentFileMeta'
+        description: 扩展信息：
+      name:
+        type: string
+      size:
+        type: integer
+    type: object
   response.AppUrlConfig:
     properties:
       appUrlInfo:
@@ -686,6 +710,10 @@ definitions:
         type: array
       response:
         type: string
+      responseFiles:
+        items:
+          $ref: '#/definitions/response.AgentResponseFile'
+        type: array
       responseList:
         items:
           $ref: '#/definitions/response.ConversationResponse'

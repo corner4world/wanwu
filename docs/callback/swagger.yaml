@@ -1571,12 +1571,13 @@ definitions:
     type: object
   protocol.Property:
     properties:
+      default:
+        description: Default specifies the default value for the property.
       description:
         description: Description is the description of the schema.
         type: string
       enum:
-        items:
-          type: string
+        items: {}
         type: array
       items:
         allOf:
@@ -1594,7 +1595,9 @@ definitions:
           type: string
         type: array
       type:
-        $ref: '#/definitions/protocol.DataType'
+        items:
+          $ref: '#/definitions/protocol.DataType'
+        type: array
     type: object
   protocol.Tool:
     properties:

@@ -16,6 +16,155 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/agent/joiner/skills": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取资源库中我添加的skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取我添加的skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.JoinerSkillDetail"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "删除资源库中我添加的skill",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "删除我添加的skill",
+                "parameters": [
+                    {
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeleteJoinerSkillReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/joiner/skills/detail": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取资源库中我添加的skill详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取我添加的skill详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.JoinerSkillDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/agent/skill/conversation": {
             "post": {
                 "security": [
@@ -14798,6 +14947,194 @@ const docTemplate = `{
                 }
             }
         },
+        "/square/skills": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取探索广场中的skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "获取广场skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.SquareSkillDetail"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/square/skills/detail": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取探索广场中的skill详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "获取广场skill详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SquareSkillDetailInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/square/skills/download": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "下载探索广场中的skill ZIP包",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "下载广场skill",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/square/skills/share": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "将广场中的skill添加到我的资源库",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "添加广场skill到资源库",
+                "parameters": [
+                    {
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ShareSquareSkillReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/statistic/api": {
             "post": {
                 "security": [
@@ -18717,15 +19054,16 @@ const docTemplate = `{
         "protocol.Property": {
             "type": "object",
             "properties": {
+                "default": {
+                    "description": "Default specifies the default value for the property."
+                },
                 "description": {
                     "description": "Description is the description of the schema.",
                     "type": "string"
                 },
                 "enum": {
                     "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "items": {}
                 },
                 "items": {
                     "description": "Items specifies which data type an array contains, if the schema type is Array.",
@@ -18749,7 +19087,10 @@ const docTemplate = `{
                     }
                 },
                 "type": {
-                    "$ref": "#/definitions/protocol.DataType"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/protocol.DataType"
+                    }
                 }
             }
         },
@@ -20918,6 +21259,17 @@ const docTemplate = `{
             "properties": {
                 "threadId": {
                     "description": "对话ID",
+                    "type": "string"
+                }
+            }
+        },
+        "request.DeleteJoinerSkillReq": {
+            "type": "object",
+            "required": [
+                "skillId"
+            ],
+            "properties": {
+                "skillId": {
                     "type": "string"
                 }
             }
@@ -23170,6 +23522,17 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ShareSquareSkillReq": {
+            "type": "object",
+            "required": [
+                "skillId"
+            ],
+            "properties": {
+                "skillId": {
+                    "type": "string"
+                }
+            }
+        },
         "request.SkillConversationChatReq": {
             "type": "object",
             "required": [
@@ -24179,6 +24542,45 @@ const docTemplate = `{
                 }
             }
         },
+        "response.AgentFileMeta": {
+            "type": "object",
+            "properties": {
+                "createAt": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AgentResponseFile": {
+            "type": "object",
+            "properties": {
+                "fileType": {
+                    "type": "string"
+                },
+                "fileUrl": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "扩展信息：",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/response.AgentFileMeta"
+                        }
+                    ]
+                },
+                "name": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
         "response.AnalysisDocUrlResp": {
             "type": "object",
             "properties": {
@@ -25106,6 +25508,12 @@ const docTemplate = `{
                 },
                 "response": {
                     "type": "string"
+                },
+                "responseFiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AgentResponseFile"
+                    }
                 },
                 "responseList": {
                     "type": "array",
@@ -26857,6 +27265,32 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.JoinerSkillDetail": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "downloadUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                },
+                "skillMarkdown": {
                     "type": "string"
                 }
             }
@@ -29315,6 +29749,58 @@ const docTemplate = `{
                 }
             }
         },
+        "response.SquareSkillDetail": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "isShared": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SquareSkillDetailInfo": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "downloadUrl": {
+                    "type": "string"
+                },
+                "isShared": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                },
+                "skillMarkdown": {
+                    "type": "string"
+                }
+            }
+        },
         "response.StatisticChart": {
             "type": "object",
             "properties": {
@@ -30044,7 +30530,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/v1",
 	Schemes:          []string{},
 	Title:            "AI Agent Productivity Platform API",
-	Description:      "## HTTP Header\r\n| Header        | 说明      |\r\n| ------------- | --------- |\r\n| Authorization | JWT token |\r\n| X-Language    | 语言Code  |\r\n| X-Org-Id      | 组织ID    |\r\n| X-Client-Id   | 客户端标识|\r\n\r\n## HTTP Status\r\n| HTTP Status             | 说明                   |\r\n| ----------------------- | ---------------------- |\r\n| 200, StatusOK           | 请求返回成功           |\r\n| 400, StatusBadRequest   | 请求返回失败，用于业务 |\r\n| 401, StatusUnauthorized | JWT认证失败            |\r\n| 403, StatusForbidden    | 没有权限               |\r\n\r\n## 权限-菜单对应表\r\n| 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\r\n|-------------|-------|------|------|------|------|\r\n| guest       |       |      | 【访客】 |      |      |\r\n| common      |       |      | 【通用】 |      |      |\r\n| permission  |       |      | 权限管理 |      |      |\r\n| permission  | user  |      | 权限管理 | 用户管理 |      |\r\n| permission  | org   |      | 权限管理 | 组织管理 |      |\r\n| permission  | role  |      | 权限管理 | 角色管理 |      |\r\n\r\n## `/v1/user/permission`返回用例\r\n```json\r\n{\r\n  \"code\": 0,\r\n  \"data\": {\r\n    \"orgPermission\": {\r\n      \"org\": {\"id\": \"test-org-id\", \"name\": \"test-org-name\"},\r\n      \"permissions\": [\r\n        {\"perm\": \"permission\"},\r\n        {\"perm\": \"permission.user\"},\r\n        {\"perm\": \"permission.org\"},\r\n        {\"perm\": \"permission.role\"}\r\n      ]\r\n    }\r\n  },\r\n  \"msg\": \"操作成功\"\r\n}\r\n```",
+	Description:      "## HTTP Header\n| Header        | 说明      |\n| ------------- | --------- |\n| Authorization | JWT token |\n| X-Language    | 语言Code  |\n| X-Org-Id      | 组织ID    |\n| X-Client-Id   | 客户端标识|\n\n## HTTP Status\n| HTTP Status             | 说明                   |\n| ----------------------- | ---------------------- |\n| 200, StatusOK           | 请求返回成功           |\n| 400, StatusBadRequest   | 请求返回失败，用于业务 |\n| 401, StatusUnauthorized | JWT认证失败            |\n| 403, StatusForbidden    | 没有权限               |\n\n## 权限-菜单对应表\n| 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\n|-------------|-------|------|------|------|------|\n| guest       |       |      | 【访客】 |      |      |\n| common      |       |      | 【通用】 |      |      |\n| permission  |       |      | 权限管理 |      |      |\n| permission  | user  |      | 权限管理 | 用户管理 |      |\n| permission  | org   |      | 权限管理 | 组织管理 |      |\n| permission  | role  |      | 权限管理 | 角色管理 |      |\n\n## `/v1/user/permission`返回用例\n```json\n{\n  \"code\": 0,\n  \"data\": {\n    \"orgPermission\": {\n      \"org\": {\"id\": \"test-org-id\", \"name\": \"test-org-name\"},\n      \"permissions\": [\n        {\"perm\": \"permission\"},\n        {\"perm\": \"permission.user\"},\n        {\"perm\": \"permission.org\"},\n        {\"perm\": \"permission.role\"}\n      ]\n    }\n  },\n  \"msg\": \"操作成功\"\n}\n```",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

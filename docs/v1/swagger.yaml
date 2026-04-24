@@ -896,12 +896,13 @@ definitions:
     type: object
   protocol.Property:
     properties:
+      default:
+        description: Default specifies the default value for the property.
       description:
         description: Description is the description of the schema.
         type: string
       enum:
-        items:
-          type: string
+        items: {}
         type: array
       items:
         allOf:
@@ -919,7 +920,9 @@ definitions:
           type: string
         type: array
       type:
-        $ref: '#/definitions/protocol.DataType'
+        items:
+          $ref: '#/definitions/protocol.DataType'
+        type: array
     type: object
   protocol.Tool:
     properties:
@@ -2386,6 +2389,13 @@ definitions:
         type: string
     required:
     - threadId
+    type: object
+  request.DeleteJoinerSkillReq:
+    properties:
+      skillId:
+        type: string
+    required:
+    - skillId
     type: object
   request.DeleteKeywordsReq:
     properties:
@@ -3934,6 +3944,13 @@ definitions:
     required:
     - tableId
     type: object
+  request.ShareSquareSkillReq:
+    properties:
+      skillId:
+        type: string
+    required:
+    - skillId
+    type: object
   request.SkillConversationChatReq:
     properties:
       conversationId:
@@ -4628,6 +4645,30 @@ definitions:
       apiCalls:
         $ref: '#/definitions/response.StatisticChart'
     type: object
+  response.AgentFileMeta:
+    properties:
+      createAt:
+        type: string
+      desc:
+        type: string
+      name:
+        type: string
+    type: object
+  response.AgentResponseFile:
+    properties:
+      fileType:
+        type: string
+      fileUrl:
+        type: string
+      metadata:
+        allOf:
+        - $ref: '#/definitions/response.AgentFileMeta'
+        description: 扩展信息：
+      name:
+        type: string
+      size:
+        type: integer
+    type: object
   response.AnalysisDocUrlResp:
     properties:
       urlList:
@@ -5239,6 +5280,10 @@ definitions:
         type: array
       response:
         type: string
+      responseFiles:
+        items:
+          $ref: '#/definitions/response.AgentResponseFile'
+        type: array
       responseList:
         items:
           $ref: '#/definitions/response.ConversationResponse'
@@ -6406,6 +6451,23 @@ definitions:
       id:
         type: string
       name:
+        type: string
+    type: object
+  response.JoinerSkillDetail:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      downloadUrl:
+        type: string
+      name:
+        type: string
+      skillId:
+        type: string
+      skillMarkdown:
         type: string
     type: object
   response.KeywordsInfo:
@@ -8049,6 +8111,40 @@ definitions:
         description: 类型
         type: string
     type: object
+  response.SquareSkillDetail:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      isShared:
+        type: boolean
+      name:
+        type: string
+      skillId:
+        type: string
+    type: object
+  response.SquareSkillDetailInfo:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      downloadUrl:
+        type: string
+      isShared:
+        type: boolean
+      name:
+        type: string
+      skillId:
+        type: string
+      skillMarkdown:
+        type: string
+    type: object
   response.StatisticChart:
     properties:
       lines:
@@ -8527,27 +8623,139 @@ definitions:
     type: object
 info:
   contact: {}
-  description: "## HTTP Header\r\n| Header        | 说明      |\r\n| ------------- |
-    --------- |\r\n| Authorization | JWT token |\r\n| X-Language    | 语言Code  |\r\n|
-    X-Org-Id      | 组织ID    |\r\n| X-Client-Id   | 客户端标识|\r\n\r\n## HTTP Status\r\n|
-    HTTP Status             | 说明                   |\r\n| -----------------------
-    | ---------------------- |\r\n| 200, StatusOK           | 请求返回成功           |\r\n|
-    400, StatusBadRequest   | 请求返回失败，用于业务 |\r\n| 401, StatusUnauthorized | JWT认证失败
-    \           |\r\n| 403, StatusForbidden    | 没有权限               |\r\n\r\n## 权限-菜单对应表\r\n|
-    一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\r\n|-------------|-------|------|------|------|------|\r\n|
-    guest       |       |      | 【访客】 |      |      |\r\n| common      |       |      |
-    【通用】 |      |      |\r\n| permission  |       |      | 权限管理 |      |      |\r\n|
-    permission  | user  |      | 权限管理 | 用户管理 |      |\r\n| permission  | org   |      |
-    权限管理 | 组织管理 |      |\r\n| permission  | role  |      | 权限管理 | 角色管理 |      |\r\n\r\n##
-    `/v1/user/permission`返回用例\r\n```json\r\n{\r\n  \"code\": 0,\r\n  \"data\": {\r\n
-    \   \"orgPermission\": {\r\n      \"org\": {\"id\": \"test-org-id\", \"name\":
-    \"test-org-name\"},\r\n      \"permissions\": [\r\n        {\"perm\": \"permission\"},\r\n
-    \       {\"perm\": \"permission.user\"},\r\n        {\"perm\": \"permission.org\"},\r\n
-    \       {\"perm\": \"permission.role\"}\r\n      ]\r\n    }\r\n  },\r\n  \"msg\":
-    \"操作成功\"\r\n}\r\n```"
+  description: |-
+    ## HTTP Header
+    | Header        | 说明      |
+    | ------------- | --------- |
+    | Authorization | JWT token |
+    | X-Language    | 语言Code  |
+    | X-Org-Id      | 组织ID    |
+    | X-Client-Id   | 客户端标识|
+
+    ## HTTP Status
+    | HTTP Status             | 说明                   |
+    | ----------------------- | ---------------------- |
+    | 200, StatusOK           | 请求返回成功           |
+    | 400, StatusBadRequest   | 请求返回失败，用于业务 |
+    | 401, StatusUnauthorized | JWT认证失败            |
+    | 403, StatusForbidden    | 没有权限               |
+
+    ## 权限-菜单对应表
+    | 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |
+    |-------------|-------|------|------|------|------|
+    | guest       |       |      | 【访客】 |      |      |
+    | common      |       |      | 【通用】 |      |      |
+    | permission  |       |      | 权限管理 |      |      |
+    | permission  | user  |      | 权限管理 | 用户管理 |      |
+    | permission  | org   |      | 权限管理 | 组织管理 |      |
+    | permission  | role  |      | 权限管理 | 角色管理 |      |
+
+    ## `/v1/user/permission`返回用例
+    ```json
+    {
+      "code": 0,
+      "data": {
+        "orgPermission": {
+          "org": {"id": "test-org-id", "name": "test-org-name"},
+          "permissions": [
+            {"perm": "permission"},
+            {"perm": "permission.user"},
+            {"perm": "permission.org"},
+            {"perm": "permission.role"}
+          ]
+        }
+      },
+      "msg": "操作成功"
+    }
+    ```
   title: AI Agent Productivity Platform API
   version: v0.0.1
 paths:
+  /agent/joiner/skills:
+    delete:
+      consumes:
+      - application/json
+      description: 删除资源库中我添加的skill
+      parameters:
+      - description: skill ID
+        in: body
+        name: skillId
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeleteJoinerSkillReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 删除我添加的skill
+      tags:
+      - resource.skill
+    get:
+      consumes:
+      - application/json
+      description: 获取资源库中我添加的skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.JoinerSkillDetail'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取我添加的skill列表
+      tags:
+      - resource.skill
+  /agent/joiner/skills/detail:
+    get:
+      consumes:
+      - application/json
+      description: 获取资源库中我添加的skill详情
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.JoinerSkillDetail'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取我添加的skill详情
+      tags:
+      - resource.skill
   /agent/skill/conversation:
     delete:
       consumes:
@@ -17216,6 +17424,115 @@ paths:
       summary: 获取词表数据列表
       tags:
       - safety
+  /square/skills:
+    get:
+      consumes:
+      - application/json
+      description: 获取探索广场中的skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.SquareSkillDetail'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取广场skill列表
+      tags:
+      - exploration.skill
+  /square/skills/detail:
+    get:
+      consumes:
+      - application/json
+      description: 获取探索广场中的skill详情
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SquareSkillDetailInfo'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取广场skill详情
+      tags:
+      - exploration.skill
+  /square/skills/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载探索广场中的skill ZIP包
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 下载广场skill
+      tags:
+      - exploration.skill
+  /square/skills/share:
+    post:
+      consumes:
+      - application/json
+      description: 将广场中的skill添加到我的资源库
+      parameters:
+      - description: skill ID
+        in: body
+        name: skillId
+        required: true
+        schema:
+          $ref: '#/definitions/request.ShareSquareSkillReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 添加广场skill到资源库
+      tags:
+      - exploration.skill
   /statistic/api:
     post:
       consumes:
