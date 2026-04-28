@@ -320,7 +320,9 @@ export default {
       const res = await getGeneralAgentResourceSelect();
       if (res?.data && Array.isArray(res.data)) {
         this.resourceList = {};
-        this.selectedResources = {};
+        Object.keys(this.selectedResources).forEach(key => {
+          delete this.selectedResources[key];
+        });
 
         res.data.forEach(item => {
           const { listType, list } = item;
@@ -329,7 +331,7 @@ export default {
               ...resource,
               resourceType: listType,
             }));
-            this.selectedResources[listType] = [];
+            this.$set(this.selectedResources, listType, []);
           }
         });
       }
@@ -344,10 +346,12 @@ export default {
 
         Object.keys(this.resourceList).forEach(type => {
           const listKey = `${type}List`;
-          this.selectedResources[type] = (res.data[listKey] || []).map(
-            item => ({
+          this.$set(
+            this.selectedResources,
+            type,
+            (res.data[listKey] || []).map(item => ({
               id: item.id,
-            }),
+            })),
           );
         });
       }
@@ -538,14 +542,15 @@ export default {
     handleToggleResource(item, resourceType) {
       const itemId = item.id;
       const selectedList = this.selectedResources[resourceType];
-
       const index = selectedList.findIndex(r => r.id === itemId);
+
       if (index > -1) {
-        selectedList.splice(index, 1);
+        const newList = [...selectedList];
+        newList.splice(index, 1);
+        this.$set(this.selectedResources, resourceType, newList);
       } else {
-        selectedList.push({
-          id: itemId,
-        });
+        const newList = [...selectedList, { id: itemId }];
+        this.$set(this.selectedResources, resourceType, newList);
       }
     },
 
@@ -813,7 +818,6 @@ export default {
     }
   }
 }
-
 
 .api-key-dialog {
   .el-dialog__body {

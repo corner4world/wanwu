@@ -24,7 +24,7 @@
         <div class="popover-list">
           <div
             v-for="(item, index) in currentFilteredList"
-            :key="item.id || item.name"
+            :key="`${item._resourceType}_${item.id || item.name}_${index}`"
             class="popover-item"
             :class="{ selected: index === selectedIndex }"
             @click="selectConfigItem(item)"
@@ -261,7 +261,7 @@ export default {
 
     getCursorPosition() {
       try {
-        const selection = window.getSelection();
+        const selection = globalThis.getSelection();
         if (!selection || selection.rangeCount === 0) return 0;
 
         const range = selection.getRangeAt(0);
@@ -309,27 +309,28 @@ export default {
       const beforeCursor = this.inputValue.substring(0, cursorPos);
       const lastAtIndex = beforeCursor.lastIndexOf('@');
 
-      if (lastAtIndex !== -1) {
-        this.mentionStartPos = lastAtIndex;
-        this.mentionSearchText = this.inputValue.substring(
-          lastAtIndex + 1,
-          cursorPos,
-        );
-
-        this.$nextTick(() => {
-          // 如果"全部"列表的搜索结果为空,则隐藏popover
-          if (
-            this.popoverTab === 'all' &&
-            this.currentFilteredList.length === 0
-          ) {
-            this.showConfigPopover = false;
-          } else {
-            this.$refs.configPopover?.updatePopper();
-          }
-        });
-      } else {
+      if (lastAtIndex === -1) {
         this.resetMentionState();
+        return;
       }
+
+      this.mentionStartPos = lastAtIndex;
+      this.mentionSearchText = this.inputValue.substring(
+        lastAtIndex + 1,
+        cursorPos,
+      );
+
+      this.$nextTick(() => {
+        // 如果"全部"列表的搜索结果为空,则隐藏popover
+        if (
+          this.popoverTab === 'all' &&
+          this.currentFilteredList.length === 0
+        ) {
+          this.showConfigPopover = false;
+        } else {
+          this.$refs.configPopover?.updatePopper();
+        }
+      });
     },
 
     handleSenderBlur() {
