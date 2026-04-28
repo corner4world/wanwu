@@ -45,7 +45,21 @@ func (*SingleAgentMessageBuilder) MessageType() MessageType {
 }
 
 func (*SingleAgentMessageBuilder) FilterMessage(respContext *response.AgentChatRespContext, chatMessage *schema.Message) bool {
-	return filterMessage(respContext, chatMessage)
+	filter := filterMessage(respContext, chatMessage)
+	if filter {
+		return true
+	}
+	if !respContext.ContentOutput {
+		messageTool := response.CreateMessageTool(chatMessage, respContext)
+		//过滤一些只包含/n的内容
+		if len(chatMessage.ReasoningContent) == 0 && !messageTool.ToolMessage() && !stopMessage(chatMessage) {
+			//本身大于0 trim之后=0
+			if len(chatMessage.Content) > 0 && len(strings.TrimSpace(strings.Trim(chatMessage.Content, "\n"))) == 0 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (*SingleAgentMessageBuilder) BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]*response.AgentMessageContent, error) {

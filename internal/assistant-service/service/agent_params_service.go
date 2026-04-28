@@ -180,7 +180,8 @@ func buildModelParams(params map[string]interface{}, modelParams *assistant_serv
 	modelParams.TopP = toDouble(params["top_p"])
 	modelParams.FrequencyPenalty = toDouble(params["frequency_penalty"])
 	modelParams.PresencePenalty = toDouble(params["presence_penalty"])
-	modelParams.EnableThinking = toInt32(params["enable_thinking"])
+	modelParams.EnableThinking = toInt32Ptr(params["enable_thinking"])
+	modelParams.MaxTokens = toInt32Ptr(params["max_tokens"])
 	return modelParams
 }
 
@@ -234,19 +235,51 @@ func toFloat64(v interface{}) (float64, error) {
 	}
 }
 
-// 0 为false，1 为true，不传时为 nil
-func toInt32(data interface{}) *int32 {
+// interface 转换 成	int32 指针
+func toInt32Ptr(data interface{}) *int32 {
 	if data == nil {
 		return nil
 	}
-	b, ok := data.(bool)
-	if !ok {
+	i, err := toInt32(data)
+	if err != nil {
 		return nil
 	}
-	if b {
-		i := int32(1)
-		return &i
-	}
-	i := int32(0)
 	return &i
+}
+
+func toInt32(i interface{}) (int32, error) {
+	switch v := i.(type) {
+	case int32:
+		return v, nil
+	case int:
+		if v > int(^int32(0)>>1) || v < -int(^int32(0)>>1)-1 {
+			return 0, fmt.Errorf("int %d out of int32 range", v)
+		}
+		return int32(v), nil
+	case int8:
+		return int32(v), nil
+	case int16:
+		return int32(v), nil
+	case int64:
+		if v > int64(^int32(0)>>1) || v < -int64(^int32(0)>>1)-1 {
+			return 0, fmt.Errorf("int64 %d out of int32 range", v)
+		}
+		return int32(v), nil
+	case string:
+		// 尝试解析整数
+		val, err := strconv.ParseInt(v, 10, 32)
+		if err != nil {
+			return 0, fmt.Errorf("string %q cannot be parsed as int32: %v", v, err)
+		}
+		return int32(val), nil
+	case bool:
+		if v {
+			return 1, nil
+		}
+		return 0, nil
+	case nil:
+		return 0, fmt.Errorf("nil value cannot be converted to int32")
+	default:
+		return 0, fmt.Errorf("unsupported type %T", v)
+	}
 }
