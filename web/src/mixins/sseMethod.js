@@ -1,4 +1,4 @@
-﻿import { fetchEventSource } from '../sse/index.js';
+import { fetchEventSource } from '../sse/index.js';
 import { store } from '@/store/index';
 import Print from '../utils/printPlus2.js';
 import {
@@ -381,7 +381,8 @@ export default {
               remaining += curText.slice(typedIdx);
             }
             for (let i = rp.sIndex + 1; i < rp.sentenceArr.length; i++) {
-              remaining += (rp.sentenceArr[i] && rp.sentenceArr[i].response) || '';
+              remaining +=
+                (rp.sentenceArr[i] && rp.sentenceArr[i].response) || '';
             }
             if (remaining) {
               doRenderReasoning(
@@ -679,13 +680,14 @@ export default {
       const completed = sessionHistory
         .slice(0, lastIndex)
         .filter(turn => turn && turn.query && turn.oriResponse);
-      const history = maxHistory > 0
-        ? completed.slice(-maxHistory).map(turn => ({
-            query: turn.query,
-            response: turn.oriResponse,
-            needHistory: true,
-          }))
-        : [];
+      const history =
+        maxHistory > 0
+          ? completed.slice(-maxHistory).map(turn => ({
+              query: turn.query,
+              response: turn.oriResponse,
+              needHistory: true,
+            }))
+          : [];
 
       // 贯穿整个流的 searchList（KB 检索结果，由 rag_search_list 更新，初始为空）
       let currentSearchList = [];
@@ -906,7 +908,10 @@ export default {
 
                 // 2) pendingOutputQueue 里堆积的 output（等 reasoning 打完才准备播的）
                 //    直接拼成整段文本喂给主 processor，跳过打字机
-                if (this._pendingOutputQueue && this._pendingOutputQueue.length) {
+                if (
+                  this._pendingOutputQueue &&
+                  this._pendingOutputQueue.length
+                ) {
                   let pendingText = '';
                   this._pendingOutputQueue.forEach(item => {
                     pendingText +=
@@ -931,7 +936,8 @@ export default {
                 // 4) 最终渲染 + 收尾
                 this.setStoreSessionStatus(-1);
                 const renderResult = processor.getRenderResult();
-                const reasoningRenderResult = reasoningProcessor.getRenderResult();
+                const reasoningRenderResult =
+                  reasoningProcessor.getRenderResult();
                 sessionCom.replaceLastData(lastIndex, {
                   ...commonData,
                   ...renderResult,
@@ -1007,7 +1013,8 @@ export default {
                   this.$nextTick(() => sessionCom.scrollBottom());
                 } else if (data.name === CUSTOM_EVENT_KNOWLEDGE_START) {
                   // 后端通知即将进入知识库检索：懒创建卡片（幂等，重复帧不重复建）
-                  if (!findStep('knowledge_search')) createStep('knowledge_search');
+                  if (!findStep('knowledge_search'))
+                    createStep('knowledge_search');
                   sessionCom.replaceLastData(lastIndex, {
                     ...commonData,
                     responseLoading: true,
@@ -1069,7 +1076,8 @@ export default {
                   if (
                     this._isInReasoning &&
                     this._reasoningPrint &&
-                    this._reasoningPrint.sIndex >= this._reasoningPrint.sentenceArr.length &&
+                    this._reasoningPrint.sIndex >=
+                      this._reasoningPrint.sentenceArr.length &&
                     this._reasoningPrint.printStatus === 0
                   ) {
                     this._flushPendingOutput();
@@ -1266,6 +1274,7 @@ export default {
                   profile,
                   order: innerOrder,
                   parentId,
+                  errMessage,
                 } = data.eventData;
                 let subConversion = this._subConversionsMap.get(id);
                 let subProcessor = this._subConversionProcessors.get(id);
@@ -1282,6 +1291,7 @@ export default {
                     response: '',
                     stableChunks: [],
                     activeResponse: '',
+                    errMessage: errMessage || '',
                     isOpen:
                       data.eventType ===
                       AGENT_MESSAGE_CONFIG.AGENT_THINK.EVENT_TYPE, // agentThink 默认展开，其他默认收起
@@ -1324,6 +1334,7 @@ export default {
                   if (timeCost) subConversion.timeCost = timeCost;
                   if (innerOrder !== undefined)
                     subConversion.innerOrder = innerOrder; // 更新内部排序
+                  if (errMessage) subConversion.errMessage = errMessage; // 更新错误信息
                   // 如果后续包中有 search_list，则更新
                   if (data.search_list && data.search_list.length) {
                     subConversion.searchList = data.search_list;
@@ -1602,15 +1613,19 @@ export default {
                   },
                 );
               }
-            } else if (data.code === 7 || data.code === -1 || data.code === 1) {
+            } else if (data.code !== 0) {
               this.setStoreSessionStatus(-1);
+              const historyList = sessionCom.getSessionData()['history'] || [];
+              const lastData = historyList[lastIndex] || {};
               // 获取最新的子会话列表，防止被覆盖
               const subConversionsList = this._subConversionsMap
                 ? Array.from(this._subConversionsMap.values())
                 : [];
               let fillData = {
-                ...commonData,
-                response: data.message,
+                ...lastData,
+                errResponse:
+                  data.response || data.message || this.$t('rag.answerFailed'),
+                errorDetail: data.message || '',
                 subConversions: subConversionsList,
                 error: true,
               };

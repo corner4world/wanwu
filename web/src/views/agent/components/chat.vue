@@ -628,6 +628,8 @@ export default {
                       index,
                     ),
                   ),
+                  errMsg: item.errMsg,
+                  errResponse: item.errResponse,
                 });
               });
             } else if (n.response) {

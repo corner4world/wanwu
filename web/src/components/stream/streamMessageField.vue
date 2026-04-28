@@ -110,7 +110,7 @@
           </div>
         </div>
         <!--loading-->
-        <div v-if="n.responseLoading" class="session-answer">
+        <div v-if="n.responseLoading && !n.error" class="session-answer">
           <div class="session-answer-wrapper">
             <img class="logo" :src="modelIconUrl || avatarSrc(defaultUrl)" />
             <div class="answer-content"><i class="el-icon-loading"></i></div>
@@ -126,31 +126,15 @@
           </div>
         </div>
 
-        <!-- 回答故障  error为true的情况-->
-        <div v-if="n.error" class="session-answer">
-          <div class="session-answer-wrapper">
-            <img class="logo" :src="modelIconUrl || avatarSrc(defaultUrl)" />
-            <div class="session-error">
-              <div class="session-error-icon">
-                <i class="el-icon-warning-outline"></i>
-              </div>
-              <div class="session-error-body">
-                <div class="session-error-title">{{ n.response || $t('rag.answerFailed') }}</div>
-                <div v-if="n.errorDetail" class="session-error-desc">{{ n.errorDetail }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!--回答 文字+图片-->
         <div
           v-if="
-            !n.error &&
-            (n.response ||
-              n.msg_type ||
-              (n.subConversions && n.subConversions.length) ||
-              n.activeReasoning ||
-              (n.stableReasoningChunks && n.stableReasoningChunks.length))
+            n.error ||
+            n.response ||
+            n.msg_type ||
+            (n.subConversions && n.subConversions.length) ||
+            n.activeReasoning ||
+            (n.stableReasoningChunks && n.stableReasoningChunks.length)
           "
           class="session-answer"
           :id="'message-container' + i"
@@ -302,6 +286,13 @@
                           : item.renderedContent
                       "
                     ></div>
+
+                    <!-- 局部错误卡片 -->
+                    <ErrorMsgCard
+                      v-if="item.errMsg || item.errResponse"
+                      :title="item.errResponse || item.response"
+                      :desc="item.errMsg"
+                    />
                   </div>
                 </template>
               </div>
@@ -324,9 +315,7 @@
 
                 <!-- RAG 过程卡片：知识库检索 + 深度思考（可折叠） -->
                 <template
-                  v-if="
-                    chatType === 'rag' && n.ragSteps && n.ragSteps.length
-                  "
+                  v-if="chatType === 'rag' && n.ragSteps && n.ragSteps.length"
                 >
                   <rag-step-card
                     v-for="(step, sIdx) in n.ragSteps"
@@ -373,9 +362,7 @@
                             v-if="typeof m.score === 'number'"
                             class="rag-source-meta"
                           >
-                            <span
-                              class="rag-source-pill rag-source-score"
-                            >
+                            <span class="rag-source-pill rag-source-score">
                               Score: {{ formatScore(m.score) }}
                             </span>
                           </div>
@@ -384,12 +371,16 @@
                             :ref="'ragQASnippet_' + i + '_' + j"
                             class="rag-source-snippet"
                             :class="{
-                              'is-collapsed': !ragSnippetExpanded['qa-' + i + '-' + j],
+                              'is-collapsed':
+                                !ragSnippetExpanded['qa-' + i + '-' + j],
                             }"
                             v-html="m.snippet"
                           ></div>
                           <div
-                            v-if="m.snippet && ragSnippetOverflow['qa-' + i + '-' + j]"
+                            v-if="
+                              m.snippet &&
+                              ragSnippetOverflow['qa-' + i + '-' + j]
+                            "
                             class="rag-source-expand-btn"
                             @click="toggleRagSnippet('qa-' + i + '-' + j)"
                           >
@@ -443,9 +434,7 @@
                             </a>
                           </div>
                           <div
-                            v-if="
-                              m.user_kb_name || typeof m.score === 'number'
-                            "
+                            v-if="m.user_kb_name || typeof m.score === 'number'"
                             class="rag-source-meta"
                           >
                             <span
@@ -556,7 +545,7 @@
                     @mouseout="onRagAnswerLeave($event)"
                     @click="onRagAnswerClick($event)"
                   >
-<div
+                    <div
                       v-for="(chunk, idx) in n.stableChunks"
                       :key="idx"
                       class="chunk_stable"
@@ -596,6 +585,13 @@
                   ></div>
                 </div>
               </template>
+
+              <!-- 整个回答下方的兜底主错误卡片 -->
+              <ErrorMsgCard
+                v-if="n.error"
+                :title="n.errResponse || n.response"
+                :desc="n.errorDetail"
+              />
             </div>
           </div>
           <!-- <div v-else class="session-answer-wrapper">
@@ -858,9 +854,9 @@
         }"
       >
         <div class="rag-citation-popover-head">
-          <span class="rag-citation-popover-num">{{
-            ragCitationTip.number
-          }}</span>
+          <span class="rag-citation-popover-num">
+            {{ ragCitationTip.number }}
+          </span>
           <span
             class="rag-citation-popover-title"
             :title="ragCitationTip.title"
@@ -871,7 +867,9 @@
         <div v-if="ragCitationTip.snippet" class="rag-citation-popover-snippet">
           {{ ragCitationTip.snippet }}
         </div>
-        <div class="rag-citation-popover-hint">{{ $t('rag.citation.viewSource') }}</div>
+        <div class="rag-citation-popover-hint">
+          {{ $t('rag.citation.viewSource') }}
+        </div>
       </div>
     </transition>
     <!-- RAG 答案图片 lightbox（极简自实现，避免额外依赖） -->
@@ -920,6 +918,7 @@ import { avatarSrc, formatScore } from '@/utils/util';
 import SubConversion from './subConversion/index.vue';
 import SubConversionList from './subConversion/SubConversionList.vue';
 import RagStepCard from './ragStepCard.vue';
+import ErrorMsgCard from './errorMsgCard.vue';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
 
 export default {
@@ -953,6 +952,7 @@ export default {
     SubConversion,
     SubConversionList,
     RagStepCard,
+    ErrorMsgCard,
   },
   data() {
     return {
@@ -1046,7 +1046,9 @@ export default {
     document.addEventListener('click', this.handleCitationClick);
     window.addEventListener('resize', this.handleWindowResize);
     // 兜底：外层 wheel / resize 时立即隐藏 RAG 引用气泡（避免 fixed 定位错位）
-    window.addEventListener('wheel', this.onWindowWheelHideTip, { passive: true });
+    window.addEventListener('wheel', this.onWindowWheelHideTip, {
+      passive: true,
+    });
     this.updateAllFileScrollStates();
   },
   updated() {
@@ -1882,9 +1884,8 @@ export default {
      * RAG 回答区鼠标悬停：命中 .citation → 弹 hover 气泡（标题 + snippet + 跳转提示）
      */
     onRagAnswerHover(e) {
-      const target = e.target && e.target.closest
-        ? e.target.closest('.citation')
-        : null;
+      const target =
+        e.target && e.target.closest ? e.target.closest('.citation') : null;
       if (!target) return;
       if (this._ragCitationTipHideTimer) {
         clearTimeout(this._ragCitationTipHideTimer);
@@ -1898,16 +1899,14 @@ export default {
       const TIP_HEIGHT = 140;
       const TIP_HALF_WIDTH = 160; // popover max-width 320 / 2
       const MARGIN = 8;
-      const placement =
-        rect.top < TIP_HEIGHT + MARGIN ? 'bottom' : 'top';
+      const placement = rect.top < TIP_HEIGHT + MARGIN ? 'bottom' : 'top';
       // x 居中于 citation，再 clamp 到 viewport 左右边界内
       let x = rect.left + rect.width / 2;
       x = Math.min(
         Math.max(x, TIP_HALF_WIDTH + MARGIN),
         window.innerWidth - TIP_HALF_WIDTH - MARGIN,
       );
-      const y =
-        placement === 'top' ? rect.top - MARGIN : rect.bottom + MARGIN;
+      const y = placement === 'top' ? rect.top - MARGIN : rect.bottom + MARGIN;
       this.ragCitationTip = {
         visible: true,
         x,
@@ -2035,34 +2034,25 @@ export default {
         replacer,
       );
       // 2) 行内反引号代码：<code>![image](url)</code>
-      out = out.replace(
-        /<code(?:\s[^>]*)?>([^<]+)<\/code>/g,
-        replacer,
-      );
+      out = out.replace(/<code(?:\s[^>]*)?>([^<]+)<\/code>/g, replacer);
       // 3) 占位 <img>：src 不是合法 URL（http/https/data/ 根路径） → 还原为字面文本
       //    用于 LLM 在思考中写 ![title](url) 这种"语法示例"的情况，避免显示破图标
-      out = out.replace(
-        /<img\b[^>]*?\bsrc="([^"]*)"[^>]*>/gi,
-        (match, src) => {
-          if (/^(https?:\/\/|data:|\/)/i.test(src)) return match;
-          const altMatch = match.match(/\balt="([^"]*)"/i);
-          const alt = altMatch ? altMatch[1] : '';
-          // 解码再编码，避免 &amp; 之类丢失
-          const decode = s =>
-            s
-              .replace(/&lt;/g, '<')
-              .replace(/&gt;/g, '>')
-              .replace(/&quot;/g, '"')
-              .replace(/&#39;/g, "'")
-              .replace(/&amp;/g, '&');
-          const escape = s =>
-            s
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;');
-          return escape(`![${decode(alt)}](${decode(src)})`);
-        },
-      );
+      out = out.replace(/<img\b[^>]*?\bsrc="([^"]*)"[^>]*>/gi, (match, src) => {
+        if (/^(https?:\/\/|data:|\/)/i.test(src)) return match;
+        const altMatch = match.match(/\balt="([^"]*)"/i);
+        const alt = altMatch ? altMatch[1] : '';
+        // 解码再编码，避免 &amp; 之类丢失
+        const decode = s =>
+          s
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&amp;/g, '&');
+        const escape = s =>
+          s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return escape(`![${decode(alt)}](${decode(src)})`);
+      });
       return out;
     },
     /**
@@ -2091,19 +2081,22 @@ export default {
       }
 
       // 过渡结束再滚动 & 高亮（collapse-transition 约 300ms）
-      setTimeout(() => {
-        const target = card.querySelector(
-          `.rag-source-item[data-citation-index="${citationIndex}"]`,
-        );
-        if (!target) return;
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        target.classList.remove('rag-source-flash');
-        // 强制重绘以重放动画
-        // eslint-disable-next-line no-unused-expressions
-        target.offsetWidth;
-        target.classList.add('rag-source-flash');
-        setTimeout(() => target.classList.remove('rag-source-flash'), 1600);
-      }, bodyVisible ? 0 : 320);
+      setTimeout(
+        () => {
+          const target = card.querySelector(
+            `.rag-source-item[data-citation-index="${citationIndex}"]`,
+          );
+          if (!target) return;
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.remove('rag-source-flash');
+          // 强制重绘以重放动画
+          // eslint-disable-next-line no-unused-expressions
+          target.offsetWidth;
+          target.classList.add('rag-source-flash');
+          setTimeout(() => target.classList.remove('rag-source-flash'), 1600);
+        },
+        bodyVisible ? 0 : 320,
+      );
     },
     // 动态设置滚动容器高度
     setHistoryBoxHeight(inputHeight) {
@@ -2298,7 +2291,9 @@ export default {
             0 2px 6px rgba(97, 113, 230, 0.25),
             inset 0 1px 0 rgba(255, 255, 255, 0.18);
           letter-spacing: 0.2px;
-          transition: box-shadow 0.2s ease, transform 0.2s ease;
+          transition:
+            box-shadow 0.2s ease,
+            transform 0.2s ease;
           &:hover {
             box-shadow:
               0 4px 12px rgba(97, 113, 230, 0.32),
@@ -2555,51 +2550,6 @@ export default {
 
   // 与 ragStepCard 视觉风格对齐：12px 圆角 + 渐变底 + 细边 + 微阴影；
   // 用红色系替换原紫色系以保留错误语义。
-  .session-error {
-    display: inline-flex;
-    align-items: flex-start;
-    gap: 10px;
-    max-width: 100%;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(245, 108, 108, 0.22);
-    background: linear-gradient(180deg, rgba(245, 108, 108, 0.06) 0%, #fafafa 100%);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    .session-error-icon {
-      flex-shrink: 0;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: rgba(245, 108, 108, 0.1);
-      border: 1px solid rgba(245, 108, 108, 0.22);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #d93025;
-      margin-top: 1px;
-      .el-icon-warning-outline {
-        font-size: 13px;
-        font-weight: bold;
-      }
-    }
-    .session-error-body {
-      flex: 1;
-      min-width: 0;
-    }
-    .session-error-title {
-      font-size: 13px;
-      font-weight: 500;
-      color: #1f2937;
-      line-height: 20px;
-    }
-    .session-error-desc {
-      margin-top: 2px;
-      font-size: 12px;
-      color: #6b7280;
-      line-height: 18px;
-      word-break: break-word;
-    }
-  }
 
   .history-box {
     height: calc(100% - 46px);
@@ -2967,7 +2917,8 @@ img.failed::after {
   border: 1px solid rgba(99, 102, 241, 0.14);
   border-radius: 4px 14px 14px 14px !important;
   padding: 18px 22px !important;
-  box-shadow: 0 6px 24px -12px rgba(79, 70, 229, 0.18),
+  box-shadow:
+    0 6px 24px -12px rgba(79, 70, 229, 0.18),
     0 2px 6px -2px rgba(0, 0, 0, 0.04);
   color: #1f2937;
   font-size: 15px;
@@ -2978,12 +2929,21 @@ img.failed::after {
       margin: 9px 0;
       word-break: break-word;
     }
-    p:first-child { margin-top: 0; }
-    p:last-child { margin-bottom: 0; }
+    p:first-child {
+      margin-top: 0;
+    }
+    p:last-child {
+      margin-bottom: 0;
+    }
     // 段落首元素为 img（后可跟引用角标 sup）时收缩到图片宽度，消除白色边框感
-    p:has(> img:first-child) { display: table; }
+    p:has(> img:first-child) {
+      display: table;
+    }
 
-    strong { color: #111827; font-weight: 600; }
+    strong {
+      color: #111827;
+      font-weight: 600;
+    }
 
     code {
       background: rgba(99, 102, 241, 0.08);
@@ -2991,7 +2951,8 @@ img.failed::after {
       padding: 1px 6px;
       border-radius: 4px;
       font-size: 13px;
-      font-family: 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+      font-family:
+        'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
     }
     pre {
       background: #0f172a;
@@ -3009,8 +2970,14 @@ img.failed::after {
       padding: 0;
     }
 
-    ul, ol { padding-left: 22px; margin: 10px 0; }
-    li { margin: 4px 0; }
+    ul,
+    ol {
+      padding-left: 22px;
+      margin: 10px 0;
+    }
+    li {
+      margin: 4px 0;
+    }
 
     blockquote {
       margin: 12px 0;
@@ -3026,7 +2993,8 @@ img.failed::after {
       margin: 12px 0;
       width: 100%;
       font-size: 13px;
-      th, td {
+      th,
+      td {
         border: 1px solid #e5e7eb;
         padding: 7px 12px;
         text-align: left;
@@ -3041,7 +3009,9 @@ img.failed::after {
     a {
       color: #4f46e5;
       text-decoration: none;
-      &:hover { text-decoration: underline; }
+      &:hover {
+        text-decoration: underline;
+      }
     }
 
     img {
@@ -3053,14 +3023,17 @@ img.failed::after {
       display: block;
       margin: 14px 0;
       border-radius: 8px;
-      box-shadow: 0 4px 16px -6px rgba(0, 0, 0, 0.18),
+      box-shadow:
+        0 4px 16px -6px rgba(0, 0, 0, 0.18),
         0 1px 3px rgba(0, 0, 0, 0.06);
       cursor: zoom-in;
-      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      transition:
+        transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
         box-shadow 0.25s ease;
       &:hover {
         transform: translateY(-1px) scale(1.005);
-        box-shadow: 0 10px 28px -10px rgba(0, 0, 0, 0.24),
+        box-shadow:
+          0 10px 28px -10px rgba(0, 0, 0, 0.24),
           0 2px 6px rgba(0, 0, 0, 0.08);
       }
     }
@@ -3088,8 +3061,11 @@ img.failed::after {
       position: relative;
       top: 1px;
       transform: none !important;
-      transition: background 0.18s ease, color 0.18s ease,
-        border-color 0.18s ease, box-shadow 0.18s ease;
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
       text-decoration: none;
 
       &:hover {
@@ -3113,7 +3089,8 @@ img.failed::after {
   background: #ffffff;
   border: 1px solid rgba(99, 102, 241, 0.2);
   border-radius: 10px;
-  box-shadow: 0 12px 32px -12px rgba(79, 70, 229, 0.28),
+  box-shadow:
+    0 12px 32px -12px rgba(79, 70, 229, 0.28),
     0 2px 8px rgba(0, 0, 0, 0.06);
   pointer-events: none;
   font-size: 13px;
@@ -3196,7 +3173,9 @@ img.failed::after {
 }
 .rag-tip-fade-enter-active,
 .rag-tip-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 .rag-tip-fade-enter,
 .rag-tip-fade-leave-to {
@@ -3261,7 +3240,9 @@ img.failed::after {
     color: #e5e7eb;
     font-size: 13px;
     text-decoration: none;
-    transition: background 0.18s ease, color 0.18s ease;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease;
     &:hover {
       background: rgba(255, 255, 255, 0.2);
       color: #fff;
