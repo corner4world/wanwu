@@ -16,69 +16,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/agent/acquired/skill/list": {
-            "get": {
-                "security": [
-                    {
-                        "JWT": []
-                    }
-                ],
-                "description": "获取资源库中我添加的skill列表",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "resource.skill"
-                ],
-                "summary": "获取我添加的skill列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "skill名称",
-                        "name": "name",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "allOf": [
-                                                {
-                                                    "$ref": "#/definitions/response.ListResult"
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "list": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "$ref": "#/definitions/response.AcquiredSkillDetail"
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/agent/acquired/skill": {
             "delete": {
                 "security": [
@@ -158,6 +95,69 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.AcquiredSkillDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/acquired/skill/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取资源库中我添加的skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取我添加的skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.AcquiredSkillDetail"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -14842,7 +14842,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/response.SquareSkillDetailInfo"
+                                            "$ref": "#/definitions/response.SquareSkillDetail"
                                         }
                                     }
                                 }
@@ -14937,7 +14937,7 @@ const docTemplate = `{
                                                         "list": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/response.SquareSkillDetail"
+                                                                "$ref": "#/definitions/response.SquareSkillInfo"
                                                             }
                                                         }
                                                     }
@@ -29499,29 +29499,6 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
-                "isShared": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "skillId": {
-                    "type": "string"
-                }
-            }
-        },
-        "response.SquareSkillDetailInfo": {
-            "type": "object",
-            "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "avatar": {
-                    "$ref": "#/definitions/request.Avatar"
-                },
-                "desc": {
-                    "type": "string"
-                },
                 "downloadUrl": {
                     "type": "string"
                 },
@@ -29535,6 +29512,29 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "skillMarkdown": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SquareSkillInfo": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "isShared": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skillId": {
                     "type": "string"
                 }
             }

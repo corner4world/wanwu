@@ -20,7 +20,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	query		string	false	"skill名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SquareSkillDetail}}
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SquareSkillInfo}}
 //	@Router			/square/skill/list [get]
 func GetSquareSkillList(ctx *gin.Context) {
 	resp, err := service.GetSquareSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
@@ -56,7 +56,7 @@ func ShareSquareSkill(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			skillId	query		string	true	"skill ID"
-//	@Success		200		{object}	response.Response{data=response.SquareSkillDetailInfo}
+//	@Success		200		{object}	response.Response{data=response.SquareSkillDetail}
 //	@Router			/square/skill/detail [get]
 func GetSquareSkillDetail(ctx *gin.Context) {
 	resp, err := service.GetSquareSkillDetail(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))
