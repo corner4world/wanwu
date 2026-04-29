@@ -597,15 +597,18 @@ func (s *Service) GetDocSegmentList(ctx context.Context, req *knowledgebase_doc_
 		log.Errorf("查询知识库导入详情失败 参数(%v)", req)
 	}
 	//4.查询分片信息
-	segmentListResp, err := service.RagGetDocSegmentList(ctx, &service.RagGetDocSegmentParams{
-		UserId:            knowledge.UserId,
-		KnowledgeBaseName: knowledge.RagName,
-		FileName:          service.RebuildFileName(docInfo.DocId, docInfo.FileType, docInfo.Name),
-		PageSize:          req.PageSize,
-		SearchAfter:       req.PageSize * (req.PageNo - 1),
-	})
-	if err != nil {
-		return nil, util.ErrCode(errs.Code_KnowledgeDocSplitFailed)
+	segmentListResp := &service.ContentListResp{}
+	if docInfo.ErrorMsg != util.KnowledgeImportSameNameErr {
+		segmentListResp, err = service.RagGetDocSegmentList(ctx, &service.RagGetDocSegmentParams{
+			UserId:            knowledge.UserId,
+			KnowledgeBaseName: knowledge.RagName,
+			FileName:          service.RebuildFileName(docInfo.DocId, docInfo.FileType, docInfo.Name),
+			PageSize:          req.PageSize,
+			SearchAfter:       req.PageSize * (req.PageNo - 1),
+		})
+		if err != nil {
+			return nil, util.ErrCode(errs.Code_KnowledgeDocSplitFailed)
+		}
 	}
 	//5.查询文档元数据,忽略错误
 	metaDataList, _ := orm.SelectDocMetaList(ctx, "", "", req.DocId)

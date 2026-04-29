@@ -7,7 +7,7 @@ const (
 	DocInit             = 0  //文档待处理
 	DocSuccess          = 1  //文档处理完成
 	DocProcessing       = 3  //文档处理中
-	DocFail             = 5  //文档待处理
+	DocFail             = 5  //文档解析失败
 	DocSuccessNew       = 10 //文档处理完成
 
 	GraphInit          GraphStatus = 0   //图谱未处理
