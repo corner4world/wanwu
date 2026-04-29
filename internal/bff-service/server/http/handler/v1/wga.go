@@ -178,6 +178,27 @@ func GetGeneralAgentSkillSelect(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
+// GetGeneralAgentKnowledgeSelect
+//
+//	@Tags			knowledge
+//	@Summary		通用智能体知识库下拉接口列表
+//	@Description	获取通用智能体知识库下拉接口列表
+//	@Security		JWT
+//	@Accept			json
+//	@Param			data	body	request.KnowledgeSelectReq	true	"查询知识库列表"
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.KnowledgeListResp}
+//	@Router			/general/agent/knowledge/select [post]
+func GetGeneralAgentKnowledgeSelect(ctx *gin.Context) {
+	userId, orgId := getUserID(ctx), getOrgID(ctx)
+	var req request.KnowledgeSelectReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.SelectKnowledgeList(ctx, userId, orgId, &req)
+	gin_util.Response(ctx, resp, err)
+}
+
 // GetGeneralAgentResourceSelect
 //
 //	@Tags			wga

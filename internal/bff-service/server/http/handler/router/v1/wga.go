@@ -23,6 +23,7 @@ func registerWGA(apiV1 *gin.RouterGroup) {
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/mcp/select", http.MethodGet, v1.GetGeneralAgentMCPSelect, "通用智能体MCP下拉接口列表")
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/workflow/select", http.MethodGet, v1.GetGeneralAgentWorkflowSelect, "通用智能体Workflow下拉接口列表")
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/skill/select", http.MethodGet, v1.GetGeneralAgentSkillSelect, "通用智能体skill下拉接口列表")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/knowledge/select", http.MethodPost, v1.GetGeneralAgentKnowledgeSelect, "通用智能体知识库下拉接口列表")
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/resource/select", http.MethodGet, v1.GetGeneralAgentResourceSelect, "通用智能体资源选择列表")
 
 	// 通用智能体对话相关接口

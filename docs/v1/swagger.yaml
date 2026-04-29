@@ -4114,6 +4114,10 @@ definitions:
         items:
           $ref: '#/definitions/request.GeneralAgentConfigItem'
         type: array
+      knowledge:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        type: array
       mcp:
         items:
           $ref: '#/definitions/request.GeneralAgentConfigItem'
@@ -6225,7 +6229,7 @@ definitions:
           $ref: '#/definitions/response.GeneralAgentResourceSelectItem'
         type: array
       listType:
-        description: '列表类型: mcp, workflow, skill, assistant'
+        description: '列表类型: mcp, workflow, skill, assistant, knowledge'
         type: string
     type: object
   response.GeneralAgentToolCategories:
@@ -12504,6 +12508,35 @@ paths:
       summary: 通用智能体workspace预览
       tags:
       - wga
+  /general/agent/knowledge/select:
+    post:
+      consumes:
+      - application/json
+      description: 获取通用智能体知识库下拉接口列表
+      parameters:
+      - description: 查询知识库列表
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.KnowledgeSelectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.KnowledgeListResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 通用智能体知识库下拉接口列表
+      tags:
+      - knowledge
   /general/agent/mcp/select:
     get:
       consumes:

@@ -441,6 +441,34 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 		opts = append(opts, skillOpts...)
 	}
 
+	// 校验并构建Knowledge配置选项（追加@提及的Knowledge）
+	knowledgeList := make([]*assistant_service.WgaConfigKnowledge, 0)
+	if wgaConfig != nil {
+		knowledgeList = append(knowledgeList, wgaConfig.KnowledgeList...)
+	}
+	if mentionResources != nil {
+		knowledgeList = append(knowledgeList, mentionResources.KnowledgeList...)
+	}
+	if len(knowledgeList) > 0 {
+		// 去重
+		seen := make(map[string]bool)
+		dedupedList := make([]*assistant_service.WgaConfigKnowledge, 0, len(knowledgeList))
+		for _, k := range knowledgeList {
+			if !seen[k.KnowledgeId] {
+				seen[k.KnowledgeId] = true
+				dedupedList = append(dedupedList, k)
+			}
+		}
+		if err := checkWgaKnowledgeConfig(ctx, userID, orgID, dedupedList); err != nil {
+			return nil, err
+		}
+		knowledgeOpts, err := buildWgaKnowledgeOptions(ctx, userID, orgID, threadID, runID, dedupedList)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, knowledgeOpts...)
+	}
+
 	// 持久化存储
 	if config.WgaCfg().Persistent.Enabled {
 		var inputDir string
@@ -669,6 +697,9 @@ func buildWgaMentionResourcesMessage(resources *wgaMentionResources) *schema.Mes
 	}
 	for _, item := range resources.AssistantItems {
 		lines = append(lines, fmt.Sprintf("- @%s (assistant) %s", item.Name, item.Desc))
+	}
+	for _, item := range resources.KnowledgeItems {
+		lines = append(lines, fmt.Sprintf("- @%s (knowledge) %s", item.Name, item.Desc))
 	}
 
 	return &schema.Message{

@@ -143,6 +143,6 @@ type GeneralAgentResourceSelectItem struct {
 }
 
 type GeneralAgentResourceSelectList struct {
-	ListType string                            `json:"listType"` // 列表类型: mcp, workflow, skill, assistant
+	ListType string                            `json:"listType"` // 列表类型: mcp, workflow, skill, assistant, knowledge
 	List     []*GeneralAgentResourceSelectItem `json:"list"`     // 列表项
 }

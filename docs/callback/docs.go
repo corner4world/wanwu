@@ -1129,6 +1129,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/wga/rag/search-knowledge-base": {
+            "post": {
+                "description": "WGA专用知识库检索接口",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "callback"
+                ],
+                "summary": "WGA知识库检索",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "X-uid",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "WGA知识库检索请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.WgaRagSearchKnowledgeBaseReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/workflow/list": {
             "get": {
                 "description": "根据userId和spaceId获取Workflow",
@@ -4299,6 +4340,24 @@ const docTemplate = `{
                 "vector_weight": {
                     "description": "语义权重",
                     "type": "number"
+                }
+            }
+        },
+        "request.WgaRagSearchKnowledgeBaseReq": {
+            "type": "object",
+            "required": [
+                "knowledgeIdList",
+                "question"
+            ],
+            "properties": {
+                "knowledgeIdList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "question": {
+                    "type": "string"
                 }
             }
         },

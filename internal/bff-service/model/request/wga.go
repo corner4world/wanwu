@@ -6,6 +6,7 @@ type UpdateGeneralAgentConfigReq struct {
 	Workflow  []GeneralAgentConfigItem     `json:"workflow"`
 	Skill     []GeneralAgentConfigItem     `json:"skill"`
 	Assistant []GeneralAgentConfigItem     `json:"assistant"`
+	Knowledge []GeneralAgentConfigItem     `json:"knowledge"`
 	Tool      []GeneralAgentConfigToolItem `json:"tool"`
 }
 

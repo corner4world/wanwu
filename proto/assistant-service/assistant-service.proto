@@ -972,6 +972,10 @@ message WgaConfigSkill {
   string skillType = 2;
 }
 
+message WgaConfigKnowledge {
+  string knowledgeId = 1;
+}
+
 message WgaConversationConfig {
   string threadId = 1;
   string title = 2;
@@ -992,6 +996,7 @@ message WgaConfig{
   repeated WgaConfigMcp mcpList = 7;
   repeated WgaConfigWorkflow workflowList = 8;
   repeated WgaConfigSkill skillList = 9;
+  repeated WgaConfigKnowledge knowledgeList = 10;
 }
 
 message GetWgaConversationConfigReq {
@@ -1024,4 +1029,5 @@ message UpdateWgaConfigReq {
   repeated WgaConfigMcp mcpList = 4;
   repeated WgaConfigWorkflow workflowList = 5;
   repeated WgaConfigSkill skillList = 6;
+  repeated WgaConfigKnowledge knowledgeList = 7;
 }
