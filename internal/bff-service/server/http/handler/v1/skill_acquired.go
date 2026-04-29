@@ -17,7 +17,7 @@ import (
 //	@Produce		json
 //	@Param			name	query		string	false	"skill名称"
 //	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AcquiredSkillDetail}}
-//	@Router			/agent/acquired/skill [get]
+//	@Router			/agent/acquired/skill/list [get]
 func GetAcquiredSkillList(ctx *gin.Context) {
 	resp, err := service.GetAcquiredSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
 	gin_util.Response(ctx, resp, err)

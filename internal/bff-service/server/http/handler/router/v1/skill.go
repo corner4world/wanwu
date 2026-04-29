@@ -20,7 +20,7 @@ func registerAgentSkill(apiV1 *gin.RouterGroup) {
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/select", http.MethodGet, v1.GetSkillSelect, "智能体skills下拉列表")
 
 	// 资源库 - 我添加的 skill（acquired skill）
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill", http.MethodGet, v1.GetAcquiredSkillList, "获取我添加的skill列表")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/list", http.MethodGet, v1.GetAcquiredSkillList, "获取我添加的skill列表")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill", http.MethodDelete, v1.DeleteAcquiredSkill, "删除我添加的skill")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/detail", http.MethodGet, v1.GetAcquiredSkillDetail, "获取我添加的skill详情")
 

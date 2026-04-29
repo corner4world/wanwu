@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/agent/acquired/skill": {
+        "/agent/acquired/skill/list": {
             "get": {
                 "security": [
                     {
@@ -77,7 +77,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/agent/acquired/skill": {
             "delete": {
                 "security": [
                     {
