@@ -26,29 +26,29 @@ func GetSquareSkillList(ctx *gin.Context, userId, orgId, name string) (*response
 		skillsCfgList = append(skillsCfgList, skillsCfg)
 	}
 
-	// 查询当前用户已添加的 joiner skill，计算 isShared
+	// 查询当前用户已添加的 acquired skill，计算 isShared
 	sharedMap := make(map[string]bool)
 	if len(skillsCfgList) > 0 {
-		joinerResp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
+		acquiredResp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
 			Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 		})
 		if err != nil {
 			return nil, err
 		}
-		if joinerResp != nil {
-			for _, skill := range joinerResp.List {
+		if acquiredResp != nil {
+			for _, skill := range acquiredResp.List {
 				sharedMap[skill.SquareSkillId] = true
 			}
 		}
 	}
 
-	list := make([]*response.SquareSkillDetail, 0, len(skillsCfgList))
+	list := make([]*response.SquareSkillInfo, 0, len(skillsCfgList))
 	for _, skillsCfg := range skillsCfgList {
 		iconUrl := config.Cfg().DefaultIcon.SkillIcon
 		if skillsCfg.Avatar != "" {
 			iconUrl = skillsCfg.Avatar
 		}
-		list = append(list, &response.SquareSkillDetail{
+		list = append(list, &response.SquareSkillInfo{
 			SkillId:  skillsCfg.SkillId,
 			Name:     skillsCfg.Name,
 			Avatar:   request.Avatar{Path: iconUrl},
@@ -99,7 +99,7 @@ func ShareSquareSkill(ctx *gin.Context, userId, orgId, skillId string) error {
 }
 
 // GetSquareSkillDetail 探索广场-skill详情
-func GetSquareSkillDetail(ctx *gin.Context, userId, orgId, skillId string) (*response.SquareSkillDetailInfo, error) {
+func GetSquareSkillDetail(ctx *gin.Context, userId, orgId, skillId string) (*response.SquareSkillDetail, error) {
 	skillsCfg, exist := config.Cfg().AgentSkill(skillId)
 	if !exist {
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "skill_not_found", "skill not found in builtin skills")
@@ -107,14 +107,14 @@ func GetSquareSkillDetail(ctx *gin.Context, userId, orgId, skillId string) (*res
 
 	// 查询当前用户是否已添加该skill
 	isShared := false
-	joinerResp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
+	acquiredResp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
 		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	if err != nil {
 		return nil, err
 	}
-	if joinerResp != nil {
-		for _, skill := range joinerResp.List {
+	if acquiredResp != nil {
+		for _, skill := range acquiredResp.List {
 			if skill.SquareSkillId == skillId {
 				isShared = true
 				break
@@ -126,14 +126,16 @@ func GetSquareSkillDetail(ctx *gin.Context, userId, orgId, skillId string) (*res
 	if skillsCfg.Avatar != "" {
 		iconUrl = skillsCfg.Avatar
 	}
-	return &response.SquareSkillDetailInfo{
-		SkillId:       skillsCfg.SkillId,
-		Name:          skillsCfg.Name,
-		Avatar:        request.Avatar{Path: iconUrl},
-		Author:        skillsCfg.Author,
-		Desc:          skillsCfg.Desc,
+	return &response.SquareSkillDetail{
+		SquareSkillInfo: response.SquareSkillInfo{
+			SkillId:  skillsCfg.SkillId,
+			Name:     skillsCfg.Name,
+			Avatar:   request.Avatar{Path: iconUrl},
+			Author:   skillsCfg.Author,
+			Desc:     skillsCfg.Desc,
+			IsShared: isShared,
+		},
 		SkillMarkdown: string(skillsCfg.SkillMarkdown),
-		IsShared:      isShared,
 	}, nil
 }
 

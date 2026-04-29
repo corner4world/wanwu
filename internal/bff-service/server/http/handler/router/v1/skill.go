@@ -9,11 +9,6 @@ import (
 )
 
 func registerAgentSkill(apiV1 *gin.RouterGroup) {
-	// 内置 skills （只读）
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/list", http.MethodGet, v1.GetAgentSkillList, "获取skill模板列表")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/detail", http.MethodGet, v1.GetAgentSkillDetail, "获取skill模板详情")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/download", http.MethodGet, v1.DownloadAgentSkill, "下载skill模板")
-
 	// 自定义 skill（CRUD）
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/list", http.MethodGet, v1.GetCustomSkillList, "获取自定义skill列表")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/detail", http.MethodGet, v1.GetCustomSkillDetail, "获取自定义skill详情")
@@ -24,10 +19,10 @@ func registerAgentSkill(apiV1 *gin.RouterGroup) {
 	// 自定义与内建 skill
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/select", http.MethodGet, v1.GetSkillSelect, "智能体skills下拉列表")
 
-	// 资源库 - 我添加的 skill（joiner skill）
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/joiner/skills", http.MethodGet, v1.GetJoinerSkillList, "获取我添加的skill列表")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/joiner/skills", http.MethodDelete, v1.DeleteJoinerSkill, "删除我添加的skill")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/joiner/skills/detail", http.MethodGet, v1.GetJoinerSkillDetail, "获取我添加的skill详情")
+	// 资源库 - 我添加的 skill（acquired skill）
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/list", http.MethodGet, v1.GetAcquiredSkillList, "获取我添加的skill列表")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill", http.MethodDelete, v1.DeleteAcquiredSkill, "删除我添加的skill")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/detail", http.MethodGet, v1.GetAcquiredSkillDetail, "获取我添加的skill详情")
 
 	// skills conversation
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation", http.MethodPost, v1.CreateSkillConversation, "创建Skill生成会话")

@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetJoinerSkillList 资源库-我添加的skill列表
-func GetJoinerSkillList(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
+// GetAcquiredSkillList 资源库-我添加的skill列表
+func GetAcquiredSkillList(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
 	resp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
 		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 		Name:     name,
@@ -19,9 +19,9 @@ func GetJoinerSkillList(ctx *gin.Context, userId, orgId, name string) (*response
 		return nil, err
 	}
 
-	list := make([]*response.JoinerSkillDetail, 0, len(resp.List))
+	list := make([]*response.AcquiredSkillDetail, 0, len(resp.List))
 	for _, skill := range resp.List {
-		list = append(list, toJoinerSkillDetail(ctx, skill))
+		list = append(list, toAcquiredSkillDetail(ctx, skill))
 	}
 
 	return &response.ListResult{
@@ -30,34 +30,34 @@ func GetJoinerSkillList(ctx *gin.Context, userId, orgId, name string) (*response
 	}, nil
 }
 
-// DeleteJoinerSkill 资源库-删除已添加的skill
-func DeleteJoinerSkill(ctx *gin.Context, joinerSkillId string) error {
+// DeleteAcquiredSkill 资源库-删除已添加的skill
+func DeleteAcquiredSkill(ctx *gin.Context, acquiredSkillId string) error {
 	_, err := mcp.AcquiredSkillDelete(ctx.Request.Context(), &mcp_service.AcquiredSkillDeleteReq{
-		AcquiredSkillId: joinerSkillId,
+		AcquiredSkillId: acquiredSkillId,
 	})
 	return err
 }
 
-// GetJoinerSkill 资源库-获取已添加skill详情
-func GetJoinerSkill(ctx *gin.Context, userId, orgId, joinerSkillId string) (*response.JoinerSkillDetail, error) {
+// GetAcquiredSkill 资源库-获取已添加skill详情
+func GetAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId string) (*response.AcquiredSkillDetail, error) {
 	resp, err := mcp.AcquiredSkillGet(ctx.Request.Context(), &mcp_service.AcquiredSkillGetReq{
-		AcquiredSkillId: joinerSkillId,
+		AcquiredSkillId: acquiredSkillId,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return toJoinerSkillDetail(ctx, resp), nil
+	return toAcquiredSkillDetail(ctx, resp), nil
 }
 
 // --- internal ---
 
-func toJoinerSkillDetail(ctx *gin.Context, skill *mcp_service.AcquiredSkill) *response.JoinerSkillDetail {
+func toAcquiredSkillDetail(ctx *gin.Context, skill *mcp_service.AcquiredSkill) *response.AcquiredSkillDetail {
 	if skill == nil {
 		return nil
 	}
 	filePath, _ := url.JoinPath(config.Cfg().Minio.DownloadURL, skill.ObjectPath)
-	return &response.JoinerSkillDetail{
+	return &response.AcquiredSkillDetail{
 		SkillId:       skill.AcquiredSkillId,
 		Name:          skill.Name,
 		Avatar:        cacheSkillAvatar(ctx, skill.Avatar),

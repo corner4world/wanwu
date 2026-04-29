@@ -1,8 +1,6 @@
 package service
 
 import (
-	"strings"
-
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
@@ -11,20 +9,6 @@ import (
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 )
-
-func GetAgentSkillList(ctx *gin.Context, name string) (*response.ListResult, error) {
-	var skillsTemplateList []*response.SkillDetail
-	for _, skillsCfg := range config.Cfg().AgentSkills {
-		if name != "" && !strings.Contains(skillsCfg.Name, name) {
-			continue
-		}
-		skillsTemplateList = append(skillsTemplateList, buildSkillTempDetail(*skillsCfg, false))
-	}
-	return &response.ListResult{
-		List:  skillsTemplateList,
-		Total: int64(len(skillsTemplateList)),
-	}, nil
-}
 
 func GetAgentSkillDetail(ctx *gin.Context, skillId string) (*response.SkillDetail, error) {
 	skillsCfg, exist := config.Cfg().AgentSkill(skillId)
@@ -46,15 +30,6 @@ func GetAgentSkillListDetail(ctx *gin.Context, skillIdList []string) (*response.
 		skillDetailList = append(skillDetailList, detail)
 	}
 	return &response.SkillDetailListResp{SkillList: skillDetailList}, nil
-}
-
-func DownloadAgentSkill(ctx *gin.Context, skillId string) ([]byte, error) {
-	// 需要把SkConfigDir+templateId路径下的所有文件在内存打成一个压缩包
-	sf, exist := config.Cfg().AgentSkill(skillId)
-	if !exist {
-		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "bff_agent_skill_download", "get skill detail empty")
-	}
-	return sf.AgentSkillZipToBytes(skillId)
 }
 
 // --- internal ---

@@ -42,8 +42,8 @@ func registerExploration(apiV1 *gin.RouterGroup) {
 	mid.Sub("exploration.template").Reg(apiV1, "/prompt/template/detail", http.MethodGet, v1.GetPromptTemplateDetail, "获取提示词模板详情")
 
 	// skill 广场
-	mid.Sub("exploration.skill").Reg(apiV1, "/square/skills", http.MethodGet, v1.GetSquareSkillList, "获取广场skill列表")
-	mid.Sub("exploration.skill").Reg(apiV1, "/square/skills/share", http.MethodPost, v1.ShareSquareSkill, "添加广场skill到资源库")
-	mid.Sub("exploration.skill").Reg(apiV1, "/square/skills/detail", http.MethodGet, v1.GetSquareSkillDetail, "获取广场skill详情")
-	mid.Sub("exploration.skill").Reg(apiV1, "/square/skills/download", http.MethodGet, v1.DownloadSquareSkill, "下载广场skill")
+	mid.Sub("exploration.skill").Reg(apiV1, "/square/skill/list", http.MethodGet, v1.GetSquareSkillList, "获取广场skill列表")
+	mid.Sub("exploration.skill").Reg(apiV1, "/square/skill/share", http.MethodPost, v1.ShareSquareSkill, "添加广场skill到资源库")
+	mid.Sub("exploration.skill").Reg(apiV1, "/square/skill/detail", http.MethodGet, v1.GetSquareSkillDetail, "获取广场skill详情")
+	mid.Sub("exploration.skill").Reg(apiV1, "/square/skill/download", http.MethodGet, v1.DownloadSquareSkill, "下载广场skill")
 }

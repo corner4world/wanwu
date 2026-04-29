@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetJoinerSkillList 获取我添加的skill列表
+// GetAcquiredSkillList 获取我添加的skill列表
 //
 //	@Tags			resource.skill
 //	@Summary		获取我添加的skill列表
@@ -16,14 +16,14 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	query		string	false	"skill名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.JoinerSkillDetail}}
-//	@Router			/agent/joiner/skills [get]
-func GetJoinerSkillList(ctx *gin.Context) {
-	resp, err := service.GetJoinerSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AcquiredSkillDetail}}
+//	@Router			/agent/acquired/skill/list [get]
+func GetAcquiredSkillList(ctx *gin.Context) {
+	resp, err := service.GetAcquiredSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
 	gin_util.Response(ctx, resp, err)
 }
 
-// DeleteJoinerSkill 删除我添加的skill
+// DeleteAcquiredSkill 删除我添加的skill
 //
 //	@Tags			resource.skill
 //	@Summary		删除我添加的skill
@@ -31,19 +31,19 @@ func GetJoinerSkillList(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			skillId	body		request.DeleteJoinerSkillReq	true	"skill ID"
+//	@Param			skillId	body		request.DeleteAcquiredSkillReq	true	"skill ID"
 //	@Success		200		{object}	response.Response
-//	@Router			/agent/joiner/skills [delete]
-func DeleteJoinerSkill(ctx *gin.Context) {
-	var req request.DeleteJoinerSkillReq
+//	@Router			/agent/acquired/skill [delete]
+func DeleteAcquiredSkill(ctx *gin.Context) {
+	var req request.DeleteAcquiredSkillReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.DeleteJoinerSkill(ctx, req.SkillId)
+	err := service.DeleteAcquiredSkill(ctx, req.SkillId)
 	gin_util.Response(ctx, nil, err)
 }
 
-// GetJoinerSkillDetail 获取我添加的skill详情
+// GetAcquiredSkillDetail 获取我添加的skill详情
 //
 //	@Tags			resource.skill
 //	@Summary		获取我添加的skill详情
@@ -52,9 +52,9 @@ func DeleteJoinerSkill(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			skillId	query		string	true	"skill ID"
-//	@Success		200		{object}	response.Response{data=response.JoinerSkillDetail}
-//	@Router			/agent/joiner/skills/detail [get]
-func GetJoinerSkillDetail(ctx *gin.Context) {
-	resp, err := service.GetJoinerSkill(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))
+//	@Success		200		{object}	response.Response{data=response.AcquiredSkillDetail}
+//	@Router			/agent/acquired/skill/detail [get]
+func GetAcquiredSkillDetail(ctx *gin.Context) {
+	resp, err := service.GetAcquiredSkill(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))
 	gin_util.Response(ctx, resp, err)
 }

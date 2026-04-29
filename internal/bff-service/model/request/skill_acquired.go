@@ -1,9 +1,9 @@
 package request
 
-type DeleteJoinerSkillReq struct {
+type DeleteAcquiredSkillReq struct {
 	SkillId string `json:"skillId" validate:"required"`
 }
 
-func (r *DeleteJoinerSkillReq) Check() error {
+func (r *DeleteAcquiredSkillReq) Check() error {
 	return nil
 }

@@ -1,73 +1,11 @@
 package v1
 
 import (
-	"fmt"
-	"net/http"
-	"net/url"
-
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/gin-gonic/gin"
 )
-
-// GetAgentSkillList
-//
-//	@Tags			resource.skill
-//	@Summary		获取skill模板列表
-//	@Description	获取skill模板列表
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Param			name	query		string	false	"skill模板名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SkillDetail}}
-//	@Router			/agent/skill/list [get]
-func GetAgentSkillList(ctx *gin.Context) {
-	resp, err := service.GetAgentSkillList(ctx, ctx.Query("name"))
-	gin_util.Response(ctx, resp, err)
-}
-
-// GetAgentSkillDetail
-//
-//	@Tags			resource.skill
-//	@Summary		获取skill模板详情
-//	@Description	获取skill模板详情
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Param			skillId	query		string	true	"skill模板ID"
-//	@Success		200		{object}	response.Response{data=response.SkillDetail}
-//	@Router			/agent/skill/detail [get]
-func GetAgentSkillDetail(ctx *gin.Context) {
-	resp, err := service.GetAgentSkillDetail(ctx, ctx.Query("skillId"))
-	gin_util.Response(ctx, resp, err)
-}
-
-// DownloadAgentSkill
-//
-//	@Tags			resource.skill
-//	@Summary		下载skill模板
-//	@Description	下载skill模板
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		application/octet-stream
-//	@Param			skillId	query		string	true	"skill模板ID"
-//	@Success		200		{object}	response.Response
-//	@Router			/agent/skill/download [get]
-func DownloadAgentSkill(ctx *gin.Context) {
-	fileName := fmt.Sprintf("%s.zip", ctx.Query("skillId"))
-	resp, err := service.DownloadAgentSkill(ctx, ctx.Query("skillId"))
-	if err != nil {
-		gin_util.Response(ctx, nil, err)
-		return
-	}
-	// 设置响应头
-	ctx.Header("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(fileName))
-	ctx.Header("Content-Type", "application/octet-stream")
-	ctx.Header("Access-Control-Expose-Headers", "Content-Disposition")
-	// 直接写入字节数据
-	ctx.Data(http.StatusOK, "application/octet-stream", resp)
-}
 
 // GetCustomSkillList
 //

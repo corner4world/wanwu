@@ -20,8 +20,8 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	query		string	false	"skill名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SquareSkillDetail}}
-//	@Router			/square/skills [get]
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SquareSkillInfo}}
+//	@Router			/square/skill/list [get]
 func GetSquareSkillList(ctx *gin.Context) {
 	resp, err := service.GetSquareSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
 	gin_util.Response(ctx, resp, err)
@@ -37,7 +37,7 @@ func GetSquareSkillList(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			skillId	body		request.ShareSquareSkillReq	true	"skill ID"
 //	@Success		200		{object}	response.Response
-//	@Router			/square/skills/share [post]
+//	@Router			/square/skill/share [post]
 func ShareSquareSkill(ctx *gin.Context) {
 	var req request.ShareSquareSkillReq
 	if !gin_util.Bind(ctx, &req) {
@@ -56,8 +56,8 @@ func ShareSquareSkill(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			skillId	query		string	true	"skill ID"
-//	@Success		200		{object}	response.Response{data=response.SquareSkillDetailInfo}
-//	@Router			/square/skills/detail [get]
+//	@Success		200		{object}	response.Response{data=response.SquareSkillDetail}
+//	@Router			/square/skill/detail [get]
 func GetSquareSkillDetail(ctx *gin.Context) {
 	resp, err := service.GetSquareSkillDetail(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))
 	gin_util.Response(ctx, resp, err)
@@ -73,7 +73,7 @@ func GetSquareSkillDetail(ctx *gin.Context) {
 //	@Produce		application/octet-stream
 //	@Param			skillId	query		string	true	"skill ID"
 //	@Success		200		{object}	response.Response
-//	@Router			/square/skills/download [get]
+//	@Router			/square/skill/download [get]
 func DownloadSquareSkill(ctx *gin.Context) {
 	fileName := fmt.Sprintf("%s.zip", ctx.Query("skillId"))
 	resp, err := service.DownloadSquareSkill(ctx, ctx.Query("skillId"))
