@@ -33,7 +33,7 @@ type IClient interface {
 	GetAppList(ctx context.Context, userId, orgId, appType string) ([]*model.App, *err_code.Status)
 	DeleteApp(ctx context.Context, appId, appType string) *err_code.Status
 	RecordAppHistory(ctx context.Context, userId, appId, appType string) *err_code.Status
-	GetAppListByIds(ctx context.Context, ids []string) ([]*model.App, *err_code.Status)
+	GetAppListByIds(ctx context.Context, ids []string, appType string) ([]*model.App, *err_code.Status)
 	GetAppInfo(ctx context.Context, appId, appType string) (*model.App, *err_code.Status)
 	ConvertAppType(ctx context.Context, appId, oldAppType, newAppType string) *err_code.Status
 

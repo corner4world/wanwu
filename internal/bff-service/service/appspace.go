@@ -58,7 +58,7 @@ func DeleteAppSpaceApp(ctx *gin.Context, userId, orgId, appId, appType string) e
 
 func GetAppSpaceAppList(ctx *gin.Context, userId, orgId, name, appType string) (*response.ListResult, error) {
 	var ret []response.AppBriefInfo
-	if appType == "" || appType == constant.AppTypeRag {
+	if appType == constant.AppTypeRag {
 		resp, err := rag.ListRag(ctx.Request.Context(), &rag_service.RagListReq{
 			Name: name,
 			Identity: &rag_service.Identity{
@@ -73,7 +73,7 @@ func GetAppSpaceAppList(ctx *gin.Context, userId, orgId, name, appType string) (
 			ret = append(ret, appBriefProto2Model(ctx, ragInfo, 0))
 		}
 	}
-	if appType == "" || appType == constant.AppTypeAgent {
+	if appType == constant.AppTypeAgent {
 		resp, err := assistant.GetAssistantListMyAll(ctx.Request.Context(), &assistant_service.GetAssistantListMyAllReq{
 			Name: name,
 			Identity: &assistant_service.Identity{
@@ -88,7 +88,7 @@ func GetAppSpaceAppList(ctx *gin.Context, userId, orgId, name, appType string) (
 			ret = append(ret, appBriefProto2Model(ctx, assistantInfo.Info, assistantInfo.Category))
 		}
 	}
-	if appType == "" || appType == constant.AppTypeWorkflow {
+	if appType == constant.AppTypeWorkflow {
 		resp, err := ListWorkflow(ctx, orgId, name, constant.AppTypeWorkflow)
 		if err != nil {
 			return nil, err
@@ -97,7 +97,7 @@ func GetAppSpaceAppList(ctx *gin.Context, userId, orgId, name, appType string) (
 			ret = append(ret, cozeWorkflowInfo2Model(workflowInfo))
 		}
 	}
-	if appType == "" || appType == constant.AppTypeChatflow {
+	if appType == constant.AppTypeChatflow {
 		resp, err := ListWorkflow(ctx, orgId, name, constant.AppTypeChatflow)
 		if err != nil {
 			return nil, err
@@ -112,6 +112,7 @@ func GetAppSpaceAppList(ctx *gin.Context, userId, orgId, name, appType string) (
 	}
 	appInfos, err := app.GetAppListByIds(ctx, &app_service.GetAppListByIdsReq{
 		AppIdsList: appIds,
+		AppType:    appType,
 	})
 	if err != nil {
 		return nil, err

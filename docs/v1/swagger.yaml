@@ -9342,6 +9342,7 @@ paths:
         - chatflow
         in: query
         name: appType
+        required: true
         type: string
       produces:
       - application/json

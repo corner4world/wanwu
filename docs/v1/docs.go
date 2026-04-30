@@ -1266,7 +1266,8 @@ const docTemplate = `{
                         "type": "string",
                         "description": "应用类型 Enums(agent,workflow,rag,chatflow)",
                         "name": "appType",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {

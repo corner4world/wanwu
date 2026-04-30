@@ -17,8 +17,12 @@ func (req DeleteAppSpaceAppRequest) Check() error {
 }
 
 type GetAppSpaceAppListRequest struct {
+	Name string `form:"name" json:"name"`
+}
+
+type GetAppSpaceAppListByTypeRequest struct {
 	Name    string `form:"name" json:"name"`
-	AppType string `form:"appType" json:"appType"`
+	AppType string `form:"appType" json:"appType" validate:"required"`
 }
 
 type PublishAppRequest struct {
@@ -55,5 +59,9 @@ func (req GetAppBaseUrlRequest) Check() error {
 }
 
 func (o *GetAppSpaceAppListRequest) Check() error {
+	return nil
+}
+
+func (o *GetAppSpaceAppListByTypeRequest) Check() error {
 	return nil
 }

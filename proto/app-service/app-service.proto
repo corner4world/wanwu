@@ -232,6 +232,7 @@ message GetAppListReq {
 
 message GetAppListByIdsReq {
   repeated string appIdsList = 1;
+  string appType = 2;
 }
 
 message AppList {

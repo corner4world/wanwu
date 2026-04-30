@@ -105,12 +105,12 @@ func (c *Client) DeleteApp(ctx context.Context, appId, appType string) *errs.Sta
 	return nil
 }
 
-func (c *Client) GetAppListByIds(ctx context.Context, ids []string) ([]*model.App, *errs.Status) {
+func (c *Client) GetAppListByIds(ctx context.Context, ids []string, appType string) ([]*model.App, *errs.Status) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
 	var publishApps []*model.App
-	if err := sqlopt.InAppIds(ids).Apply(c.db.WithContext(ctx)).Order("id DESC").Find(&publishApps).Error; err != nil {
+	if err := sqlopt.InAppIds(ids).Apply(c.db.WithContext(ctx)).Where("app_type = ?", appType).Order("id DESC").Find(&publishApps).Error; err != nil {
 		return nil, toErrStatus("app_publish_apps_get_by_ids", err.Error())
 	}
 	return publishApps, nil

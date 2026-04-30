@@ -37,11 +37,11 @@ func DeleteAppSapceApp(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	query		string	false	"应用名(模糊查询)"
-//	@Param			appType	query		string	false	"应用类型 Enums(agent,workflow,rag,chatflow)"
+//	@Param			appType	query		string	true	"应用类型 Enums(agent,workflow,rag,chatflow)"
 //	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AppBriefInfo}}
 //	@Router			/appspace/app/list [get]
 func GetAppSpaceAppList(ctx *gin.Context) {
-	var req request.GetAppSpaceAppListRequest
+	var req request.GetAppSpaceAppListByTypeRequest
 	if !gin_util.BindQuery(ctx, &req) {
 		return
 	}

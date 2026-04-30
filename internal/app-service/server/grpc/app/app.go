@@ -71,7 +71,7 @@ func (s *Service) DeleteApp(ctx context.Context, req *app_service.DeleteAppReq) 
 }
 
 func (s *Service) GetAppListByIds(ctx context.Context, req *app_service.GetAppListByIdsReq) (*app_service.AppList, error) {
-	publishAppList, err := s.cli.GetAppListByIds(ctx, req.AppIdsList)
+	publishAppList, err := s.cli.GetAppListByIds(ctx, req.AppIdsList, req.AppType)
 	if err != nil {
 		return nil, errStatus(errs.Code_AppExploration, err)
 	}
