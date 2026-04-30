@@ -903,15 +903,23 @@ export default {
       this.exportData(this.selectedDocIds);
     },
     handleBatchConfig() {
-      const unprocessedDocs = this.selectedTableData.filter(
+      const urlDocs = this.selectedTableData.filter(
+        doc => doc.docType === 'url',
+      );
+      const nonUrlDocs = this.selectedTableData.filter(
+        doc => doc.docType !== 'url',
+      );
+
+      const unprocessedDocs = nonUrlDocs.filter(
         doc => doc.status !== KNOWLEDGE_STATUS_FINISH,
       );
-      const allowedDocs = this.selectedTableData.filter(
+      const allowedDocs = nonUrlDocs.filter(
         doc => doc.status === KNOWLEDGE_STATUS_FINISH,
       );
+
       if (
-        this.selectedTableData.some(doc => doc.isMultimodal === true) &&
-        this.selectedTableData.some(doc => doc.isMultimodal === false)
+        nonUrlDocs.some(doc => doc.isMultimodal === true) &&
+        nonUrlDocs.some(doc => doc.isMultimodal === false)
       ) {
         this.$alert(
           this.$t('knowledgeManage.multimodalMixTips'),
@@ -921,10 +929,10 @@ export default {
             type: 'warning',
           },
         );
-      } else if (unprocessedDocs.length > 0) {
+      } else if (urlDocs.length > 0 || unprocessedDocs.length > 0) {
         let message = this.$t('knowledgeManage.batchConfigTips', {
           total: this.selectedTableData.length,
-          unprocessedNum: unprocessedDocs.length,
+          unprocessedNum: urlDocs.length + unprocessedDocs.length,
         });
         if (allowedDocs.length > 0) {
           message += this.$t('knowledgeManage.continueTips');
@@ -944,7 +952,7 @@ export default {
           });
         }
       } else {
-        this.handleConfig(this.selectedDocIds);
+        this.handleConfig(nonUrlDocs.map(doc => doc.docId));
       }
     },
     async getTableData(data) {
