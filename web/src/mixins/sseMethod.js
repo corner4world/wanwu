@@ -1,4 +1,4 @@
-import { fetchEventSource } from '../sse/index.js';
+﻿import { fetchEventSource } from '../sse/index.js';
 import { store } from '@/store/index';
 import Print from '../utils/printPlus2.js';
 import {
@@ -1163,6 +1163,7 @@ export default {
       sessionCom.pushHistory(params);
 
       this._print = new Print({
+        timer: 10000,
         onPrintEnd: () => {
           this.onMainPrintEnd && this.onMainPrintEnd();
         },
@@ -1637,35 +1638,34 @@ export default {
         },
         onclose: () => {
           console.log('===> sendEventSource onClose');
-          this.setStoreSessionStatus(-1);
-          this._print && this._print.stop();
-          this._currentMainFinish = undefined;
-
-          // 清除历史记录中的 Loading/未完成 状态
-          const history = sessionCom.getSessionData()['history'] || [];
-          const lastItem = history[lastIndex];
-          if (lastItem) {
-            // 中断时尚未完成的子会话置为失败 (4)
-            const subConversionsList = this._subConversionsMap
-              ? Array.from(this._subConversionsMap.values())
-              : [];
-            subConversionsList.forEach(sub => {
-              if (sub.status === 1 || sub.status === 2) {
-                sub.status = 4;
-                if (!sub.errMessage && !sub.errorMsg) {
-                  sub.errMessage = '连接已异常中断';
-                }
-              }
-            });
-
-            sessionCom.replaceLastData(lastIndex, {
-              ...lastItem,
-              responseLoading: false,
-              finish: 1, // 强制结束
-              subConversions: subConversionsList,
-            });
+          // 1. 如果打字机仍在运行，等待其自然结束（onPrintEnd 回调）后再收尾
+          //    若打字机已经空闲（或未启动），直接同步收尾
+          const doFinalize = () => {
+            this.setStoreSessionStatus(-1);
+            const history = sessionCom.getSessionData()['history'] || [];
+            const lastItem = history[lastIndex];
+            if (lastItem && lastItem.responseLoading) {
+              sessionCom.replaceLastData(lastIndex, {
+                ...lastItem,
+                responseLoading: false,
+              });
+            }
+            this.sseOnCloseCallBack && this.sseOnCloseCallBack();
+          };
+          // 打字机还在跑（printStatus===1）或队列未排空时，挂载 onPrintEnd 延迟执行
+          if (
+            this._print &&
+            (this._print.printStatus === 1 ||
+              this._print.sIndex < this._print.sentenceArr.length)
+          ) {
+            const originalOnPrintEnd = this._print.onPrintEnd;
+            this._print.onPrintEnd = () => {
+              originalOnPrintEnd && originalOnPrintEnd();
+              doFinalize();
+            };
+          } else {
+            doFinalize();
           }
-          this.sseOnCloseCallBack && this.sseOnCloseCallBack();
         },
       });
     },

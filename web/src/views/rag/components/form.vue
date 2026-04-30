@@ -23,7 +23,15 @@
               @click="editAgent"
             ></span>
             <LinkIcon type="rag" />
-            <p>{{ editForm.desc || '' }}</p>
+            <el-tooltip
+              effect="dark"
+              :content="editForm.desc || ''"
+              placement="top"
+            >
+              <p class="desc-text">
+                {{ editForm.desc || '' }}
+              </p>
+            </el-tooltip>
             <p>
               uuid: {{ this.editForm.appId }}
               <copyIcon :text="this.editForm.appId" type="icon" />
@@ -889,4 +897,11 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/style/draft.scss';
+.desc-text {
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
 </style>

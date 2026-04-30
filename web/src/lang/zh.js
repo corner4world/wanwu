@@ -1818,7 +1818,7 @@ export default {
       ' 输入智能体名称 ，仅支持中文、英文、数字、下划线、中划线、英文（.）',
     descplaceholder: '输入智能体描述，将展示给智能体用户',
     pluginNameRules: ' 智能体名称须在30字符以内',
-    descRules: '智能体描述限制600字符以内',
+    descRules: '智能体描述限制200字符以内',
     nameRules: '请填写智能体名称',
     uploadImg: '请上传智能体图标',
   },
@@ -1835,6 +1835,7 @@ export default {
     pluginNameRules: ' 知识问答名称须在30字符以内',
     nameRules: '请填写知识问答名称',
     logoRules: '请上传知识问答图标',
+    descRules: '知识问答描述限制200字符以内',
   },
   fileChunk: {
     fileClear: '文件清除成功',
