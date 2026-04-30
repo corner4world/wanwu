@@ -5,12 +5,14 @@ type AssistantBrief struct {
 	AppBriefConfig
 }
 
-func (a *AssistantBrief) Check() error { return nil }
+func (a *AssistantBrief) Check() error { return validateAppBrief(a.AppBriefConfig, "智能体") }
 
 type AssistantCreateReq struct {
 	Category int `json:"category"` // 1:单智能体 2:多智能体
 	AppBriefConfig
 }
+
+func (a *AssistantCreateReq) Check() error { return validateAppBrief(a.AppBriefConfig, "智能体") }
 
 type AssistantConfig struct {
 	AssistantId         string                  `json:"assistantId"  validate:"required"`

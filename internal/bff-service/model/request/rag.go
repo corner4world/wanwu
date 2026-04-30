@@ -5,6 +5,14 @@ type RagBrief struct {
 	AppBriefConfig
 }
 
+type RagCreateReq struct {
+	AppBriefConfig
+}
+
+func (r *RagCreateReq) Check() error {
+	return validateAppBrief(r.AppBriefConfig, "知识问答")
+}
+
 type RagConfig struct {
 	RagID                 string                    `json:"ragId" validate:"required"`
 	ModelConfig           *AppModelConfig           `json:"modelConfig" validate:"required"`           // 模型
@@ -40,7 +48,7 @@ type RagReq struct {
 }
 
 func (r RagBrief) Check() error {
-	return nil
+	return validateAppBrief(r.AppBriefConfig, "知识问答")
 }
 
 func (r RagConfig) Check() error {

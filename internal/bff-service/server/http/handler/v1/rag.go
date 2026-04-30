@@ -81,16 +81,16 @@ func ChatPublishedRag(ctx *gin.Context) {
 //	@Security	JWT
 //	@Accept		json
 //	@Produce	json
-//	@Param		data	body		request.AppBriefConfig	true	"创建RAG的请求参数"
+//	@Param		data	body		request.RagCreateReq	true	"创建RAG的请求参数"
 //	@Success	200		{object}	response.Response{data=request.RagReq}
 //	@Router		/appspace/rag [post]
 func CreateRag(ctx *gin.Context) {
 	userId, orgId := getUserID(ctx), getOrgID(ctx)
-	var req request.AppBriefConfig
+	var req request.RagCreateReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	resp, err := service.CreateRag(ctx, userId, orgId, req)
+	resp, err := service.CreateRag(ctx, userId, orgId, req.AppBriefConfig)
 	gin_util.Response(ctx, resp, err)
 }
 

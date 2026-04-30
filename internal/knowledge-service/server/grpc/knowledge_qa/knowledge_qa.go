@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -389,7 +388,7 @@ func buildRagQAHitMetaItems(knowledgeID string, params []*knowledgebase_qa_servi
 			return nil, err
 		}
 		// 转换参数值
-		ragValue, err := buildValueData(param.Type, param.Value)
+		ragValue, err := knowledge.BuildValueData(param.Type, param.Value)
 		if err != nil {
 			log.Errorf("kbId: %s, convert value failed: %v", knowledgeID, err)
 			return nil, fmt.Errorf("convert value for key %s: %s", param.Key, err.Error())
@@ -403,16 +402,6 @@ func buildRagQAHitMetaItems(knowledgeID string, params []*knowledgebase_qa_servi
 	}
 	return metaItems, nil
 }
-
-func buildValueData(valueType string, value string) (interface{}, error) {
-	switch valueType {
-	case model.MetaTypeNumber:
-	case model.MetaTypeTime:
-		return strconv.ParseInt(value, 10, 64)
-	}
-	return value, nil
-}
-
 func validateMetaFilterParam(knowledgeID string, param *knowledgebase_qa_service.MetaFilterParams) error {
 	// 检查关键参数是否为空
 	if param.Key == "" || param.Type == "" || param.Condition == "" {

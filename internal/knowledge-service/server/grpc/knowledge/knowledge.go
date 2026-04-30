@@ -859,7 +859,7 @@ func buildRagHitMetaItems(knowledgeID string, params []*knowledgebase_service.Me
 			return nil, err
 		}
 		// 转换参数值
-		ragValue, err := buildValueData(param.Type, param.Value)
+		ragValue, err := BuildValueData(param.Type, param.Value)
 		if err != nil {
 			log.Errorf("kbId: %s, convert value failed: %v", knowledgeID, err)
 			return nil, fmt.Errorf("convert value for key %s: %s", param.Key, err.Error())
@@ -908,10 +908,12 @@ func isValidFilterParams(params *knowledgebase_service.MetaDataFilterParams) boo
 		len(params.MetaFilterParams) > 0
 }
 
-func buildValueData(valueType string, value string) (interface{}, error) {
+func BuildValueData(valueType string, value string) (interface{}, error) {
+	if value == "" {
+		return value, nil
+	}
 	switch valueType {
-	case model.MetaTypeNumber:
-	case model.MetaTypeTime:
+	case model.MetaTypeNumber, model.MetaTypeTime:
 		return strconv.ParseInt(value, 10, 64)
 	}
 	return value, nil
