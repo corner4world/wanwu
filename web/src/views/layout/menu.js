@@ -30,33 +30,24 @@ export const menuList = [
     name: i18n.t('menu.ontologyAgent'),
     index: 'ontologyAgent',
     icon: 'ontologyAgent',
-    perm: [PERMS.AGENT],
+    // perm: [PERMS.AGENT],
     children: [
-      {
-        name: i18n.t('menu.dataConnect'),
-        index: 'ontologyAgent-data-connect',
-        perm: PERMS.AGENT,
-        redirect: () => {
-          window.location.href =
-            window.location.origin + basePath + '/vega/data-connect';
-        },
-      },
-      {
-        name: i18n.t('menu.atomDataView'),
-        index: 'ontologyAgent-atom-data-view',
-        perm: PERMS.AGENT,
-        redirect: () => {
-          window.location.href =
-            window.location.origin + basePath + '/vega/atom-data-view';
-        },
-      },
       {
         name: i18n.t('menu.ontology'),
         index: 'ontologyAgent-ontology',
-        perm: PERMS.AGENT,
+        // perm: PERMS.AGENT,
         redirect: () => {
-          window.location.href =
-            window.location.origin + basePath + '/vega/ontology';
+          globalThis.location.href =
+            globalThis.location.origin + basePath + '/vega/ontology';
+        },
+      },
+      {
+        name: i18n.t('menu.dataConnect'),
+        index: 'ontologyAgent-data-connect',
+        // perm: PERMS.AGENT,
+        redirect: () => {
+          globalThis.location.href =
+            globalThis.location.origin + basePath + '/vega/data-connect';
         },
       },
     ],

@@ -241,7 +241,7 @@
   </el-form>
 </template>
 <script>
-import { getRerankList, getMultiRerankList } from '@/api/modelAccess';
+import { getRerankList } from '@/api/modelAccess';
 import {
   KNOWLEDGE,
   QA,
@@ -347,7 +347,7 @@ export default {
             if (this.setType === 'knowledge') {
               delete this.formInline.knowledgeMatchParams.maxHistory;
             }
-            const payload = JSON.parse(JSON.stringify(this.formInline));
+            const payload = structuredClone(this.formInline);
             this.$emit('sendConfigInfo', payload);
           }
         }, 200);
@@ -360,7 +360,7 @@ export default {
         if (newVal && Object.keys(newVal).length > 0) {
           this.isSettingFromConfig = true;
           const params = newVal.knowledgeMatchParams || newVal;
-          const formData = JSON.parse(JSON.stringify(params));
+          const formData = structuredClone(params);
           this.formInline.knowledgeMatchParams = formData;
           const { matchType, priorityMatch } =
             this.formInline.knowledgeMatchParams;
@@ -373,8 +373,13 @@ export default {
               showContent: item.value === matchType,
             }));
             if (matchType === 'mix') {
-              this.searchTypeData[2]['mixTypeValue'] =
-                priorityMatch === 1 ? 'weight' : 'rerank';
+              // QA模式下，强制使用rerank模式
+              if (this.category === QA) {
+                this.setQAMixRetrievalDefault();
+              } else {
+                this.searchTypeData[2]['mixTypeValue'] =
+                  priorityMatch === 1 ? 'weight' : 'rerank';
+              }
             }
           }
 
@@ -389,7 +394,11 @@ export default {
   },
   mounted() {
     this.$nextTick(() => {
-      this.initialEditForm = JSON.parse(JSON.stringify(this.formInline));
+      this.initialEditForm = structuredClone(this.formInline);
+      // 确保QA模式下混合检索默认选中rerank
+      if (this.category === QA && !this.config) {
+        this.setQAMixRetrievalDefault();
+      }
     });
   },
   created() {
@@ -397,14 +406,26 @@ export default {
     this.getRerankData();
   },
   methods: {
+    /**
+     * 设置QA模式下的混合检索默认配置
+     * QA模式强制使用rerank，不使用权重匹配
+     */
+    setQAMixRetrievalDefault() {
+      if (this.category !== QA) return;
+
+      const mixItem = this.searchTypeData.find(item => item.value === 'mix');
+      if (mixItem) {
+        mixItem.mixTypeValue = 'rerank';
+      }
+      this.formInline.knowledgeMatchParams.priorityMatch = 0;
+    },
     hasMixTypeRange(item, key) {
-      return Object.prototype.hasOwnProperty.call(item, key);
+      return Object.hasOwn(item, key);
     },
     filteredMixType(item) {
-      if (
-        this.category &&
-        (this.category === QA || this.category === MULTIMODAL)
-      ) {
+      console.log(item.mixType, this.category);
+      // QA模式下过滤掉权重选项，只保留rerank
+      if (this.category && this.category === QA) {
         return item.mixType.filter((_, idx) => idx !== 0);
       }
       return item.mixType;
@@ -444,6 +465,10 @@ export default {
           n.value !== 'mix' ? 0 : 1;
       } else {
         this.formInline.knowledgeMatchParams.priorityMatch = 0;
+        // 确保QA模式下混合检索默认选中rerank
+        if (n.value === 'mix') {
+          this.setQAMixRetrievalDefault();
+        }
       }
       this.clear();
     },
@@ -457,9 +482,6 @@ export default {
     getRerankData() {
       this.rerankLoading = true;
       const request = getRerankList();
-      // this.knowledgeCategory === MULTIMODAL
-      //   ? getMultiRerankList()
-      //   : getRerankList();
       request
         .then(res => {
           if (res.code === 0) {
@@ -478,7 +500,7 @@ export default {
     handleRerankChange(value) {
       this.$nextTick(() => {
         if (this.setType === 'knowledge') {
-          const formData = JSON.parse(JSON.stringify(this.formInline));
+          const formData = structuredClone(this.formInline);
           delete formData.knowledgeMatchParams.maxHistory;
           this.$emit('sendConfigInfo', formData);
         } else {
@@ -496,7 +518,7 @@ export default {
               this.$t('knowledgeManage.multiKnowledgeDatabase.mixWarning'),
             );
           }
-          const payload = JSON.parse(JSON.stringify(this.formInline));
+          const payload = structuredClone(this.formInline);
           this.$emit('sendConfigInfo', payload);
         }
       });

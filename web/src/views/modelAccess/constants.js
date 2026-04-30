@@ -127,12 +127,14 @@ export const TYPE_OBJ = {
     [ZHIPU]: 'ca7d6a3***************wg0Fxc',
   },
   inferUrl: {
+    [`${RERANK}_${QWEN}`]: 'https://dashscope.aliyuncs.com/api/v1',
     [`${MULTIMODAL_RERANK}_${QWEN}`]: 'https://dashscope.aliyuncs.com/api/v1',
     [`${MULTIMODAL_EMBEDDING}_${QWEN}`]:
-      'https://dashscope.aliyuncs.com/api/v1',
+      'https://dashscope.aliyuncs.com/api/v1/services/embeddings/multimodal-embedding/multimodal-embedding',
     [`${ASR}_${QWEN}`]: 'https://dashscope.aliyuncs.com/api/v1',
     [`${ASR}_${HUOSHAN}`]:
       'https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash',
+    [`${RERANK}_${YUAN_JING}`]: 'https://maas-api.ai-yuanjing.com/openapi/v1',
     [`${MULTIMODAL_EMBEDDING}_${YUAN_JING}`]:
       'https://maas-api.ai-yuanjing.com/openapi/compatible-mode/v1',
     [`${MULTIMODAL_RERANK}_${YUAN_JING}`]:

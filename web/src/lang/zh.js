@@ -942,8 +942,8 @@ export default {
     deleteTips: '确定要删除此条数据吗?',
     deleteBatchTips: '确定要删除这些数据吗?',
     batchConfigTips:
-      '本次共计选择{total}个文档，其中{unprocessedNum}个文件暂未解析成功，无法进行分段配置编辑，请在文档“当前状态”变为“处理完成”后再次尝试。',
-    continueTips: '是否继续批量编辑其余“处理完成”的文档？',
+      '本次共计选择{total}个文档，其中{unprocessedNum}个文件暂未解析成功或为URL导入，无法进行分段配置编辑，请确保非url导入文档“当前状态”变为“解析成功”后再次尝试。',
+    continueTips: '是否继续批量编辑其余“解析成功”的文档？',
     multimodalMixTips:
       '批量编辑分段设置，只支持相同文件类型的批量分段设置（多模态/文本表格）',
     tip: '提示',
