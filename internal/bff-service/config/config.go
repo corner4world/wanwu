@@ -36,6 +36,7 @@ type Config struct {
 	PromptEngineering PromptEngineeringConfig    `json:"prompt-engineering" mapstructure:"prompt-engineering"`
 	SkillCreator      SkillCreatorConfig         `json:"skill-creator" mapstructure:"skill-creator"`
 	SkillCreatorPath  SkillCreatorPathConfig     `json:"skill-creator-path" mapstructure:"skill-creator-path"`
+	RecommendModels   RecommendModelConfig       `json:"recommend_models" mapstructure:"recommend_models"`
 	// middleware
 	Minio minio.Config `json:"minio" mapstructure:"minio"`
 	Redis redis.Config `json:"redis" mapstructure:"redis"`
@@ -52,7 +53,6 @@ type Config struct {
 	DifyKnowledgeConfig DifyKnowledgeConfig   `json:"dify-knowledge" mapstructure:"dify-knowledge"`
 	Workflow            WorkflowServiceConfig `json:"workflow" mapstructure:"workflow"`
 	WgaSandbox          WgaSandboxConfig      `json:"wga-sandbox" mapstructure:"wga-sandbox"`
-	RecommendModels     RecommendModelConfig  `json:"recommend_models" mapstructure:"recommend_models"`
 	AgentService        AgentServiceConfig    `json:"agent-service" mapstructure:"agent-service"`
 }
 
@@ -83,21 +83,6 @@ type RecommendModelItem struct {
 	Model       string `mapstructure:"model" json:"model"`
 	DisplayName string `mapstructure:"display_name" json:"displayName"`
 }
-
-type RecommendModelsByProvider struct {
-	Provider       string                  `mapstructure:"provider" json:"provider"`
-	Llm            []RecommendModelItemLLM `mapstructure:"llm" json:"llm"`
-	Embedding      []RecommendModelItem    `mapstructure:"embedding" json:"embedding"`
-	MultiEmbedding []RecommendModelItem    `mapstructure:"multimodal-embedding" json:"multimodal-embedding"`
-	Rerank         []RecommendModelItem    `mapstructure:"rerank" json:"rerank"`
-	MultiRerank    []RecommendModelItem    `mapstructure:"multimodal-rerank" json:"multimodal-rerank"`
-	Ocr            []RecommendModelItem    `mapstructure:"ocr" json:"ocr"`
-	Gui            []RecommendModelItem    `mapstructure:"gui" json:"gui"`
-	PdfParser      []RecommendModelItem    `mapstructure:"pdf-parser" json:"pdf-parser"`
-	SyncAsr        []RecommendModelItem    `mapstructure:"sync-asr" json:"sync-asr"`
-}
-
-type RecommendModelConfig []RecommendModelsByProvider
 
 type LogConfig struct {
 	Std   bool         `json:"std" mapstructure:"std"`
@@ -204,6 +189,21 @@ type PromptEngineeringConfig struct {
 	Evaluation   string `json:"evaluation" mapstructure:"evaluation"`
 }
 
+type RecommendModelsByProvider struct {
+	Provider       string                  `mapstructure:"provider" json:"provider"`
+	Llm            []RecommendModelItemLLM `mapstructure:"llm" json:"llm"`
+	Embedding      []RecommendModelItem    `mapstructure:"embedding" json:"embedding"`
+	MultiEmbedding []RecommendModelItem    `mapstructure:"multimodal-embedding" json:"multimodal-embedding"`
+	Rerank         []RecommendModelItem    `mapstructure:"rerank" json:"rerank"`
+	MultiRerank    []RecommendModelItem    `mapstructure:"multimodal-rerank" json:"multimodal-rerank"`
+	Ocr            []RecommendModelItem    `mapstructure:"ocr" json:"ocr"`
+	Gui            []RecommendModelItem    `mapstructure:"gui" json:"gui"`
+	PdfParser      []RecommendModelItem    `mapstructure:"pdf-parser" json:"pdf-parser"`
+	SyncAsr        []RecommendModelItem    `mapstructure:"sync-asr" json:"sync-asr"`
+}
+
+type RecommendModelConfig []RecommendModelsByProvider
+
 type WorkflowServiceConfig struct {
 	Endpoint           string `json:"endpoint" mapstructure:"endpoint"`
 	MinioProxyEndpoint string `json:"minio_proxy_endpoint" mapstructure:"minio_proxy_endpoint"`
@@ -216,6 +216,8 @@ type WorkflowServiceConfig struct {
 	ExportUri  string `json:"export_uri" mapstructure:"export_uri"`
 	ImportUri  string `json:"import_uri" mapstructure:"import_uri"`
 	ConvertUri string `json:"convert_uri" mapstructure:"convert_uri"`
+	// schema
+	ListSchemaUri string `json:"list_schema_uri" mapstructure:"list_schema_uri"`
 	// run
 	WorkflowRunByOpenapiUri     string `json:"workflow_run_by_openapi_uri" mapstructure:"workflow_run_by_openapi_uri"`
 	WorkflowRunLatestVersionUri string `json:"workflow_run_latest_version_uri" mapstructure:"workflow_run_latest_version_uri"`
@@ -231,11 +233,11 @@ type WorkflowServiceConfig struct {
 	// upload
 	UploadActionUri string `json:"upload_action_uri" mapstructure:"upload_action_uri"`
 	UploadCommonUri string `json:"upload_common_uri" mapstructure:"upload_common_uri"`
-	UploadFileUri   string `json:"upload_file_uri" mapstructure:"upload_file_uri"`
 	SignImgUri      string `json:"sign_img_uri" mapstructure:"sign_img_uri"`
 	// version
 	PublishUri           string               `json:"publish_uri" mapstructure:"publish_uri"`
 	VersionListUri       string               `json:"version_list_uri" mapstructure:"version_list_uri"`
+	MultiVersionListUri  string               `json:"multi_version_list_uri" mapstructure:"multi_version_list_uri"`
 	UpdateVersionDescUri string               `json:"update_version_desc_uri" mapstructure:"update_version_desc_uri"`
 	RollbackUri          string               `json:"rollback_uri" mapstructure:"rollback_uri"`
 	ModelParams          []WorkflowModelParam `json:"model_params" mapstructure:"model_params"`

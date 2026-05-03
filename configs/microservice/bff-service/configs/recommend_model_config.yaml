@@ -34,6 +34,9 @@ recommend_models:
     embedding:
       - model: "doubao-embedding-large-text-250515"
         display_name: "doubao-embedding-large-text-250515"
+    sync-asr:
+      - model: "volc.bigasr.auc_turbo"
+        display_name: "大模型录音文件极速版"
 
   - provider: "YuanJing"
     llm:
@@ -73,6 +76,16 @@ recommend_models:
     gui:
       - model: "gui_agent_v1"
         display_name: "gui_agent_v1"
+    ocr:
+      - model: "unicom-ocr"
+        display_name: "元景-PDF文字解析"
+    sync-asr:
+      - model: "yuanjing-asr"
+        display_name: "yuanjing-asr"
+    pdf-parser:
+      - model: "pdf-parser"
+        display_name: "知识库-高精度文档解析工具"
+
 
   - provider: "Qwen"
     llm:
@@ -91,6 +104,9 @@ recommend_models:
     rerank:
       - model: "gte-rerank-v2"
         display_name: "gte-rerank-v2"
+    multimodal-rerank:
+      - model: "qwen3-vl-rerank"
+        display_name: "qwen3-vl-rerank"
     embedding:
       - model: "text-embedding-v4"
         display_name: "text-embedding-v4"
@@ -182,7 +198,7 @@ recommend_models:
         display_name: "jina-reranker-v2-base-multilingual"
       - model: "jina-reranker-v3"
         display_name: "jina-reranker-v3"
-    multi-rerank:
+    multimodal-rerank:
       - model: "jina-reranker-m0"
         display_name: "jina-reranker-m0"
     embedding:
@@ -195,5 +211,24 @@ recommend_models:
         display_name: "jina-embeddings-v4"
       - model: "jina-clip-v2"
         display_name: "jina-clip-v2"
+
   - provider: "Ollama"
+    llm:
+      - model: "glm-5:cloud"
+        display_name: "glm-5:cloud"
+        tags: [ "深度思考开关", "工具调用" ]
+    embedding:
+      - model: "granite-embedding:latest"
+        display_name: "granite-embedding:latest"
+
   - provider: "OpenAI-API-compatible"
+    llm:
+      - model: "glm-5"
+        display_name: "glm-5"
+        tags: [ "深度思考开关", "工具调用" ]
+    rerank:
+      - model: "qwen3-reranker-4b"
+        display_name: "qwen3-reranker-4b"
+    embedding:
+      - model: "qwen3-embed-0.6b"
+        display_name: "qwen3-embed-0.6b"

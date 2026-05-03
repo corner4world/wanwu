@@ -80,11 +80,13 @@ func (c *Client) UpdateMCP(ctx context.Context, tab *model.MCPClient) *errs.Stat
 	if err := sqlopt.SQLOptions(
 		sqlopt.WithID(tab.ID),
 	).Apply(c.db).WithContext(ctx).Model(tab).Updates(map[string]interface{}{
-		"name":        tab.Name,
-		"from":        tab.From,
-		"desc":        tab.Desc,
-		"sse_url":     tab.SseUrl,
-		"avatar_path": tab.AvatarPath,
+		"name":           tab.Name,
+		"from":           tab.From,
+		"desc":           tab.Desc,
+		"sse_url":        tab.SseUrl,
+		"streamable_url": tab.StreamableUrl,
+		"transport":      tab.Transport,
+		"avatar_path":    tab.AvatarPath,
 	}).Error; err != nil {
 		return toErrStatus("mcp_update_err", err.Error())
 	}

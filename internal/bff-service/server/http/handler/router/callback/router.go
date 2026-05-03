@@ -11,7 +11,7 @@ import (
 func Register(callbackAPI *gin.RouterGroup) {
 	// callback
 	mid.Sub("callback").Reg(callbackAPI, "/file/url/base64", http.MethodPost, callback.FileUrlConvertBase64, "文件URL转换为base64")
-
+	mid.Sub("callback").Reg(callbackAPI, "/file/upload/base64", http.MethodPost, callback.UploadFileByBase64, "通过base64上传文件")
 	// model
 	mid.Sub("callback").Reg(callbackAPI, "/model/:modelId", http.MethodGet, callback.GetModelById, "根据modelId获取模型")
 	mid.Sub("callback").Reg(callbackAPI, "/model/:modelId/chat/completions", http.MethodPost, callback.ModelChatCompletions, "Model Chat Completions")
@@ -29,13 +29,13 @@ func Register(callbackAPI *gin.RouterGroup) {
 	mid.Sub("callback").Reg(callbackAPI, "/workflow/list", http.MethodGet, callback.GetWorkflowList, "根据userId和spaceId获取Workflow")
 	mid.Sub("callback").Reg(callbackAPI, "/workflow/tool/square", http.MethodGet, callback.GetWorkflowSquareTool, "获取内置工具详情")
 	mid.Sub("callback").Reg(callbackAPI, "/workflow/tool/custom", http.MethodGet, callback.GetWorkflowCustomTool, "获取自定义工具详情")
-	mid.Sub("callback").Reg(callbackAPI, "/workflow/upload/file", http.MethodPost, callback.WorkflowUploadFile, "通过二进制上传文件")
-	mid.Sub("callback").Reg(callbackAPI, "/workflow/upload/file/base64", http.MethodPost, callback.WorkflowUploadFileByBase64, "通过base64上传文件")
 	// mcp
 	mid.Sub("callback").Reg(callbackAPI, "/mcp", http.MethodGet, callback.GetMCP, "获取自定义MCP详情")
 	mid.Sub("callback").Reg(callbackAPI, "/mcp/server", http.MethodGet, callback.GetMCPServer, "获取MCP服务详情")
 	// chatflow
 	mid.Sub("callback").Reg(callbackAPI, "/chatflow/list", http.MethodGet, callback.GetChatflowList, "根据userId和spaceId获取Chatflow")
+	// agent bff proxy
+	mid.Sub("callback").Reg(callbackAPI, "/agent/:assistantId/chat", http.MethodPost, callback.AgentChatProxy, "智能体代理问答")
 	// rag bff proxy
 	mid.Sub("callback").Reg(callbackAPI, "/rag/search-knowledge-base", http.MethodPost, callback.SearchKnowledgeBase, "查询知识库列表（命中测试）")
 	mid.Sub("callback").Reg(callbackAPI, "/rag/knowledge/stream/search", http.MethodPost, callback.KnowledgeStreamSearch, "根据知识库id 和当前用户id 获取有权限的知识库列表信息")
@@ -46,8 +46,7 @@ func Register(callbackAPI *gin.RouterGroup) {
 	mid.Sub("callback").Reg(callbackAPI, "/wga/sandbox/cleanup", http.MethodPost, callback.WgaSandboxCleanup, "WGA沙箱清理")
 	// app record
 	mid.Sub("callback").Reg(callbackAPI, "/app/record", http.MethodPost, callback.AppRecord, "应用使用记录")
-	// agent proxy
-	mid.Sub("callback").Reg(callbackAPI, "/agent/proxy/chat", http.MethodPost, callback.AgentProxyChat, "智能体代理问答")
 	//skill
 	mid.Sub("callback").Reg(callbackAPI, "/skill/builtin/list", http.MethodPost, callback.SearchBuiltInSkillList, "内置工具详情列表")
+	mid.Sub("callback").Reg(callbackAPI, "/skill/detail", http.MethodGet, callback.GetSkillDetail, "获取技能详情")
 }

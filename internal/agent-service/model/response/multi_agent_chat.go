@@ -2,11 +2,12 @@ package response
 
 import (
 	"encoding/json"
+	"strings"
+	"time"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	"github.com/cloudwego/eino/schema"
-	"strings"
-	"time"
 )
 
 const (
@@ -69,6 +70,14 @@ func (m *MultiAgentContext) PeekAgent() *AgentInfo {
 		return nil
 	}
 	return peek
+}
+
+func (m *MultiAgentContext) CurrentAgentId() string {
+	agent := m.PeekAgent()
+	if agent == nil {
+		return ""
+	}
+	return agent.Id
 }
 
 func (m *MultiAgentContext) CreateAgent(subAgentMap map[string]*request.AgentConfig) {

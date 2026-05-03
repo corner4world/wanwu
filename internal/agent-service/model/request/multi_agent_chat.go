@@ -6,6 +6,7 @@ type MultiAgentChatParams struct {
 }
 
 type MultiAgentChatReq struct {
+	DetailId            string                 `json:"detailId"`
 	Input               string                 `json:"input"`
 	UploadFile          []string               `json:"uploadFile"`
 	Stream              bool                   `json:"stream"`

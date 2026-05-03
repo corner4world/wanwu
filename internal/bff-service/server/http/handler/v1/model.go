@@ -323,3 +323,44 @@ func RecommendModels(ctx *gin.Context) {
 	resp, err := service.GetRecommendModels(ctx, &req)
 	gin_util.Response(ctx, resp, err)
 }
+
+// ValidateModelThinking
+//
+//	@Tags			model
+//	@Summary		深度思考校验
+//	@Description	对LLM模型进行深度思考功能校验
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.ImportOrUpdateModelRequest	true	"模型信息"
+//	@Success		200		{object}	response.Response
+//	@Router			/model/validate-thinking [post]
+func ValidateModelThinking(ctx *gin.Context) {
+	var req request.ImportOrUpdateModelRequest
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.ValidateModelThinking(ctx, getUserID(ctx), getOrgID(ctx), &req)
+	gin_util.Response(ctx, nil, err)
+}
+
+// ListImportProviders
+//
+//	@Tags			model
+//	@Summary		模型导入-获取供应商列表
+//	@Description	根据模型类型筛选支持的供应商，不传则返回全部
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			modelType	query		string	false	"模型类型"
+//	@Param			provider	query		string	false	"供应商"
+//	@Success		200			{object}	response.Response{data=response.ListResult{list=response.ProviderModelTypes}}
+//	@Router			/model/import/providers [get]
+func ListImportProviders(ctx *gin.Context) {
+	var req request.ListImportProvidersRequest
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.ListImportProviders(ctx, &req)
+	gin_util.Response(ctx, resp, err)
+}

@@ -2,12 +2,13 @@ package agent_chat_builder
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/response"
 	agent_util "github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
-	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/cloudwego/eino/schema"
-	"strconv"
 )
 
 type SkillMessageBuilder struct {
@@ -28,7 +29,7 @@ func (*SkillMessageBuilder) FilterMessage(respContext *response.AgentChatRespCon
 	return !skillChatStep.SkillNeedProcess()
 }
 
-func (*SkillMessageBuilder) BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message, changeStyle *bool) ([]*response.AgentMessageContent, error) {
+func (*SkillMessageBuilder) BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]*response.AgentMessageContent, error) {
 	skillChatStep := response.CreateSkillChatStep(respContext, chatMessage)
 	//到这里说明都是需要处理的skill消息
 	step := skillChatStep.BuildSkillStep()
@@ -36,12 +37,7 @@ func (*SkillMessageBuilder) BuildContent(req *request.AgentChatContext, respCont
 	if message == nil {
 		return make([]*response.AgentMessageContent, 0), nil
 	}
-	marshal, _ := json.Marshal(message)
-	log.Infof("buildDataContent, %s", string(marshal))
-	var style = true
-	content, err := NewMultiBuilder().BuildContent(req, respContext, message, &style)
-	bytes, _ := json.Marshal(content)
-	log.Infof("buildDataContent, %s", string(bytes))
+	content, err := NewMultiBuilder().BuildContent(req, respContext, message)
 	buildSkillEvent(content, respContext.Order)
 	return content, err
 }
@@ -78,11 +74,14 @@ func rebuildSkillMessage(respContext *response.AgentChatRespContext, chatMessage
 		if len(message.Extra) > 0 {
 			fileListData := message.Extra["fileList"]
 			if fileListData != nil {
-				fileList, ok := fileListData.([]*response.DownloadFileInfo)
-				if ok {
+				fileList := response.ParseDownloadFileInfoList(fileListData)
+				if len(fileList) > 0 {
 					respContext.DownloadContext.AddDownloadFile(respContext.SkillChatContext.SkillId, fileList)
 				}
 			}
+		}
+		if len(message.Content) > 0 {
+			message.Content = strings.ReplaceAll(message.Content, "-ReplaceLocalFile", "")
 		}
 		return message
 	}

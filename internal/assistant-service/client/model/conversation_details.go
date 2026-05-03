@@ -9,7 +9,7 @@ const (
 	AgentThink        ConversationType = "agentThink"        //主智能体思考
 	SubAgent          ConversationType = "subAgent"          //子智能体
 	AgentSkill        ConversationType = "agentSkill"        //子智能体
-	AgentSkillText    ConversationType = "agentSkillText"    //智能体skill内容
+	AgentSubText      ConversationType = "subText"           //智能体skill内容,或者子智能体内容
 	SubAgentTool      ConversationType = "subAgentTool"      //子智能体工具
 	SubAgentKnowledge ConversationType = "subAgentKnowledge" //子智能体只是库
 
@@ -25,14 +25,29 @@ type FileInfo struct {
 	FileUrl  string `json:"fileUrl"`
 }
 
+type AgentFile struct {
+	Name     string     `json:"name"`
+	Size     int        `json:"size"`
+	FileUrl  string     `json:"fileUrl"`
+	FileType string     `json:"fileType"`
+	Metadata *AgentMeta `json:"metadata"`
+}
+
+type AgentMeta struct {
+	Desc     string `json:"desc"`
+	CreateAt string `json:"createAt"`
+	Name     string `json:"name"`
+}
+
 type SubEventData struct {
-	Status   SubEventStatus `json:"status"`
-	Id       string         `json:"id"`
-	ParentId string         `json:"parentId"`
-	Name     string         `json:"name"`
-	Profile  string         `json:"profile"`
-	TimeCost string         `json:"timeCost"`
-	Order    int            `json:"order"`
+	Status      SubEventStatus `json:"status"`
+	Id          string         `json:"id"`
+	ParentId    string         `json:"parentId"`
+	Name        string         `json:"name"`
+	Profile     string         `json:"profile"`
+	TimeCost    string         `json:"timeCost"`
+	Order       int            `json:"order"`
+	DisplayMode int            `json:"displayMode"`
 }
 
 func (s *SubEventData) Copy() *SubEventData {
@@ -72,7 +87,6 @@ type ConversationDetails struct {
 	ResponseList              []*ConversationResponse  `json:"responseList"`
 	SubConversationDetailList []*SubConversationDetail `json:"SubConversationDetailList"`
 	SearchList                string                   `json:"searchList"`
-	QaType                    int32                    `json:"qaType"`
 	FileUrl                   string                   `json:"requestFileUrls"`
 	FileSize                  int64                    `json:"fileSize"`
 	FileName                  string                   `json:"fileName"`
@@ -81,4 +95,5 @@ type ConversationDetails struct {
 	OrgId                     string                   `json:"orgId"`
 	CreatedAt                 int64                    `json:"createdAt"`
 	UpdatedAt                 int64                    `json:"updatedAt"`
+	ResponseFiles             []*AgentFile             `json:"responseFiles"`
 }

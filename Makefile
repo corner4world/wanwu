@@ -108,11 +108,18 @@ doc-swag:
 	swag init -g openurl.go -d internal/bff-service/server/http/handler/openurl -o docs/openurl --pd
 	@echo '// nolint' | cat - docs/openurl/docs.go > tmp && mv tmp docs/openurl/docs.go
 
+docker-image-frontend:
+	@printf "==========================================\n"
+	@printf "前端镜像构建说明：\n"
+	@printf "==========================================\n"
+	@printf "1. 确保 wanwu 和 wanwu-workflow 仓库在同一目录下，均更新至最新状态\n"
+	@printf "2. 在该目录下执行：\n"
+	@printf "   cp wanwu/Dockerfile.frontend.bak Dockerfile.frontend\n"
+	@printf "   docker build -f Dockerfile.frontend -t wanwulite/wanwu-frontend:${WANWU_VERSION}-$(shell git rev-parse --short HEAD)-${WANWU_ARCH} .\n"
+	@printf "==========================================\n"
+
 docker-image-backend:
 	docker build -f Dockerfile.backend --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/wanwu-backend:${WANWU_VERSION}-$(shell git rev-parse --short HEAD)-${WANWU_ARCH} .
-
-docker-image-frontend:
-	docker build -f Dockerfile.frontend --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/wanwu-frontend:${WANWU_VERSION}-$(shell git rev-parse --short HEAD)-${WANWU_ARCH} .
 
 docker-image-rag:
 	docker build -f Dockerfile.rag --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/rag:${WANWU_VERSION}-$(shell git rev-parse --short HEAD)-${WANWU_ARCH} .
@@ -127,7 +134,7 @@ docker-image-wga-sandbox:
 	docker build -f Dockerfile.wga-sandbox --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/wga-sandbox:${WANWU_VERSION}-$(shell git rev-parse --short HEAD)-${WANWU_ARCH} .
 
 docker-image-wga-sandbox-base:
-	docker build -f Dockerfile.wga-sandbox-base --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/wga-sandbox-base:1.0.0.152-opencode1.1.65-${WANWU_ARCH} .
+	docker build -f Dockerfile.wga-sandbox-base --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/wga-sandbox-base:1.0.0.152-opencode1.4.11-${WANWU_ARCH} .
 
 grpc-protoc:
 	protoc --proto_path=. --go_out=paths=source_relative:api --go-grpc_out=paths=source_relative:api proto/*/*.proto

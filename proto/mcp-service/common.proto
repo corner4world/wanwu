@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package mcp_service;
+
+option go_package = "github.com/UnicomAI/wanwu/api/proto/mcp-service";
+
+message Identity {
+  string userId = 1;
+  string orgId = 2;
+}

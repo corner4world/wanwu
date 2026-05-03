@@ -39,13 +39,14 @@ func CreateChatModel(ctx context.Context, agentChatInfo *service_model.AgentChat
 		extraFields = map[string]any{"enable_thinking": thinking}
 	}
 	return openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		APIKey:           modelConfig.ApiKey,
-		BaseURL:          modelConfig.EndpointUrl,
-		Model:            modelInfo.Model,
-		Temperature:      params.Temperature,
-		TopP:             params.TopP,
-		FrequencyPenalty: params.FrequencyPenalty,
-		PresencePenalty:  params.PresencePenalty,
-		ExtraFields:      extraFields,
+		APIKey:              modelConfig.ApiKey,
+		BaseURL:             modelConfig.EndpointUrl,
+		Model:               modelInfo.Model,
+		Temperature:         params.Temperature,
+		TopP:                params.TopP,
+		FrequencyPenalty:    params.FrequencyPenalty,
+		PresencePenalty:     params.PresencePenalty,
+		ExtraFields:         extraFields,
+		MaxCompletionTokens: params.MaxTokens,
 	})
 }

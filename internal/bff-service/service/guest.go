@@ -88,16 +88,16 @@ func GetLogoCustomInfo(ctx *gin.Context, mode string) (response.LogoCustomInfo, 
 		return ret, err
 	}
 	if custom.Tab.TabLogoPath != "" {
-		ret.Tab.Logo = CacheAvatar(ctx, custom.Tab.TabLogoPath, false)
+		ret.Tab.Logo = cacheCustomAvatar(custom.Tab.TabLogoPath)
 	}
 	if custom.Tab.TabTitle != "" {
 		ret.Tab.Title = custom.Tab.TabTitle
 	}
 	if custom.Login.LoginBgPath != "" {
-		ret.Login.Background = CacheAvatar(ctx, custom.Login.LoginBgPath, false)
+		ret.Login.Background = cacheCustomAvatar(custom.Login.LoginBgPath)
 	}
 	if custom.Login.LoginLogo != "" {
-		ret.Login.Logo = CacheAvatar(ctx, custom.Login.LoginLogo, false)
+		ret.Login.Logo = cacheCustomAvatar(custom.Login.LoginLogo)
 	}
 	if custom.Login.LoginButtonColor != "" {
 		ret.Login.LoginButtonColor = custom.Login.LoginButtonColor
@@ -109,7 +109,7 @@ func GetLogoCustomInfo(ctx *gin.Context, mode string) (response.LogoCustomInfo, 
 		ret.Home.Title = custom.Home.HomeName
 	}
 	if custom.Home.HomeLogoPath != "" {
-		ret.Home.Logo = CacheAvatar(ctx, custom.Home.HomeLogoPath, false)
+		ret.Home.Logo = cacheCustomAvatar(custom.Home.HomeLogoPath)
 	}
 	if custom.Home.HomeBgColor != "" {
 		ret.Home.BackgroundColor = custom.Home.HomeBgColor

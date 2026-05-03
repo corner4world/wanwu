@@ -178,3 +178,21 @@ func SearchQABase(ctx *gin.Context) {
 	resp, httpStatus := service.RagSearchQABase(ctx, &req)
 	gin_util.ResponseRawByte(ctx, httpStatus, resp)
 }
+
+// UploadFileByBase64
+//
+//	@Tags		callback
+//	@Summary	通过base64上传文件
+//	@Accept		json
+//	@Produce	json
+//	@Param		data	body		request.UploadFileByBase64Req	true	"通过base64格式上传文件参数"
+//	@Success	200		{object}	response.Response{data=response.UploadFileByBase64Resp}
+//	@Router		/file/upload/base64 [post]
+func UploadFileByBase64(ctx *gin.Context) {
+	var req request.UploadFileByBase64Req
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.UploadFileByBase64(ctx, &req)
+	gin_util.Response(ctx, resp, err)
+}

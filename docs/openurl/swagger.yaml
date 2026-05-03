@@ -239,17 +239,58 @@ definitions:
         description: 前端请求地址，例如：/v1/static/avatar/abc/def.png (请求非必填)
         type: string
     type: object
+  request.CleanFileReq:
+    properties:
+      chunkName:
+        description: 上传批次标识
+        type: string
+    required:
+    - chunkName
+    type: object
   request.ConversationIdRequest:
     properties:
       conversationId:
         type: string
+      detailId:
+        description: 可选，传值则删除单条对话，不传则删除全部对话
+        type: string
     required:
     - conversationId
+    type: object
+  request.ConversionStreamFile:
+    properties:
+      fileName:
+        type: string
+      fileSize:
+        type: integer
+      fileUrl:
+        type: string
     type: object
   request.MemoryConfig:
     properties:
       maxHistoryLength:
         type: integer
+    type: object
+  request.MergeFileReq:
+    properties:
+      chunkName:
+        description: 上传批次标识
+        type: string
+      chunkTotal:
+        description: 分片总数
+        type: integer
+      fileName:
+        description: 原始文件名
+        type: string
+      fileSize:
+        description: 原始文件大小
+        type: integer
+      isExpired:
+        description: minio存储文件是否过期 0:过期，1:不过期
+        type: boolean
+    required:
+    - chunkName
+    - fileName
     type: object
   request.MetaDataFilterParams:
     properties:
@@ -298,10 +339,24 @@ definitions:
     required:
     - prompt
     type: object
+  request.UrlConversationIdRequest:
+    properties:
+      conversationId:
+        type: string
+      detailId:
+        description: 可选，传值则删除单条对话，不传则清空全部对话
+        type: string
+    required:
+    - conversationId
+    type: object
   request.UrlConversionStreamRequest:
     properties:
       conversationId:
         type: string
+      fileInfo:
+        items:
+          $ref: '#/definitions/request.ConversionStreamFile'
+        type: array
       prompt:
         type: string
     required:
@@ -315,6 +370,30 @@ definitions:
         type: string
     required:
     - query
+    type: object
+  response.AgentFileMeta:
+    properties:
+      createAt:
+        type: string
+      desc:
+        type: string
+      name:
+        type: string
+    type: object
+  response.AgentResponseFile:
+    properties:
+      fileType:
+        type: string
+      fileUrl:
+        type: string
+      metadata:
+        allOf:
+        - $ref: '#/definitions/response.AgentFileMeta'
+        description: 扩展信息：
+      name:
+        type: string
+      size:
+        type: integer
     type: object
   response.AppUrlConfig:
     properties:
@@ -594,6 +673,12 @@ definitions:
       workFlowId:
         type: string
     type: object
+  response.CleanFileResp:
+    properties:
+      status:
+        description: 0:清除失败，1：已完成
+        type: integer
+    type: object
   response.ConversationCreateResp:
     properties:
       conversationId:
@@ -625,6 +710,10 @@ definitions:
         type: array
       response:
         type: string
+      responseFiles:
+        items:
+          $ref: '#/definitions/response.AgentResponseFile'
+        type: array
       responseList:
         items:
           $ref: '#/definitions/response.ConversationResponse'
@@ -662,6 +751,18 @@ definitions:
       list: {}
       total:
         type: integer
+    type: object
+  response.MergeFileResp:
+    properties:
+      fileName:
+        description: 合并后文件名(在minio中的文件名)
+        type: string
+      filePath:
+        description: minio文件的完整路径
+        type: string
+      originalFileName:
+        description: 原始文件名
+        type: string
     type: object
   response.RecommendConfig:
     properties:
@@ -718,6 +819,12 @@ definitions:
       timeCost:
         description: 耗时
         type: string
+    type: object
+  response.UploadFileResp:
+    properties:
+      status:
+        description: 0:上传失败，1：上传成功
+        type: integer
     type: object
   response.VisionConfig:
     properties:
@@ -836,6 +943,40 @@ paths:
       security:
       - JWT: []
       summary: 创建智能体对话
+      tags:
+      - openurl
+  /agent/{suffix}/conversation/clear:
+    delete:
+      consumes:
+      - application/json
+      description: 清空智能体对话ES数据，不删除会话ID
+      parameters:
+      - description: 临时唯一标识
+        in: header
+        name: X-Client-ID
+        required: true
+        type: string
+      - description: Url后缀
+        in: path
+        name: suffix
+        required: true
+        type: string
+      - description: 智能体对话清空参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UrlConversationIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 清空智能体对话
       tags:
       - openurl
   /agent/{suffix}/conversation/detail:
@@ -991,4 +1132,99 @@ paths:
       summary: 智能体流式问答
       tags:
       - openurl
+  /file/clean:
+    post:
+      consumes:
+      - application/json
+      description: 清除已上传的分片文件（匿名访问）
+      parameters:
+      - description: 文件清除参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.CleanFileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CleanFileResp'
+              type: object
+      summary: 文件清除
+      tags:
+      - openurl.file
+  /file/merge:
+    post:
+      consumes:
+      - application/json
+      description: 合并分片文件（匿名访问）
+      parameters:
+      - description: 文件合并参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.MergeFileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.MergeFileResp'
+              type: object
+      summary: 文件合并
+      tags:
+      - openurl.file
+  /file/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 分片文件上传（匿名访问）
+      parameters:
+      - description: 原始文件名
+        in: formData
+        name: fileName
+        required: true
+        type: string
+      - description: 分片文件序号
+        in: formData
+        name: sequence
+        required: true
+        type: integer
+      - description: 上传批次标识
+        in: formData
+        name: chunkName
+        required: true
+        type: string
+      - description: 文件
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UploadFileResp'
+              type: object
+      summary: 文件上传
+      tags:
+      - openurl.file
 swagger: "2.0"

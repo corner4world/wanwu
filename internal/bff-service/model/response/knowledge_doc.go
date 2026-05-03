@@ -1,6 +1,9 @@
 package response
 
-import "github.com/UnicomAI/wanwu/internal/bff-service/model/request"
+import (
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
+	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+)
 
 type DocPageResult struct {
 	List             []*ListDocResp    `json:"list"`
@@ -67,18 +70,24 @@ type DocImportTipResp struct {
 }
 
 type DocSegmentResp struct {
-	FileName            string            `json:"fileName"`            //名称
-	PageTotal           int               `json:"pageTotal"`           //总页数
-	SegmentTotalNum     int               `json:"segmentTotalNum"`     //分段数量
-	MaxSegmentSize      int               `json:"maxSegmentSize"`      //设置最大长度
-	SegmentType         string            `json:"segmentType"`         //分段方式 0自动分段 1自定义分段
-	UploadTime          string            `json:"uploadTime"`          //上传时间
-	Splitter            string            `json:"splitter"`            //分隔符（只有自定义分段必填）
-	MetaDataList        []*DocMetaData    `json:"metaDataList"`        //文档元数据
-	SegmentContentList  []*SegmentContent `json:"contentList"`         //内容
-	SegmentImportStatus string            `json:"segmentImportStatus"` //分段导入状态描述
-	SegmentMethod       string            `json:"segmentMethod"`       //分段方式 父子分段/通用分段
-	DocAnalyzerText     []string          `json:"docAnalyzerText"`     //文档解析类型 文字提取 / OCR解析  / 模型解析
+	FileName            string                 `json:"fileName"`            //名称
+	PageTotal           int                    `json:"pageTotal"`           //总页数
+	SegmentTotalNum     int                    `json:"segmentTotalNum"`     //分段数量
+	MaxSegmentSize      int                    `json:"maxSegmentSize"`      //设置最大长度
+	SegmentType         string                 `json:"segmentType"`         //分段方式 0自动分段 1自定义分段
+	UploadTime          string                 `json:"uploadTime"`          //上传时间
+	Splitter            string                 `json:"splitter"`            //分隔符（只有自定义分段必填）
+	MetaDataList        []*DocMetaData         `json:"metaDataList"`        //文档元数据
+	SegmentContentList  []*SegmentContent      `json:"contentList"`         //内容
+	SegmentImportStatus string                 `json:"segmentImportStatus"` //分段导入状态描述
+	SegmentMethod       string                 `json:"segmentMethod"`       //分段方式 父子分段/通用分段
+	DocAnalyzerText     []*DocAnalyzerTextInfo `json:"docAnalyzerText"`     //文档解析类型 文字提取 / OCR解析  / 模型解析
+}
+
+type DocAnalyzerTextInfo struct {
+	Text        string          `json:"text"`
+	DisplayName string          `json:"displayName,omitempty"`
+	Tags        []mp_common.Tag `json:"tags,omitempty"`
 }
 
 type DocMetaData struct {

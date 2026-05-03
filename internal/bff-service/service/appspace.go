@@ -11,6 +11,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"github.com/UnicomAI/wanwu/pkg/constant"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
+	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
@@ -109,19 +110,25 @@ func GetAppSpaceAppList(ctx *gin.Context, userId, orgId, name, appType string) (
 	for _, appInfo := range ret {
 		appIds = append(appIds, appInfo.AppId)
 	}
-	AppInfos, err := app.GetAppListByIds(ctx, &app_service.GetAppListByIdsReq{
+	appInfos, err := app.GetAppListByIds(ctx, &app_service.GetAppListByIdsReq{
 		AppIdsList: appIds,
 	})
 	if err != nil {
 		return nil, err
 	}
-	publishTypeMap := make(map[string]string, len(AppInfos.Infos))
-	for _, appInfo := range AppInfos.Infos {
-		publishTypeMap[appInfo.AppId] = appInfo.PublishType
+	publishAppMap := make(map[string]*app_service.AppInfo, len(appInfos.Infos))
+	for _, appInfo := range appInfos.Infos {
+		publishAppMap[appInfo.AppId] = appInfo
 	}
+
+	versionMap := getAppVersionBatch(ctx, userId, orgId, publishAppMap)
 	for idx, appInfo := range ret {
-		if publishType, ok := publishTypeMap[appInfo.AppId]; ok {
-			ret[idx].PublishType = publishType
+		// 填充发布类型和版本信息
+		if publishAppInfo, ok := publishAppMap[appInfo.AppId]; ok {
+			ret[idx].PublishType = publishAppInfo.PublishType
+			if version, ok := versionMap[appInfo.AppId]; ok {
+				ret[idx].Version = version
+			}
 		}
 	}
 	sort.SliceStable(ret, func(i, j int) bool {
@@ -234,4 +241,87 @@ func GetAppList(ctx *gin.Context, userId, orgId, appType string) (*response.List
 		List:  resp.Infos,
 		Total: int64(len(resp.Infos)),
 	}, nil
+}
+
+// getAppVersionBatch 为已发布应用拉取各域最新版本号，供列表填充 Version。
+// publishAppMap 的 key 为 appId，value 为 app-service 侧应用信息；仅 PublishType 非空时参与版本查询。
+// 任一批次下游失败仅打日志、不中断列表；对应 app 的 version 可能为空（降级），与列表接口仍返回成功一致。
+func getAppVersionBatch(ctx *gin.Context, userId, orgId string, publishAppMap map[string]*app_service.AppInfo) map[string]string {
+	versionMap := make(map[string]string)
+
+	var ragIds, assistantIds, workflowIds, chatflowIds []string
+	for appId, appInfo := range publishAppMap {
+		switch appInfo.AppType {
+		case constant.AppTypeRag:
+			ragIds = append(ragIds, appId)
+		case constant.AppTypeAgent:
+			assistantIds = append(assistantIds, appId)
+		case constant.AppTypeWorkflow:
+			workflowIds = append(workflowIds, appId)
+		case constant.AppTypeChatflow:
+			chatflowIds = append(chatflowIds, appId)
+		}
+
+	}
+	if len(ragIds) > 0 {
+		resp, err := rag.GetPublishRagDescBatch(ctx.Request.Context(), &rag_service.GetPublishRagDescBatchReq{
+			RagIdList: ragIds,
+			Identity:  &rag_service.Identity{UserId: userId, OrgId: orgId},
+		})
+		if err != nil {
+			log.Errorf("getAppVersionBatch rag batch query failed, userId=%s orgId=%s ragCount=%d err=%v", userId, orgId, len(ragIds), err)
+		} else if resp == nil {
+			log.Errorf("getAppVersionBatch rag batch query got nil response, userId=%s orgId=%s ragCount=%d", userId, orgId, len(ragIds))
+		} else {
+			for _, item := range resp.List {
+				versionMap[item.RagId] = item.Version
+			}
+		}
+	}
+
+	if len(assistantIds) > 0 {
+		resp, err := assistant.AssistantSnapshotLatestBatch(ctx.Request.Context(), &assistant_service.AssistantSnapshotLatestBatchReq{
+			AssistantIdList: assistantIds,
+			Identity: &assistant_service.Identity{
+				UserId: userId,
+				OrgId:  orgId,
+			},
+		})
+		if err != nil {
+			log.Errorf("getAppVersionBatch assistant batch query failed, userId=%s orgId=%s assistantCount=%d err=%v", userId, orgId, len(assistantIds), err)
+		} else if resp == nil {
+			log.Errorf("getAppVersionBatch assistant batch query got nil response, userId=%s orgId=%s assistantCount=%d", userId, orgId, len(assistantIds))
+		} else {
+			for _, snapshot := range resp.List {
+				versionMap[snapshot.AssistantId] = snapshot.Version
+			}
+		}
+	}
+
+	if len(workflowIds) > 0 {
+		resp, err := MultiGetWorkflowVersionList(ctx, workflowIds)
+		if err != nil {
+			log.Errorf("getAppVersionBatch workflow batch query failed, userId=%s orgId=%s workflowCount=%d err=%v", userId, orgId, len(workflowIds), err)
+		} else if resp == nil {
+			log.Errorf("getAppVersionBatch workflow batch query got nil response, userId=%s orgId=%s workflowCount=%d", userId, orgId, len(workflowIds))
+		} else {
+			for _, item := range resp {
+				versionMap[item.WorkflowID] = item.Version
+			}
+		}
+	}
+	if len(chatflowIds) > 0 {
+		resp, err := MultiGetWorkflowVersionList(ctx, chatflowIds)
+		if err != nil {
+			log.Errorf("getAppVersionBatch chatflow batch query failed, userId=%s orgId=%s chatflowCount=%d err=%v", userId, orgId, len(chatflowIds), err)
+		} else if resp == nil {
+			log.Errorf("getAppVersionBatch chatflow batch query got nil response, userId=%s orgId=%s chatflowCount=%d", userId, orgId, len(chatflowIds))
+		} else {
+			for _, item := range resp {
+				versionMap[item.WorkflowID] = item.Version
+			}
+		}
+	}
+
+	return versionMap
 }

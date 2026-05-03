@@ -94,6 +94,23 @@ func (c *Client) GetAssistantSnapshot(ctx context.Context, assistantID uint32, v
 	return assistantSnapshot, nil
 }
 
+// GetAssistantSnapshotListByAssistantIds 按 assistant_id IN 返回全部匹配的快照行（含历史版本），非每 ID 一条；最新一条由 gRPC AssistantSnapshotLatestBatch 按 CreatedAt 聚合。
+func (c *Client) GetAssistantSnapshotListByAssistantIds(ctx context.Context, assistantIds []uint32) ([]*model.AssistantSnapshot, *err_code.Status) {
+	if len(assistantIds) == 0 {
+		return nil, toErrStatus("assistant_snapshot_list", "assistantIds cannot be empty")
+	}
+	var assistantSnapshots []*model.AssistantSnapshot
+	err := sqlopt.SQLOptions(
+		sqlopt.WithAssistantIDs(assistantIds),
+	).Apply(c.db.WithContext(ctx)).Model(&model.AssistantSnapshot{}).
+		Order("created_at DESC").
+		Find(&assistantSnapshots).Error
+	if err != nil {
+		return nil, toErrStatus("assistant_snapshot_list", fmt.Sprintf("assistant snapshot list query failed: %v", err))
+	}
+	return assistantSnapshots, nil
+}
+
 func (c *Client) RollbackAssistantSnapshot(ctx context.Context, assistant *model.Assistant, tools []*model.AssistantTool, mcps []*model.AssistantMCP, workflows []*model.AssistantWorkflow, subAgents []*model.MultiAgentRelation, userID, orgID string) *err_code.Status {
 	return c.transaction(ctx, func(tx *gorm.DB) *err_code.Status {
 		// Update Assistant Info

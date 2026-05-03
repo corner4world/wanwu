@@ -182,6 +182,7 @@ type RagSearchKnowledgeBaseReq struct {
 	RewriteQuery         bool                           `json:"rewrite_query"`                 // 是否query改写
 	EnableVision         bool                           `json:"enable_vision"`                 // 召回结果是否包含多模态文件(只在callback层做最后的赋值)
 	AttachmentFiles      []*RagKnowledgeAttachment      `json:"attachment_files"`              // 上传的多模态文件
+	ReturnMeta           bool                           `json:"return_meta,omitempty"`         // 是否返回元数据
 }
 
 type RagKnowledgeAttachment struct {
@@ -318,6 +319,13 @@ type DeleteKnowledgeExternalReq struct {
 
 type KnowledgeExternalListReq struct {
 	ExternalAPIId string `json:"externalApiId" form:"externalApiId" validate:"required"` //外部知识库API id
+	CommonCheck
+}
+
+// GetDocByKnowledgeNameAndDocNameReq 根据知识库名称和文档名称获取文档信息请求
+type GetDocByKnowledgeNameAndDocNameReq struct {
+	KnowledgeName string `json:"knowledgeName" form:"knowledgeName" validate:"required"` // 知识库名称
+	DocName       string `json:"docName" form:"docName" validate:"required"`             // 文档名称
 	CommonCheck
 }
 

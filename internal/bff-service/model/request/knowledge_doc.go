@@ -3,6 +3,7 @@ package request
 import (
 	"errors"
 	"regexp"
+	"strings"
 )
 
 const (
@@ -126,7 +127,6 @@ type DocSegmentLabelsReq struct {
 	ContentId string   `json:"contentId"  validate:"required"`
 	DocId     string   `json:"docId"  validate:"required"`
 	Labels    []string `json:"labels"  validate:"required"`
-	CommonCheck
 }
 
 type CreateDocSegmentReq struct {
@@ -298,5 +298,17 @@ func (c *BatchDocMetaDataReq) Check() error {
 			keyMap[meta.MetaKey] = true
 		}
 	}
+	return nil
+}
+
+func (c *DocSegmentLabelsReq) Check() error {
+	filtered := make([]string, 0, len(c.Labels))
+	for _, v := range c.Labels {
+		v = strings.TrimSpace(v)
+		if v != "" {
+			filtered = append(filtered, v)
+		}
+	}
+	c.Labels = filtered
 	return nil
 }

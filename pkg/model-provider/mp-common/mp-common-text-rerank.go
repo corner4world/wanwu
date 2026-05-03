@@ -64,9 +64,11 @@ type Document struct {
 }
 
 type Usage struct {
-	PromptTokens     int `json:"prompt_tokens,omitempty"`
-	TotalTokens      int `json:"total_tokens,omitempty"`
-	CompletionTokens int `json:"completion_tokens,omitempty"`
+	PromptTokens     int  `json:"prompt_tokens,omitempty"`
+	TotalTokens      int  `json:"total_tokens,omitempty"`
+	CompletionTokens int  `json:"completion_tokens,omitempty"`
+	ImageTokens      *int `json:"image_tokens,omitempty"`
+	InputTokens      *int `json:"input_tokens,omitempty"`
 }
 
 // --- request ---

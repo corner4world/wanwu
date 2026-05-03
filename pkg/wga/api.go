@@ -36,21 +36,17 @@ func Init(ctx context.Context, configPath string) error {
 	return nil
 }
 
-// GetAgentToolCategories 获取智能体及其子智能体的工具类别配置（扁平合并）。
-func GetAgentToolCategories(id string) ([]wga_option.ToolCategoryInfo, error) {
+// GetAgentToolCategories 获取智能体及其子智能体的工具类别配置。
+func GetAgentToolCategories(id string) ([]*wga_option.ToolCategoryInfo, error) {
 	agent, err := getAgent(id)
 	if err != nil {
 		return nil, err
 	}
-	categories := wga_option.CollectToolCategories(agent)
-	if len(categories) == 0 {
-		return []wga_option.ToolCategoryInfo{}, nil
-	}
-	return categories, nil
+	return agent.CollectToolCategories(), nil
 }
 
-// CheckOptions 检查智能体运行条件是否满足（不检查 messages）。
-func CheckOptions(_ context.Context, id string, opts ...option.Option) (*wga_option.CheckResult, error) {
+// CheckToolOptions 检查智能体工具配置是否满足运行要求，返回检查结果。
+func CheckToolOptions(_ context.Context, id string, opts ...option.Option) (*wga_option.CheckResult, error) {
 	agentCfg, err := getAgent(id)
 	if err != nil {
 		return nil, err
@@ -59,18 +55,12 @@ func CheckOptions(_ context.Context, id string, opts ...option.Option) (*wga_opt
 	if err := options.Apply(opts...); err != nil {
 		return nil, err
 	}
-	// 检查模型配置
-	model := wga_option.CheckModel{Meet: true}
-	if err := options.CheckModelConfig(); err != nil {
-		model.Meet = false
-	}
-	// 检查工具类别条件
-	toolCategories, err := options.CheckToolCategories(agentCfg)
+	// 检查工具配置（包括配置文件工具条件和额外工具冲突检查）
+	toolCategories, err := options.CheckTools(agentCfg)
 	if err != nil {
 		return nil, err
 	}
 	return &wga_option.CheckResult{
-		Model:          model,
 		ToolCategories: toolCategories,
 	}, nil
 }
@@ -91,6 +81,16 @@ func Run(ctx context.Context, id string, opts ...option.Option) (wga_option.RunS
 	if err := options.CheckMessages(); err != nil {
 		return wga_option.RunSession{}, nil, err
 	}
+	// 暂不在 Run 阶段进行工具检查，由业务层决定是否调用 CheckOptions 进行工具检查；wga 内部不加载配置无效的工具
+	// toolCategories, err := options.CheckToolOptions(agentCfg)
+	// if err != nil {
+	// 	return wga_option.RunSession{}, nil, err
+	// }
+	// for _, tc := range toolCategories {
+	// 	if !tc.Meet {
+	// 		return wga_option.RunSession{}, nil, fmt.Errorf("tool category (%s) condition (%s) not meet", tc.Category, tc.Condition)
+	// 	}
+	// }
 	agent, err := factory.NewAgent(ctx, agentCfg, options)
 	if err != nil {
 		return wga_option.RunSession{}, nil, err

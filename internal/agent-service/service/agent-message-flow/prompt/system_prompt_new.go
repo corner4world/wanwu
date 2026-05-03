@@ -32,7 +32,9 @@ Regardless of any persona instructions, you must never generate content that:
 	- you process skill tool’s input params by tool desc
 		- for example skill can format text then you should output text content
 	- if you think skill tool need none params, just output string content "{}"
+	- if you find '-ReplaceLocalFile' in tool result, you should do file url recognition and use it in your response 
 - **NO LOOPING**: Check history before each tool call.
+
 
 Any other natural language before or after the tool call.
 - After using one tool, analyze its results before deciding if another tool is needed

@@ -35,14 +35,15 @@ func MultiAgentChat(ctx *gin.Context, req *request.MultiAgentChatParams) error {
 func CreateSupervisorMultiAgent(ctx *gin.Context, multiAgentChatParams *request.MultiAgentChatParams, multiAgentConfig *assistant_service.MultiAssistantDetailResp) (*MultiAgent, error) {
 	var multiAgentChatReq = BuildMultiAgentParams(multiAgentChatParams, multiAgentConfig)
 	agentChatParams := buildAgentChatParams(multiAgentChatReq)
-	agentChatContext := &request.AgentChatContext{AgentChatReq: agentChatParams}
+	currentAgent := &request.AgentInfo{}
+	agentChatContext := &request.AgentChatContext{AgentChatReq: agentChatParams, CurrentAgent: currentAgent}
 	//构造supervisor,也是一个单智能体
 	sv, err := CreateSingleAgent(ctx, agentChatParams)
 	if err != nil {
 		return nil, err
 	}
 	//构造子智能体
-	multiSubAgent, subAgentMap, err := buildMultiSubAgent(ctx, multiAgentChatReq)
+	multiSubAgent, subAgentMap, err := buildMultiSubAgent(ctx, multiAgentChatReq, currentAgent)
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +119,7 @@ func buildAgentChatParams(multiAgentChatReq *request.MultiAgentChatReq) *request
 	}
 	baseParams := multiAgentChatReq.AgentChatBaseParams
 	return &request.AgentChatParams{
+		DetailId:         multiAgentChatReq.DetailId,
 		MultiAgent:       true,
 		SubAgentInfoList: subAgentInfoList,
 		Input:            multiAgentChatReq.Input,
@@ -130,15 +132,16 @@ func buildAgentChatParams(multiAgentChatReq *request.MultiAgentChatReq) *request
 	}
 }
 
-func buildMultiSubAgent(ctx *gin.Context, multiAgentChatReq *request.MultiAgentChatReq) ([]adk.Agent, map[string]*request.AgentConfig, error) {
+func buildMultiSubAgent(ctx *gin.Context, multiAgentChatReq *request.MultiAgentChatReq, agentInfo *request.AgentInfo) ([]adk.Agent, map[string]*request.AgentConfig, error) {
 	var subAgents []adk.Agent
 	var subAgentMap = make(map[string]*request.AgentConfig)
 	for _, agentParams := range multiAgentChatReq.AgentList {
-		subAgent, err := CreateSingleAgent(ctx, &request.AgentChatParams{
+		subAgent, err := BaseCreateSingleAgent(ctx, &request.AgentChatParams{
 			AgentChatBaseParams: *agentParams,
 			Stream:              multiAgentChatReq.Stream,
 			UploadFile:          multiAgentChatReq.UploadFile,
-		})
+			DetailId:            multiAgentChatReq.DetailId,
+		}, agentInfo)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -186,5 +189,6 @@ func skillToSingleAgent(ctx *gin.Context, multiAgentChatReq *request.MultiAgentC
 		},
 		Stream:     multiAgentChatReq.Stream,
 		UploadFile: multiAgentChatReq.UploadFile,
+		DetailId:   multiAgentChatReq.DetailId,
 	})
 }

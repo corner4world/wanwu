@@ -17,6 +17,8 @@ service KnowledgeBaseService {
   rpc SelectKnowledgeDetailByIdList(KnowledgeDetailSelectListReq) returns (KnowledgeDetailSelectListResp) {}
   // 获取知识库详情
   rpc SelectKnowledgeDetailByName(KnowledgeDetailSelectReq) returns (KnowledgeInfo) {}
+  // 根据ragName获取知识库ID
+  rpc SelectKnowledgeIdByRagName(SelectKnowledgeIdByRagNameReq) returns (SelectKnowledgeIdByRagNameResp) {}
   // 新增知识库
   rpc CreateKnowledge(CreateKnowledgeReq) returns (CreateKnowledgeResp) {}
   // 修改知识库
@@ -61,6 +63,8 @@ service KnowledgeBaseService {
   rpc UpdateKnowledgeExternal(UpdateKnowledgeExternalReq) returns (google.protobuf.Empty) {}
   // 删除外部知识库
   rpc DeleteKnowledgeExternal(DeleteKnowledgeExternalReq) returns (google.protobuf.Empty) {}
+  // 根据知识库名称和文档名称获取文档信息
+  rpc GetDocByKnowledgeNameAndDocName(GetDocByKnowledgeNameAndDocNameReq) returns (GetDocByKnowledgeNameAndDocNameResp) {}
 }
 
 message DeleteKnowledgeReq{
@@ -191,6 +195,18 @@ message KnowledgeDetailSelectListReq{
 message KnowledgeDetailSelectListResp{
   repeated KnowledgeInfo list = 1; // 知识库详情列表
   int32 total = 2;
+}
+
+// 根据ragName获取知识库ID 请求
+message SelectKnowledgeIdByRagNameReq{
+  string ragName = 1; // rag名称
+  string userId = 2;
+  string orgId = 3;
+}
+
+// 根据ragName获取知识库ID 响应
+message SelectKnowledgeIdByRagNameResp{
+  string knowledgeId = 1; // 知识库ID
 }
 
 // 知识库信息
@@ -492,4 +508,21 @@ message RerankingModel{
 
 message KnowledgeExternalSelectListResp{
   repeated KnowledgeExternalInfo externalKnowledgeList = 1;
+}
+
+// 根据知识库名称和文档名称获取文档信息 请求
+message GetDocByKnowledgeNameAndDocNameReq{
+  string knowledgeName = 1; // 知识库名称
+  string docName = 2; // 文档名称
+  string userId = 3;
+  string orgId = 4;
+}
+
+// 根据知识库名称和文档名称获取文档信息 响应
+message GetDocByKnowledgeNameAndDocNameResp{
+  string knowledgeId = 1; // 知识库ID
+  string knowledgeName = 2; // 知识库名称
+  string docId = 3; // 文档ID
+  string docType = 4; // 文档类型
+  string docName = 5; // 文档名称
 }

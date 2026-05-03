@@ -80,12 +80,18 @@ func (s *Service) UpdateWgaConfig(ctx context.Context, req *assistant_service.Up
 
 	toolListJSON, _ := json.Marshal(req.ToolList)
 	assistantListJSON, _ := json.Marshal(req.AssistantList)
+	mcpListJSON, _ := json.Marshal(req.McpList)
+	workflowListJSON, _ := json.Marshal(req.WorkflowList)
+	skillListJSON, _ := json.Marshal(req.SkillList)
 
 	config := &model.WgaConfig{
 		UserID:        req.Identity.UserId,
 		OrgID:         req.Identity.OrgId,
 		AssistantList: string(assistantListJSON),
 		ToolList:      string(toolListJSON),
+		McpList:       string(mcpListJSON),
+		WorkflowList:  string(workflowListJSON),
+		SkillList:     string(skillListJSON),
 	}
 
 	status := s.cli.UpdateWgaConfig(ctx, config)
@@ -144,6 +150,41 @@ func toProtoWgaConfig(m *model.WgaConfig) *assistant_service.WgaConfig {
 				config.AssistantList = append(config.AssistantList, &assistant_service.WgaConfigAssistant{
 					AssistantId:   assistants[i].AssistantId,
 					AssistantType: assistants[i].AssistantType,
+				})
+			}
+		}
+	}
+
+	if m.McpList != "" {
+		var mcps []assistant_service.WgaConfigMcp
+		if err := json.Unmarshal([]byte(m.McpList), &mcps); err == nil {
+			for i := range mcps {
+				config.McpList = append(config.McpList, &assistant_service.WgaConfigMcp{
+					McpId:   mcps[i].McpId,
+					McpType: mcps[i].McpType,
+				})
+			}
+		}
+	}
+
+	if m.WorkflowList != "" {
+		var workflows []assistant_service.WgaConfigWorkflow
+		if err := json.Unmarshal([]byte(m.WorkflowList), &workflows); err == nil {
+			for i := range workflows {
+				config.WorkflowList = append(config.WorkflowList, &assistant_service.WgaConfigWorkflow{
+					WorkflowId: workflows[i].WorkflowId,
+				})
+			}
+		}
+	}
+
+	if m.SkillList != "" {
+		var skills []assistant_service.WgaConfigSkill
+		if err := json.Unmarshal([]byte(m.SkillList), &skills); err == nil {
+			for i := range skills {
+				config.SkillList = append(config.SkillList, &assistant_service.WgaConfigSkill{
+					SkillId:   skills[i].SkillId,
+					SkillType: skills[i].SkillType,
 				})
 			}
 		}

@@ -11,8 +11,9 @@ type AppBriefInfo struct {
 	Desc        string         `json:"desc"`        // 应用描述
 	CreatedAt   string         `json:"createdAt"`   // 应用创建时间
 	UpdatedAt   string         `json:"updatedAt"`   // 应用更新时间(用于历史记录排序)
-	PublishType string         `json:"publishType"` // 发布类型(public:公开发布,private:私密发布)
+	PublishType string         `json:"publishType"` // 发布类型(public:公开发布,private:私密发布)，为空表示未发布(草稿)
 	Category    int32          `json:"category"`    // 智能体分类(1:单智能体,2:多智能体)
+	Version     string         `json:"version"`     // 已发布应用的版本号(未发布时为空)
 }
 
 type AppUrlInfo struct {

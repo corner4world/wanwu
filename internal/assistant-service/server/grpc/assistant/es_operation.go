@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strings"
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
+	"github.com/UnicomAI/wanwu/internal/assistant-service/config"
 	"github.com/UnicomAI/wanwu/pkg/es"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -67,7 +70,9 @@ func (s *Service) SearchFromES(ctx context.Context, req *assistant_service.Searc
 
 	docJsonList := make([]string, 0, len(docs))
 	for _, doc := range docs {
-		docJsonList = append(docJsonList, string(doc))
+		// 替换minio地址为用户访问的服务器地址
+		docStr := strings.ReplaceAll(string(doc), "http://"+config.Cfg().Minio.EndPoint, os.Getenv("MINIO_DOWNLOAD_URL"))
+		docJsonList = append(docJsonList, docStr)
 	}
 
 	return &assistant_service.SearchFromESResp{

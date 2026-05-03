@@ -436,14 +436,14 @@ type GetQAPairListReq struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	KnowledgeId string `protobuf:"bytes,1,opt,name=knowledgeId,proto3" json:"knowledgeId,omitempty"` //问答库id
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`               //名称
-	Status      int32  `protobuf:"varint,3,opt,name=status,proto3" json:"status,omitempty"`          //状态
-	PageSize    int32  `protobuf:"varint,4,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
-	PageNum     int32  `protobuf:"varint,5,opt,name=pageNum,proto3" json:"pageNum,omitempty"`
-	UserId      string `protobuf:"bytes,6,opt,name=userId,proto3" json:"userId,omitempty"`
-	OrgId       string `protobuf:"bytes,7,opt,name=orgId,proto3" json:"orgId,omitempty"`
-	MetaValue   string `protobuf:"bytes,8,opt,name=metaValue,proto3" json:"metaValue,omitempty"`
+	KnowledgeId string  `protobuf:"bytes,1,opt,name=knowledgeId,proto3" json:"knowledgeId,omitempty"` //问答库id
+	Name        string  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`               //名称
+	Status      []int32 `protobuf:"varint,3,rep,packed,name=status,proto3" json:"status,omitempty"`   //状态 -1：全部 0:待处理 1:导入中 2:导入成功 3:导入失败
+	PageSize    int32   `protobuf:"varint,4,opt,name=pageSize,proto3" json:"pageSize,omitempty"`
+	PageNum     int32   `protobuf:"varint,5,opt,name=pageNum,proto3" json:"pageNum,omitempty"`
+	UserId      string  `protobuf:"bytes,6,opt,name=userId,proto3" json:"userId,omitempty"`
+	OrgId       string  `protobuf:"bytes,7,opt,name=orgId,proto3" json:"orgId,omitempty"`
+	MetaValue   string  `protobuf:"bytes,8,opt,name=metaValue,proto3" json:"metaValue,omitempty"`
 }
 
 func (x *GetQAPairListReq) Reset() {
@@ -492,11 +492,11 @@ func (x *GetQAPairListReq) GetName() string {
 	return ""
 }
 
-func (x *GetQAPairListReq) GetStatus() int32 {
+func (x *GetQAPairListReq) GetStatus() []int32 {
 	if x != nil {
 		return x.Status
 	}
-	return 0
+	return nil
 }
 
 func (x *GetQAPairListReq) GetPageSize() int32 {
@@ -1817,7 +1817,7 @@ var file_proto_knowledgebase_qa_service_knowledgebase_qa_service_proto_rawDesc =
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x6b, 0x6e, 0x6f, 0x77, 0x6c, 0x65, 0x64, 0x67, 0x65, 0x49,
 	0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1a, 0x0a,
+	0x03, 0x20, 0x03, 0x28, 0x05, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1a, 0x0a,
 	0x08, 0x70, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52,
 	0x08, 0x70, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x61, 0x67,
 	0x65, 0x4e, 0x75, 0x6d, 0x18, 0x05, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x70, 0x61, 0x67, 0x65,

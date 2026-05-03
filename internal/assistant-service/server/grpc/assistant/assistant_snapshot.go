@@ -148,6 +148,42 @@ func (s *Service) AssistantSnapshotLatest(ctx context.Context, req *assistant_se
 	}, nil
 }
 
+func (s *Service) AssistantSnapshotLatestBatch(ctx context.Context, req *assistant_service.AssistantSnapshotLatestBatchReq) (*assistant_service.AssistantSnapshotLatestBatchResp, error) {
+	if len(req.AssistantIdList) == 0 {
+		return &assistant_service.AssistantSnapshotLatestBatchResp{List: []*assistant_service.AssistantSnapshot{}}, nil
+	}
+	// 转换 assistantId 列表
+	assistantIds := make([]uint32, 0, len(req.AssistantIdList))
+	for _, idStr := range req.AssistantIdList {
+		assistantIds = append(assistantIds, util.MustU32(idStr))
+	}
+	// 批量查询 snapshot
+	snapshotList, status := s.cli.GetAssistantSnapshotListByAssistantIds(ctx, assistantIds)
+	if status != nil {
+		return nil, errStatus(errs.Code_AssistantErr, status)
+	}
+	// 按 assistantId 分组，取每个 assistantId 的最新版本
+	snapshotMap := make(map[uint32]*model.AssistantSnapshot)
+	for _, snapshot := range snapshotList {
+		if existing, ok := snapshotMap[snapshot.AssistantID]; !ok || snapshot.CreatedAt > existing.CreatedAt {
+			snapshotMap[snapshot.AssistantID] = snapshot
+		}
+	}
+	// 构建响应
+	resp := make([]*assistant_service.AssistantSnapshot, 0, len(snapshotMap))
+	for _, snapshot := range snapshotMap {
+		resp = append(resp, &assistant_service.AssistantSnapshot{
+			SnapshotId:  util.Int2Str(snapshot.ID),
+			AssistantId: util.Int2Str(snapshot.AssistantID),
+			Version:     snapshot.Version,
+			Desc:        snapshot.SnapshotDesc,
+			CreateAt:    snapshot.CreatedAt,
+			Category:    int32(snapshot.Category),
+		})
+	}
+	return &assistant_service.AssistantSnapshotLatestBatchResp{List: resp}, nil
+}
+
 func (s *Service) AssistantSnapshotInfo(ctx context.Context, req *assistant_service.AssistantSnapshotInfoReq) (*assistant_service.AssistantInfo, error) {
 	snapshotInfo, status := s.cli.GetAssistantSnapshot(ctx, util.MustU32(req.AssistantId), req.Version)
 

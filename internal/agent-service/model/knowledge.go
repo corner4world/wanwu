@@ -17,7 +17,7 @@ type ChunkSearchList struct {
 	Snippet          string          `json:"snippet"`
 	KbName           string          `json:"kb_name"`
 	UserKbName       string          `json:"user_kb_name"`
-	MetaData         interface{}     `json:"meta_data"`
+	MetaData         *MetaData       `json:"meta_data"`
 	ChildContentList []*ChildContent `json:"child_content_list"`
 	ChildScore       []float64       `json:"child_score"`
 	Score            float64         `json:"score"`
@@ -26,4 +26,17 @@ type ChunkSearchList struct {
 type ChildContent struct {
 	ChildSnippet string  `json:"child_snippet"`
 	Score        float64 `json:"score"`
+}
+
+type MetaData struct {
+	PageNum         []interface{} `json:"page_num"`
+	ParentTitle     []interface{} `json:"parent_title"`
+	FileName        string        `json:"file_name"`
+	DownloadLink    string        `json:"download_link"`
+	RowNum          int           `json:"row_num"`
+	ChunkCurrentNum int           `json:"chunk_current_num"`
+	ChunkTotalNum   int           `json:"chunk_total_num"`
+	BucketName      string        `json:"bucket_name"`
+	ObjectName      string        `json:"object_name"`
+	DocMeta         []interface{} `json:"doc_meta"`
 }

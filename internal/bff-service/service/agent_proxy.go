@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"text/template"
 
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
@@ -21,23 +22,158 @@ import (
 )
 
 const (
-	mainAgentEventType = 0
+	proxyAgentEventType = 0
 )
 
-func AgentProxyChat(ctx *gin.Context, req *request.AgentProxyChatReq) (string, error) {
+const proxyAgentChatOpenAPITemplate = `{
+  "openapi": "3.0.1",
+  "info": {
+    "title": {{.Title | tojson}},
+    "version": {{.Version | tojson}},
+    "description": {{.Description | tojson}}
+  },
+  "servers": [
+    {
+      "url": "http://bff-service:6668/callback/v1"
+    }
+  ],
+  "paths": {
+    "/agent/{{.AssistantId}}/chat": {
+      "post": {
+        "tags": ["callback"],
+        "summary": {{.Description | tojson}},
+        "description": {{.DescWithParams | tojson}},
+        "operationId": "agentChatProxy",
+        "requestBody": {
+          "required": true,
+          "description": "智能体问答请求体",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["input"],
+                "properties": {
+                  "input": {
+                    "type": "string",
+                    "description": "用户输入的提问内容"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "返回智能体回答的文本",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "响应状态码，0表示成功"
+                    },
+                    "data": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "成功时为智能体回答的文本，失败时为null"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "响应消息，成功时为空，失败时包含错误描述"
+                    }
+                  }
+                },
+                "example": {
+                  "code": 0,
+                  "data": "智能体回答的文本内容...",
+                  "msg": ""
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误（如缺少必填字段 input）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "响应状态码，0表示成功"
+                    },
+                    "data": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "成功时为智能体回答的文本，失败时为null"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "响应消息，成功时为空，失败时包含错误描述"
+                    }
+                  }
+                },
+                "example": {
+                  "code": 400,
+                  "data": null,
+                  "msg": "invalid parameter"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务内部错误（如下游 agent-service 不可达）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "响应状态码，0表示成功"
+                    },
+                    "data": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "成功时为智能体回答的文本，失败时为null"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "响应消息，成功时为空，失败时包含错误描述"
+                    }
+                  }
+                },
+                "example": {
+                  "code": 500,
+                  "data": null,
+                  "msg": "agent proxy stream request failed"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}`
+
+func AgentChatProxy(ctx *gin.Context, assistantId string, req *request.AgentChatProxyReq) (string, error) {
 	agentConfig := config.Cfg().AgentService
 	url := fmt.Sprintf("http://%s:%d/agent/chat", agentConfig.Host, agentConfig.Port)
 
 	agentReq := map[string]interface{}{
-		"assistantId": req.AssistantId,
+		"assistantId": util.MustU32(assistantId),
 		"input":       req.Input,
-		"uploadFile":  req.UploadFile,
 		"stream":      true,
-		"userId":      req.UserId,
-		"orgId":       req.OrgId,
+		// "uploadFile":  req.UploadFile,
 	}
 
-	retCh, errCh := agentProxyStream(ctx.Request.Context(), url, agentReq)
+	retCh, errCh := agentStreamProxy(ctx.Request.Context(), url, agentReq)
 	if err := <-errCh; err != nil {
 		return "", grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error())
 	}
@@ -50,7 +186,7 @@ func AgentProxyChat(ctx *gin.Context, req *request.AgentProxyChatReq) (string, e
 	return aggregatedResponse.String(), nil
 }
 
-func agentProxyStream(ctx context.Context, url string, req map[string]interface{}) (<-chan string, <-chan error) {
+func agentStreamProxy(ctx context.Context, url string, req map[string]interface{}) (<-chan string, <-chan error) {
 	ret := make(chan string, 1024)
 	errCh := make(chan error, 1)
 
@@ -144,9 +280,42 @@ func parseAgentSSEData(sseData string) string {
 		return ""
 	}
 
-	if agentResp.EventType == mainAgentEventType {
+	if agentResp.EventType == proxyAgentEventType {
 		return agentResp.Response
 	}
 
 	return ""
+}
+
+func renderAgentChatProxySchema(assistantId, name, desc string) ([]byte, error) {
+	tmpl, err := template.New("agentChatProxy").Funcs(template.FuncMap{
+		"tojson": func(v interface{}) (string, error) {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return "", err
+			}
+			return string(b), nil
+		},
+	}).Parse(proxyAgentChatOpenAPITemplate)
+	if err != nil {
+		return nil, fmt.Errorf("parse agent chat proxy openapi template err: %w", err)
+	}
+	data := struct {
+		Title          string
+		Version        string
+		Description    string
+		DescWithParams string
+		AssistantId    string
+	}{
+		Title:          name,
+		Version:        "1.0.0",
+		Description:    desc,
+		DescWithParams: fmt.Sprintf("%s。请求参数：input（string，必填）为用户提问内容。成功时返回智能体回答的文本（code=0, data为回答字符串, msg为空）；失败时 code 非零，msg 包含错误信息。", desc),
+		AssistantId:    assistantId,
+	}
+	var buf strings.Builder
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return nil, fmt.Errorf("execute agent chat proxy openapi template err: %w", err)
+	}
+	return []byte(buf.String()), nil
 }

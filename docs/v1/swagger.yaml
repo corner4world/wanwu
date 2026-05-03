@@ -205,6 +205,8 @@ definitions:
         $ref: '#/definitions/mp_qwen.LLM'
       multiModalEmbedding:
         $ref: '#/definitions/mp_qwen.MultiModalEmbedding'
+      multiModalRerank:
+        $ref: '#/definitions/mp_qwen.MultiModalRerank'
       rerank:
         $ref: '#/definitions/mp_qwen.Rerank'
     type: object
@@ -670,6 +672,27 @@ definitions:
           type: string
         type: array
     type: object
+  mp_qwen.MultiModalRerank:
+    properties:
+      apiKey:
+        type: string
+      contextSize:
+        type: integer
+      endpointUrl:
+        type: string
+      maxImageSize:
+        type: integer
+      maxTextLength:
+        type: integer
+      maxVideoClipSize:
+        type: integer
+      supportFileTypes:
+        items:
+          type: string
+        type: array
+      supportImageInQuery:
+        type: boolean
+    type: object
   mp_qwen.Rerank:
     properties:
       apiKey:
@@ -873,12 +896,13 @@ definitions:
     type: object
   protocol.Property:
     properties:
+      default:
+        description: Default specifies the default value for the property.
       description:
         description: Description is the description of the schema.
         type: string
       enum:
-        items:
-          type: string
+        items: {}
         type: array
       items:
         allOf:
@@ -896,7 +920,9 @@ definitions:
           type: string
         type: array
       type:
-        $ref: '#/definitions/protocol.DataType'
+        items:
+          $ref: '#/definitions/protocol.DataType'
+        type: array
     type: object
   protocol.Tool:
     properties:
@@ -1459,18 +1485,6 @@ definitions:
     - mcpId
     - mcpType
     type: object
-  request.AssistantSelected:
-    properties:
-      assistantId:
-        description: 智能体ID
-        type: string
-      assistantType:
-        description: 智能体类型
-        type: string
-    required:
-    - assistantId
-    - assistantType
-    type: object
   request.AssistantSkillAddRequest:
     properties:
       assistantId:
@@ -1833,12 +1847,18 @@ definitions:
     properties:
       assistantId:
         type: string
+      detailId:
+        description: 可选，传值则删除单条对话，不传则删除全部对话
+        type: string
     required:
     - assistantId
     type: object
   request.ConversationIdRequest:
     properties:
       conversationId:
+        type: string
+      detailId:
+        description: 可选，传值则删除单条对话，不传则删除全部对话
         type: string
     required:
     - conversationId
@@ -2362,6 +2382,13 @@ definitions:
     required:
     - threadId
     type: object
+  request.DeleteJoinerSkillReq:
+    properties:
+      skillId:
+        type: string
+    required:
+    - skillId
+    type: object
   request.DeleteKeywordsReq:
     properties:
       id:
@@ -2769,14 +2796,34 @@ definitions:
     type: object
   request.GeneralAgentConfigCheckRequest:
     properties:
+      agentId:
+        description: 子智能体ID
+        type: string
       threadId:
         description: 对话ID
         type: string
     required:
     - threadId
     type: object
+  request.GeneralAgentConfigItem:
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+    type: object
+  request.GeneralAgentConfigToolItem:
+    properties:
+      toolId:
+        type: string
+      toolType:
+        type: string
+    type: object
   request.GeneralAgentConversationChatReq:
     properties:
+      agentId:
+        description: 智能体ID
+        type: string
       messages:
         description: 消息
         items:
@@ -2802,17 +2849,6 @@ definitions:
     required:
     - content
     - role
-    type: object
-  request.GeneralAgentCopilotRuntimeReq:
-    properties:
-      body:
-        additionalProperties: true
-        type: object
-      method:
-        type: string
-      params:
-        additionalProperties: true
-        type: object
     type: object
   request.GetModelRequest:
     properties:
@@ -3197,11 +3233,16 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
+        type: string
     required:
     - desc
     - from
     - name
-    - sseUrl
     type: object
   request.MCPIDReq:
     properties:
@@ -3347,12 +3388,17 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
+        type: string
     required:
     - desc
     - from
     - mcpId
     - name
-    - sseUrl
     type: object
   request.MemoryConfig:
     properties:
@@ -3892,6 +3938,13 @@ definitions:
     required:
     - tableId
     type: object
+  request.ShareSquareSkillReq:
+    properties:
+      skillId:
+        type: string
+    required:
+    - skillId
+    type: object
   request.SkillConversationChatReq:
     properties:
       conversationId:
@@ -3924,18 +3977,6 @@ definitions:
     required:
     - conversationId
     - skillSaveId
-    type: object
-  request.ToolSelected:
-    properties:
-      toolId:
-        description: 工具ID
-        type: string
-      toolType:
-        description: 工具类型
-        type: string
-    required:
-    - toolId
-    - toolType
     type: object
   request.ToolSquareAPIKeyReq:
     properties:
@@ -4069,15 +4110,25 @@ definitions:
     type: object
   request.UpdateGeneralAgentConfigReq:
     properties:
-      assistantList:
-        description: 智能体ID
+      assistant:
         items:
-          $ref: '#/definitions/request.AssistantSelected'
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
         type: array
-      toolList:
-        description: 工具ID
+      mcp:
         items:
-          $ref: '#/definitions/request.ToolSelected'
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        type: array
+      skill:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        type: array
+      tool:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigToolItem'
+        type: array
+      workflow:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
         type: array
     type: object
   request.UpdateGeneralAgentConversationConfigReq:
@@ -4555,6 +4606,30 @@ definitions:
       apiCalls:
         $ref: '#/definitions/response.StatisticChart'
     type: object
+  response.AgentFileMeta:
+    properties:
+      createAt:
+        type: string
+      desc:
+        type: string
+      name:
+        type: string
+    type: object
+  response.AgentResponseFile:
+    properties:
+      fileType:
+        type: string
+      fileUrl:
+        type: string
+      metadata:
+        allOf:
+        - $ref: '#/definitions/response.AgentFileMeta'
+        description: 扩展信息：
+      name:
+        type: string
+      size:
+        type: integer
+    type: object
   response.AnalysisDocUrlResp:
     properties:
       urlList:
@@ -4594,13 +4669,16 @@ definitions:
         description: 应用名称
         type: string
       publishType:
-        description: 发布类型(public:公开发布,private:私密发布)
+        description: 发布类型(public:公开发布,private:私密发布)，为空表示未发布(草稿)
         type: string
       uniqueId:
         description: 随机unique id(每次动态生成)
         type: string
       updatedAt:
         description: 应用更新时间(用于历史记录排序)
+        type: string
+      version:
+        description: 已发布应用的版本号(未发布时为空)
         type: string
     type: object
   response.AppKeyInfo:
@@ -5163,6 +5241,10 @@ definitions:
         type: array
       response:
         type: string
+      responseFiles:
+        items:
+          $ref: '#/definitions/response.AgentResponseFile'
+        type: array
       responseList:
         items:
           $ref: '#/definitions/response.ConversationResponse'
@@ -5719,6 +5801,17 @@ definitions:
           $ref: '#/definitions/response.DirectUploadFileInfo'
         type: array
     type: object
+  response.DocAnalyzerTextInfo:
+    properties:
+      displayName:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/mp_common.Tag'
+        type: array
+      text:
+        type: string
+    type: object
   response.DocChildSegmentResp:
     properties:
       contentList:
@@ -5900,7 +5993,7 @@ definitions:
       docAnalyzerText:
         description: 文档解析类型 文字提取 / OCR解析  / 模型解析
         items:
-          type: string
+          $ref: '#/definitions/response.DocAnalyzerTextInfo'
         type: array
       fileName:
         description: 名称
@@ -5998,7 +6091,7 @@ definitions:
         description: 应用名称
         type: string
       publishType:
-        description: 发布类型(public:公开发布,private:私密发布)
+        description: 发布类型(public:公开发布,private:私密发布)，为空表示未发布(草稿)
         type: string
       uniqueId:
         description: 随机unique id(每次动态生成)
@@ -6010,6 +6103,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/response.User'
         description: 作者信息
+      version:
+        description: 已发布应用的版本号(未发布时为空)
+        type: string
     type: object
   response.GeneralAgentCheckTool:
     properties:
@@ -6022,17 +6118,25 @@ definitions:
     type: object
   response.GeneralAgentConfigCheckResponse:
     properties:
+      meet:
+        description: 是否符合要求
+        type: boolean
       modelMeet:
-        description: 是否符合模型要求
+        description: 是否符合模型要求 FIXME 去掉模型检查
         type: boolean
       toolsMeet:
         description: 工具是否符合要求
         items:
           $ref: '#/definitions/response.GeneralAgentToolCategories'
         type: array
-      valid:
-        description: 是否有效
-        type: boolean
+    type: object
+  response.GeneralAgentConfigList:
+    properties:
+      list:
+        description: 列表项
+      listType:
+        description: '类型: mcp, workflow, skill, assistant, tool'
+        type: string
     type: object
   response.GeneralAgentConversationDetailInfo:
     properties:
@@ -6058,30 +6162,6 @@ definitions:
         description: 对话标题
         type: string
     type: object
-  response.GeneralAgentCopilotRuntimeInfoAgent:
-    properties:
-      className:
-        type: string
-      description:
-        type: string
-      name:
-        type: string
-    type: object
-  response.GeneralAgentCopilotRuntimeInfoResp:
-    properties:
-      a2uiEnabled:
-        type: boolean
-      agents:
-        additionalProperties:
-          $ref: '#/definitions/response.GeneralAgentCopilotRuntimeInfoAgent'
-        type: object
-      audioFileTranscriptionEnabled:
-        type: boolean
-      mode:
-        type: string
-      version:
-        type: string
-    type: object
   response.GeneralAgentFileInfo:
     properties:
       children:
@@ -6096,6 +6176,39 @@ definitions:
         type: integer
       type:
         description: '"file" or "directory"'
+        type: string
+    type: object
+  response.GeneralAgentResourceSelectItem:
+    properties:
+      author:
+        description: 作者
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 头像
+      desc:
+        description: 描述
+        type: string
+      id:
+        description: ID
+        type: string
+      name:
+        description: 名称
+        type: string
+      type:
+        description: 类型
+        type: string
+    type: object
+  response.GeneralAgentResourceSelectList:
+    properties:
+      list:
+        description: 列表项
+        items:
+          $ref: '#/definitions/response.GeneralAgentResourceSelectItem'
+        type: array
+      listType:
+        description: '列表类型: mcp, workflow, skill, assistant'
         type: string
     type: object
   response.GeneralAgentToolCategories:
@@ -6150,6 +6263,27 @@ definitions:
     required:
     - toolType
     type: object
+  response.GeneralAgentUploadLimit:
+    properties:
+      extList:
+        description: 支持的文件后缀列表
+        items:
+          type: string
+        type: array
+      fileType:
+        description: 文件类型，如：image、video、audio、document
+        type: string
+      maxSize:
+        description: 文件大小限制，单位MB
+        type: integer
+    type: object
+  response.GeneralAgentUploadLimitResp:
+    properties:
+      uploadLimitList:
+        items:
+          $ref: '#/definitions/response.GeneralAgentUploadLimit'
+        type: array
+    type: object
   response.GeneralAgentWorkspaceResp:
     properties:
       fileCount:
@@ -6169,52 +6303,26 @@ definitions:
       totalSize:
         type: integer
     type: object
-  response.GetGeneralAgentAssistantSelectResp:
+  response.GetDocByKnowledgeNameAndDocNameResp:
     properties:
-      appId:
-        description: 应用id
+      disable:
+        description: 禁用模式，默认false
+        type: boolean
+      id:
+        description: 文档ID
         type: string
-      appType:
-        description: 应用类型
+      knowledgeId:
+        description: 知识库ID
         type: string
-      avatar:
-        allOf:
-        - $ref: '#/definitions/request.Avatar'
-        description: 应用图标
-      category:
-        description: 智能体分类(1:单智能体,2:多智能体)
-        type: integer
-      createdAt:
-        description: 应用创建时间
-        type: string
-      desc:
-        description: 应用描述
+      knowledgeName:
+        description: 知识库名称
         type: string
       name:
-        description: 应用名称
+        description: 文档名称
         type: string
-      publishType:
-        description: 发布类型(public:公开发布,private:私密发布)
+      type:
+        description: 文档类型
         type: string
-      uniqueId:
-        description: 随机unique id(每次动态生成)
-        type: string
-      updatedAt:
-        description: 应用更新时间(用于历史记录排序)
-        type: string
-    type: object
-  response.GetGeneralAgentConfigResp:
-    properties:
-      assistantList:
-        description: 智能体列表
-        items:
-          $ref: '#/definitions/request.AssistantSelected'
-        type: array
-      toolList:
-        description: 工具列表
-        items:
-          $ref: '#/definitions/request.ToolSelected'
-        type: array
     type: object
   response.GetGeneralAgentConversationConfigResp:
     properties:
@@ -6225,6 +6333,14 @@ definitions:
       threadId:
         description: 对话ID
         type: string
+    type: object
+  response.GetGeneralAgentSubListResp:
+    properties:
+      wgaAgentList:
+        description: 子智能体列表
+        items:
+          $ref: '#/definitions/response.WgaAgentInfo'
+        type: array
     type: object
   response.GetGeneralAgentToolSelectResp:
     properties:
@@ -6276,6 +6392,23 @@ definitions:
       id:
         type: string
       name:
+        type: string
+    type: object
+  response.JoinerSkillDetail:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      downloadUrl:
+        type: string
+      name:
+        type: string
+      skillId:
+        type: string
+      skillMarkdown:
         type: string
     type: object
   response.KeywordsInfo:
@@ -7000,8 +7133,14 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
       summary:
         description: 使用概述
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
         type: string
     type: object
   response.MCPInfo:
@@ -7031,6 +7170,12 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
+        type: string
     type: object
   response.MCPSelect:
     properties:
@@ -7056,6 +7201,9 @@ definitions:
       serverUrl:
         description: sseUrl
         type: string
+      streamableUrl:
+        description: streamableUrl
+        type: string
       toolId:
         description: 工具id
         type: string
@@ -7067,6 +7215,9 @@ definitions:
         enum:
         - mcp
         - mcpserver
+        type: string
+      transport:
+        description: 传输协议
         type: string
       type:
         type: string
@@ -7396,6 +7547,13 @@ definitions:
       text:
         type: string
     type: object
+  response.ModelTypeItem:
+    properties:
+      key:
+        type: string
+      name:
+        type: string
+    type: object
   response.MyAppItem:
     properties:
       appId:
@@ -7516,6 +7674,17 @@ definitions:
     required:
     - name
     - templateId
+    type: object
+  response.ProviderModelTypes:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/response.ModelTypeItem'
+        type: array
+      key:
+        type: string
+      name:
+        type: string
     type: object
   response.QAHitSearchList:
     properties:
@@ -7883,6 +8052,40 @@ definitions:
         description: 类型
         type: string
     type: object
+  response.SquareSkillDetail:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      isShared:
+        type: boolean
+      name:
+        type: string
+      skillId:
+        type: string
+    type: object
+  response.SquareSkillDetailInfo:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      downloadUrl:
+        type: string
+      isShared:
+        type: boolean
+      name:
+        type: string
+      skillId:
+        type: string
+      skillMarkdown:
+        type: string
+    type: object
   response.StatisticChart:
     properties:
       lines:
@@ -8248,6 +8451,22 @@ definitions:
         description: 视觉配置图片数量
         type: integer
     type: object
+  response.WgaAgentInfo:
+    properties:
+      agentId:
+        description: 子智能体ID
+        type: string
+      agentName:
+        description: 子智能体名称
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: logo
+      placeholder:
+        description: 占位提示文本
+        type: string
+    type: object
   response.WorkflowTemplateDetail:
     properties:
       author:
@@ -8393,6 +8612,91 @@ info:
   title: AI Agent Productivity Platform API
   version: v0.0.1
 paths:
+  /agent/joiner/skills:
+    delete:
+      consumes:
+      - application/json
+      description: 删除资源库中我添加的skill
+      parameters:
+      - description: skill ID
+        in: body
+        name: skillId
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeleteJoinerSkillReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 删除我添加的skill
+      tags:
+      - resource.skill
+    get:
+      consumes:
+      - application/json
+      description: 获取资源库中我添加的skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.JoinerSkillDetail'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取我添加的skill列表
+      tags:
+      - resource.skill
+  /agent/joiner/skills/detail:
+    get:
+      consumes:
+      - application/json
+      description: 获取资源库中我添加的skill详情
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.JoinerSkillDetail'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取我添加的skill详情
+      tags:
+      - resource.skill
   /agent/skill/conversation:
     delete:
       consumes:
@@ -8827,6 +9131,10 @@ paths:
       - description: skill名称
         in: query
         name: name
+        type: string
+      - description: skill类型(builtin/custom)
+        in: query
+        name: skillType
         type: string
       produces:
       - application/json
@@ -9473,6 +9781,40 @@ paths:
       summary: 回滚应用到指定版本
       tags:
       - common
+  /appspace/assistant/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取智能体应用列表
+      parameters:
+      - description: 应用名(模糊查询)
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.AppBriefInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取智能体应用列表
+      tags:
+      - assistant
   /appspace/chatflow:
     post:
       consumes:
@@ -9837,6 +10179,40 @@ paths:
       security:
       - JWT: []
       summary: 获取草稿RAG信息
+      tags:
+      - rag
+  /appspace/rag/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取文本问答应用列表
+      parameters:
+      - description: 应用名(模糊查询)
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.AppBriefInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取文本问答应用列表
       tags:
       - rag
   /appspace/workflow:
@@ -10208,6 +10584,30 @@ paths:
       summary: 创建智能体对话
       tags:
       - agent
+  /assistant/conversation/clear:
+    delete:
+      consumes:
+      - application/json
+      description: 清空已发布智能体对话ES数据，不删除会话ID
+      parameters:
+      - description: 智能体对话清空参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.ConversationIdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 清空已发布智能体对话
+      tags:
+      - agent
   /assistant/conversation/detail:
     get:
       consumes:
@@ -10257,7 +10657,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: 删除草稿智能体对话
+      description: 删除草稿智能体对话，传detailId删除单条，不传删除全部
       parameters:
       - description: 智能体对话删除参数
         in: body
@@ -10570,7 +10970,7 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.AppBriefInfo'
+                          $ref: '#/definitions/response.ExplorationAppInfo'
                         type: array
                     type: object
               type: object
@@ -11807,7 +12207,7 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.GetGeneralAgentAssistantSelectResp'
+                          $ref: '#/definitions/response.ExplorationAppInfo'
                         type: array
                     type: object
               type: object
@@ -11831,7 +12231,9 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/response.GetGeneralAgentConfigResp'
+                  items:
+                    $ref: '#/definitions/response.GeneralAgentConfigList'
+                  type: array
               type: object
       security:
       - JWT: []
@@ -12186,28 +12588,116 @@ paths:
       summary: 通用智能体workspace预览
       tags:
       - wga
-  /general/agent/copilotkit:
-    post:
+  /general/agent/mcp/select:
+    get:
       consumes:
       - application/json
-      description: 通用智能体CopilotRuntime协议端点，用于CopilotKit框架调用，支持method=info,agent/connect,agent/run,agent/stop
+      description: 获取通用智能体MCP下拉接口列表，用于用户选择MCP进行对话
       parameters:
-      - description: CopilotRuntime请求参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.GeneralAgentCopilotRuntimeReq'
+      - description: MCP名称
+        in: query
+        name: name
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: CopilotRuntime信息
+          description: OK
           schema:
-            $ref: '#/definitions/response.GeneralAgentCopilotRuntimeInfoResp'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.MCPSelect'
+                        type: array
+                    type: object
+              type: object
       security:
       - JWT: []
-      summary: 通用智能体CopilotRuntime协议端点
+      summary: 通用智能体MCP下拉接口列表
+      tags:
+      - wga
+  /general/agent/resource/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体资源选择列表，包括MCP、Workflow、Skill、智能体四种类型
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneralAgentResourceSelectList'
+              type: object
+      security:
+      - JWT: []
+      summary: 通用智能体资源选择列表
+      tags:
+      - wga
+  /general/agent/skill/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.CustomSkillDetail'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取通用智能体skill列表
+      tags:
+      - wga
+  /general/agent/sub/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体支持的子智能体列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GetGeneralAgentSubListResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取通用智能体子智能体列表
       tags:
       - wga
   /general/agent/tool/info:
@@ -12248,6 +12738,12 @@ paths:
       consumes:
       - application/json
       description: 获取通用智能体工具选择，用于用户选择工具进行对话
+      parameters:
+      - description: 智能体ID，默认为空
+        in: query
+        name: agentId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -12270,6 +12766,62 @@ paths:
       security:
       - JWT: []
       summary: 通用智能体工具选择
+      tags:
+      - wga
+  /general/agent/upload/limit:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体所支持的上传文件格式及大小限制
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneralAgentUploadLimitResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取通用智能体上传文件格式限制
+      tags:
+      - wga
+  /general/agent/workflow/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体工作流列表
+      parameters:
+      - description: workflow名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.ExplorationAppInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 通用智能体工作流列表
       tags:
       - wga
   /knowledge:
@@ -12369,6 +12921,39 @@ paths:
       security:
       - JWT: []
       summary: 删除文档
+      tags:
+      - knowledge.doc
+  /knowledge/doc/by/name:
+    get:
+      consumes:
+      - application/json
+      description: 根据知识库名称和文档名称获取文档信息
+      parameters:
+      - description: 文档名称
+        in: query
+        name: docName
+        required: true
+        type: string
+      - description: 知识库名称
+        in: query
+        name: knowledgeName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GetDocByKnowledgeNameAndDocNameResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 根据知识库名称和文档名称获取文档信息
       tags:
       - knowledge.doc
   /knowledge/doc/config:
@@ -13663,7 +14248,7 @@ paths:
       tags:
       - knowledge.qa
   /knowledge/qa/pair/list:
-    get:
+    post:
       consumes:
       - application/json
       description: 获取问答对列表
@@ -13685,9 +14270,13 @@ paths:
         name: pageSize
         required: true
         type: integer
-      - in: query
+      - collectionFormat: csv
+        description: -1：全部 0:待处理 1:导入中 2:导入成功 3:导入失败
+        in: query
+        items:
+          type: integer
         name: status
-        type: integer
+        type: array
       produces:
       - application/json
       responses:
@@ -14832,9 +15421,13 @@ paths:
         in: query
         name: mcpId
         type: string
-      - description: serverUrl,就是sseUrl(和mcpId传一个)
+      - description: serverUrl,就是sseUrl/streamable(和mcpId传一个)
         in: query
         name: serverUrl
+        type: string
+      - description: '传输协议类型: sse 或 streamable(仅当serverUrl不为空时生效)'
+        in: query
+        name: transport
         type: string
       produces:
       - application/json
@@ -15078,6 +15671,42 @@ paths:
       summary: 模型体验
       tags:
       - model.experience
+  /model/import/providers:
+    get:
+      consumes:
+      - application/json
+      description: 根据模型类型筛选支持的供应商，不传则返回全部
+      parameters:
+      - description: 模型类型
+        in: query
+        name: modelType
+        type: string
+      - description: 供应商
+        in: query
+        name: provider
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        $ref: '#/definitions/response.ProviderModelTypes'
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 模型导入-获取供应商列表
+      tags:
+      - model
   /model/list:
     get:
       consumes:
@@ -15452,6 +16081,30 @@ paths:
       security:
       - JWT: []
       summary: 模型启用/关闭
+      tags:
+      - model
+  /model/validate-thinking:
+    post:
+      consumes:
+      - application/json
+      description: 对LLM模型进行深度思考功能校验
+      parameters:
+      - description: 模型信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.ImportOrUpdateModelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 深度思考校验
       tags:
       - model
   /oauth/app:
@@ -16714,6 +17367,115 @@ paths:
       summary: 获取词表数据列表
       tags:
       - safety
+  /square/skills:
+    get:
+      consumes:
+      - application/json
+      description: 获取探索广场中的skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.SquareSkillDetail'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取广场skill列表
+      tags:
+      - exploration.skill
+  /square/skills/detail:
+    get:
+      consumes:
+      - application/json
+      description: 获取探索广场中的skill详情
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SquareSkillDetailInfo'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取广场skill详情
+      tags:
+      - exploration.skill
+  /square/skills/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载探索广场中的skill ZIP包
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 下载广场skill
+      tags:
+      - exploration.skill
+  /square/skills/share:
+    post:
+      consumes:
+      - application/json
+      description: 将广场中的skill添加到我的资源库
+      parameters:
+      - description: skill ID
+        in: body
+        name: skillId
+        required: true
+        schema:
+          $ref: '#/definitions/request.ShareSquareSkillReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 添加广场skill到资源库
+      tags:
+      - exploration.skill
   /statistic/api:
     post:
       consumes:

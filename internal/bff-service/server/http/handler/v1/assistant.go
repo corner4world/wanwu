@@ -451,6 +451,27 @@ func ConversationDelete(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
+// ClearPublishedAssistantConversation
+//
+//	@Tags			agent
+//	@Summary		清空已发布智能体对话
+//	@Description	清空已发布智能体对话ES数据，不删除会话ID
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.ConversationIdRequest	true	"智能体对话清空参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/assistant/conversation/clear [delete]
+func ClearPublishedAssistantConversation(ctx *gin.Context) {
+	userId, orgId := getUserID(ctx), getOrgID(ctx)
+	var req request.ConversationIdRequest
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.ClearPublishedConversationES(ctx, userId, orgId, req)
+	gin_util.Response(ctx, resp, err)
+}
+
 // GetConversationList
 //
 //	@Tags			agent
@@ -581,7 +602,7 @@ func DraftAssistantConversationDetailList(ctx *gin.Context) {
 //
 //	@Tags			agent
 //	@Summary		删除草稿智能体对话
-//	@Description	删除草稿智能体对话
+//	@Description	删除草稿智能体对话，传detailId删除单条，不传删除全部
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
@@ -713,7 +734,7 @@ func MultiAgentConfigUpdate(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	query		string	false	"assistant名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AppBriefInfo}}
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.ExplorationAppInfo}}
 //	@Router			/assistant/select [get]
 func GetAssistantSelect(ctx *gin.Context) {
 	req := request.GetExplorationAppListRequest{

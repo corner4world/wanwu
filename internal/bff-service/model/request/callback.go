@@ -9,3 +9,13 @@ type FileUrlConvertBase64Req struct {
 func (f *FileUrlConvertBase64Req) Check() error {
 	return nil
 }
+
+type UploadFileByBase64Req struct {
+	File     string `form:"file" json:"file" validate:"required"` // base64格式
+	FileName string `form:"fileName" json:"fileName"`
+	FileExt  string `form:"fileExt" json:"fileExt"` // 文件后缀名，如 "png", "pdf"
+}
+
+func (u *UploadFileByBase64Req) Check() error {
+	return nil
+}

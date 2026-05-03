@@ -72,7 +72,7 @@ func UploadAvatar(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
-	avatar := service.CacheAvatar(ctx, avatarObjectPath, false)
+	avatar := service.CacheAvatar(avatarObjectPath)
 	gin_util.Response(ctx, avatar, nil)
 }
 

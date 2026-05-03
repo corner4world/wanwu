@@ -1,8 +1,9 @@
 package response
 
 import (
-	"github.com/cloudwego/eino/schema"
 	"sort"
+
+	"github.com/cloudwego/eino/schema"
 )
 
 type MessageTool struct {

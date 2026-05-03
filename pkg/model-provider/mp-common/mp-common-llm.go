@@ -24,15 +24,15 @@ const (
 )
 
 const (
-	TagChat                string = "CHAT"
-	TagTextEmbedding       string = "Text-Embedding"
-	TagMultiModalEmbedding string = "MultiModal-Embedding"
-	TagTextRerank          string = "Text-Rerank"
-	TagMultiModalRerank    string = "MultiModal-Rerank"
+	TagChat                string = "文本生成"
+	TagTextEmbedding       string = "文本向量化"
+	TagMultiModalEmbedding string = "多模态向量化"
+	TagTextRerank          string = "文本重排序"
+	TagMultiModalRerank    string = "多模态重排序"
 	TagGui                 string = "GUI"
 	TagOcr                 string = "OCR"
-	TagPdfParser           string = "文档解析"
-	TagSyncAsr             string = "SYNC-ASR"
+	TagPdfParser           string = "PDF文档解析"
+	TagSyncAsr             string = "短语音识别"
 	TagText2Image          string = "文生图"
 	TagVisionSupport       string = "图文问答"
 	TagToolCall            string = "工具调用"

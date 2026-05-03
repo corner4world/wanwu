@@ -70,20 +70,20 @@ func (wb *Workbook) Close() error {
 	return wb.f.Close()
 }
 
-// F 返回底层 *excelize.File，供需要高级操作的调用方使用
-func (wb *Workbook) F() *excelize.File {
-	if wb == nil {
-		return nil
-	}
-	return wb.f
-}
-
 // WriteTo 将工作簿写入 w（例如 HTTP ResponseWriter），写入后应 Close。
 func (wb *Workbook) WriteTo(w io.Writer) (int64, error) {
 	if wb == nil || wb.f == nil {
 		return 0, fmt.Errorf("workbook is nil")
 	}
 	return wb.f.WriteTo(w)
+}
+
+// GetSheets 返回所有工作表名称列表
+func (wb *Workbook) GetSheets() ([]string, error) {
+	if wb == nil || wb.f == nil {
+		return nil, fmt.Errorf("workbook is nil")
+	}
+	return wb.f.GetSheetList(), nil
 }
 
 // GetRows 读取指定工作表全部行（sheet 为空时使用第一个工作表）。
@@ -96,15 +96,6 @@ func (wb *Workbook) GetRows(sheet string) ([][]string, error) {
 		return nil, err
 	}
 	return wb.f.GetRows(name)
-}
-
-// GetHeaderColIndexes 根据表头行解析列名到列索引（与 GetExcelHeaderColIndexes 逻辑一致，从 Workbook 读表）。
-func (wb *Workbook) GetHeaderColIndexes(sheet string, headerRow int, colNames []string) (map[string]int, error) {
-	rows, err := wb.GetRows(sheet)
-	if err != nil {
-		return nil, err
-	}
-	return GetExcelHeaderColIndexes(rows, headerRow, colNames), nil
 }
 
 // CreateSheet 新建工作表并设为活动工作表。
@@ -222,36 +213,6 @@ func (wb *Workbook) ReadWithHeaderMapping(opts ReadWithHeaderMappingOptions) ([]
 		result = append(result, rowMap)
 	}
 	return result, nil
-}
-
-// GetExcelHeaderColIndexes 获取表头列索引映射
-// 参数:
-//   - rows: Excel行数据
-//   - headerRow: 表头所在行（从0开始）
-//   - colNames: 需要获取索引的列名列表
-//
-// 返回: map[string]int 列名到列索引的映射，未找到的列名索引为-1
-func GetExcelHeaderColIndexes(rows [][]string, headerRow int, colNames []string) map[string]int {
-	// 1. 初始化结果映射，所有列名默认索引为-1
-	colIndexes := make(map[string]int)
-	for _, name := range colNames {
-		colIndexes[trimInvisibleSpace(name)] = -1
-	}
-
-	// 2. 检查行数是否足够
-	if len(rows) <= headerRow {
-		return colIndexes
-	}
-
-	// 3. 遍历表头行，获取列索引
-	for idx, col := range rows[headerRow] {
-		col = trimInvisibleSpace(col)
-		if _, ok := colIndexes[col]; ok {
-			colIndexes[col] = idx
-		}
-	}
-
-	return colIndexes
 }
 
 // --- internal ---

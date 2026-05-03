@@ -267,6 +267,7 @@ services:
       MINIO_ENDPOINT: ${WANWU_MINIO_ENDPOINT}
       MINIO_USER: ${WANWU_MINIO_USER}
       MINIO_PASSWORD: ${WANWU_MINIO_PASSWORD}
+      MINIO_DOWNLOAD_URL: ${WANWU_WEB_BASE_URL}/minio/download/api
       REDIS_HOST: ${WANWU_REDIS_HOST}
       REDIS_PORT: ${WANWU_REDIS_PORT}
       REDIS_PASSWORD: ${WANWU_REDIS_PASSWORD}
@@ -695,6 +696,7 @@ services:
       WANWU_CALLBACK_CHATFLOW_LIST_URL: http://bff-service:6668/callback/v1/chatflow/list
       WANWU_CALLBACK_MCP_GET_URL: http://bff-service:6668/callback/v1/mcp
       WANWU_CALLBACK_MCP_SERVER_GET_URL: http://bff-service:6668/callback/v1/mcp/server
+      WANWU_CALLBACK_SKILL_DETAIL_URL: http://bff-service:6668/callback/v1/skill/detail
       WANWU_CALLBACK_WORKFLOW_LIST_SCHEMA_URL: http://workflow-wanwu:8999/v1/workflow/list_schema_by_wanwu
       WANWU_AGENT_API_URL: http://agent-service:8990/agent/chat/direct
       WANWU_KNOWLEDGE_SEARCH_URL: http://bff-service:6668/callback/v1/rag/search-knowledge-base

@@ -7,7 +7,7 @@
   },
   "tags": [],
   "paths": {
-    "/callback/v1/workflow/upload/file/base64": {
+    "/callback/v1/file/upload/base64": {
       "post": {
         "summary": "通过base64上传文件",
         "operationId": "upload_file_by_base64",

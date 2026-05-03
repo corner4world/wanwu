@@ -503,12 +503,17 @@ class KTBuilder:
                         failed_count += 1
 
         except Exception as e:
-            return
+            logger.error(f"Failed to process documents: {e}")
+            raise e
+
+        if failed_count > 0:
+            error_msg = f"Failed to process documents: {failed_count} documents"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
         end_construct = time.time()
         logger.info(f"Construction Time: {end_construct - start_construct}s")
         logger.info(f"Successfully processed: {processed_count}/{total_docs} documents")
-        logger.info(f"Failed: {failed_count} documents")
 
         logger.info(f"---- {'Processing Level 3 and 4':^20} ----")
         logger.info(f"{'-' * 20}")

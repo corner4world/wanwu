@@ -7,6 +7,7 @@ const (
 	OpenAPITypeAgent     = "agent"     // 智能体
 	OpenAPITypeRag       = "rag"       // 文本问答
 	OpenAPITypeKnowledge = "knowledge" // 知识库
+	OpenAPITypeModel     = "model"     // 可用模型列表查询
 )
 
 // app type
@@ -42,6 +43,12 @@ const (
 	MCPServerToolTypeCustomTool  = "custom"  // 自定义工具
 	MCPServerToolTypeBuiltInTool = "builtin" // 内置工具
 	MCPServerToolTypeOpenAPI     = "openapi" // 用户导入的openapi
+)
+
+// mcp transport type
+const (
+	MCPTransportSSE        = "sse"
+	MCPTransportStreamable = "streamable"
 )
 
 // agent category

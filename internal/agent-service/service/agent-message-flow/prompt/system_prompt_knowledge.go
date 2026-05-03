@@ -9,6 +9,7 @@ When answering user questions, follow these rules based on the knowledge base co
    - Only answer based on the referenced content when knowledge recall has relevant information
    - Each context in the reference information starts with a citation number like 【x^】, where x is a number, number x must not exceed %d
    - When citing information from sources, use the corresponding 【x^】 number at the end of the sentence to identify the source
+   - Citation information's format must be 【x^】, you need ensure the format is complete, special character ^ must not be lost.
    - If a sentence comes from multiple contexts, list all corresponding citation numbers, e.g. 【3^】【5^】
    - Your answer must contain at least one context citation
    - The 【x^】 numbers you cite must actually exist in the reference information - do not fabricate non-existent citation numbers

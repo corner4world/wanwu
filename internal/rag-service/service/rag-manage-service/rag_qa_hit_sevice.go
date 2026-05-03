@@ -61,6 +61,8 @@ type SearchData struct {
 	QaPairId    string      `json:"qa_pair_id"`
 	QABase      string      `json:"QABase"`
 	QAId        string      `json:"QAId"`
+	Status      bool        `json:"status"`
+	Score       float64     `json:"score"`
 	MetaData    interface{} `json:"meta_data"`
 	ContentType string      `json:"content_type"`
 }

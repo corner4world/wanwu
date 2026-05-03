@@ -8,6 +8,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
+	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
@@ -204,11 +205,17 @@ func buildKnowledgePermissionUserList(ctx *gin.Context, knowledgeUserList []*kno
 		userInfoMap, orgInfoMap := searchUserAndOrgInfo(ctx, userIdMap, orgIdMap)
 		var retList []*response.KnowledgeUserInfo
 		for _, info := range knowledgeUserList {
+			userInfo := userInfoMap[info.UserId]
+			orgInfo := orgInfoMap[info.OrgId]
+			if userInfo == nil || orgInfo == nil {
+				log.Errorf("user or org is nil, userId %s, orgId %s", info.UserId, info.OrgId)
+				continue
+			}
 			retList = append(retList, &response.KnowledgeUserInfo{
 				UserId:         info.UserId,
-				UserName:       userInfoMap[info.UserId].Name,
+				UserName:       userInfo.Name,
 				OrgId:          info.OrgId,
-				OrgName:        orgInfoMap[info.OrgId].Name,
+				OrgName:        orgInfo.Name,
 				PermissionType: int(info.PermissionType),
 				PermissionId:   info.PermissionId,
 				Transfer:       buildUserTransfer(info, userId, orgId),

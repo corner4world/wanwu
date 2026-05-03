@@ -5,9 +5,36 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 )
 
-type GetGeneralAgentConfigResp struct {
-	ToolList      []request.ToolSelected      `json:"toolList"`      // 工具列表
-	AssistantList []request.AssistantSelected `json:"assistantList"` // 智能体列表
+// GetGeneralAgentConfigResp 通用智能体配置响应
+type GetGeneralAgentConfigResp []*GeneralAgentConfigList
+
+// GeneralAgentConfigList 配置列表
+type GeneralAgentConfigList struct {
+	ListType string      `json:"listType"` // 类型: mcp, workflow, skill, assistant, tool
+	List     interface{} `json:"list"`     // 列表项
+}
+
+// GeneralAgentConfigItem 配置项（mcp/assistant/skill/workflow 用）
+type GeneralAgentConfigItem struct {
+	ID   string `json:"id"`   // ID
+	Type string `json:"type"` // 类型
+}
+
+// GeneralAgentConfigToolItem tool配置项
+type GeneralAgentConfigToolItem struct {
+	ID   string `json:"toolId"`   // 工具ID
+	Type string `json:"toolType"` // 工具类型
+}
+
+type WgaAgentInfo struct {
+	AgentID     string         `json:"agentId"`     // 子智能体ID
+	AgentName   string         `json:"agentName"`   // 子智能体名称
+	Avatar      request.Avatar `json:"avatar"`      // logo
+	Placeholder string         `json:"placeholder"` // 占位提示文本
+}
+
+type GetGeneralAgentSubListResp struct {
+	WgaAgentList []WgaAgentInfo `json:"wgaAgentList"` // 子智能体列表
 }
 
 type GetGeneralAgentConversationConfigResp struct {
@@ -25,10 +52,6 @@ type GeneralAgentConversationInfo struct {
 	CreatedAt string `json:"createdAt"` // 创建时间
 }
 
-type GetGeneralAgentAssistantSelectResp struct {
-	AppBriefInfo
-}
-
 type GetGeneralAgentToolSelectResp struct {
 	Category  string     `json:"category"`  // 类型
 	Condition string     `json:"condition"` // 条件 none | optional | required
@@ -41,8 +64,8 @@ type GeneralAgentToolInfoResp struct {
 }
 
 type GeneralAgentConfigCheckResponse struct {
-	Valid     bool                         `json:"valid"`     // 是否有效
-	ModelMeet bool                         `json:"modelMeet"` // 是否符合模型要求
+	Meet      bool                         `json:"meet"`      // 是否符合要求
+	ModelMeet bool                         `json:"modelMeet"` // 是否符合模型要求 FIXME 去掉模型检查
 	ToolsMeet []GeneralAgentToolCategories `json:"toolsMeet"` // 工具是否符合要求
 }
 
@@ -86,6 +109,16 @@ type GeneralAgentConversationWorkspaceInfo struct {
 	IsDisplay bool   `json:"isDisplay"`
 }
 
+type GeneralAgentUploadLimitResp struct {
+	UploadLimitList []*GeneralAgentUploadLimit `json:"uploadLimitList"`
+}
+
+type GeneralAgentUploadLimit struct {
+	FileType string   `json:"fileType"` // 文件类型，如：image、video、audio、document
+	MaxSize  int      `json:"maxSize"`  // 文件大小限制，单位MB
+	ExtList  []string `json:"extList"`  // 支持的文件后缀列表
+}
+
 type GeneralAgentCopilotRuntimeInfoAgent struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -98,4 +131,18 @@ type GeneralAgentCopilotRuntimeInfoResp struct {
 	Mode                          string                                         `json:"mode"`
 	AudioFileTranscriptionEnabled bool                                           `json:"audioFileTranscriptionEnabled"`
 	A2UIEnabled                   bool                                           `json:"a2uiEnabled,omitempty"`
+}
+
+type GeneralAgentResourceSelectItem struct {
+	ID     string         `json:"id"`     // ID
+	Name   string         `json:"name"`   // 名称
+	Desc   string         `json:"desc"`   // 描述
+	Avatar request.Avatar `json:"avatar"` // 头像
+	Type   string         `json:"type"`   // 类型
+	Author string         `json:"author"` // 作者
+}
+
+type GeneralAgentResourceSelectList struct {
+	ListType string                            `json:"listType"` // 列表类型: mcp, workflow, skill, assistant
+	List     []*GeneralAgentResourceSelectItem `json:"list"`     // 列表项
 }

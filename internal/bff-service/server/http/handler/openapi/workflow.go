@@ -144,3 +144,23 @@ func WorkflowFileUpload(ctx *gin.Context) {
 	}
 	ctx.String(http.StatusOK, resp)
 }
+
+// ChatflowFileUpload
+//
+//	@Tags			openapi
+//	@Summary		对话流OpenAPI文件上传
+//	@Description	对话流OpenAPI文件上传
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			file	formData	file	true	"文件"
+//	@Success		200		{object}	string
+//	@Success		400		{object}	response.Response
+//	@Router			/chatflow/file/upload [post]
+func ChatflowFileUpload(ctx *gin.Context) {
+	resp, err := service.OpenAPIWorkflowFileUpload(ctx)
+	if err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+	ctx.String(http.StatusOK, resp)
+}

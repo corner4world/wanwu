@@ -1071,7 +1071,7 @@ func buildSegmentListResp(importTask *model.KnowledgeImportTask, doc *model.Know
 		log.Errorf("SegmentConfig process error %s", err.Error())
 		return nil, err
 	}
-	analyzerList, err := replaceAnalyzerByFileType(importTask, doc)
+	analyzerList, analyzer, err := replaceAnalyzerByFileType(importTask, doc)
 	if err != nil {
 		return nil, err
 	}
@@ -1089,17 +1089,20 @@ func buildSegmentListResp(importTask *model.KnowledgeImportTask, doc *model.Know
 		SegmentImportStatus: buildSegmentImportStatus(segmentImportTask),
 		SegmentMethod:       buildSegmentMethod(doc, segmentConfigMap),
 		DocAnalyzer:         analyzerList,
+		AsrModelId:          analyzer.AsrModelId,
+		MultimodalModelId:   analyzer.MultimodalModelId,
+		ParserModelId:       importTask.OcrModelId,
 	}
 	return resp, nil
 }
 
 // replaceAnalyzerByFileType 根据不同文件类型，替换文件解析方式
-func replaceAnalyzerByFileType(importTask *model.KnowledgeImportTask, doc *model.KnowledgeDoc) ([]string, error) {
+func replaceAnalyzerByFileType(importTask *model.KnowledgeImportTask, doc *model.KnowledgeDoc) ([]string, *model.DocAnalyzer, error) {
 	var analyzer = &model.DocAnalyzer{}
 	err := json.Unmarshal([]byte(importTask.DocAnalyzer), analyzer)
 	if err != nil {
 		log.Errorf("DocAnalyzer process error %s", err.Error())
-		return nil, err
+		return nil, nil, err
 	}
 
 	// 获取可用文件后缀
@@ -1113,7 +1116,7 @@ func replaceAnalyzerByFileType(importTask *model.KnowledgeImportTask, doc *model
 
 	// 文档类型直接返回原始解析方式
 	if docMap[fileType] {
-		return analyzer.AnalyzerList, nil
+		return analyzer.AnalyzerList, analyzer, nil
 	}
 
 	analyzerList := make([]string, 0)
@@ -1127,7 +1130,7 @@ func replaceAnalyzerByFileType(importTask *model.KnowledgeImportTask, doc *model
 		analyzerList = append(analyzerList, filterAnalyzer(analyzer.AnalyzerList, "multimodal")...)
 	}
 
-	return analyzerList, nil
+	return analyzerList, analyzer, nil
 }
 
 // filterAnalyzer 从 analyzerList 中过滤出 allowed 中的解析方式

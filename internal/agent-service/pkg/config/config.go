@@ -54,18 +54,18 @@ func (c Config) Stop() error {
 // 全局配置变量
 
 type Config struct {
-	Server               *Server                `mapstructure:"server" json:"server"`
-	Log                  LogConfig              `mapstructure:"log" json:"log"`
-	AccessLog            LogConfig              `mapstructure:"access-log" json:"access-log" yaml:"access-log"`
-	RpcLog               LogConfig              `mapstructure:"rpc-log" json:"rpc-log" yaml:"rpc-log"`
-	RagServer            *RagServerConfig       `mapstructure:"rag-server" json:"rag-server"`
-	BffServer            *BffServerConfig       `mapstructure:"bff-server" json:"bff-server"`
-	ToolServer           *ToolServerConfig      `mapstructure:"tool-server" json:"tool-server"`
-	Minio                *MinioConfig           `mapstructure:"minio" json:"minio"`
-	AgentFileConfig      *AgentFileConfig       `mapstructure:"agent-file-config" json:"agent-file-config"`
-	Microservices        Microservices          `mapstructure:"microservices" json:"microservices"`
-	WgaSandbox           WgaSandboxConfig       `mapstructure:"wga-sandbox" json:"wga-sandbox"`
-	ToolTemplateConfig   *ToolTemplateConfigData `mapstructure:"tool-template" json:"tool-template" yaml:"tool-template"`
+	Server             *Server                 `mapstructure:"server" json:"server"`
+	Log                LogConfig               `mapstructure:"log" json:"log"`
+	AccessLog          LogConfig               `mapstructure:"access-log" json:"access-log" yaml:"access-log"`
+	RpcLog             LogConfig               `mapstructure:"rpc-log" json:"rpc-log" yaml:"rpc-log"`
+	RagServer          *RagServerConfig        `mapstructure:"rag-server" json:"rag-server"`
+	BffServer          *BffServerConfig        `mapstructure:"bff-server" json:"bff-server"`
+	ToolServer         *ToolServerConfig       `mapstructure:"tool-server" json:"tool-server"`
+	Minio              *MinioConfig            `mapstructure:"minio" json:"minio"`
+	AgentFileConfig    *AgentFileConfig        `mapstructure:"agent-file-config" json:"agent-file-config"`
+	Microservices      Microservices           `mapstructure:"microservices" json:"microservices"`
+	WgaSandbox         WgaSandboxConfig        `mapstructure:"wga-sandbox" json:"wga-sandbox"`
+	ToolTemplateConfig *ToolTemplateConfigData `mapstructure:"tool-template" json:"tool-template" yaml:"tool-template"`
 }
 
 type Microservices struct {

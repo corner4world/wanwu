@@ -113,8 +113,11 @@ func PreviousDateRange(startDate, endDate string) ([]string, []string, error) {
 // 输出：格式化字符串（如：1天02:15:30 或 02:15:30）
 func NowSpanToHMS(startTime int64) string {
 	milliseconds := time.Now().UnixMilli() - startTime
-	if milliseconds < 0 {
-		return "0秒"
+	if milliseconds < 1 {
+		return "1ms"
+	}
+	if milliseconds < 1000 {
+		return fmt.Sprintf("%dms", milliseconds)
 	}
 
 	// 计算总秒数
@@ -135,19 +138,26 @@ func NowSpanToHMS(startTime int64) string {
 
 	// 根据天数决定输出格式
 	if days > 0 {
-		return fmt.Sprintf("%dd%02d:%02d:%02d.%03d", days, hours, minutes, seconds, millis)
+		return fmt.Sprintf("%dd%dh%dm%ds", days, hours, minutes, seconds)
 	}
 
 	// 如果有小时
 	if hours > 0 {
-		return fmt.Sprintf("%02d:%02d:%02d.%03d", hours, minutes, seconds, millis)
+		return fmt.Sprintf("%dh%dm%ds", hours, minutes, seconds)
 	}
 
 	// 如果只有分钟和秒
 	if minutes > 0 {
-		return fmt.Sprintf("%02d:%02d.%03d", minutes, seconds, millis)
+		if seconds > 0 {
+			return fmt.Sprintf("%dm%ds", minutes, seconds)
+		}
+		return fmt.Sprintf("%dm", minutes)
 	}
 
+	millis = millis / 100
+	if millis == 0 {
+		return fmt.Sprintf("%ds", seconds)
+	}
 	// 如果只有秒和毫秒
-	return fmt.Sprintf("%d.%03ds", seconds, millis)
+	return fmt.Sprintf("%d.%ds", seconds, millis)
 }

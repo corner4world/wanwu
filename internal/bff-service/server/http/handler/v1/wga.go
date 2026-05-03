@@ -1,64 +1,42 @@
 package v1
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
-	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/gin-gonic/gin"
 )
 
-// GetGeneralAgentAssistantSelect
+// GetGeneralAgentSubList
 //
 //	@Tags			wga
-//	@Summary		通用智能体智能体选择，只返回单智能体
-//	@Description	获取通用智能体智能体选择，只返回单智能体
+//	@Summary		获取通用智能体子智能体列表
+//	@Description	获取通用智能体支持的子智能体列表
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			name	query		string	false	"智能体名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.GetGeneralAgentAssistantSelectResp}}
-//	@Router			/general/agent/assistant/select [get]
-func GetGeneralAgentAssistantSelect(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentAssistantSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
+//	@Success		200	{object}	response.Response{data=response.GetGeneralAgentSubListResp}
+//	@Router			/general/agent/sub/list [get]
+func GetGeneralAgentSubList(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentSubList(ctx)
 	gin_util.Response(ctx, resp, err)
 }
 
-// GetGeneralAgentToolSelect
+// GetGeneralAgentUploadLimit
 //
 //	@Tags			wga
-//	@Summary		通用智能体工具选择
-//	@Description	获取通用智能体工具选择，用于用户选择工具进行对话
+//	@Summary		获取通用智能体上传文件格式限制
+//	@Description	获取通用智能体所支持的上传文件格式及大小限制
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.ListResult{list=[]response.GetGeneralAgentToolSelectResp}}
-//	@Router			/general/agent/tool/select [get]
-func GetGeneralAgentToolSelect(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentToolSelect(ctx, getUserID(ctx), getOrgID(ctx))
-	gin_util.Response(ctx, resp, err)
-}
-
-// GetGeneralAgentToolInfo
-//
-//	@Tags			wga
-//	@Summary		通用智能体工具详情
-//	@Description	获取通用智能体工具详情，用于工具调用
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Param			toolId		query		string	true	"工具ID"
-//	@Param			toolType	query		string	true	"工具类型"
-//	@Success		200			{object}	response.Response{data=response.GeneralAgentToolInfoResp}
-//	@Router			/general/agent/tool/info [get]
-func GetGeneralAgentToolInfo(ctx *gin.Context) {
-	resp, err := service.GetGeneralAgentToolInfo(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("toolId"), ctx.Query("toolType"))
+//	@Success		200	{object}	response.Response{data=response.GeneralAgentUploadLimitResp}
+//	@Router			/general/agent/upload/limit [get]
+func GetGeneralAgentUploadLimit(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentUploadLimit(ctx, getUserID(ctx), getOrgID(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -94,6 +72,124 @@ func UpdateGeneralAgentConfig(ctx *gin.Context) {
 //	@Router			/general/agent/config [get]
 func GetGeneralAgentConfig(ctx *gin.Context) {
 	resp, err := service.GetGeneralAgentConfig(ctx, getUserID(ctx), getOrgID(ctx))
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentAssistantSelect
+//
+//	@Tags			wga
+//	@Summary		通用智能体智能体选择，只返回单智能体
+//	@Description	获取通用智能体智能体选择，只返回单智能体
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	query		string	false	"智能体名称"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.ExplorationAppInfo}}
+//	@Router			/general/agent/assistant/select [get]
+func GetGeneralAgentAssistantSelect(ctx *gin.Context) {
+	req := request.GetExplorationAppListRequest{
+		Name: ctx.Query("name"),
+	}
+	resp, err := service.GetAssistantSelect(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentToolSelect
+//
+//	@Tags			wga
+//	@Summary		通用智能体工具选择
+//	@Description	获取通用智能体工具选择，用于用户选择工具进行对话
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			agentId	query		string	true	"智能体ID，默认为空"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.GetGeneralAgentToolSelectResp}}
+//	@Router			/general/agent/tool/select [get]
+func GetGeneralAgentToolSelect(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentToolSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("agentId"))
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentToolInfo
+//
+//	@Tags			wga
+//	@Summary		通用智能体工具详情
+//	@Description	获取通用智能体工具详情，用于工具调用
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			toolId		query		string	true	"工具ID"
+//	@Param			toolType	query		string	true	"工具类型"
+//	@Success		200			{object}	response.Response{data=response.GeneralAgentToolInfoResp}
+//	@Router			/general/agent/tool/info [get]
+func GetGeneralAgentToolInfo(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentToolInfo(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("toolId"), ctx.Query("toolType"))
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentMCPSelect
+//
+//	@Tags			wga
+//	@Summary		通用智能体MCP下拉接口列表
+//	@Description	获取通用智能体MCP下拉接口列表，用于用户选择MCP进行对话
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	query		string	false	"MCP名称"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.MCPSelect}}
+//	@Router			/general/agent/mcp/select [get]
+func GetGeneralAgentMCPSelect(ctx *gin.Context) {
+	resp, err := service.GetMCPSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentWorkflowSelect
+//
+//	@Tags			wga
+//	@Summary		通用智能体工作流列表
+//	@Description	获取通用智能体工作流列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	query		string	false	"workflow名称"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.ExplorationAppInfo}}
+//	@Router			/general/agent/workflow/select [get]
+func GetGeneralAgentWorkflowSelect(ctx *gin.Context) {
+	req := request.GetExplorationAppListRequest{
+		Name: ctx.Query("name"),
+	}
+	resp, err := service.GetWorkflowSelect(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentSkillSelect
+//
+//	@Tags			wga
+//	@Summary		获取通用智能体skill列表
+//	@Description	获取通用智能体skill列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	query		string	false	"skill名称"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.CustomSkillDetail}}
+//	@Router			/general/agent/skill/select [get]
+func GetGeneralAgentSkillSelect(ctx *gin.Context) {
+	resp, err := service.GetCustomSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentResourceSelect
+//
+//	@Tags			wga
+//	@Summary		通用智能体资源选择列表
+//	@Description	获取通用智能体资源选择列表，包括MCP、Workflow、Skill、智能体四种类型
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.GeneralAgentResourceSelectList}
+//	@Router			/general/agent/resource/select [get]
+func GetGeneralAgentResourceSelect(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentResourceSelect(ctx, getUserID(ctx), getOrgID(ctx), "")
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -330,108 +426,5 @@ func GeneralAgentConversationChat(ctx *gin.Context) {
 	err := service.GeneralAgentConversationChat(ctx, getUserID(ctx), getOrgID(ctx), req)
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
-	}
-}
-
-// GeneralAgentCopilotRuntime
-//
-//	@Tags			wga
-//	@Summary		通用智能体CopilotRuntime协议端点
-//	@Description	通用智能体CopilotRuntime协议端点，用于CopilotKit框架调用，支持method=info,agent/connect,agent/run,agent/stop
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Param			data	body		request.GeneralAgentCopilotRuntimeReq		true	"CopilotRuntime请求参数"
-//	@Success		200		{object}	response.GeneralAgentCopilotRuntimeInfoResp	"CopilotRuntime信息"
-//	@Router			/general/agent/copilotkit [post]
-func GeneralAgentCopilotRuntime(ctx *gin.Context) {
-	var req request.GeneralAgentCopilotRuntimeReq
-	if !gin_util.Bind(ctx, &req) {
-		return
-	}
-
-	switch req.Method {
-	case "info":
-		resp := service.GeneralAgentCopilotRuntimeInfo(ctx)
-		ctx.JSON(http.StatusOK, resp)
-
-	case "agent/connect":
-		resp, err := service.GetGeneralAgentConversationDetail(ctx, getUserID(ctx), getOrgID(ctx), req.GetThreadID())
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error":   "internal_error",
-				"message": err.Error(),
-			})
-		}
-
-		ctx.Header("Content-Type", "text/event-stream")
-		ctx.Header("Cache-Control", "no-cache")
-		ctx.Header("Connection", "keep-alive")
-		if resp.List == nil {
-			return
-		}
-
-		// FIXME 目前一条条重现，并且delay=5ms；而非一次性全部重现所有sse
-		// var builder strings.Builder
-		for _, run := range resp.List.([]response.GeneralAgentConversationDetailInfo) {
-			for _, event := range run.Events {
-				b, _ := json.Marshal(event)
-				_, _ = fmt.Fprintf(ctx.Writer, "data: %v\n\n", string(b))
-				ctx.Writer.Flush()
-				time.Sleep(time.Millisecond * 5)
-				// if _, err = builder.WriteString(fmt.Sprintf("data: %v\n\n", string(b))); err != nil {
-				// 	log.Errorf("[wga] agent/connect write string err: %v", err)
-				// 	continue
-				// }
-			}
-		}
-		// if _, err := ctx.Writer.Write([]byte(builder.String())); err != nil {
-		// 	log.Errorf("[wga] agent/connect write sse err: %v", err)
-		// }
-		// ctx.Writer.Flush()
-
-	case "agent/run":
-		threadID := req.GetThreadID()
-		if threadID == "" {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error":   "invalid_request",
-				"message": "threadId is required",
-			})
-			return
-		}
-
-		messages := req.GetMessages()
-		if len(messages) == 0 {
-			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error":   "invalid_request",
-				"message": "messages is required and cannot be empty",
-			})
-			return
-		}
-
-		chatReq := request.GeneralAgentConversationChatReq{
-			ThreadID: threadID,
-			Messages: messages,
-		}
-
-		err := service.GeneralAgentConversationChat(ctx, getUserID(ctx), getOrgID(ctx), chatReq)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error":   "internal_error",
-				"message": err.Error(),
-			})
-		}
-
-	case "agent/stop":
-		ctx.JSON(http.StatusOK, gin.H{
-			"stopped": false,
-			"message": "Unimplemented",
-		})
-
-	default:
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error":   "invalid_request",
-			"message": "Unknown method: " + req.Method,
-		})
 	}
 }

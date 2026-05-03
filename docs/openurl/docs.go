@@ -188,6 +188,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/agent/{suffix}/conversation/clear": {
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "清空智能体对话ES数据，不删除会话ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl"
+                ],
+                "summary": "清空智能体对话",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "临时唯一标识",
+                        "name": "X-Client-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Url后缀",
+                        "name": "suffix",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "智能体对话清空参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UrlConversationIdRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/agent/{suffix}/conversation/detail": {
             "get": {
                 "security": [
@@ -438,6 +491,163 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/file/clean": {
+            "post": {
+                "description": "清除已上传的分片文件（匿名访问）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl.file"
+                ],
+                "summary": "文件清除",
+                "parameters": [
+                    {
+                        "description": "文件清除参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CleanFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CleanFileResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/file/merge": {
+            "post": {
+                "description": "合并分片文件（匿名访问）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl.file"
+                ],
+                "summary": "文件合并",
+                "parameters": [
+                    {
+                        "description": "文件合并参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.MergeFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.MergeFileResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/file/upload": {
+            "post": {
+                "description": "分片文件上传（匿名访问）",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl.file"
+                ],
+                "summary": "文件上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "原始文件名",
+                        "name": "fileName",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分片文件序号",
+                        "name": "sequence",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "上传批次标识",
+                        "name": "chunkName",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "文件",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.UploadFileResp"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -820,6 +1030,18 @@ const docTemplate = `{
                 }
             }
         },
+        "request.CleanFileReq": {
+            "type": "object",
+            "required": [
+                "chunkName"
+            ],
+            "properties": {
+                "chunkName": {
+                    "description": "上传批次标识",
+                    "type": "string"
+                }
+            }
+        },
         "request.ConversationIdRequest": {
             "type": "object",
             "required": [
@@ -827,6 +1049,24 @@ const docTemplate = `{
             ],
             "properties": {
                 "conversationId": {
+                    "type": "string"
+                },
+                "detailId": {
+                    "description": "可选，传值则删除单条对话，不传则删除全部对话",
+                    "type": "string"
+                }
+            }
+        },
+        "request.ConversionStreamFile": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "fileSize": {
+                    "type": "integer"
+                },
+                "fileUrl": {
                     "type": "string"
                 }
             }
@@ -836,6 +1076,35 @@ const docTemplate = `{
             "properties": {
                 "maxHistoryLength": {
                     "type": "integer"
+                }
+            }
+        },
+        "request.MergeFileReq": {
+            "type": "object",
+            "required": [
+                "chunkName",
+                "fileName"
+            ],
+            "properties": {
+                "chunkName": {
+                    "description": "上传批次标识",
+                    "type": "string"
+                },
+                "chunkTotal": {
+                    "description": "分片总数",
+                    "type": "integer"
+                },
+                "fileName": {
+                    "description": "原始文件名",
+                    "type": "string"
+                },
+                "fileSize": {
+                    "description": "原始文件大小",
+                    "type": "integer"
+                },
+                "isExpired": {
+                    "description": "minio存储文件是否过期 0:过期，1:不过期",
+                    "type": "boolean"
                 }
             }
         },
@@ -907,6 +1176,21 @@ const docTemplate = `{
                 }
             }
         },
+        "request.UrlConversationIdRequest": {
+            "type": "object",
+            "required": [
+                "conversationId"
+            ],
+            "properties": {
+                "conversationId": {
+                    "type": "string"
+                },
+                "detailId": {
+                    "description": "可选，传值则删除单条对话，不传则清空全部对话",
+                    "type": "string"
+                }
+            }
+        },
         "request.UrlConversionStreamRequest": {
             "type": "object",
             "required": [
@@ -915,6 +1199,12 @@ const docTemplate = `{
             "properties": {
                 "conversationId": {
                     "type": "string"
+                },
+                "fileInfo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.ConversionStreamFile"
+                    }
                 },
                 "prompt": {
                     "type": "string"
@@ -932,6 +1222,45 @@ const docTemplate = `{
                 },
                 "query": {
                     "type": "string"
+                }
+            }
+        },
+        "response.AgentFileMeta": {
+            "type": "object",
+            "properties": {
+                "createAt": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AgentResponseFile": {
+            "type": "object",
+            "properties": {
+                "fileType": {
+                    "type": "string"
+                },
+                "fileUrl": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "扩展信息：",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/response.AgentFileMeta"
+                        }
+                    ]
+                },
+                "name": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
                 }
             }
         },
@@ -1358,6 +1687,15 @@ const docTemplate = `{
                 }
             }
         },
+        "response.CleanFileResp": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "0:清除失败，1：已完成",
+                    "type": "integer"
+                }
+            }
+        },
         "response.ConversationCreateResp": {
             "type": "object",
             "properties": {
@@ -1404,6 +1742,12 @@ const docTemplate = `{
                 },
                 "response": {
                     "type": "string"
+                },
+                "responseFiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AgentResponseFile"
+                    }
                 },
                 "responseList": {
                     "type": "array",
@@ -1460,6 +1804,23 @@ const docTemplate = `{
                 "list": {},
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "response.MergeFileResp": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "description": "合并后文件名(在minio中的文件名)",
+                    "type": "string"
+                },
+                "filePath": {
+                    "description": "minio文件的完整路径",
+                    "type": "string"
+                },
+                "originalFileName": {
+                    "description": "原始文件名",
+                    "type": "string"
                 }
             }
         },
@@ -1541,6 +1902,15 @@ const docTemplate = `{
                 "timeCost": {
                     "description": "耗时",
                     "type": "string"
+                }
+            }
+        },
+        "response.UploadFileResp": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "description": "0:上传失败，1：上传成功",
+                    "type": "integer"
                 }
             }
         },

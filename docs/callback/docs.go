@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/agent/proxy/chat": {
+        "/agent/{assistantId}/chat": {
             "post": {
                 "description": "智能体代理问答，固定流式返回，提取eventType=0的数据聚合返回",
                 "consumes": [
@@ -31,12 +31,19 @@ const docTemplate = `{
                 "summary": "智能体代理问答",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "assistantId",
+                        "name": "assistantId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "智能体代理问答请求参数",
                         "name": "data",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.AgentProxyChatReq"
+                            "$ref": "#/definitions/request.AgentChatProxyReq"
                         }
                     }
                 ],
@@ -366,6 +373,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/callback/v1/skill/detail": {
+            "get": {
+                "description": "根据skillId和skillType获取技能详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "skill"
+                ],
+                "summary": "获取技能详情（供workflow回调使用）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skillId",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "skillType (builtin/custom)",
+                        "name": "skillType",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillDetailForWorkflow"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/callback/wga/sandbox/cleanup": {
             "post": {
                 "description": "清理沙箱资源",
@@ -468,6 +526,51 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/file/upload/base64": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "callback"
+                ],
+                "summary": "通过base64上传文件",
+                "parameters": [
+                    {
+                        "description": "通过base64格式上传文件参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UploadFileByBase64Req"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.UploadFileByBase64Resp"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -1166,101 +1269,6 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/workflow/upload/file": {
-            "post": {
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "callback"
-                ],
-                "summary": "通过二进制上传文件",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "文件",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "文件名",
-                        "name": "fileName",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.UploadFileByWorkflowResp"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/workflow/upload/file/base64": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "callback"
-                ],
-                "summary": "通过base64上传文件",
-                "parameters": [
-                    {
-                        "description": "通过base64格式上传文件参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.WorkflowUploadFileByBase64Req"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.UploadFileByWorkflowResp"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
@@ -1490,6 +1498,9 @@ const docTemplate = `{
                 },
                 "multiModalEmbedding": {
                     "$ref": "#/definitions/mp_qwen.MultiModalEmbedding"
+                },
+                "multiModalRerank": {
+                    "$ref": "#/definitions/mp_qwen.MultiModalRerank"
                 },
                 "rerank": {
                     "$ref": "#/definitions/mp_qwen.Rerank"
@@ -2029,6 +2040,9 @@ const docTemplate = `{
                 },
                 "text": {
                     "type": "string"
+                },
+                "video": {
+                    "type": "string"
                 }
             }
         },
@@ -2118,6 +2132,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/mp_common.MultiDocument"
                     }
+                },
+                "fps": {
+                    "description": "视频帧率（适配qwen rerank）",
+                    "type": "number"
                 },
                 "instruction": {
                     "description": "指令内容（适配元景qwen_rerank）",
@@ -2700,6 +2718,12 @@ const docTemplate = `{
                 "completion_tokens": {
                     "type": "integer"
                 },
+                "image_tokens": {
+                    "type": "integer"
+                },
+                "input_tokens": {
+                    "type": "integer"
+                },
                 "prompt_tokens": {
                     "type": "integer"
                 },
@@ -3246,6 +3270,38 @@ const docTemplate = `{
                 }
             }
         },
+        "mp_qwen.MultiModalRerank": {
+            "type": "object",
+            "properties": {
+                "apiKey": {
+                    "type": "string"
+                },
+                "contextSize": {
+                    "type": "integer"
+                },
+                "endpointUrl": {
+                    "type": "string"
+                },
+                "maxImageSize": {
+                    "type": "integer"
+                },
+                "maxTextLength": {
+                    "type": "integer"
+                },
+                "maxVideoClipSize": {
+                    "type": "integer"
+                },
+                "supportFileTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "supportImageInQuery": {
+                    "type": "boolean"
+                }
+            }
+        },
         "mp_qwen.Rerank": {
             "type": "object",
             "properties": {
@@ -3533,15 +3589,16 @@ const docTemplate = `{
         "protocol.Property": {
             "type": "object",
             "properties": {
+                "default": {
+                    "description": "Default specifies the default value for the property."
+                },
                 "description": {
                     "description": "Description is the description of the schema.",
                     "type": "string"
                 },
                 "enum": {
                     "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "items": {}
                 },
                 "items": {
                     "description": "Items specifies which data type an array contains, if the schema type is Array.",
@@ -3565,7 +3622,10 @@ const docTemplate = `{
                     }
                 },
                 "type": {
-                    "$ref": "#/definitions/protocol.DataType"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/protocol.DataType"
+                    }
                 }
             }
         },
@@ -3631,31 +3691,13 @@ const docTemplate = `{
                 }
             }
         },
-        "request.AgentProxyChatReq": {
+        "request.AgentChatProxyReq": {
             "type": "object",
             "required": [
-                "assistantId",
-                "input",
-                "orgId",
-                "userId"
+                "input"
             ],
             "properties": {
-                "assistantId": {
-                    "type": "integer"
-                },
                 "input": {
-                    "type": "string"
-                },
-                "orgId": {
-                    "type": "string"
-                },
-                "uploadFile": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "userId": {
                     "type": "string"
                 }
             }
@@ -4101,6 +4143,10 @@ const docTemplate = `{
                     "description": "hybrid_search:混合搜索， semantic_search:向量搜索， full_text_search：文本搜索",
                     "type": "string"
                 },
+                "return_meta": {
+                    "description": "是否返回元数据",
+                    "type": "boolean"
+                },
                 "rewrite_query": {
                     "description": "是否query改写",
                     "type": "boolean"
@@ -4224,6 +4270,25 @@ const docTemplate = `{
                 }
             }
         },
+        "request.UploadFileByBase64Req": {
+            "type": "object",
+            "required": [
+                "file"
+            ],
+            "properties": {
+                "file": {
+                    "description": "base64格式",
+                    "type": "string"
+                },
+                "fileExt": {
+                    "description": "文件后缀名，如 \"png\", \"pdf\"",
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                }
+            }
+        },
         "request.WeightParams": {
             "type": "object",
             "properties": {
@@ -4332,25 +4397,6 @@ const docTemplate = `{
         },
         "request.WgaSandboxTool": {
             "type": "object"
-        },
-        "request.WorkflowUploadFileByBase64Req": {
-            "type": "object",
-            "required": [
-                "file"
-            ],
-            "properties": {
-                "file": {
-                    "description": "base64格式",
-                    "type": "string"
-                },
-                "fileExt": {
-                    "description": "文件后缀名，如 \"png\", \"pdf\"",
-                    "type": "string"
-                },
-                "fileName": {
-                    "type": "string"
-                }
-            }
         },
         "response.CustomToolActionInfo": {
             "type": "object",
@@ -4472,8 +4518,16 @@ const docTemplate = `{
                     "description": "SSE URL",
                     "type": "string"
                 },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
                 "summary": {
                     "description": "使用概述",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
                     "type": "string"
                 }
             }
@@ -4701,6 +4755,29 @@ const docTemplate = `{
                 }
             }
         },
+        "response.SkillDetailForWorkflow": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "objectPath": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                },
+                "skillType": {
+                    "type": "string"
+                }
+            }
+        },
         "response.SkillDetailListResp": {
             "type": "object",
             "properties": {
@@ -4778,7 +4855,7 @@ const docTemplate = `{
                 }
             }
         },
-        "response.UploadFileByWorkflowResp": {
+        "response.UploadFileByBase64Resp": {
             "type": "object",
             "properties": {
                 "uri": {

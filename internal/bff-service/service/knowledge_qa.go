@@ -1,6 +1,7 @@
 package service
 
 import (
+	"net/url"
 	"strings"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
@@ -103,7 +104,7 @@ func GetKnowledgeQAPairList(ctx *gin.Context, userId, orgId string, r *request.K
 	resp, err := knowledgeBaseQA.GetQAPairList(ctx.Request.Context(), &knowledgebase_qa_service.GetQAPairListReq{
 		KnowledgeId: r.KnowledgeId,
 		Name:        strings.TrimSpace(r.Name),
-		Status:      int32(r.Status),
+		Status:      r.Status,
 		PageSize:    int32(r.PageSize),
 		PageNum:     int32(r.PageNo),
 		UserId:      userId,
@@ -139,7 +140,7 @@ func GetKnowledgeExportRecordList(ctx *gin.Context, userId, orgId string, r *req
 		return nil, err
 	}
 	return &response.KnowledgeExportRecordPageResult{
-		List:     buildExportRecordRespList(ctx, resp.ExportRecordInfos),
+		List:     buildKnowledgeExportRecordRespList(ctx, resp.ExportRecordInfos),
 		Total:    resp.Total,
 		PageNo:   int(resp.PageNum),
 		PageSize: int(resp.PageSize),
@@ -274,15 +275,16 @@ func buildQAPairRespList(ctx *gin.Context, dataList []*knowledgebase_qa_service.
 	return retList
 }
 
-// buildExportRecordRespList 构造知识库导出记录返回列表
-func buildExportRecordRespList(ctx *gin.Context, dataList []*knowledgebase_service.ExportRecordInfo) []*response.ListKnowledgeExportRecordResp {
+// buildKnowledgeExportRecordRespList 构造知识库导出记录返回列表
+func buildKnowledgeExportRecordRespList(ctx *gin.Context, dataList []*knowledgebase_service.ExportRecordInfo) []*response.ListKnowledgeExportRecordResp {
 	retList := make([]*response.ListKnowledgeExportRecordResp, 0)
-	authorMap := buildExportAuthorMap(ctx, dataList)
+	authorMap := buildKnowledgeExportAuthorMap(ctx, dataList)
 	for _, data := range dataList {
+		filePath, _ := url.JoinPath(config.Cfg().Minio.DownloadURL, data.FilePath)
 		retList = append(retList, &response.ListKnowledgeExportRecordResp{
 			ExportRecordId: data.ExportRecordId,
 			ExportTime:     data.ExportTime,
-			FilePath:       buildAccessFilePath(data.FilePath),
+			FilePath:       filePath,
 			Status:         int(data.Status),
 			ErrorMsg:       gin_util.I18nKey(ctx, data.ErrorMsg),
 			Author:         authorMap[data.UserId],
@@ -290,11 +292,6 @@ func buildExportRecordRespList(ctx *gin.Context, dataList []*knowledgebase_servi
 		})
 	}
 	return retList
-}
-
-func buildAccessFilePath(filePath string) string {
-	path := config.Cfg().Server.WebBaseUrl + "/minio/download/api/" + filePath
-	return path
 }
 
 func buildQAPairAuthorMap(ctx *gin.Context, dataList []*knowledgebase_qa_service.QAPairInfo) map[string]string {
@@ -328,7 +325,7 @@ func buildQAPairAuthorMap(ctx *gin.Context, dataList []*knowledgebase_qa_service
 	return authorMap
 }
 
-func buildExportAuthorMap(ctx *gin.Context, dataList []*knowledgebase_service.ExportRecordInfo) map[string]string {
+func buildKnowledgeExportAuthorMap(ctx *gin.Context, dataList []*knowledgebase_service.ExportRecordInfo) map[string]string {
 	authorMap := make(map[string]string)
 	userIdSet := make(map[string]bool)
 	for _, data := range dataList {

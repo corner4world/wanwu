@@ -37,8 +37,7 @@ func (QAFinishBuilder) Build(ctx context.Context, ragContext *RagContext) *RagEv
 	if len(search.Data.SearchList) > 0 {
 		list := search.Data.SearchList
 		searchData := list[0]
-		var resultSearchList = make([]interface{}, 0)
-		list = list[1:]
+		resultSearchList := make([]interface{}, 0, len(list))
 		for _, item := range list {
 			resultSearchList = append(resultSearchList, item)
 		}

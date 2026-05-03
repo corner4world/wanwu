@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"time"
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
@@ -17,11 +19,9 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	empty "google.golang.org/protobuf/types/known/emptypb"
-
-	"net/http"
-	"time"
 )
 
 func (s *Service) GetMultiAssistantById(ctx context.Context, req *assistant_service.GetMultiAssistantByIdReq) (*assistant_service.MultiAssistantDetailResp, error) {
@@ -48,6 +48,7 @@ func (s *Service) GetMultiAssistantById(ctx context.Context, req *assistant_serv
 }
 
 func (s *Service) MultiAssistantConversionStream(req *assistant_service.MultiAssistantConversionStreamReq, stream grpc.ServerStreamingServer[assistant_service.AssistantConversionStreamResp]) error {
+	req.DetailId = uuid.New().String()
 	//会话处理
 	conversationProcessor := &service.ConversationProcessor{
 		SSEWriter: sse_util.NewGrpcSSEWriter(stream, "MultiAssistantConversionStreamNew", nil),
@@ -115,6 +116,7 @@ func buildMultiConversationParams(req *assistant_service.MultiAssistantConversio
 		OrgId:          req.Identity.OrgId,
 		Query:          req.Prompt,
 		UserId:         req.Identity.UserId,
+		DetailId:       req.DetailId,
 	}
 }
 
@@ -134,6 +136,7 @@ func buildMultiAgentSendRequest(req *assistant_service.MultiAssistantConversionS
 		UserId:         req.Identity.UserId,
 		OrgId:          req.Identity.OrgId,
 		Draft:          req.Draft,
+		DetailId:       req.DetailId,
 	}, util.MustU32(req.AssistantId))
 	var monitorKey = "multi_agent_chat_service"
 

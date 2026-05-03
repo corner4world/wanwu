@@ -35,8 +35,8 @@ func (*SubAgentTool) Build(conversationResp *ConversationResp, conversation, sea
 		//保存对话
 		resp.Write(conversation, eventData.Order)
 	}
-	//终态存储
-	if eventData.Status == model.EventEndStatus || eventData.Status == model.EventFailStatus {
+	//如果已经输出过结束态则不再输出
+	if resp.EventData == nil || resp.EventData.Status != model.EventEndStatus {
 		resp.EventData = eventData
 	}
 	return nil

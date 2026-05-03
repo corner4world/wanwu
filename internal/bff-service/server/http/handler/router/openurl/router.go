@@ -15,8 +15,14 @@ func Register(openUrl *gin.RouterGroup) {
 	// --- conversation ---
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation", http.MethodPost, openurl.UrlConversationCreate, "创建智能体对话")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation", http.MethodDelete, openurl.UrlConversationDelete, "删除智能体对话")
+	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation/clear", http.MethodDelete, openurl.UrlConversationClear, "清空智能体对话")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation/list", http.MethodGet, openurl.GetUrlConversationList, "获取智能体对话列表")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/conversation/detail", http.MethodGet, openurl.GetUrlConversationDetailList, "智能体对话详情历史列表")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/stream", http.MethodPost, openurl.AssistantUrlConversionStream, "智能体流式问答")
 	mid.Sub("openurl").Reg(openUrl, "/agent/:suffix/recommend", http.MethodPost, openurl.AssistantUrlQuestionRecommend, "智能体推荐问题")
+
+	// --- file upload（匿名访问） ---
+	mid.Sub("openurl").Reg(openUrl, "/file/upload", http.MethodPost, openurl.UploadFile, "上传文件")
+	mid.Sub("openurl").Reg(openUrl, "/file/merge", http.MethodPost, openurl.MergeFile, "合并文件")
+	mid.Sub("openurl").Reg(openUrl, "/file/clean", http.MethodPost, openurl.CleanFile, "清除文件")
 }

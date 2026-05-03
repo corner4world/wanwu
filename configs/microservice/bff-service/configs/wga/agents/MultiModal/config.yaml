@@ -23,18 +23,16 @@ tool_categories:
       - path: configs/microservice/mcp-service/configs/tool/tongyiqwen/openapi.json
         auth_required: true
         operations:
-          - operation_id: qwen_image_max
-          - operation_id: qwen_image_edit_max
+          - operation_id: qwen_image_2.0
       - path: configs/microservice/mcp-service/configs/tool/tongyiwan/openapi.json
         auth_required: true
         operations:
-          - operation_id: wan26_t2i
-          - operation_id: wan26_image
           - operation_id: wan26_i2v_flash
           - operation_id: wan22_kf2v_flash
           - operation_id: wan26_t2v
+          - operation_id: wan27_image
   - category: wga_tool_category_search
-    condition: optional
+    condition: none
     tools:
       - path: configs/microservice/mcp-service/configs/tool/bochasearch/openapi.json
         auth_required: true
@@ -44,7 +42,6 @@ tool_categories:
         auth_required: true
         operations:
           - operation_id: tavily_basic_search
-          
 
 skills:
 

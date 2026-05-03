@@ -3,11 +3,13 @@ package middleware
 import (
 	mid "github.com/UnicomAI/wanwu/pkg/gin-util/mid-wrap"
 	"github.com/UnicomAI/wanwu/pkg/gin-util/route"
+	"github.com/gin-gonic/gin"
 )
 
-func Init() {
+func Init(r *gin.Engine) {
 
 	mid.InitWrapper(Record)
+	r.Use(CacheAvatar())
 
 	// --- openapi ---
 	mid.NewSub("openapi", "对外提供原子能力", route.PermNone, false, false)
@@ -25,7 +27,13 @@ func Init() {
 	mid.NewSub("common", "", route.PermNeedEnable, false, false, JWTUser, CheckUserEnable)
 
 	// --- wga ---
-	mid.NewSub("wga", "", route.PermNeedEnable, false, false, JWTUser, CheckUserEnable)
+	mid.NewSub("wga", "通用智能体", route.PermNeedCheck, true, true, JWTUser, CheckUserPerm)
+
+	// wga.skill_management
+	mid.Sub("wga").NewSub("wanwu_bot", "WanwuBot", route.PermNeedCheck, true, true)
+
+	// OpenClaw
+	mid.Sub("wga").NewSub("openclaw", "OpenClaw", route.PermNeedCheck, true, true)
 
 	// --- model ---
 	mid.NewSub("model", "模型服务", route.PermNeedCheck, true, true, JWTUser, CheckUserPerm)
@@ -77,6 +85,9 @@ func Init() {
 
 	// exploration.template
 	mid.Sub("exploration").NewSub("template", "模板广场", route.PermNeedCheck, true, true)
+
+	// exploration.skill
+	mid.Sub("exploration").NewSub("skill", "Skill广场", route.PermNeedCheck, true, true)
 
 	// --- operation ---
 	mid.NewSub("operation", "运营管理", route.PermNeedCheck, true, true, JWTUser, CheckUserPerm)

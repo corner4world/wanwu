@@ -204,11 +204,6 @@ type CozeConversationData struct {
 	AccountID     *int64            `thrift:"AccountID,7,optional" form:"account_id" json:"account_id,omitempty"`
 }
 
-type UploadFileByWorkflowResp struct {
-	Url string `json:"url"`
-	Uri string `json:"uri"`
-}
-
 type CozeListMessageApiResponse struct {
 	Messages []*OpenMessageApi `thrift:"messages,1,optional" form:"data" json:"data,omitempty"`
 	// Is there still data, true yes, false no
@@ -238,6 +233,21 @@ type CozeWorkflowVersion struct {
 	Desc      string `json:"version_description"`
 	CreatedAt int64  `json:"created_at"`
 	CommitId  string `json:"commit_id"`
+}
+
+type CozeMGetWorkflowLatestVersionResponse struct {
+	Data []*CozeWorkflowVersionInfo `json:"data"`
+	Code int64                      `json:"code"`
+	Msg  string                     `json:"msg"`
+}
+
+type CozeWorkflowVersionInfo struct {
+	WorkflowID         string `json:"workflow_id"`
+	Version            string `json:"version"`
+	VersionDescription string `json:"version_description"`
+	CreatedAt          int64  `json:"created_at"`
+	CommitID           string `json:"commit_id"`
+	Type               int64  `json:"type"`
 }
 
 type CozeCommonResp struct {

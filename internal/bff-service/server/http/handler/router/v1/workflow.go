@@ -9,6 +9,7 @@ import (
 )
 
 func registerWorkflow(apiV1 *gin.RouterGroup) {
+	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow/list", http.MethodGet, v1.GetAppSpaceAppList, "获取工作流/对话流应用列表")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow", http.MethodPost, v1.CreateWorkflow, "创建workflow")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow/convert", http.MethodPost, v1.WorkflowConvert, "workflow转为chatflow")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow/copy/draft", http.MethodPost, v1.CopyWorkflowDraft, "拷贝workflow草稿")

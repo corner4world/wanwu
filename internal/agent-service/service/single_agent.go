@@ -36,8 +36,6 @@ func SingleAgentChat(ctx *gin.Context, req *request.AgentChatReq) error {
 
 // SingleAgentChatDirect 单智能体问答
 func SingleAgentChatDirect(ctx *gin.Context, agentChatParams *request.AgentChatParams) error {
-	agentChatParams.OriginNewStyle = true
-	agentChatParams.NewStyle = true
 	agent, err := CreateSingleAgent(ctx, agentChatParams)
 	if err != nil {
 		return err
@@ -47,6 +45,11 @@ func SingleAgentChatDirect(ctx *gin.Context, agentChatParams *request.AgentChatP
 
 // CreateSingleAgent 创建单智能体
 func CreateSingleAgent(ctx *gin.Context, req *request.AgentChatParams) (*SingleAgent, error) {
+	return BaseCreateSingleAgent(ctx, req, nil)
+}
+
+// BaseCreateSingleAgent 创建单智能体
+func BaseCreateSingleAgent(ctx *gin.Context, req *request.AgentChatParams, agentInfo *request.AgentInfo) (*SingleAgent, error) {
 	data, _ := json.Marshal(req)
 	log.Infof("single agent chat req %s", string(data))
 	chatInfo, err := buildAgentChatInfo(ctx, req)
@@ -54,7 +57,7 @@ func CreateSingleAgent(ctx *gin.Context, req *request.AgentChatParams) (*SingleA
 		log.Errorf("failed to build chat info: %v", err)
 		return nil, err
 	}
-	chatContext := &request.AgentChatContext{}
+	chatContext := &request.AgentChatContext{CurrentAgent: agentInfo}
 	localAgentService := local_agent.CreateLocalAgentService(ctx, req, chatInfo, chatContext)
 	//创建模型
 	chatModel, err := localAgentService.CreateChatModel(ctx, req, chatInfo)
@@ -91,7 +94,7 @@ func (s *SingleAgent) Chat(ctx *gin.Context) error {
 
 	//2.处理结果
 	_, err := agent_message_processor.AgentMessage(ctx, iter, &request.AgentChatContext{AgentChatReq: s.Req,
-		KnowledgeHitData: s.ChatContext.KnowledgeHitData, ToolMap: buildToolMap(s.Req), Order: s.ChatContext.Order})
+		KnowledgeHitData: s.ChatContext.KnowledgeHitData, ToolMap: buildToolMap(s.Req), Order: s.ChatContext.Order, CurrentAgent: s.ChatContext.CurrentAgent})
 	return err
 }
 
@@ -105,7 +108,7 @@ func (s *SingleAgent) Description(ctx context.Context) string {
 func (s *SingleAgent) Run(ctx context.Context, input *adk.AgentInput, options ...adk.AgentRunOption) *adk.AsyncIterator[*adk.AgentEvent] {
 	log.Infof("[%s] single agent run", s.Req.AgentBaseParams.Name)
 	//参数预处理
-	process, chatContext := agent_preprocessor.AgentPreProcess(s.AgentPreprocess, input, s.Req)
+	process, chatContext := agent_preprocessor.AgentPreProcess(s.AgentPreprocess, input, s.Req, s.ChatContext.CurrentAgent)
 	s.ChatContext.Order = chatContext.Order
 	return s.ChatModelAgent.Run(ctx, process, options...)
 }

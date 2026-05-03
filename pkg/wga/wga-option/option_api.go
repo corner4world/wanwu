@@ -1,6 +1,7 @@
 package wga_option
 
 import (
+	"github.com/UnicomAI/wanwu/pkg/wga/internal/config"
 	"github.com/UnicomAI/wanwu/pkg/wga/internal/option"
 	"github.com/cloudwego/eino/adk"
 )
@@ -8,10 +9,14 @@ import (
 type Option = option.Option
 type ModelConfig = option.ModelConfig
 type ToolConfig = option.ToolConfig
+type ExtraTool = option.ExtraTool
+type Skill = option.Skill
+type MCP = option.MCP
 type RunSession = option.RunSession
 
 type CheckResult = option.CheckResult
-type CheckModel = option.CheckModel
+
+type ToolCategoryInfo = config.ToolCategory
 
 // WithModelConfig 设置模型配置。
 func WithModelConfig(model ModelConfig) Option {
@@ -21,6 +26,22 @@ func WithModelConfig(model ModelConfig) Option {
 // WithToolConfig 添加工具配置，工具标题不能重复。
 func WithToolConfig(tool ToolConfig) Option {
 	return option.WithToolConfig(tool)
+}
+
+// WithExtraTool 添加额外工具（非配置文件中的工具）。
+// 工具标题不能与配置文件中的工具重复，也不能与已添加的额外工具重复。
+func WithExtraTool(tool ExtraTool) Option {
+	return option.WithExtraTool(tool)
+}
+
+// WithMCP 添加 MCP 服务器。
+func WithMCP(mcp MCP) Option {
+	return option.WithMCP(mcp)
+}
+
+// WithSkill 添加技能（非配置文件中的技能）。
+func WithSkill(skill Skill) Option {
+	return option.WithSkill(skill)
 }
 
 // WithInputDir 设置输入目录。

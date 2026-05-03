@@ -7,23 +7,20 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"time"
-
-	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
-
-	"github.com/UnicomAI/wanwu/internal/assistant-service/service"
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/assistant-service/client/model"
 	"github.com/UnicomAI/wanwu/internal/assistant-service/config"
-	"github.com/UnicomAI/wanwu/pkg/es"
+	"github.com/UnicomAI/wanwu/internal/assistant-service/service"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	http_client "github.com/UnicomAI/wanwu/pkg/http-client"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -51,24 +48,47 @@ func (s *Service) ConversationCreate(ctx context.Context, req *assistant_service
 // ConversationDelete 删除对话
 func (s *Service) ConversationDelete(ctx context.Context, req *assistant_service.ConversationDeleteReq) (*emptypb.Empty, error) {
 	// 转换ID
-	conversationID, err := strconv.ParseUint(req.ConversationId, 10, 32)
-	if err != nil {
-		return nil, err
-	}
+	conversationID := util.MustU32(req.ConversationId)
 
 	// 调用client方法删除对话
-	if status := s.cli.DeleteConversation(ctx, uint32(conversationID)); status != nil {
+	if status := s.cli.DeleteConversation(ctx, conversationID); status != nil {
 		return nil, errStatus(errs.Code_AssistantConversationErr, status)
 	}
 
 	// 删除es中的对话详情
-	fieldConditions := map[string]interface{}{
-		"conversationId.keyword": req.ConversationId,
-		"userId.keyword":         req.Identity.UserId,
-	}
-	indexPattern := "conversation_detail_infos_*"
-	if err := es.Assistant().DeleteByFields(ctx, indexPattern, fieldConditions); err != nil {
+	if _, err := s.DeleteFromES(ctx, &assistant_service.DeleteFromESReq{
+		IndexName: "conversation_detail_infos_*",
+		Conditions: map[string]string{
+			"conversationId": req.ConversationId,
+			"userId.keyword": req.Identity.UserId,
+		},
+	}); err != nil {
 		log.Errorf("从ES删除对话详情失败，conversationId: %s, error: %v", req.ConversationId, err)
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+// ClearConversationES 清空对话ES数据（不删除会话ID），支持按detailId删除单条
+func (s *Service) ClearConversationES(ctx context.Context, req *assistant_service.ClearConversationESReq) (*emptypb.Empty, error) {
+	conditions := map[string]string{
+		"conversationId": req.ConversationId,
+		"userId.keyword": req.Identity.UserId,
+	}
+	if req.DetailId != "" {
+		conditions["id"] = req.DetailId
+	}
+
+	if _, err := s.DeleteFromES(ctx, &assistant_service.DeleteFromESReq{
+		IndexName:  "conversation_detail_infos_*",
+		Conditions: conditions,
+	}); err != nil {
+		if req.DetailId != "" {
+			log.Errorf("从ES删除单条对话详情失败，detailId: %s, conversationId: %s, error: %v", req.DetailId, req.ConversationId, err)
+		} else {
+			log.Errorf("从ES删除对话详情失败，conversationId: %s, error: %v", req.ConversationId, err)
+		}
+		return nil, err
 	}
 
 	return &emptypb.Empty{}, nil
@@ -119,22 +139,18 @@ func (s *Service) GetConversationList(ctx context.Context, req *assistant_servic
 
 // GetConversationDetailList 对话详情历史列表
 func (s *Service) GetConversationDetailList(ctx context.Context, req *assistant_service.GetConversationDetailListReq) (*assistant_service.GetConversationDetailListResp, error) {
-	// 计算分页参数
-	from := (req.PageNo - 1) * req.PageSize
-	size := int(req.PageSize)
-
-	// 组装查询条件
-	fieldConditions := map[string]interface{}{
-		"conversationId": req.ConversationId,
-		"userId.keyword": req.Identity.UserId,
-		"orgId.keyword":  req.Identity.OrgId,
-	}
-
-	// 使用通配符查询所有对话详情索引
-	indexPattern := "conversation_detail_infos_*"
-
-	// 从ES查询数据
-	documents, total, err := es.Assistant().SearchByFields(ctx, indexPattern, fieldConditions, int(from), size, "desc")
+	// 复用 SearchFromES 查询ES数据
+	searchResp, err := s.SearchFromES(ctx, &assistant_service.SearchFromESReq{
+		IndexName: "conversation_detail_infos_*",
+		Conditions: map[string]string{
+			"conversationId": req.ConversationId,
+			"userId.keyword": req.Identity.UserId,
+			"orgId.keyword":  req.Identity.OrgId,
+		},
+		PageNo:    req.PageNo,
+		PageSize:  req.PageSize,
+		SortOrder: "desc",
+	})
 	if err != nil {
 		log.Errorf("从ES查询对话详情失败，conversationId: %s, userId: %s, error: %v", req.ConversationId, req.Identity.UserId, err)
 		return nil, fmt.Errorf("查询对话详情失败: %v", err)
@@ -142,9 +158,9 @@ func (s *Service) GetConversationDetailList(ctx context.Context, req *assistant_
 
 	// 转换查询结果为响应格式
 	var conversationDetails []*assistant_service.ConversionDetailInfo
-	for _, doc := range documents {
+	for _, docStr := range searchResp.DocJsonList {
 		var detail model.ConversationDetails
-		if err := json.Unmarshal(doc, &detail); err != nil {
+		if err := json.Unmarshal([]byte(docStr), &detail); err != nil {
 			log.Warnf("解析ES文档失败: %v", err)
 			continue
 		}
@@ -157,7 +173,6 @@ func (s *Service) GetConversationDetailList(ctx context.Context, req *assistant_
 			SysPrompt:            detail.SysPrompt,
 			Response:             detail.Response,
 			SearchList:           detail.SearchList,
-			QaType:               detail.QaType,
 			CreatedBy:            detail.UserId, // 使用CreatedBy字段映射UserId
 			CreatedAt:            detail.CreatedAt,
 			UpdatedAt:            detail.UpdatedAt,
@@ -166,21 +181,23 @@ func (s *Service) GetConversationDetailList(ctx context.Context, req *assistant_
 			FileName:             detail.FileName,
 			SubConversationList:  buildSubConversationList(detail.SubConversationDetailList, len(detail.ResponseList) == 0),
 			ConversationResponse: buildConversationResponse(detail.Response, detail.ResponseList, len(detail.SubConversationDetailList)),
+			ResponseFiles:        transAgentFiles(detail.ResponseFiles),
 		})
 	}
 
 	log.Infof("成功从ES查询对话详情，conversationId: %s, userId: %s, 总数: %d, 返回: %d",
-		req.ConversationId, req.Identity.UserId, total, len(conversationDetails))
+		req.ConversationId, req.Identity.UserId, searchResp.Total, len(conversationDetails))
 
 	return &assistant_service.GetConversationDetailListResp{
 		Data:     conversationDetails,
-		Total:    total,
+		Total:    searchResp.Total,
 		PageSize: req.PageSize,
 		PageNo:   req.PageNo,
 	}, nil
 }
 
 func (s *Service) AssistantConversionStream(req *assistant_service.AssistantConversionStreamReq, stream assistant_service.AssistantService_AssistantConversionStreamServer) error {
+	req.DetailId = uuid.New().String()
 	//会话处理
 	conversationProcessor := &service.ConversationProcessor{
 		SSEWriter: sse_util.NewGrpcSSEWriter(stream, "AssistantConversionStreamNew", nil),
@@ -248,6 +265,38 @@ func transRequestFiles(files []model.FileInfo) []*assistant_service.RequestFile 
 	return result
 }
 
+// transAgentFiles 将 model.AgentFile 转换为 assistant_service.AgentFile
+func transAgentFiles(files []*model.AgentFile) []*assistant_service.AgentFile {
+	if files == nil {
+		return nil
+	}
+
+	var result []*assistant_service.AgentFile
+	for _, file := range files {
+		if file == nil {
+			continue
+		}
+
+		var metadata *assistant_service.AgentMeta
+		if file.Metadata != nil {
+			metadata = &assistant_service.AgentMeta{
+				Desc:     file.Metadata.Desc,
+				CreateAt: file.Metadata.CreateAt,
+				Name:     file.Metadata.Name,
+			}
+		}
+
+		result = append(result, &assistant_service.AgentFile{
+			Name:     file.Name,
+			Size:     int32(file.Size),
+			FileUrl:  file.FileUrl,
+			FileType: file.FileType,
+			Metadata: metadata,
+		})
+	}
+	return result
+}
+
 func buildConversationParams(req *assistant_service.AssistantConversionStreamReq) *service.ConversationParams {
 	return &service.ConversationParams{
 		AssistantId:    req.AssistantId,
@@ -256,6 +305,7 @@ func buildConversationParams(req *assistant_service.AssistantConversionStreamReq
 		OrgId:          req.Identity.OrgId,
 		Query:          req.Prompt,
 		UserId:         req.Identity.UserId,
+		DetailId:       req.DetailId,
 	}
 }
 
@@ -275,6 +325,7 @@ func buildAgentSendRequest(req *assistant_service.AssistantConversionStreamReq) 
 		UserId:         req.Identity.UserId,
 		OrgId:          req.Identity.OrgId,
 		Draft:          req.Draft,
+		DetailId:       req.DetailId,
 	}, util.MustU32(req.AssistantId))
 
 	var monitorKey = "agent_chat_service"

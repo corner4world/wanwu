@@ -73,7 +73,7 @@ message GetQAPairInfoReq {
 message GetQAPairListReq{
   string knowledgeId = 1;//问答库id
   string name = 2; //名称
-  int32  status = 3; //状态
+  repeated int32  status = 3; //状态 -1：全部 0:待处理 1:导入中 2:导入成功 3:导入失败
   int32 pageSize = 4;
   int32 pageNum = 5;
   string userId = 6;

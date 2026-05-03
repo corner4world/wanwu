@@ -316,7 +316,9 @@ func GetDocSegmentList(ctx *gin.Context, userId, orgId string, req *request.DocS
 	if err != nil {
 		return nil, err
 	}
-	return buildDocSegmentResp(resp), nil
+	// 查询ASR和图文问答模型信息
+	analyzerModelMap := buildDocAnalyzerModelMap(ctx, resp.DocAnalyzer, resp.AsrModelId, resp.MultimodalModelId, resp.ParserModelId)
+	return buildDocSegmentResp(resp, analyzerModelMap), nil
 }
 
 func UpdateDocSegmentStatus(ctx *gin.Context, userId, orgId string, r *request.UpdateDocSegmentStatusReq) error {
@@ -410,7 +412,7 @@ func buildAuthorMap(ctx *gin.Context, dataList []*knowledgebase_doc_service.DocI
 }
 
 // buildDocSegmentResp 构造doc分片返回信息
-func buildDocSegmentResp(docSegmentListResp *knowledgebase_doc_service.DocSegmentListResp) *response.DocSegmentResp {
+func buildDocSegmentResp(docSegmentListResp *knowledgebase_doc_service.DocSegmentListResp, analyzerModelMap map[string]*response.ModelInfo) *response.DocSegmentResp {
 	var segmentContentList = make([]*response.SegmentContent, 0)
 	if len(docSegmentListResp.ContentList) > 0 {
 		for _, contentInfo := range docSegmentListResp.ContentList {
@@ -441,17 +443,66 @@ func buildDocSegmentResp(docSegmentListResp *knowledgebase_doc_service.DocSegmen
 		MetaDataList:        buildMetaDataResultList(docSegmentListResp.MetaDataList),
 		SegmentImportStatus: docSegmentListResp.SegmentImportStatus,
 		SegmentMethod:       docSegmentListResp.SegmentMethod,
-		DocAnalyzerText:     buildDocAnalyzerText(docSegmentListResp.DocAnalyzer),
+		DocAnalyzerText:     buildDocAnalyzerText(docSegmentListResp.DocAnalyzer, analyzerModelMap),
 	}
 }
 
-func buildDocAnalyzerText(docAnalyzer []string) []string {
+func buildDocAnalyzerText(docAnalyzer []string, analyzerModelMap map[string]*response.ModelInfo) []*response.DocAnalyzerTextInfo {
 	if len(docAnalyzer) == 0 {
-		return []string{"无"}
+		return []*response.DocAnalyzerTextInfo{{Text: "无"}}
 	}
-	return lo.Map(docAnalyzer, func(item string, index int) string {
-		return docAnalyzerMap[item]
+	return lo.Map(docAnalyzer, func(item string, index int) *response.DocAnalyzerTextInfo {
+		info := &response.DocAnalyzerTextInfo{Text: docAnalyzerMap[item]}
+		if modelInfo, ok := analyzerModelMap[item]; ok && modelInfo != nil {
+			info.DisplayName = modelInfo.DisplayName
+			info.Tags = modelInfo.Tags
+		}
+		return info
 	})
+}
+
+// buildDocAnalyzerModelMap 查询docAnalyzer中涉及的模型信息，返回 analyzerKey -> ModelInfo 的映射
+func buildDocAnalyzerModelMap(ctx *gin.Context, docAnalyzer []string, asrModelId, multimodalModelId, parserModelId string) map[string]*response.ModelInfo {
+	modelMap := make(map[string]*response.ModelInfo)
+	analyzerSet := lo.SliceToMap(docAnalyzer, func(item string) (string, bool) { return item, true })
+
+	// OCR和模型解析共用parserModelId
+	if (analyzerSet["ocr"] || analyzerSet["model"]) && parserModelId != "" {
+		modelInfo, err := GetModelById(ctx, &request.GetModelRequest{
+			BaseModelRequest: request.BaseModelRequest{ModelId: parserModelId},
+		})
+		if err != nil {
+			log.Warnf("获取解析模型信息失败 modelId=%s err=%v", parserModelId, err)
+		} else {
+			if analyzerSet["ocr"] {
+				modelMap["ocr"] = modelInfo
+			}
+			if analyzerSet["model"] {
+				modelMap["model"] = modelInfo
+			}
+		}
+	}
+	if analyzerSet["asr"] && asrModelId != "" {
+		modelInfo, err := GetModelById(ctx, &request.GetModelRequest{
+			BaseModelRequest: request.BaseModelRequest{ModelId: asrModelId},
+		})
+		if err != nil {
+			log.Warnf("获取ASR模型信息失败 modelId=%s err=%v", asrModelId, err)
+		} else {
+			modelMap["asr"] = modelInfo
+		}
+	}
+	if analyzerSet["multimodal"] && multimodalModelId != "" {
+		modelInfo, err := GetModelById(ctx, &request.GetModelRequest{
+			BaseModelRequest: request.BaseModelRequest{ModelId: multimodalModelId},
+		})
+		if err != nil {
+			log.Warnf("获取图文问答模型信息失败 modelId=%s err=%v", multimodalModelId, err)
+		} else {
+			modelMap["multimodal"] = modelInfo
+		}
+	}
+	return modelMap
 }
 
 func buildDocChildSegmentResp(docSegmentListResp *knowledgebase_doc_service.GetDocChildSegmentListResp) *response.DocChildSegmentResp {

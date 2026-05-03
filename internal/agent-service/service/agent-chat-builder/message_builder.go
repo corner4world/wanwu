@@ -18,7 +18,7 @@ const (
 type AgentMessageBuilder interface {
 	MessageType() MessageType //消息类型
 	FilterMessage(respContext *response.AgentChatRespContext, chatMessage *schema.Message) bool
-	BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message, changeStyle *bool) ([]*response.AgentMessageContent, error)
+	BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]*response.AgentMessageContent, error)
 }
 
 func BuildChatMessage(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]string, error) {
@@ -29,7 +29,7 @@ func BuildChatMessage(req *request.AgentChatContext, respContext *response.Agent
 		return make([]string, 0), nil
 	}
 	//构造内容
-	contentList, err := builder.BuildContent(req, respContext, chatMessage, nil)
+	contentList, err := builder.BuildContent(req, respContext, chatMessage)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func BuildChatMessage(req *request.AgentChatContext, respContext *response.Agent
 		if content.Empty() {
 			continue
 		}
-		resp, err1 := response.BuildAgentChatResp(req, chatMessage, content.ContentList, content.SubEventData, content.NotStop, respContext.Order)
+		resp, err1 := response.BuildAgentChatResp(req, chatMessage, content.ContentList, content.SubEventData, content.NotStop, respContext)
 		if err1 != nil {
 			return nil, err1
 		}

@@ -1,12 +1,14 @@
 package service
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"mime"
 	"net/http"
-	net_url "net/url"
+	"net/url"
+	"path"
 	"strings"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
@@ -14,9 +16,9 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
+	"github.com/UnicomAI/wanwu/pkg/minio"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 )
 
 func FileUrlConvertBase64(ctx *gin.Context, req *request.FileUrlConvertBase64Req) (string, error) {
@@ -44,21 +46,7 @@ func FileUrlConvertBase64(ctx *gin.Context, req *request.FileUrlConvertBase64Req
 	}
 }
 
-func UploadFileToWorkflow(ctx *gin.Context, req *request.WorkflowUploadFileReq) (*response.UploadFileByWorkflowResp, error) {
-	file, err := req.File.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = file.Close() }()
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-	base64Str := base64.StdEncoding.EncodeToString(fileBytes)
-	return UploadFileByWorkflow(ctx, req.File.Filename, base64Str)
-}
-
-func UploadFileBase64ToWorkflow(ctx *gin.Context, req *request.WorkflowUploadFileByBase64Req) (*response.UploadFileByWorkflowResp, error) {
+func UploadFileByBase64(ctx *gin.Context, req *request.UploadFileByBase64Req) (*response.UploadFileByBase64Resp, error) {
 	var finalFileName string
 	if req.FileName == "" {
 		finalFileName = util.GenUUID()
@@ -101,32 +89,24 @@ func UploadFileBase64ToWorkflow(ctx *gin.Context, req *request.WorkflowUploadFil
 		finalFileName += finalExt
 	}
 
-	return UploadFileByWorkflow(ctx, finalFileName, base64Data)
-}
+	// 解码 base64 数据
+	fileData, err := base64.StdEncoding.DecodeString(base64Data)
+	if err != nil {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_file_base64_decode", err.Error())
+	}
 
-func UploadFileByWorkflow(ctx *gin.Context, fileName, file string) (*response.UploadFileByWorkflowResp, error) {
-	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.UploadFileUri)
-	ret := &response.UploadFileByWorkflowResp{}
-	requestBody := map[string]string{
-		"name": fileName,
-		"data": file,
+	// 使用 minio 上传文件
+	reader := bytes.NewReader(fileData)
+	_, _, err = minio.UploadFile(ctx, minio.BucketFileUpload, minio.DirFileExpire, finalFileName, reader, int64(len(fileData)))
+	if err != nil {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_file_upload_minio", err.Error())
 	}
-	if resp, err := resty.New().
-		R().
-		SetContext(ctx.Request.Context()).
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Accept", "application/json").
-		SetHeaders(workflowHttpReqHeader(ctx)).
-		SetBody(requestBody).
-		SetResult(ret).
-		Post(url); err != nil {
-		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_upload_file", err.Error())
-	} else if resp.StatusCode() >= 300 {
-		b, err := io.ReadAll(resp.RawResponse.Body)
-		if err != nil {
-			return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_upload_file", fmt.Sprintf("[%v] %v", resp.StatusCode(), err))
-		}
-		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_upload_file", fmt.Sprintf("[%v] %v", resp.StatusCode(), string(b)))
-	}
-	return ret, nil
+
+	objectPath := path.Join(minio.BucketFileUpload, minio.DirFileExpire, finalFileName)
+	filePath, _ := url.JoinPath(config.Cfg().Minio.DownloadURL, objectPath)
+
+	return &response.UploadFileByBase64Resp{
+		Url: filePath,
+		Uri: objectPath,
+	}, nil
 }

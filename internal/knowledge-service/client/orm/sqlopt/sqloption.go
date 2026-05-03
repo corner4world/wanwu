@@ -278,6 +278,19 @@ func WithStatus(status int) SQLOption {
 	})
 }
 
+func WithQAStatusList(status []int32) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(status) == 0 {
+			return db
+		} else if len(status) == 1 {
+			if status[0] == -1 {
+				return db
+			}
+			return db.Where("status = ?", status[0])
+		}
+		return db.Where("status IN ?", status)
+	})
+}
 func WithoutStatus(status int) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		return db.Where("status != ?", status)
@@ -297,6 +310,15 @@ func WithName(name string) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		if len(name) > 0 {
 			return db.Where("name = ?", name)
+		}
+		return db
+	})
+}
+
+func WithRagName(name string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(name) > 0 {
+			return db.Where("rag_name = ?", name)
 		}
 		return db
 	})

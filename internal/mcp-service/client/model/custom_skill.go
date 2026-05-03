@@ -10,8 +10,8 @@ type CustomSkill struct {
 	Markdown   string `gorm:"column:markdown;type:text;comment:skill markdown内容"`
 	SaveId     string `gorm:"column:save_id;index:idx_custom_skill_save_id;comment:保存id"`
 	SourceType string `gorm:"column:source_type;index:idx_custom_skill_source_type;comment:来源类型"`
-	UserId     string `gorm:"column:user_id;index:idx_custom_skill_user_id;comment:用户id"`
-	OrgId      string `gorm:"column:org_id;index:idx_custom_skill_org_id;comment:组织id"`
+	UserID     string `gorm:"column:user_id;index:idx_custom_skill_user_id;comment:用户id"`
+	OrgID      string `gorm:"column:org_id;index:idx_custom_skill_org_id;comment:组织id"`
 	CreatedAt  int64  `gorm:"autoCreateTime:milli;comment:创建时间"`
 	UpdatedAt  int64  `gorm:"autoUpdateTime:milli;comment:更新时间"`
 }

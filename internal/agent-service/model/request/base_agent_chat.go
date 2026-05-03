@@ -8,6 +8,7 @@ type AgentChatBaseReq struct {
 	Stream         bool     `json:"stream"`
 	Draft          bool     `json:"draft"`
 	ConversationId string   `json:"conversationId"` //会话ID
+	DetailId       string   `json:"detailId"`
 }
 
 type AgentConfig struct {

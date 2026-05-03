@@ -24,10 +24,10 @@
 │                                                                                     │
 │  ┌───────────────────────────────────────────────────────────────────────────────┐ │
 │  │ api.go                                                                        │ │
-│  │  ├─ Init(configPath)        加载智能体配置                                     │ │
-│  │  ├─ CheckOptions(id, opts)  检查运行条件                                      │ │
-│  │  ├─ Run(id, opts)          执行智能体，返回 AgentEvent 迭代器                 │ │
-│  │  └─ Cleanup(runID)          清理沙箱资源                                       │ │
+│  │  ├─ Init(configPath)           加载智能体配置                                  │ │
+│  │  ├─ CheckToolOptions(id, opts) 检查工具配置                                   │ │
+│  │  ├─ Run(id, opts)              执行智能体，返回 AgentEvent 迭代器             │ │
+│  │  └─ Cleanup(runID)             清理沙箱资源                                    │ │
 │  └───────────────────────────────────────────────────────────────────────────────┘ │
 │                                       │                                             │
 │                                       ▼                                             │
@@ -53,9 +53,10 @@
 │  │   │  1. buildSandboxOpts()     构建沙箱选项                                    │ │
 │  │   │     ├─ ModelConfig (来自 WithModelConfig)                                 │ │
 │  │   │     ├─ Instruction (来自配置文件)                                          │ │
-│  │   │     └─ Tools (来自配置 + WithToolConfig)                                   │ │
+│  │   │     ├─ Tools (来自配置 + WithToolConfig + WithExtraTool)                  │ │
+│  │   │     └─ MCPs (来自 WithMCP)                                                │ │
 │  │   │                                                                           │ │
-│  │   │  2. wga_sandbox.Run()  ─────────────────▶ wga-sandbox                     │ │
+│  │   │  2. wga_sandbox.Run()  ─────────────────▶ wga-sandbox (opencode runner)  │ │
 │  │   │                                                                           │ │
 │  │   │  3. ConvertToEinoIterator() 转换 JSON → AgentEvent                        │ │
 │  │   │                                                                           │ │
@@ -66,19 +67,22 @@
 │                                       │                                             │
 │                                       ▼                                             │
 │  ┌───────────────────────────────────────────────────────────────────────────────┐ │
-│  │ wga-sandbox/wga-sandbox-converter/ - Eino 事件转换器                            │ │
+│  │ internal/option/ - 运行选项                                                     │ │
 │  │                                                                               │ │
-│  │  EinoConverter 接口                                                           │ │
-│  │   └─ Convert(line string) → *schema.Message                                  │ │
+│  │  option.go        Options 结构体、选项函数、Check 方法                         │ │
+│  │  option_model.go  ToChatModel() 模型转换                                      │ │
+│  │  option_prompt.go FormatInstruction() 提示词格式化                             │ │
+│  │  option_tool.go   ToToolsConfig() 工具配置转换                                 │ │
+│  │  tool.go          invokableToolImpl HTTP 工具调用实现                          │ │
+│  └───────────────────────────────────────────────────────────────────────────────┘ │
+│                                       │                                             │
+│                                       ▼                                             │
+│  ┌───────────────────────────────────────────────────────────────────────────────┐ │
+│  │ internal/config/ - 配置加载                                                     │ │
 │  │                                                                               │ │
-│  │  ConvertToEinoIterator(ctx, runnerType, outputCh) → *AsyncIterator           │ │
-│  │                                                                               │ │
-│  │  opencodeConverter 实现                                                        │ │
-│  │   ├─ text      → Message{Content}                                            │ │
-│  │   ├─ reasoning → Message{ReasoningContent}                                   │ │
-│  │   ├─ tool_use  → Message{ToolCalls}                                          │ │
-│  │   ├─ file      → Message{Content: "[file] ..."}                              │ │
-│  │   └─ error     → Message{Content: "[error] ..."}                             │ │
+│  │  agent.go         Agent 配置结构体、LoadAgents() 加载                          │ │
+│  │  agent_tool.go    CollectToolCategories() 递归收集工具类别                      │ │
+│  │  const.go         常量定义 (AgentType, ToolCategoryCondition)                  │ │
 │  └───────────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────────────┘
                     │                                      │
@@ -128,36 +132,37 @@
 │  │                                                                               │ │
 │  │  实现模式                                                                      │ │
 │  │   ├─ reuseSandbox   复用已启动容器     ✅ 已实现                               │ │
-│  │   └─ oneshotSandbox 每次启动新容器     ○ 仅接口                                │ │
+│  │   └─ oneshotSandbox 每次启动新容器     ✅ 已实现                               │ │
 │  └───────────────────────────────────────────────────────────────────────────────┘ │
 │                                       │                                             │
 │                                       ▼                                             │
 │  ┌───────────────────────────────────────────────────────────────────────────────┐ │
-│  │ internal/runner/opencode/ - Opencode 运行器                                    │ │
+│  │ internal/runner/ - 运行器                                                      │ │
 │  │                                                                               │ │
-│  │  Runner                                                                       │ │
-│  │   ├─ BeforeRun(ctx)                                                          │ │
-│  │   │   ├─ setupConfig()          创建 opencode.json                            │ │
-│  │   │   ├─ 复制 skills 到 .opencode/skills/                                    │ │
-│  │   │   ├─ 转换 tools 为 skills (openapi-to-skills)                             │ │
-│  │   │   └─ 复制 input 目录内容                                                 │ │
-│  │   │                                                                           │ │
-│  │   ├─ Run(ctx) → chan string                                                  │ │
-│  │   │   └─ 通过 HTTP API 调用 opencode，接收 SSE 事件流                         │ │
-│  │   │                                                                           │ │
-│  │   └─ AfterRun(ctx)                                                           │ │
-│  │       └─ 复制沙箱输出到 OutputDir（排除隐藏文件）                              │ │
+│  │  Runner 接口                                                                   │ │
+│  │   ├─ BeforeRun(ctx)  准备环境（创建配置、复制文件）                            │ │
+│  │   ├─ Run(ctx)        执行任务，返回 JSON 事件流                               │ │
+│  │   └─ AfterRun(ctx)   后处理（复制输出）                                        │ │
+│  │                                                                               │ │
+│  │  实现类型                                                                      │ │
+│  │   └─ opencode.Runner   opencode 智能体（通过 HTTP API + SSE）                 │ │
 │  └───────────────────────────────────────────────────────────────────────────────┘ │
 │                                       │                                             │
 │                                       ▼                                             │
 │  ┌───────────────────────────────────────────────────────────────────────────────┐ │
-│  │ api_opencode.go - Opencode 事件解析                                            │ │
+│  │ wga-sandbox-converter/ - Eino 事件转换器                                        │ │
 │  │                                                                               │ │
-│  │  ParseOpencodeEvent(data) → *OpencodeEvent                                   │ │
-│  │   ├─ ParseOpencodeTextPart(data)      → TextPart                             │ │
-│  │   ├─ ParseOpencodeToolPart(data)      → ToolPart                             │ │
-│  │   ├─ ParseOpencodeReasoningPart(data) → ReasoningPart                        │ │
-│  │   └─ ... 更多解析函数                                                         │ │
+│  │  EinoConverter 接口                                                           │ │
+│  │   └─ Convert(line string) → []*schema.Message                                 │ │
+│  │                                                                               │ │
+│  │  ConvertToEinoIterator(ctx, runnerType, outputCh) → *AsyncIterator           │ │
+│  │                                                                               │ │
+│  │  opencodeConverter 实现                                                        │ │
+│  │   ├─ text      → Message{Content}                                            │ │
+│  │   ├─ reasoning → Message{ReasoningContent}                                   │ │
+│  │   ├─ tool_use  → Message{ToolCalls}                                          │ │
+│  │   ├─ file      → Message{Content: "[file] ..."}                              │ │
+│  │   └─ error     → Message{Content: "[error] ..."}                             │ │
 │  └───────────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────────────┘
                                         │
@@ -198,8 +203,11 @@
 │  └──────────────────────────────┘    └────────────────────────────────────────┘   │
 │                                                                                     │
 │  ┌───────────────────────────────────────────────────────────────────────────────┐ │
-│  │ 辅助函数                                                                      │ │
-│  │  └─ EventsToJSONChannel(ctx, events)  事件流 → JSON 字符串流                  │ │
+│  │ 辅助组件                                                                      │ │
+│  │  ├─ MessageState      管理 TEXT_MESSAGE/REASONING 状态机                      │ │
+│  │  ├─ BaseState         基础状态（RunStarted/RunFinished）                       │ │
+│  │  ├─ AgentActivitySimple  单智能体活动状态                                     │ │
+│  │  └─ EventsToJSONChannel  事件流 → JSON 字符串流                               │ │
 │  └───────────────────────────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -208,7 +216,7 @@
 
 ```
 路径 A: wga 高级 API
-────────────────────
+───────────────────
 
   用户请求
        │
@@ -288,23 +296,19 @@
               ▼
   ┌───────────────────────────────────────────────────────────────────────┐
   │ runner.BeforeRun(ctx)                                                 │
-  │  ├─ 创建 opencode.json (模型配置)                                      │
-  │  ├─ 复制 skills/tools                                                 │
-  │  └─ 复制输入文件                                                       │
+  │  └─ opencode: 创建 opencode.json, 复制 skills/tools/input             │
   └───────────────────────────────────────────────────────────────────────┘
               │
               ▼
   ┌───────────────────────────────────────────────────────────────────────┐
   │ runner.Run(ctx) → chan string                                         │
   │                                                                       │
-  │  通过 HTTP API 调用 opencode，接收 SSE 事件流                          │
+  │  opencode: 通过 HTTP API 调用 opencode，接收 SSE 事件流                 │
   │                                                                       │
   │  输出流:                                                               │
-  │   {"type":"step_start","part":{...}}                                  │
   │   {"type":"text","part":{"text":"..."}}                               │
   │   {"type":"tool_use","part":{"tool":"bash",...}}                      │
   │   {"type":"reasoning","part":{"text":"..."}}                          │
-  │   {"type":"step_finish","part":{...}}                                 │
   └───────────────────────────────────────────────────────────────────────┘
               │
               ▼
@@ -327,7 +331,7 @@
   │   ├─ text      → TextMessageContent                                   │
   │   ├─ reasoning → TextMessageContent (引用格式)                         │
   │   ├─ tool_use  → ToolCallStart/Args/End/Result                        │
-  │   └─ step_*    → 跳过                                                 │
+  │   └─ error     → TextMessageContent ("[error] ...")                   │
   └───────────────────────────────────────────────────────────────────────┘
               │
               ▼
@@ -385,18 +389,35 @@
 
 ```
 用户代码                           wga 内部                      wga-sandbox 内部
-────────                           ─────────                    ────────────────
+───────                           ─────────                    ────────────────
 
 wga.WithModelConfig(      ─────▶  options.Model         ─────▶  ModelConfig
-  Model: "glm-4",
-  ApiKey: "sk-xxx",
-  EndpointUrl: "..."
+  Provider: "zhipu",
+  BaseURL: "https://...",
+  APIKey: "sk-xxx",
+  Model: "glm-5",
+  ModelName: "GLM-5",
+  Params: {...}
 )
 
-wga.WithToolConfig(       ─────▶  options.Tools[]       ─────▶  Tools[]
-  Title: "天气查询",                                          .OpenAPI3Schema
-  APIAuth: {...}                                               .OperationIDs
-)                                                               .APIAuth
+wga.WithToolConfig(       ─────▶  options.Tools[]       ─────▶  配置文件工具的认证
+  Title: "天气查询",                                          (通过 Title 匹配)
+  APIAuth: {...}
+)
+
+wga.WithExtraTool(        ─────▶  options.ExtraTools[]  ─────▶  额外工具（运行时传入）
+  OpenAPI3Schema: doc,                                        .OpenAPI3Schema
+  APIAuth: {...}                                              .APIAuth
+)
+
+wga.WithMCP(               ─────▶  options.MCPs[]        ─────▶  MCP 服务器
+  Name: "Jira工单",                                            .Name
+  URL: "https://...",                                          .URL
+)
+
+wga.WithSkill(              ─────▶  options.Skills[]      ─────▶  Skills
+  Dir: "configs/skills/xxx"                                    .Dir
+)
 
 wga.WithInputDir("...")    ─────▶  options.Workspace.InputDir   ─────▶  InputDir
 wga.WithOutputDir("...")   ─────▶  options.Workspace.OutputDir  ─────▶  OutputDir
@@ -472,15 +493,36 @@ ctx := context.Background()
 // 初始化
 wga.Init(ctx, "/path/to/config.yaml")
 
+// 检查工具配置
+result, _ := wga.CheckToolOptions(ctx, "agent-id",
+    wga.WithModelConfig(wga_option.ModelConfig{
+        Model:   "glm-5",
+        BaseURL: "https://api.example.com/v1",
+        APIKey:  "sk-xxx",
+    }),
+    wga.WithToolConfig(wga_option.ToolConfig{
+        Title:   "天气查询",
+        APIAuth: &util.ApiAuthWebRequest{Type: "header", Name: "Authorization", Value: "Bearer xxx"},
+    }),
+    wga.WithExtraTool(wga_option.ExtraTool{
+        OpenAPI3Schema: openAPIDoc,
+        APIAuth:        &util.ApiAuthWebRequest{Type: "header", Name: "X-API-Key", Value: "xxx"},
+    }),
+)
+
 // 执行
 runSession, iter, _ := wga.Run(ctx, "agent-id",
     wga.WithModelConfig(wga_option.ModelConfig{
-        Model:       "glm-4",
-        ApiKey:      "sk-xxx",
-        EndpointUrl: "https://api.example.com/v1",
+        Model:   "glm-5",
+        BaseURL: "https://api.example.com/v1",
+        APIKey:  "sk-xxx",
     }),
     wga.WithMessages([]adk.Message{
         &schema.Message{Role: schema.User, Content: "任务描述"},
+    }),
+    wga.WithMCP(wga_option.MCP{
+        Name: "Jira工单",
+        URL:  "https://jira.example.com/sse",
     }),
 )
 
@@ -501,7 +543,8 @@ for {
 | 函数 | 说明 |
 |------|------|
 | `Init(ctx, configPath)` | 初始化配置 |
-| `CheckOptions(ctx, id, opts...)` | 检查运行条件 |
+| `GetAgentToolCategories(id)` | 获取智能体及其子智能体的工具类别配置 |
+| `CheckToolOptions(ctx, id, opts...)` | 检查工具配置（工具条件、额外工具冲突） |
 | `Run(ctx, id, opts...)` | 执行智能体 |
 | `Cleanup(ctx, runID)` | 清理资源 |
 
@@ -510,8 +553,121 @@ for {
 | 选项 | 说明 |
 |------|------|
 | `WithModelConfig` | 模型配置（必须） |
-| `WithToolConfig` | 工具配置 |
+| `WithToolConfig` | 工具配置（配置文件工具的认证信息） |
+| `WithExtraTool` | 额外工具（运行时动态添加，非配置文件中定义的工具） |
+| `WithMCP` | MCP 服务器（运行时动态添加） |
+| `WithSkill` | 技能（运行时动态添加） |
 | `WithInputDir` | 输入目录 |
 | `WithOutputDir` | 输出目录 |
 | `WithRunSession` | 会话标识 |
 | `WithMessages` | 消息列表（历史消息 + 当前问题，最后一条必须是 User 消息） |
+
+## MCP 服务器
+
+`WithMCP` 用于添加 MCP (Model Context Protocol) 服务器，允许智能体通过 SSE 协议与外部工具交互。
+
+```go
+wga.WithMCP(wga_option.MCP{
+    Name: "Jira工单",
+    URL:  "https://jira.example.com/sse",
+}),
+wga.WithMCP(wga_option.MCP{
+    Name: "Confluence",
+    URL:  "https://confluence.example.com/sse",
+}),
+```
+
+MCP 配置会被传递到 opencode runner，生成 opencode.json 中的 mcp 配置：
+
+```json
+{
+  "mcp": {
+    "Jira工单": {
+      "type": "remote",
+      "url": "https://jira.example.com/sse",
+      "enabled": true
+    },
+    "Confluence": {
+      "type": "remote",
+      "url": "https://confluence.example.com/sse",
+      "enabled": true
+    }
+  }
+}
+```
+
+## 工具配置
+
+### ToolConfig vs ExtraTool
+
+| 特性 | ToolConfig | ExtraTool |
+|------|------------|-----------|
+| 用途 | 配置文件工具的认证信息 | 运行时添加额外工具 |
+| OpenAPI Schema | 不需要（从配置文件读取） | 必须 |
+| 认证方式 | `ApiAuthWebRequest` | `ApiAuthWebRequest` |
+| 标题匹配 | 通过 Title 匹配配置文件工具 | 自动从 Schema.Info.Title 读取 |
+| 冲突检查 | 同 Title 不允许重复 | 不允许与配置文件工具或已有额外工具重名 |
+
+### 工具类别条件
+
+| 条件 | 说明 |
+|------|------|
+| `none` | 无需检查，该类别下的工具都是可选项 |
+| `optional` | 该类别下至少有一个工具完成配置 |
+| `required` | 该类别下所有工具完成配置 |
+
+## 类型
+
+### CheckResult
+
+`CheckToolOptions` 返回的检查结果。
+
+```go
+type CheckResult struct {
+    ToolCategories []CheckToolCategory // 工具类别检查结果
+}
+```
+
+### CheckToolCategory
+
+工具类别检查结果。
+
+```go
+type CheckToolCategory struct {
+    Category  string      // 工具类别类型
+    Condition string      // 工具类别条件 (none/optional/required)
+    Meet      bool        // 是否满足条件
+    Tools     []CheckTool // 工具检查结果
+}
+```
+
+### CheckTool
+
+工具检查结果。
+
+```go
+type CheckTool struct {
+    Title string // 工具标题
+    Meet  bool   // 是否满足条件（已配置认证）
+}
+```
+
+### Skill
+
+技能配置。
+
+```go
+type Skill struct {
+    Dir string // skill 目录路径（相对程序运行目录）
+}
+```
+
+### MCP
+
+MCP 服务器配置。
+
+```go
+type MCP struct {
+    Name string // MCP 名称
+    URL  string // MCP SSE/STREAMABLE 服务器地址
+}

@@ -1,9 +1,10 @@
 package response
 
 import (
+	"time"
+
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
-	"time"
 )
 
 type ThinkStep int
@@ -24,34 +25,34 @@ func NewThinkChatContext() *ThinkChatContext {
 	return &ThinkChatContext{}
 }
 
-func (t *ThinkChatContext) ThinkContextPrepare(newStyle bool, thinkStep ThinkStep, respContext *AgentChatRespContext) {
+func (t *ThinkChatContext) ThinkContextPrepare(thinkStep ThinkStep, respContext *AgentChatRespContext) {
 	switch thinkStep {
 	case ThinkStart:
 		t.Thinking = true
 		respContext.ReplaceContent.Reset()
-		if newStyle {
-			respContext.IncreaseOrder()
-			t.ThinkingTool = &AgentTool{
-				Order:     respContext.Order,
-				ToolId:    uuid.New().String(),
-				ToolName:  "智能体思考",
-				ToolType:  ThinkingEventType,
-				Avatar:    BuildDefaultAvatarByType(ThinkingEventType),
-				StartTime: time.Now().UnixMilli(),
-			}
+		respContext.IncreaseOrder()
+		t.ThinkingTool = &AgentTool{
+			Order:     respContext.Order,
+			ToolId:    uuid.New().String(),
+			ToolName:  "智能体思考",
+			ToolType:  ThinkingEventType,
+			Avatar:    BuildDefaultAvatarByType(ThinkingEventType),
+			StartTime: time.Now().UnixMilli(),
 		}
 	case ThinkFinish:
 		t.Thinking = false
-		if newStyle {
-			respContext.IncreaseOrder()
-		}
+		respContext.IncreaseOrder()
 	}
 }
 
-func (t *ThinkChatContext) ThinkMessage(newStyle bool, chatMessage *schema.Message, respContext *AgentChatRespContext) []*AgentMessageContent {
+func (t *ThinkChatContext) ThinkMessage(chatMessage *schema.Message, respContext *AgentChatRespContext) []*AgentMessageContent {
 	thinkStep := t.ThinkStep(chatMessage)
-	t.ThinkContextPrepare(newStyle, thinkStep, respContext)
-	return t.buildContentByStep(chatMessage, newStyle, thinkStep)
+	return t.ThinkMessageByStep(chatMessage, thinkStep, respContext)
+}
+
+func (t *ThinkChatContext) ThinkMessageByStep(chatMessage *schema.Message, thinkStep ThinkStep, respContext *AgentChatRespContext) []*AgentMessageContent {
+	t.ThinkContextPrepare(thinkStep, respContext)
+	return t.buildContentByStep(chatMessage, thinkStep)
 }
 
 func (t *ThinkChatContext) ThinkStep(chatMessage *schema.Message) ThinkStep {
@@ -67,31 +68,8 @@ func (t *ThinkChatContext) ThinkStep(chatMessage *schema.Message) ThinkStep {
 	return ThinkNone
 }
 
-func (t *ThinkChatContext) buildContentByStep(chatMessage *schema.Message, newStyle bool, step ThinkStep) []*AgentMessageContent {
-	if newStyle {
-		return t.buildNewReasoningContent(chatMessage, step)
-	} else {
-		return t.buildReasoningContent(chatMessage, step)
-	}
-}
-
-func (t *ThinkChatContext) buildReasoningContent(chatMessage *schema.Message, step ThinkStep) []*AgentMessageContent {
-	var retContentList []*AgentMessageContent
-	switch step {
-	case ThinkStart:
-		retContentList = append(retContentList, &AgentMessageContent{
-			ContentList: []string{"<think>" + chatMessage.ReasoningContent},
-		})
-	case Thinking:
-		retContentList = append(retContentList, &AgentMessageContent{
-			ContentList: []string{chatMessage.ReasoningContent},
-		})
-	case ThinkFinish:
-		retContentList = append(retContentList, &AgentMessageContent{
-			ContentList: []string{"</think>"},
-		})
-	}
-	return retContentList
+func (t *ThinkChatContext) buildContentByStep(chatMessage *schema.Message, step ThinkStep) []*AgentMessageContent {
+	return t.buildNewReasoningContent(chatMessage, step)
 }
 
 func (t *ThinkChatContext) buildNewReasoningContent(chatMessage *schema.Message, step ThinkStep) []*AgentMessageContent {

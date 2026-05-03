@@ -100,6 +100,15 @@ func WithAssistantID(assistantId uint32) SQLOption {
 	})
 }
 
+func WithAssistantIDs(assistantIds []uint32) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(assistantIds) > 0 {
+			return db.Where("assistant_id IN ?", assistantIds)
+		}
+		return db
+	})
+}
+
 func WithToolId(toolId string) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		return db.Where("tool_id = ?", toolId)

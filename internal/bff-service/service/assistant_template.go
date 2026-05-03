@@ -115,7 +115,7 @@ func toAssistantTemplate(ctx *gin.Context, cfg *template.Assistant) *response.As
 		AppType:             "agentTemplate",
 		Category:            cfg.Category,
 		AppBriefConfig: request.AppBriefConfig{
-			Avatar: CacheAvatar(ctx, cfg.AvatarKey, false),
+			Avatar: CacheAvatar(cfg.AvatarKey),
 			Name:   cfg.Name,
 			Desc:   cfg.Desc,
 		},

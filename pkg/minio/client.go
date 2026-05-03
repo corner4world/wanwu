@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	Endpoint string `json:"endpoint" mapstructure:"endpoint"`
-	User     string `json:"user" mapstructure:"user"`
-	Password string `json:"password" mapstructure:"password"`
+	Endpoint    string `json:"endpoint" mapstructure:"endpoint"`
+	User        string `json:"user" mapstructure:"user"`
+	Password    string `json:"password" mapstructure:"password"`
+	DownloadURL string `json:"download_url" mapstructure:"download_url"`
 }
 
 type client struct {

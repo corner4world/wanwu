@@ -204,12 +204,56 @@ def search_result2docs(search_results):
     return docs
 
             
+# def detect_file_encoding(file_path):
+#     with open(file_path, 'rb') as f:
+#         raw_data = f.read()
+#     encoding = chardet.detect(raw_data)['encoding']
+#     if encoding is not None:
+#         if encoding.lower().startswith('gb'):
+#             encoding = 'gb18030'
+#
+#     return encoding
+
 def detect_file_encoding(file_path):
+    # 限制读取大小，防止 OOM (内存溢出)
+    MAX_READ = 10 * 1024 * 1024
+
     with open(file_path, 'rb') as f:
-        raw_data = f.read()
-    encoding = chardet.detect(raw_data)['encoding']
-    if encoding is not None:
-        if encoding.lower().startswith('gb'):
-            encoding = 'gb18030'
-    
-    return encoding        
+        raw_data = f.read(MAX_READ)
+
+    if not raw_data:
+        return 'utf-8'
+
+    # --- 1. 优先检查 UTF-8 BOM ---
+    if raw_data.startswith(b'\xef\xbb\xbf'):
+        return 'utf-8-sig'
+
+    # --- 2. 尝试严格 UTF-8 解码 ---
+    try:
+        raw_data.decode('utf-8')
+        return 'utf-8'
+    except UnicodeDecodeError:
+        pass
+
+    # --- 3. 使用 chardet 分析 ---
+    res = chardet.detect(raw_data)
+    encoding = res['encoding']
+    confidence = res['confidence'] or 0
+
+    if encoding:
+        encoding = encoding.lower()
+
+        # 建立黑名单：这些编码在中文环境下 99% 都是误报
+        misleading_list = ['windows-1254', 'windows-1252', 'macroman', 'iso-8859-1', 'ascii']
+
+        # 纠偏逻辑：
+        # 符合 GB 系列名称 OR 属于黑名单 OR 置信度不足 0.95
+        if (encoding.startswith('gb') or
+            encoding == 'cp936' or
+            encoding in misleading_list or
+            confidence < 0.95):
+            return 'gb18030'
+
+        return encoding
+
+    return 'gb18030'

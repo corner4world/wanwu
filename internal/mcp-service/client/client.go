@@ -49,4 +49,10 @@ type IClient interface {
 	GetCustomSkillList(ctx context.Context, userId, orgId, name string) ([]*model.CustomSkill, int64, *errs.Status)
 	GetCustomSkillBySaveIds(ctx context.Context, saveIds []string) ([]*model.CustomSkill, *errs.Status)
 	GetCustomSkillBySkillIds(ctx context.Context, skillIds []string) ([]*model.CustomSkill, *errs.Status)
+
+	//================AcquiredSkill================
+	CreateAcquiredSkill(ctx context.Context, acquiredSkill *model.AcquiredSkill) (string, *errs.Status)
+	DeleteAcquiredSkill(ctx context.Context, acquiredSkillId string) *errs.Status
+	GetAcquiredSkill(ctx context.Context, acquiredSkillId string) (*model.AcquiredSkill, *errs.Status)
+	GetAcquiredSkillList(ctx context.Context, userId, orgId, name string) ([]*model.AcquiredSkill, int64, *errs.Status)
 }

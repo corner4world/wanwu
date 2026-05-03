@@ -155,8 +155,9 @@ func buildToolSquareInfoList(ctx context.Context, cli client.IClient, req *mcp_s
 		}
 		for _, toolCfg := range config.Cfg().Tools {
 			tool := toolInfoMap[toolCfg.ToolSquareId]
+			var apiAuth *common.ApiAuthWebRequest
 			if tool != nil {
-				apiAuth := &common.ApiAuthWebRequest{}
+				apiAuth = &common.ApiAuthWebRequest{}
 				if toolCfg.NeedApiKeyInput {
 					apiAuthJson := tool.AuthJSON
 					if err := json.Unmarshal([]byte(apiAuthJson), apiAuth); err != nil {
@@ -165,8 +166,8 @@ func buildToolSquareInfoList(ctx context.Context, cli client.IClient, req *mcp_s
 					}
 					apiAuth = toBuiltinToolApiAuth(*toolCfg, apiAuth.ApiKeyValue)
 				}
-				toolSquareInfo = append(toolSquareInfo, buildSquareToolDetail(*toolCfg, apiAuth))
 			}
+			toolSquareInfo = append(toolSquareInfo, buildSquareToolDetail(*toolCfg, apiAuth))
 		}
 	}
 	return toolSquareInfo, nil

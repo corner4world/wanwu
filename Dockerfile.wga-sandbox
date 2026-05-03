@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux GOARCH=$WANWU_ARCH go build -ldflags="-s -w" -o eino-agent ./pkg/wga-sandbox/internal/runner/eino/agent
 
-FROM crpi-6pj79y7ddzdpexs8.cn-hangzhou.personal.cr.aliyuncs.com/wanwulite/wga-sandbox-base:1.0.0.152-opencode1.1.65
+FROM crpi-6pj79y7ddzdpexs8.cn-hangzhou.personal.cr.aliyuncs.com/wanwulite/wga-sandbox-base:1.0.0.152-opencode1.4.11
 
 USER root
 
@@ -50,6 +50,7 @@ RUN set -eux; \
         fonts-noto-cjk \
         fonts-wqy-zenhei \
         fonts-wqy-microhei \
+        fonts-liberation \
         fontconfig; \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*;

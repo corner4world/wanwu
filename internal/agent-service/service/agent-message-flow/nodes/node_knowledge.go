@@ -15,6 +15,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/http"
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	"github.com/UnicomAI/wanwu/internal/agent-service/service/agent-message-flow/prompt"
+	minio_service "github.com/UnicomAI/wanwu/internal/agent-service/service/minio-service"
 	http_client "github.com/UnicomAI/wanwu/pkg/http-client"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/cloudwego/eino/adk"
@@ -39,11 +40,11 @@ func (k *KnowledgeRetriever) Retrieve(ctx context.Context, reqContext *request.A
 		LlmModelID: req.ModelParams.ModelId,
 	}
 	req.KnowledgeParams.AttachmentFiles = make([]*request.RagKnowledgeAttachment, 0)
+	req.KnowledgeParams.ReturnMeta = true
 	toolId := uuid.New().String()
-	newStyle := reqContext.AgentChatReq.NewStyle
-	sendKnowledgeMessage(reqContext.Generator, false, nil, toolId, newStyle)
+	sendKnowledgeMessage(reqContext.Generator, false, nil, toolId)
 	defer func() {
-		sendKnowledgeMessage(reqContext.Generator, true, reqContext.KnowledgeHitData, toolId, newStyle)
+		sendKnowledgeMessage(reqContext.Generator, true, reqContext.KnowledgeHitData, toolId)
 	}()
 	fileList := reqContext.AgentChatReq.UploadFile
 	if len(fileList) > 0 {
@@ -105,12 +106,53 @@ func ragKnowledgeHit(ctx context.Context, knowledgeHitParams *request.KnowledgeP
 	if resp.Code != successCode {
 		return nil, errors.New(resp.Message)
 	}
+
+	if resp.Data != nil && len(resp.Data.SearchList) > 0 {
+		urlMap := make(map[string]bool)
+		for _, list := range resp.Data.SearchList {
+			if list.MetaData != nil {
+				urlMap[buildMinioPath(list.MetaData)] = true
+			}
+		}
+		uploadUrlMap := copyFile(urlMap)
+		for _, list := range resp.Data.SearchList {
+			if list.MetaData != nil {
+				list.MetaData.DownloadLink = uploadUrlMap[buildMinioPath(list.MetaData)]
+			}
+		}
+		return &resp, nil
+	}
 	return &resp, nil
 }
 
+func buildMinioPath(metaData *model.MetaData) string {
+	return "http://minio-wanwu:9000/" + metaData.BucketName + "/" + metaData.ObjectName
+}
+
+func copyFile(urlMap map[string]bool) map[string]string {
+	var startTime = time.Now().UnixMilli()
+	defer func() {
+		log.Infof("downloadAndUpload cost: %d ms", time.Now().UnixMilli()-startTime)
+	}()
+
+	retUrlMap := make(map[string]string)
+	if len(urlMap) == 0 {
+		return retUrlMap
+	}
+	for fileUrl := range urlMap {
+		filePath, _, _, err := minio_service.CopyFile(context.Background(), fileUrl, uuid.New().String(), true)
+		if err != nil {
+			log.Errorf("minio copy file error: %v", err)
+			continue
+		}
+		retUrlMap[fileUrl] = filePath
+	}
+	return retUrlMap
+}
+
 // sendKnowledgeMessage 发送知识库消息
-func sendKnowledgeMessage(generator *adk.AsyncGenerator[*adk.AgentEvent], finish bool, hitData *model.KnowledgeHitData, toolId string, newStyle bool) {
-	if generator != nil && newStyle {
+func sendKnowledgeMessage(generator *adk.AsyncGenerator[*adk.AgentEvent], finish bool, hitData *model.KnowledgeHitData, toolId string) {
+	if generator != nil {
 		message := buildKnowledgeMessage(finish, hitData, toolId)
 		generator.Send(&adk.AgentEvent{
 			Output: &adk.AgentOutput{

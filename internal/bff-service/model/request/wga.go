@@ -1,8 +1,24 @@
 package request
 
+// UpdateGeneralAgentConfigReq 更新通用智能体配置请求
 type UpdateGeneralAgentConfigReq struct {
-	ToolList      []ToolSelected      `json:"toolList"`      // 工具ID
-	AssistantList []AssistantSelected `json:"assistantList"` // 智能体ID
+	Mcp       []GeneralAgentConfigItem     `json:"mcp"`
+	Workflow  []GeneralAgentConfigItem     `json:"workflow"`
+	Skill     []GeneralAgentConfigItem     `json:"skill"`
+	Assistant []GeneralAgentConfigItem     `json:"assistant"`
+	Tool      []GeneralAgentConfigToolItem `json:"tool"`
+}
+
+// GeneralAgentConfigItem 配置项（带type）
+type GeneralAgentConfigItem struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+// GeneralAgentConfigToolItem tool配置项
+type GeneralAgentConfigToolItem struct {
+	ID   string `json:"toolId"`
+	Type string `json:"toolType"`
 }
 
 func (c *UpdateGeneralAgentConfigReq) Check() error { return nil }
@@ -40,6 +56,7 @@ type GetGeneralAgentConversationDetailReq struct {
 func (c *GetGeneralAgentConversationDetailReq) Check() error { return nil }
 
 type GeneralAgentConfigCheckRequest struct {
+	AgentID  string `json:"agentId"`                                      // 子智能体ID
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
 }
 
@@ -56,13 +73,13 @@ type ToolSelected struct {
 }
 
 type AssistantSelected struct {
-	AssistantID   string `json:"assistantId" validate:"required"`   // 智能体ID
-	AssistantType string `json:"assistantType" validate:"required"` // 智能体类型
+	AssistantID string `json:"assistantId" validate:"required"` // 智能体ID
 }
 
 func (c *UpdateGeneralAgentConversationConfigReq) Check() error { return nil }
 
 type GeneralAgentConversationChatReq struct {
+	AgentID  string                            `json:"agentId"`                      // 智能体ID
 	ThreadID string                            `json:"threadId" validate:"required"` // 对话ID
 	Messages []GeneralAgentConversationMessage `json:"messages" validate:"required"` // 消息
 }
@@ -75,15 +92,17 @@ type GeneralAgentConversationMessage struct {
 	Content interface{} `json:"content" validate:"required"` // 内容 string 或者 [{"type":"text","text":"这张图片是什么？"},{"type":"binary","mimeType":"image/png","url":"https://..."}]
 }
 
-func (m *GeneralAgentConversationMessage) GetURLs() []string {
-	var urls []string
+func (m *GeneralAgentConversationMessage) GetURLs() map[string]string {
+	urls := make(map[string]string)
 	switch v := m.Content.(type) {
 	case []interface{}:
 		for _, item := range v {
 			if m, ok := item.(map[string]interface{}); ok {
 				if m["type"] == "binary" {
-					if urlStr, ok := m["url"].(string); ok {
-						urls = append(urls, urlStr)
+					urlStr, _ := m["url"].(string)
+					fileName, _ := m["fileName"].(string)
+					if urlStr != "" && fileName != "" {
+						urls[fileName] = urlStr
 					}
 				}
 			}

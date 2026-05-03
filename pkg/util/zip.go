@@ -5,13 +5,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/UnicomAI/wanwu/pkg/log"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/UnicomAI/wanwu/pkg/log"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 // ZipDir 将目录打包为 zip 格式数据。
@@ -37,7 +38,7 @@ func ZipDirToLocal(srcDir, destZipPath string) error {
 	// 创建目标 zip 文件
 	zipFile, err := os.Create(destZipPath)
 	if err != nil {
-		return fmt.Errorf("create zip file failed: %w", err)
+		return fmt.Errorf("create zip file error: %w", err)
 	}
 	defer func() {
 		if err := zipFile.Close(); err != nil {
@@ -54,7 +55,7 @@ func UnzipDir(ctx context.Context, localFilePath string, destDir string) (extrac
 	}
 	defer func() {
 		if err1 := fileReader.Close(); err1 != nil {
-			log.Errorf("ZipFileExtractServiceService file close error %v", err)
+			log.Errorf("UnzipDir file (%s) close error: %v", localFilePath, err1)
 		}
 	}()
 
@@ -74,11 +75,10 @@ func UnzipDir(ctx context.Context, localFilePath string, destDir string) (extrac
 		if f.FileInfo().IsDir() {
 			// 创建目录
 			if err := os.MkdirAll(destFilePath, f.Mode()); err != nil {
-				fmt.Printf("无法创建目录: %v\n", err)
+				log.Errorf("UnzipDir create directory (%s) error: %v", destFilePath, err)
 			}
 			continue
 		}
-		log.Infof("ExtractFile file path %s", destFilePath)
 		// 我们需要确保所有的文件夹都已经创建好
 		err = os.MkdirAll(filepath.Dir(destFilePath), f.Mode())
 		if err != nil {
@@ -187,7 +187,7 @@ func writeUnzipFile(zipFile *zip.File, destFilePath string) error {
 	}
 	defer func() {
 		if err := destFile.Close(); err != nil {
-			log.Errorf("ZipFileExtractServiceService file close error %v", err)
+			log.Errorf("writeUnzipFile file close error: %v", err)
 		}
 	}()
 
@@ -198,7 +198,7 @@ func writeUnzipFile(zipFile *zip.File, destFilePath string) error {
 	}
 	defer func() {
 		if err := sourceFile.Close(); err != nil {
-			log.Errorf("ZipFileExtractServiceService file close error %v", err)
+			log.Errorf("writeUnzipFile file close error: %v", err)
 		}
 	}()
 

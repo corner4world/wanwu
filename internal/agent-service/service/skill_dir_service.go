@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"path/filepath"
+	"strings"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	minio_service "github.com/UnicomAI/wanwu/internal/agent-service/service/minio-service"
 	"github.com/UnicomAI/wanwu/pkg/util"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -15,6 +16,7 @@ const (
 
 type SkillDir struct {
 	SkillDir  string //技能所在地址
+	RunDir    string //技能运行时目录
 	OutputDir string //此次运行技能输出地址
 	InputDir  string //此次运行技能输入地址
 }
@@ -33,7 +35,7 @@ func CreateSkillDir(runId string, skill *request.SkillToolInfo, uploadFile []str
 	}
 	if len(uploadFile) > 0 {
 		for _, file := range uploadFile {
-			err := minio_service.DownloadFileToLocal(context.Background(), file, inputDir+util.NewRandomFile(file))
+			err := minio_service.DownloadFileToLocal(context.Background(), file, filepath.Join(inputDir, util.NewRandomFile(file)))
 			if err != nil {
 				return nil, err
 			}
@@ -50,6 +52,7 @@ func CreateSkillDir(runId string, skill *request.SkillToolInfo, uploadFile []str
 		SkillDir:  skillDir,
 		OutputDir: outputDir,
 		InputDir:  inputDir,
+		RunDir:    runDir,
 	}, nil
 }
 

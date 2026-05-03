@@ -127,12 +127,15 @@ func SelectKnowledgeInfoByName(ctx *gin.Context, userId, orgId string, r *reques
 	}, nil
 }
 
-// GetDeployInfo 查询部署信息
-func GetDeployInfo(ctx *gin.Context) (interface{}, error) {
-	cfgServer := config.Cfg().Server
-	return map[string]string{
-		"webBaseUrl": cfgServer.WebBaseUrl + "/minio/download/api/",
-	}, nil
+// SelectKnowledgeIdByRagName 根据ragName获取知识库ID
+func SelectKnowledgeIdByRagName(ctx *gin.Context, ragName string) (string, error) {
+	resp, err := knowledgeBase.SelectKnowledgeIdByRagName(ctx.Request.Context(), &knowledgebase_service.SelectKnowledgeIdByRagNameReq{
+		RagName: ragName,
+	})
+	if err != nil {
+		return "", err
+	}
+	return resp.KnowledgeId, nil
 }
 
 // CreateKnowledge 创建知识库
@@ -890,4 +893,25 @@ func buildKnowledgeHitDocInfoList(docInfoList []*request.DocInfo) []*knowledgeba
 		}
 	}
 	return retList
+}
+
+// GetDocByKnowledgeNameAndDocName 根据知识库名称和文档名称获取文档信息
+func GetDocByKnowledgeNameAndDocName(ctx *gin.Context, userId, orgId string, req *request.GetDocByKnowledgeNameAndDocNameReq) (*response.GetDocByKnowledgeNameAndDocNameResp, error) {
+	resp, err := knowledgeBase.GetDocByKnowledgeNameAndDocName(ctx.Request.Context(), &knowledgebase_service.GetDocByKnowledgeNameAndDocNameReq{
+		KnowledgeName: req.KnowledgeName,
+		DocName:       req.DocName,
+		UserId:        userId,
+		OrgId:         orgId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &response.GetDocByKnowledgeNameAndDocNameResp{
+		KnowledgeId:   resp.KnowledgeId,
+		KnowledgeName: resp.KnowledgeName,
+		DocId:         resp.DocId,
+		DocType:       resp.DocType,
+		DocName:       resp.DocName,
+		Disable:       false,
+	}, nil
 }

@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package mcp_service;
+
+import "proto/mcp-service/common.proto";
+
+option go_package = "github.com/UnicomAI/wanwu/api/proto/mcp-service";
+
+// --- custom skill ---
+message CustomSkill {
+  string skillId = 1;
+  string name = 2;
+  string avatar = 3;
+  string author = 4;
+  string desc = 5;
+  string objectPath = 6;
+  string markdown = 9;
+  int64 createdAt = 7;
+  int64 updatedAt = 8;
+}
+
+message CustomSkillCreateReq {
+  string name = 1;
+  string avatar = 2;
+  string author = 3;
+  string desc = 4;
+  string objectPath = 5;
+  string saveId = 6;
+  string sourceType = 7;
+  Identity identity = 8;
+  string markdown = 9;
+}
+
+message CustomSkillCreateResp {
+  string skillId = 1;
+}
+
+message CustomSkillDeleteReq {
+  string skillId = 1;
+}
+
+message CustomSkillGetReq {
+  string skillId = 1;
+  Identity identity = 2;
+}
+
+message CustomSkillGetListReq {
+  string name = 1;
+  int32 page = 2;
+  int32 pageSize = 3;
+  Identity identity = 4;
+}
+
+message CustomSkillGetListResp {
+  repeated CustomSkill list = 1;
+  int64 total = 2;
+}
+
+message CustomSkillGetBySaveIdsReq {
+  repeated string saveIds = 1;
+}
+
+message CustomSkillSaveIdsResp {
+  repeated string saveIds = 1;
+}
+
+message CustomSkillDetailByIdListReq {
+  repeated string skillIds = 1;
+}
+
+message CustomSkillDetailByIdListResp {
+  repeated CustomSkill skillDetails = 1;
+}
+
+// --- acquired skill ---
+message AcquiredSkill {
+  string acquiredSkillId = 1;
+  string squareSkillId = 2;
+  string name = 3;
+  string avatar = 4;
+  string author = 5;
+  string authorId = 6;
+  string desc = 7;
+  string objectPath = 8;
+  string markdown = 9;
+  string acquiredType = 10; //builtin/custom 
+  string version = 11;
+  string versionDescription = 12;
+  int64 createdAt = 13;
+  int64 updatedAt = 14;
+}
+
+message AcquiredSkillCreateReq {
+  Identity identity = 1;
+  string name = 2;
+  string avatar = 3;
+  string squareSkillId = 4;
+  string author = 5;
+  string authorId = 6;
+  string desc = 7;
+  string objectPath = 8;
+  string acquiredType = 9; //builtin/custom 
+  string markdown = 10;
+  string version = 11;
+  string versionDescription = 12;
+}
+
+message AcquiredSkillCreateResp {
+  string acquiredSkillId = 1;
+}
+
+message AcquiredSkillDeleteReq {
+  string acquiredSkillId = 1;
+}
+
+message AcquiredSkillGetReq {
+  string acquiredSkillId = 1;
+}
+
+message AcquiredSkillGetListReq {
+  Identity identity = 1;
+  string name = 2;
+}
+
+message AcquiredSkillGetListResp {
+  repeated AcquiredSkill list = 1;
+  int64 total = 2;
+}

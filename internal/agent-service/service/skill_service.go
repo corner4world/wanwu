@@ -3,6 +3,12 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/response"
 	agent_config "github.com/UnicomAI/wanwu/internal/agent-service/pkg/config"
@@ -22,8 +28,6 @@ import (
 	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
 	"github.com/samber/lo"
-	"path/filepath"
-	"strings"
 )
 
 // 使用 map 存储特殊字符，查找效率 O(1)
@@ -58,6 +62,7 @@ type skillRunEnv struct {
 	inputDir       string
 	outputDir      string
 	skillDir       string
+	runDir         string
 	enableThinking bool //是否输出智能体思考过程
 }
 
@@ -164,9 +169,21 @@ func (s *SkillExecutor) initEnv(argumentsInJSON string) *SkillExecutor {
 		inputDir:       dir.InputDir,
 		outputDir:      dir.OutputDir,
 		skillDir:       dir.SkillDir,
+		runDir:         dir.RunDir,
 		enableThinking: false,
 	}
 	return s
+}
+
+// clearEnv 清理运行环境，删除 runDir 下的所有数据
+func (s *SkillExecutor) clearEnv() {
+	if s.runEnv != nil && s.runEnv.runDir != "" {
+		log.Errorf("skillTool clearEnv %s", s.runEnv.runDir)
+		err := os.RemoveAll(s.runEnv.runDir)
+		if err != nil {
+			log.Errorf("skillTool clearEnv error: %v", err)
+		}
+	}
 }
 
 func (s *SkillExecutor) initMessages() *SkillExecutor {
@@ -189,12 +206,14 @@ func (s *SkillExecutor) runStream(runnerType wga_sandbox_option.RunnerType) (*sc
 	_, jsonCh, err := wga_sandbox.Run(s.ctx, skillOpts...)
 	if err != nil {
 		log.Errorf("skillTool strem run error: %v", err)
-		return nil, err
+		return nil, errors.New(agent_util.WgaErr)
 	}
 
 	safe_go_util.SafeGo(func() {
 		defer func() {
 			sw.Close()
+			// 清理运行环境
+			s.clearEnv()
 		}()
 		for ch := range jsonCh {
 			if conv != nil {
@@ -228,16 +247,19 @@ func (s *SkillExecutor) runStream(runnerType wga_sandbox_option.RunnerType) (*sc
 	return sr, nil
 }
 
+// downloadInputFile 下载输入文件
 func downloadInputFile(inputDir string, skillParams *SkillParams) {
 	if len(skillParams.UploadFileUrl) > 0 {
 		for _, file := range skillParams.UploadFileUrl {
-			err := minio_service.DownloadFileToLocal(context.Background(), file, inputDir+filepath.Base(file))
+			localFilePath := filepath.Join(inputDir, filepath.Base(file))
+			err := minio_service.DownloadFileToLocal(context.Background(), file, localFilePath)
 			if err != nil {
 				log.Errorf("skillTool downloadInputFile error: %v", err)
 			}
 		}
 	}
 }
+
 func skillOutputProcessor(outputDir string) (string, map[string]any, error) {
 	var builder = &strings.Builder{}
 	//结果文件处理
@@ -248,7 +270,7 @@ func skillOutputProcessor(outputDir string) (string, map[string]any, error) {
 	}
 	var extra = map[string]any{}
 	if len(fileList) > 0 {
-		builder.WriteString("生成文件结果如下:")
+		builder.WriteString("\n 生成文件结果如下-ReplaceLocalFile:")
 		for _, file := range fileList {
 			builder.WriteString(util.MdImageFile(file.FileName, file.FilePath))
 		}
@@ -275,6 +297,7 @@ func uploadResultFile(outputDir string) ([]*response.DownloadFileInfo, error) {
 			FileName: fileName,
 			FilePath: minioPath,
 			FileSize: fileSize,
+			CreateAt: util.Time2Str(time.Now().UnixMilli()),
 		})
 	}
 	return fileList, nil

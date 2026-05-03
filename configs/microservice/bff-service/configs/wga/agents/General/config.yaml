@@ -14,7 +14,7 @@ prompt_relative_path: ./prompt.md
 
 tool_categories:
   - category: wga_tool_category_search
-    condition: optional
+    condition: none
     tools:
       - path: configs/microservice/mcp-service/configs/tool/bochasearch/openapi.json
         auth_required: true
@@ -36,9 +36,7 @@ tool_categories:
 
 skills:
   # - dir: configs/microservice/bff-service/configs/agent-skills/anthropics
-  # - dir: configs/microservice/bff-service/configs/agent-skills/kimi/kimi-pdf
-  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/minimax-docx
-  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/pptx-generator
-  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax/frontend-dev
+  # - dir: configs/microservice/bff-service/configs/agent-skills/minimax
+  # - dir: configs/microservice/bff-service/configs/agent-skills/wanwu
  
 sub_agents:

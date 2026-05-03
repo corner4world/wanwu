@@ -417,6 +417,34 @@ func (s *Service) GetPublishRagDesc(ctx context.Context, req *rag_service.GetPub
 	}, nil
 }
 
+func (s *Service) GetPublishRagDescBatch(ctx context.Context, req *rag_service.GetPublishRagDescBatchReq) (*rag_service.GetPublishRagDescBatchResp, error) {
+	if len(req.RagIdList) == 0 {
+		return &rag_service.GetPublishRagDescBatchResp{List: []*rag_service.GetPublishRagDescResp{}}, nil
+	}
+	ragList, err := s.cli.FetchPublishRagListByRagIds(ctx, req.RagIdList)
+	if err != nil {
+		return nil, errStatus(errs.Code_RagGetErr, err)
+	}
+	// 按 ragId 分组，取每个 ragId 的最新版本
+	ragMap := make(map[string]*model.RagPublish)
+	for _, rag := range ragList {
+		if existing, ok := ragMap[rag.RagID]; !ok || rag.CreatedAt > existing.CreatedAt {
+			ragMap[rag.RagID] = rag
+		}
+	}
+	// 构建响应
+	resp := make([]*rag_service.GetPublishRagDescResp, 0, len(ragMap))
+	for ragId, rag := range ragMap {
+		resp = append(resp, &rag_service.GetPublishRagDescResp{
+			RagId:    ragId,
+			Version:  rag.Version,
+			Desc:     rag.Description,
+			CreateAt: rag.CreatedAt,
+		})
+	}
+	return &rag_service.GetPublishRagDescBatchResp{List: resp}, nil
+}
+
 func (s *Service) searchRagDetail(ctx context.Context, ragId, version string, publish int32) (*model.RagInfo, error) {
 	// 获取rag详情
 	rag := &model.RagInfo{}

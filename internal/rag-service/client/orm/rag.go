@@ -423,3 +423,16 @@ func (c *Client) FetchPublishRagList(ctx context.Context, ragId string) ([]*mode
 	}
 	return ragList, nil
 }
+
+// FetchPublishRagListByRagIds 按 rag_id IN 返回全部匹配的发布记录（含历史版本）；每个 rag 取最新由 GetPublishRagDescBatch 按 CreatedAt 聚合。
+func (c *Client) FetchPublishRagListByRagIds(ctx context.Context, ragIds []string) ([]*model.RagPublish, *err_code.Status) {
+	if len(ragIds) == 0 {
+		return nil, toErrStatus("rag_get_err", "ragIds cannot be empty")
+	}
+	ragList := make([]*model.RagPublish, 0)
+	err := sqlopt.SQLOptions(sqlopt.InRagIds(ragIds)).Apply(c.db.WithContext(ctx)).Order("created_at DESC").Find(&ragList).Error
+	if err != nil {
+		return nil, toErrStatus("rag_get_err", "failed to fetch rag: "+err.Error())
+	}
+	return ragList, nil
+}

@@ -133,6 +133,8 @@ definitions:
         $ref: '#/definitions/mp_qwen.LLM'
       multiModalEmbedding:
         $ref: '#/definitions/mp_qwen.MultiModalEmbedding'
+      multiModalRerank:
+        $ref: '#/definitions/mp_qwen.MultiModalRerank'
       rerank:
         $ref: '#/definitions/mp_qwen.Rerank'
     type: object
@@ -501,6 +503,8 @@ definitions:
         type: string
       text:
         type: string
+      video:
+        type: string
     type: object
   mp_common.MultiInput:
     properties:
@@ -557,6 +561,9 @@ definitions:
         items:
           $ref: '#/definitions/mp_common.MultiDocument'
         type: array
+      fps:
+        description: 视频帧率（适配qwen rerank）
+        type: number
       instruction:
         description: 指令内容（适配元景qwen_rerank）
         type: string
@@ -943,6 +950,10 @@ definitions:
   mp_common.Usage:
     properties:
       completion_tokens:
+        type: integer
+      image_tokens:
+        type: integer
+      input_tokens:
         type: integer
       prompt_tokens:
         type: integer
@@ -1336,6 +1347,27 @@ definitions:
           type: string
         type: array
     type: object
+  mp_qwen.MultiModalRerank:
+    properties:
+      apiKey:
+        type: string
+      contextSize:
+        type: integer
+      endpointUrl:
+        type: string
+      maxImageSize:
+        type: integer
+      maxTextLength:
+        type: integer
+      maxVideoClipSize:
+        type: integer
+      supportFileTypes:
+        items:
+          type: string
+        type: array
+      supportImageInQuery:
+        type: boolean
+    type: object
   mp_qwen.Rerank:
     properties:
       apiKey:
@@ -1539,12 +1571,13 @@ definitions:
     type: object
   protocol.Property:
     properties:
+      default:
+        description: Default specifies the default value for the property.
       description:
         description: Description is the description of the schema.
         type: string
       enum:
-        items:
-          type: string
+        items: {}
         type: array
       items:
         allOf:
@@ -1562,7 +1595,9 @@ definitions:
           type: string
         type: array
       type:
-        $ref: '#/definitions/protocol.DataType'
+        items:
+          $ref: '#/definitions/protocol.DataType'
+        type: array
     type: object
   protocol.Tool:
     properties:
@@ -1610,25 +1645,12 @@ definitions:
         description: Title is a human-readable title for the tool, useful for UI display
         type: string
     type: object
-  request.AgentProxyChatReq:
+  request.AgentChatProxyReq:
     properties:
-      assistantId:
-        type: integer
       input:
         type: string
-      orgId:
-        type: string
-      uploadFile:
-        items:
-          type: string
-        type: array
-      userId:
-        type: string
     required:
-    - assistantId
     - input
-    - orgId
-    - userId
     type: object
   request.AppModelConfig:
     properties:
@@ -1927,6 +1949,9 @@ definitions:
       retrieve_method:
         description: hybrid_search:混合搜索， semantic_search:向量搜索， full_text_search：文本搜索
         type: string
+      return_meta:
+        description: 是否返回元数据
+        type: boolean
       rewrite_query:
         description: 是否query改写
         type: boolean
@@ -2011,6 +2036,19 @@ definitions:
     - categoryName
     - userId
     type: object
+  request.UploadFileByBase64Req:
+    properties:
+      file:
+        description: base64格式
+        type: string
+      fileExt:
+        description: 文件后缀名，如 "png", "pdf"
+        type: string
+      fileName:
+        type: string
+    required:
+    - file
+    type: object
   request.WeightParams:
     properties:
       text_weight:
@@ -2082,19 +2120,6 @@ definitions:
     - dir
     type: object
   request.WgaSandboxTool:
-    type: object
-  request.WorkflowUploadFileByBase64Req:
-    properties:
-      file:
-        description: base64格式
-        type: string
-      fileExt:
-        description: 文件后缀名，如 "png", "pdf"
-        type: string
-      fileName:
-        type: string
-    required:
-    - file
     type: object
   response.CustomToolActionInfo:
     properties:
@@ -2177,8 +2202,14 @@ definitions:
       sseUrl:
         description: SSE URL
         type: string
+      streamableUrl:
+        description: Streamable HTTP URL
+        type: string
       summary:
         description: 使用概述
+        type: string
+      transport:
+        description: '传输协议: "sse" 或 "streamable"'
         type: string
     type: object
   response.MCPServerDetail:
@@ -2334,6 +2365,21 @@ definitions:
         description: markdown地址，内部使用，不要对外
         type: string
     type: object
+  response.SkillDetailForWorkflow:
+    properties:
+      avatar:
+        type: string
+      desc:
+        type: string
+      name:
+        type: string
+      objectPath:
+        type: string
+      skillId:
+        type: string
+      skillType:
+        type: string
+    type: object
   response.SkillDetailListResp:
     properties:
       skillList:
@@ -2385,7 +2431,7 @@ definitions:
           $ref: '#/definitions/protocol.Tool'
         type: array
     type: object
-  response.UploadFileByWorkflowResp:
+  response.UploadFileByBase64Resp:
     properties:
       uri:
         type: string
@@ -2425,18 +2471,23 @@ info:
   title: AI Agent Productivity Platform - Callback
   version: v0.0.1
 paths:
-  /agent/proxy/chat:
+  /agent/{assistantId}/chat:
     post:
       consumes:
       - application/json
       description: 智能体代理问答，固定流式返回，提取eventType=0的数据聚合返回
       parameters:
+      - description: assistantId
+        in: path
+        name: assistantId
+        required: true
+        type: string
       - description: 智能体代理问答请求参数
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.AgentProxyChatReq'
+          $ref: '#/definitions/request.AgentChatProxyReq'
       produces:
       - application/json
       responses:
@@ -2644,6 +2695,37 @@ paths:
       summary: 获取内置工具列表
       tags:
       - skill
+  /callback/v1/skill/detail:
+    get:
+      consumes:
+      - application/json
+      description: 根据skillId和skillType获取技能详情
+      parameters:
+      - description: skillId
+        in: query
+        name: skillId
+        required: true
+        type: string
+      - description: skillType (builtin/custom)
+        in: query
+        name: skillType
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillDetailForWorkflow'
+              type: object
+      summary: 获取技能详情（供workflow回调使用）
+      tags:
+      - skill
   /callback/wga/sandbox/cleanup:
     post:
       consumes:
@@ -2712,6 +2794,32 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: 根据userId和spaceId获取Chatflow
+      tags:
+      - callback
+  /file/upload/base64:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 通过base64格式上传文件参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UploadFileByBase64Req'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UploadFileByBase64Resp'
+              type: object
+      summary: 通过base64上传文件
       tags:
       - callback
   /file/url/base64:
@@ -3154,62 +3262,6 @@ paths:
                   $ref: '#/definitions/response.ToolSquareDetail'
               type: object
       summary: 获取内置工具详情
-      tags:
-      - callback
-  /workflow/upload/file:
-    post:
-      consumes:
-      - multipart/form-data
-      parameters:
-      - description: 文件
-        in: formData
-        name: file
-        required: true
-        type: file
-      - description: 文件名
-        in: formData
-        name: fileName
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.UploadFileByWorkflowResp'
-              type: object
-      summary: 通过二进制上传文件
-      tags:
-      - callback
-  /workflow/upload/file/base64:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: 通过base64格式上传文件参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.WorkflowUploadFileByBase64Req'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.UploadFileByWorkflowResp'
-              type: object
-      summary: 通过base64上传文件
       tags:
       - callback
 swagger: "2.0"

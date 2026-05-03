@@ -3,10 +3,11 @@ package util
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
-	"strings"
 )
 
 func UserMessage(content string) []adk.Message {

@@ -24,17 +24,18 @@ var (
 
 func Start(ctx context.Context) {
 
+	// router
+	gin.ForceConsoleColor()
+	r := gin.Default()
+
 	// middleware
-	middleware.Init()
+	middleware.Init(r)
 
 	// validator
 	if err := gin_util.InitValidator(); err != nil {
 		log.Fatalf("init gin validator err: %v", err)
 	}
 
-	// router
-	gin.ForceConsoleColor()
-	r := gin.Default()
 	// v1
 	v1.Register(r.Group("/v1"))
 	// v2

@@ -36,6 +36,8 @@ service RagService {
   rpc OverwriteRagDraft(OverwriteRagDraftReq) returns (google.protobuf.Empty) {}
   // 返回最新版本描述
   rpc GetPublishRagDesc(GetPublishRagDescReq) returns (GetPublishRagDescResp) {}
+  // 批量返回最新版本描述
+  rpc GetPublishRagDescBatch(GetPublishRagDescBatchReq) returns (GetPublishRagDescBatchResp) {}
 }
 message Identity {
   string userId = 1;
@@ -251,4 +253,13 @@ message GetPublishRagDescResp{
   string version = 2;
   string desc = 3;
   int64 createAt = 4;
+}
+
+message GetPublishRagDescBatchReq{
+  repeated string ragIdList = 1;
+  Identity identity = 2;
+}
+
+message GetPublishRagDescBatchResp{
+  repeated GetPublishRagDescResp list = 1;
 }

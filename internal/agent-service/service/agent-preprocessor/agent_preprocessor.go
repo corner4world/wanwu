@@ -20,7 +20,7 @@ type AgentPreprocess struct {
 }
 
 // AgentPreProcess 预处理
-func AgentPreProcess(agentPreprocess *AgentPreprocess, agentInput *adk.AgentInput, req *request.AgentChatParams) (*adk.AgentInput, *response.AgentChatRespContext) {
+func AgentPreProcess(agentPreprocess *AgentPreprocess, agentInput *adk.AgentInput, req *request.AgentChatParams, agentInfo *request.AgentInfo) (*adk.AgentInput, *response.AgentChatRespContext) {
 	ctx := agentPreprocess.GinContext
 	iter, generator := adk.NewAsyncIteratorPair[*adk.AgentEvent]()
 	safe_go_util.SafeGo(func() {
@@ -35,6 +35,6 @@ func AgentPreProcess(agentPreprocess *AgentPreprocess, agentInput *adk.AgentInpu
 		}
 	})
 	//此处阻塞读iter
-	chatRespContext, _ := agent_message_processor.AgentMessage(ctx, iter, &request.AgentChatContext{AgentChatReq: req})
+	chatRespContext, _ := agent_message_processor.AgentMessage(ctx, iter, &request.AgentChatContext{AgentChatReq: req, CurrentAgent: agentInfo})
 	return agentInput, chatRespContext
 }

@@ -3,6 +3,7 @@ package ag_ui_util
 import (
 	"context"
 	"io"
+	"strings"
 
 	"github.com/UnicomAI/wanwu/pkg/util"
 	aguievents "github.com/ag-ui-protocol/ag-ui/sdks/community/go/pkg/core/events"
@@ -22,7 +23,10 @@ type AgentActivitySimple struct {
 	streamingToolCalls         map[string]bool
 }
 
-const subAgentActivityType = "sub_agent"
+const (
+	DefaultAgentName     = "default"
+	subAgentActivityType = "sub_agent"
+)
 
 func NewAgentActivitySimple(agentName string) *AgentActivitySimple {
 	return &AgentActivitySimple{
@@ -91,28 +95,9 @@ func (t *EinoTranslator) TranslateStream(ctx context.Context, iter *adk.AsyncIte
 				return
 			}
 
-			if event.Err != nil {
-				errMsg := &schema.Message{
-					Role:    schema.Assistant,
-					Content: "[error] " + event.Err.Error(),
-				}
-				for _, evt := range t.translateMessageForCurrentAgent(errMsg) {
-					select {
-					case out <- evt:
-					case <-ctx.Done():
-						return
-					}
-				}
-				return
-			}
-
-			if event.Action != nil && event.Action.Exit {
-				return
-			}
-
 			agentName := event.AgentName
 			if agentName == "" {
-				agentName = "default"
+				agentName = DefaultAgentName
 			}
 
 			shouldSwitch := t.currentActivity == nil || t.currentActivity.agentName != agentName
@@ -124,6 +109,26 @@ func (t *EinoTranslator) TranslateStream(ctx context.Context, iter *adk.AsyncIte
 						return
 					}
 				}
+			}
+
+			if event.Err != nil {
+				errMsg := &schema.Message{
+					Role:    schema.Assistant,
+					Content: "[error] " + strings.ReplaceAll(event.Err.Error(), "%!s(<nil>)", ""),
+				}
+				for _, evt := range t.translateMessageForCurrentAgent(errMsg) {
+					select {
+					case out <- evt:
+					case <-ctx.Done():
+						return
+					}
+				}
+				// 错误事件后不会有后续事件（eino adk 在发送错误事件后会关闭迭代器）
+				return
+			}
+
+			if event.Action != nil && event.Action.Exit {
+				return
 			}
 
 			if event.Output == nil || event.Output.MessageOutput == nil {
@@ -202,14 +207,88 @@ func (t *EinoTranslator) endCurrentAgentActivity() []aguievents.Event {
 }
 
 func (t *EinoTranslator) translateMessageForCurrentAgent(msg *schema.Message) []aguievents.Event {
-	if t.currentActivity == nil {
-		return nil
+	// 创建临时 activity（如果 currentActivity 为空）
+	activity := t.currentActivity
+	if activity == nil {
+		activity = NewAgentActivitySimple(DefaultAgentName)
 	}
-
-	return t.translateMessageWithActivity(msg, t.currentActivity, false)
+	return translateMessageWithActivity(msg, activity, false)
 }
 
-func (t *EinoTranslator) translateMessageWithActivity(msg *schema.Message, activity *AgentActivitySimple, isStreaming bool) []aguievents.Event {
+func (t *EinoTranslator) translateStreamForAgent(ctx context.Context, msgOutput *adk.MessageVariant, out chan<- aguievents.Event) {
+	if msgOutput.MessageStream == nil {
+		return
+	}
+	defer msgOutput.MessageStream.Close()
+
+	if t.currentActivity == nil {
+		return
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		frame, err := msgOutput.MessageStream.Recv()
+		if err == io.EOF {
+			for toolCallID := range t.currentActivity.streamingToolCalls {
+				args := t.currentActivity.streamingToolCallArgs[toolCallID]
+				if !t.currentActivity.toolCallStarted[toolCallID] {
+					continue
+				}
+				if args != "" {
+					select {
+					case out <- aguievents.NewToolCallArgsEvent(toolCallID, args):
+					case <-ctx.Done():
+						return
+					}
+				}
+				select {
+				case out <- aguievents.NewToolCallEndEvent(toolCallID):
+				case <-ctx.Done():
+					return
+				}
+				delete(t.currentActivity.toolCallStarted, toolCallID)
+				delete(t.currentActivity.streamingToolCallArgs, toolCallID)
+				delete(t.currentActivity.streamingToolCalls, toolCallID)
+			}
+			return
+		}
+		if err != nil {
+			return
+		}
+
+		for _, evt := range translateMessageWithActivity(frame, t.currentActivity, true) {
+			select {
+			case out <- evt:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func (t *EinoTranslator) finishAllAgents() []aguievents.Event {
+	var events []aguievents.Event
+
+	if t.currentActivity != nil {
+		events = append(events, t.endCurrentAgentActivity()...)
+	}
+
+	if !t.runFinished {
+		t.runFinished = true
+		events = append(events, aguievents.NewRunFinishedEvent(t.threadID, t.runID))
+	}
+
+	return events
+}
+
+// --- function ---
+
+func translateMessageWithActivity(msg *schema.Message, activity *AgentActivitySimple, isStreaming bool) []aguievents.Event {
 	if msg == nil {
 		return nil
 	}
@@ -279,77 +358,6 @@ func (t *EinoTranslator) translateMessageWithActivity(msg *schema.Message, activ
 		events = append(events, activity.EndReasoning()...)
 		events = append(events, activity.StartTextMessage()...)
 		events = append(events, aguievents.NewTextMessageContentEvent(activity.TextMsgID(), msg.Content))
-	}
-
-	return events
-}
-
-func (t *EinoTranslator) translateStreamForAgent(ctx context.Context, msgOutput *adk.MessageVariant, out chan<- aguievents.Event) {
-	if msgOutput.MessageStream == nil {
-		return
-	}
-	defer msgOutput.MessageStream.Close()
-
-	if t.currentActivity == nil {
-		return
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		frame, err := msgOutput.MessageStream.Recv()
-		if err == io.EOF {
-			for toolCallID := range t.currentActivity.streamingToolCalls {
-				args := t.currentActivity.streamingToolCallArgs[toolCallID]
-				if !t.currentActivity.toolCallStarted[toolCallID] {
-					continue
-				}
-				if args != "" {
-					select {
-					case out <- aguievents.NewToolCallArgsEvent(toolCallID, args):
-					case <-ctx.Done():
-						return
-					}
-				}
-				select {
-				case out <- aguievents.NewToolCallEndEvent(toolCallID):
-				case <-ctx.Done():
-					return
-				}
-				delete(t.currentActivity.toolCallStarted, toolCallID)
-				delete(t.currentActivity.streamingToolCallArgs, toolCallID)
-				delete(t.currentActivity.streamingToolCalls, toolCallID)
-			}
-			return
-		}
-		if err != nil {
-			return
-		}
-
-		for _, evt := range t.translateMessageWithActivity(frame, t.currentActivity, true) {
-			select {
-			case out <- evt:
-			case <-ctx.Done():
-				return
-			}
-		}
-	}
-}
-
-func (t *EinoTranslator) finishAllAgents() []aguievents.Event {
-	var events []aguievents.Event
-
-	if t.currentActivity != nil {
-		events = append(events, t.endCurrentAgentActivity()...)
-	}
-
-	if !t.runFinished {
-		t.runFinished = true
-		events = append(events, aguievents.NewRunFinishedEvent(t.threadID, t.runID))
 	}
 
 	return events

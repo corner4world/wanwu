@@ -8,6 +8,7 @@ import (
 
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	mcp_client "github.com/UnicomAI/wanwu/internal/agent-service/service/mcp-client"
+	"github.com/UnicomAI/wanwu/pkg/constant"
 	"github.com/cloudwego/eino-ext/components/tool/mcp"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/mark3labs/mcp-go/client"
@@ -20,19 +21,36 @@ type MCPServerInfo struct {
 	ToolNameList []string `json:"toolNameList"`
 }
 
-func createMCPClient(ctx context.Context, url string) (client.MCPClient, error) {
-	// 使用 NewSSEMCPClient 创建客户端
-	mcpClient, err := client.NewSSEMCPClient(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create SSE MCP client: %w", err)
+// createMCPClient 根据 transport 类型创建 MCP 客户端
+// transport: "sse" 或 "streamable"
+func createMCPClient(ctx context.Context, url string, transport string) (client.MCPClient, error) {
+	var mcpClient *client.Client
+	var err error
+
+	switch transport {
+	case constant.MCPTransportStreamable:
+		// 创建 StreamableHTTP 客户端
+		mcpClient, err = client.NewStreamableHttpClient(url)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create StreamableHTTP MCP client: %w", err)
+		}
+	case constant.MCPTransportSSE:
+		// 默认使用 SSE 客户端
+		mcpClient, err = client.NewSSEMCPClient(url)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create SSE MCP client: %w", err)
+		}
+	default:
+		return nil, fmt.Errorf("unsupported transport type: %s", transport)
 	}
+
 	retryMcpClient := mcp_client.NewDefaultRetryMcpClient(mcpClient)
 
 	// 启动客户端
 	err = retryMcpClient.Start(ctx)
 	if err != nil {
 		_ = retryMcpClient.Close()
-		return nil, fmt.Errorf("failed to start SSE MCP client: %w", err)
+		return nil, fmt.Errorf("failed to start MCP client: %w", err)
 	}
 
 	// 初始化 MCP 客户端
@@ -53,7 +71,7 @@ func createMCPClient(ctx context.Context, url string) (client.MCPClient, error) 
 		return nil, fmt.Errorf("failed to initialize MCP client: %w", err)
 	}
 
-	log.Println("SSE MCP client initialized successfully")
+	log.Printf("MCP client (%s) initialized successfully", transport)
 	return retryMcpClient, nil
 }
 
@@ -67,7 +85,7 @@ func GetToolsFromMCPServers(ctx context.Context, toolParamsList []*request.MCPTo
 	for _, serverInfo := range toolParamsList {
 		log.Printf("Connecting to MCP server: %v", serverInfo)
 
-		mcpClient, err := createMCPClient(ctx, serverInfo.URL)
+		mcpClient, err := createMCPClient(ctx, serverInfo.URL, serverInfo.Transport)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create MCP client for %v: %v", serverInfo, err)
 		}

@@ -16,8 +16,8 @@ func (c *Client) CreateCustomSkill(ctx context.Context, customSkill *model.Custo
 	if customSkill.SaveId != "" {
 		var count int64
 		if err := sqlopt.SQLOptions(
-			sqlopt.WithUserID(customSkill.UserId),
-			sqlopt.WithOrgID(customSkill.OrgId),
+			sqlopt.WithUserID(customSkill.UserID),
+			sqlopt.WithOrgID(customSkill.OrgID),
 			sqlopt.WithCustomSkillSaveId(customSkill.SaveId),
 			sqlopt.WithCustomSkillSourceType(customSkill.SourceType),
 		).Apply(c.db).WithContext(ctx).Model(&model.CustomSkill{}).Count(&count).Error; err != nil {
@@ -28,15 +28,8 @@ func (c *Client) CreateCustomSkill(ctx context.Context, customSkill *model.Custo
 		}
 	}
 
-	status := c.transaction(ctx, func(tx *gorm.DB) *err_code.Status {
-		if err := tx.WithContext(ctx).Create(customSkill).Error; err != nil {
-			return toErrStatus("mcp_custom_skill_create", err.Error())
-		}
-		return nil
-	})
-
-	if status != nil {
-		return "", status
+	if err := c.db.WithContext(ctx).Create(customSkill).Error; err != nil {
+		return "", toErrStatus("mcp_custom_skill_create", err.Error())
 	}
 
 	return util.Int2Str(customSkill.ID), nil

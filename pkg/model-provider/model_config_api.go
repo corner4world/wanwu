@@ -229,6 +229,12 @@ func ToModelTags(provider, modelType, cfg string) ([]mp_common.Tag, error) {
 				return nil, fmt.Errorf("unmarshal model config err: %v", err)
 			}
 			tags = asr.Tags()
+		case ModelTypeMultiRerank:
+			rerank := &mp_qwen.MultiModalRerank{}
+			if err := json.Unmarshal([]byte(cfg), rerank); err != nil {
+				return nil, fmt.Errorf("unmarshal model config err: %v", err)
+			}
+			tags = rerank.Tags()
 		default:
 			return nil, fmt.Errorf("ToModelTags:invalid provider %v model type %v", provider, modelType)
 		}
@@ -456,6 +462,13 @@ func ToModelConfig(provider, modelType, cfg string) (interface{}, error) {
 			}
 		case ModelTypeSyncAsr:
 			ret = &mp_qwen.SyncAsr{}
+		case ModelTypeMultiRerank:
+			ret = &mp_qwen.MultiModalRerank{
+				MaxTextLength:       &maxTextLength,
+				MaxImageSize:        &maxImageSize,
+				SupportFileTypes:    []string{"image"},
+				SupportImageInQuery: true,
+			}
 		default:
 			return nil, fmt.Errorf("ToModelConfig:invalid provider %v model type %v", provider, modelType)
 		}
@@ -578,6 +591,7 @@ type ProviderModelByQwen struct {
 	Rerank              mp_qwen.Rerank              `json:"rerank"`
 	Embedding           mp_qwen.Embedding           `json:"embedding"`
 	MultiModalEmbedding mp_qwen.MultiModalEmbedding `json:"multiModalEmbedding"`
+	MultiModalRerank    mp_qwen.MultiModalRerank    `json:"multiModalRerank"`
 }
 
 type ProviderModelByOllama struct {

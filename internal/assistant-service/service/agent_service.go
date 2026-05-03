@@ -9,6 +9,7 @@ type AgentChatReq struct {
 	UserId         string   `json:"userId"`
 	OrgId          string   `json:"orgId"`
 	Draft          bool     `json:"draft"`
+	DetailId       string   `json:"detailId"`
 }
 
 type MultiAgentChatReq struct {
@@ -20,6 +21,7 @@ type MultiAgentChatReq struct {
 	UserId           string   `json:"userId"`
 	OrgId            string   `json:"orgId"`
 	Draft            bool     `json:"draft"`
+	DetailId         string   `json:"detailId"`
 }
 
 type AgentUserInputParams struct {
@@ -30,6 +32,7 @@ type AgentUserInputParams struct {
 	ConversationId string
 	UserId         string
 	OrgId          string
+	DetailId       string
 }
 
 func BuildAgentChatReq(agentUserInputParams *AgentUserInputParams, assistantId uint32) *AgentChatReq {
@@ -42,6 +45,7 @@ func BuildAgentChatReq(agentUserInputParams *AgentUserInputParams, assistantId u
 		UserId:         agentUserInputParams.UserId,
 		OrgId:          agentUserInputParams.OrgId,
 		Draft:          agentUserInputParams.Draft,
+		DetailId:       agentUserInputParams.DetailId,
 	}
 	return req
 }
@@ -56,6 +60,7 @@ func BuildMultiAgentChatReq(agentUserInputParams *AgentUserInputParams, assistan
 		UserId:           agentUserInputParams.UserId,
 		OrgId:            agentUserInputParams.OrgId,
 		Draft:            agentUserInputParams.Draft,
+		DetailId:         agentUserInputParams.DetailId,
 	}
 	return req
 }

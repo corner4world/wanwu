@@ -24,6 +24,7 @@ func registerExploration(apiV1 *gin.RouterGroup) {
 	mid.Sub("exploration.app").Reg(apiV1, "/assistant/conversation", http.MethodDelete, v1.ConversationDelete, "删除智能体对话")
 	mid.Sub("exploration.app").Reg(apiV1, "/assistant/conversation/list", http.MethodGet, v1.GetConversationList, "智能体对话列表")
 	mid.Sub("exploration.app").Reg(apiV1, "/assistant/conversation/detail", http.MethodGet, v1.GetConversationDetailList, "智能体对话详情历史列表")
+	mid.Sub("exploration.app").Reg(apiV1, "/assistant/conversation/clear", http.MethodDelete, v1.ClearPublishedAssistantConversation, "清空已发布智能体对话")
 	mid.Sub("exploration.app").Reg(apiV1, "/assistant/stream", http.MethodPost, v1.PublishedAssistantConversionStream, "已发布智能体流式问答", middleware.AppHistoryRecord("assistantId", constant.AppTypeAgent))
 
 	// workflow 相关接口
@@ -39,4 +40,10 @@ func registerExploration(apiV1 *gin.RouterGroup) {
 
 	mid.Sub("exploration.template").Reg(apiV1, "/prompt/template/list", http.MethodGet, v1.GetPromptTemplateList, "获取提示词模板列表")
 	mid.Sub("exploration.template").Reg(apiV1, "/prompt/template/detail", http.MethodGet, v1.GetPromptTemplateDetail, "获取提示词模板详情")
+
+	// skill 广场
+	mid.Sub("exploration.skill").Reg(apiV1, "/square/skills", http.MethodGet, v1.GetSquareSkillList, "获取广场skill列表")
+	mid.Sub("exploration.skill").Reg(apiV1, "/square/skills/share", http.MethodPost, v1.ShareSquareSkill, "添加广场skill到资源库")
+	mid.Sub("exploration.skill").Reg(apiV1, "/square/skills/detail", http.MethodGet, v1.GetSquareSkillDetail, "获取广场skill详情")
+	mid.Sub("exploration.skill").Reg(apiV1, "/square/skills/download", http.MethodGet, v1.DownloadSquareSkill, "下载广场skill")
 }

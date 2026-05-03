@@ -1,28 +1,27 @@
-***
-
+---
 name: fullstack-dev
 description: |
-Full-stack backend architecture and frontend-backend integration guide.
-TRIGGER when: building a full-stack app, creating REST API with frontend, scaffolding backend service,
-building todo app, building CRUD app, building real-time app, building chat app,
-Express + React, Next.js API, Node.js backend, Python backend, Go backend,
-designing service layers, implementing error handling, managing config/auth,
-setting up API clients, implementing auth flows, handling file uploads,
-adding real-time features (SSE/WebSocket), hardening for production.
-DO NOT TRIGGER when: pure frontend UI work, pure CSS/styling, database schema only.
+  Full-stack backend architecture and frontend-backend integration guide.
+  TRIGGER when: building a full-stack app, creating REST API with frontend, scaffolding backend service,
+  building todo app, building CRUD app, building real-time app, building chat app,
+  Express + React, Next.js API, Node.js backend, Python backend, Go backend,
+  designing service layers, implementing error handling, managing config/auth,
+  setting up API clients, implementing auth flows, handling file uploads,
+  adding real-time features (SSE/WebSocket), hardening for production.
+  DO NOT TRIGGER when: pure frontend UI work, pure CSS/styling, database schema only.
 license: MIT
 metadata:
-category: full-stack
-version: "1.0.0"
-sources:
-\- The Twelve-Factor App (12factor.net)
-\- Clean Architecture (Robert C. Martin)
-\- Domain-Driven Design (Eric Evans)
-\- Patterns of Enterprise Application Architecture (Martin Fowler)
-\- Martin Fowler (Testing Pyramid, Contract Tests)
-\- Google SRE Handbook (Release Engineering)
-\- ThoughtWorks Technology Radar
---------------------------------
+  category: full-stack
+  version: "1.0.0"
+  sources:
+    - The Twelve-Factor App (12factor.net)
+    - Clean Architecture (Robert C. Martin)
+    - Domain-Driven Design (Eric Evans)
+    - Patterns of Enterprise Application Architecture (Martin Fowler)
+    - Martin Fowler (Testing Pyramid, Contract Tests)
+    - Google SRE Handbook (Release Engineering)
+    - ThoughtWorks Technology Radar
+---
 
 # Full-Stack Development Practices
 

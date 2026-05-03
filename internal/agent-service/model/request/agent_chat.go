@@ -24,6 +24,24 @@ type AgentChatContext struct {
 	ToolMap          map[string]*ToolConfig
 	SubAgentMap      map[string]*AgentConfig
 	Order            int
+	CurrentAgent     *AgentInfo
+}
+
+func (a *AgentChatContext) WriteAgent(agentId string) {
+	if a.CurrentAgent != nil {
+		a.CurrentAgent.AgentId = agentId
+	}
+}
+
+func (a *AgentChatContext) AgentId() string {
+	if a.CurrentAgent != nil {
+		return a.CurrentAgent.AgentId
+	}
+	return ""
+}
+
+type AgentInfo struct {
+	AgentId string
 }
 
 type ToolConfig struct {
@@ -49,12 +67,11 @@ type AgentChatReq struct {
 }
 
 type AgentChatParams struct {
+	DetailId         string          `json:"detailId"`
 	Input            string          `json:"input" validate:"required"`
 	UploadFile       []string        `json:"uploadFile"`
 	Stream           bool            `json:"stream"`
 	MultiAgent       bool            //是否多智能体
-	NewStyle         bool            //是否使用新样式
-	OriginNewStyle   bool            //是否使用新样式
 	SubAgentInfoList []*SubAgentInfo //子智能体
 	AgentChatBaseParams
 }

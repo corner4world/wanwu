@@ -251,6 +251,7 @@ enum Code {
   MCPUpdateCustomMCPErr = 310023; // 更新自定义MCP错误
   MCPUpdateBuiltinToolErr = 310024; // 更新内置工具错误
   MCPCustomSkillErr = 310025; // 自定义技能相关错误
+  MCPAcquiredSkillErr = 310026; // 获取技能相关错误
 
   // --- operate-service ---
   // [320000, 329999]

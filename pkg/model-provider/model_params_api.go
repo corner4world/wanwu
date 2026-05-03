@@ -100,6 +100,7 @@ func ToModelParams(provider, modelType, cfg string) (interface{}, map[string]int
 			}
 		case ModelTypeTextRerank:
 		case ModelTypeTextEmbedding:
+		case ModelTypeMultiRerank:
 		default:
 			return nil, nil, fmt.Errorf("invalid model type: %v", modelType)
 		}

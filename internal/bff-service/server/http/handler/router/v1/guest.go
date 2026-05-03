@@ -15,7 +15,6 @@ func registerGuest(apiV1 *gin.RouterGroup) {
 	_ = mime.AddExtensionType(".csv", "text/csv; charset=utf-8")
 
 	apiV1.Static("/static", "./configs/microservice/bff-service/static")
-	apiV1.Static("/cache", "./cache")
 
 	mid.Sub("guest").Reg(apiV1, "/base/register/email", http.MethodPost, v1.RegisterByEmail, "邮箱注册用户")
 	mid.Sub("guest").Reg(apiV1, "/base/register/email/code", http.MethodPost, v1.ResgisterSendEmailCode, "邮箱注册验证码发送")

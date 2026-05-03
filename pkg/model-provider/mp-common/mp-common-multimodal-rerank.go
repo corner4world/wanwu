@@ -28,11 +28,13 @@ type MultiModalRerankReq struct {
 	TopN            *int            `json:"top_n,omitempty"`            // 返回排序后的top_n个文档。默认返回全部文档。
 	User            *string         `json:"user,omitempty"`             // 用户标识（兼容千帆)
 	Instruction     *string         `json:"instruction,omitempty"`      // 指令内容（适配元景qwen_rerank）
+	Fps             *float64        `json:"fps,omitempty"`              // 视频帧率（适配qwen rerank）
 }
 
 type MultiDocument struct {
-	Text  string `json:"text,omitempty"`
-	Image string `json:"image,omitempty"`
+	Text  *string `json:"text,omitempty"`
+	Image *string `json:"image,omitempty"`
+	Video *string `json:"video,omitempty"`
 }
 
 func (req *MultiModalRerankReq) Check() error {

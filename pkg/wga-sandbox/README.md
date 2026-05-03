@@ -70,6 +70,8 @@ runSession, outputCh, _ := wga_sandbox.Run(ctx,
         wga_sandbox_option.SandboxReuse("localhost"),  // 复用模式
         // 或 wga_sandbox_option.SandboxOneshot("image:tag"),  // 一次性模式
     ),
+    // 运行器类型（必须）
+    wga_sandbox_option.WithRunnerType(wga_sandbox_option.RunnerTypeOpencode),
     // 消息列表（必须，最后一条必须是 User 消息）
     wga_sandbox_option.WithMessages([]adk.Message{
         &schema.Message{Role: schema.User, Content: "生成一个 HTTP 服务器"},
@@ -78,6 +80,10 @@ runSession, outputCh, _ := wga_sandbox.Run(ctx,
     wga_sandbox_option.WithRunSession(wga_sandbox_option.RunSession{
         ThreadID: "thread-123",
         RunID:    "run-456",
+    }),
+    // MCP 服务器
+    wga_sandbox_option.WithMCPs([]wga_sandbox_option.MCP{
+        {Name: "Jira工单", URL: "https://jira.example.com/sse"},
     }),
 )
 
@@ -108,8 +114,12 @@ import (
 runSession, outputCh, _ := wga_sandbox.Run(ctx,
     wga_sandbox_option.WithModelConfig(modelConfig),
     wga_sandbox_option.WithSandbox(wga_sandbox_option.SandboxReuse("localhost")),
+    wga_sandbox_option.WithRunnerType(wga_sandbox_option.RunnerTypeOpencode),
     wga_sandbox_option.WithMessages([]adk.Message{
         &schema.Message{Role: schema.User, Content: "任务描述"},
+    }),
+    wga_sandbox_option.WithMCPs([]wga_sandbox_option.MCP{
+        {Name: "Jira工单", URL: "https://jira.example.com/sse"},
     }),
 )
 
@@ -137,6 +147,7 @@ import ag_ui_util "github.com/UnicomAI/wanwu/pkg/ag-ui-util"
 runSession, outputCh, _ := wga_sandbox.Run(ctx,
     wga_sandbox_option.WithModelConfig(modelConfig),
     wga_sandbox_option.WithSandbox(wga_sandbox_option.SandboxReuse("localhost")),
+    wga_sandbox_option.WithRunnerType(wga_sandbox_option.RunnerTypeOpencode),
     wga_sandbox_option.WithMessages([]adk.Message{
         &schema.Message{Role: schema.User, Content: "任务描述"},
     }),
@@ -183,6 +194,7 @@ eventCh := tr.TranslateStream(ctx, outputCh)
 |------|------|------|
 | `WithModelConfig` | 模型配置 | 是 |
 | `WithSandbox` | 沙箱配置（`SandboxReuse(host)` 或 `SandboxOneshot(imageName)`） | 是 |
+| `WithRunnerType` | 运行器类型（`RunnerTypeOpencode`） | 是 |
 | `WithMessages` | 消息列表（历史消息 + 当前问题，最后一条必须是 User 消息） | 是 |
 | `WithRunSession` | 会话标识 | 否 |
 | `WithInstruction` | 系统提示词 | 否 |
@@ -191,10 +203,80 @@ eventCh := tr.TranslateStream(ctx, outputCh)
 | `WithOutputDir` | 输出目录 | 否 |
 | `WithTools` | 工具列表 | 否 |
 | `WithSkills` | 技能列表 | 否 |
+| `WithMCPs` | MCP 服务器列表 | 否 |
 | `WithEnableThinking` | 思考模式 | 否 |
 | `WithSkipCleanup` | 跳过清理 | 否 |
 | `WithAgentName` | 智能体名称 | 否 |
-| `WithRunnerType` | 运行器类型（默认 opencode） | 否 |
+
+## 类型
+
+### Tool
+
+工具配置。
+
+```go
+type Tool struct {
+    OpenAPI3Schema *openapi3.T       // OpenAPI 3.0 schema 文档（必须）
+    OperationIDs   []string          // 允许的 operations，为空则全部允许
+    APIAuth        *openapi3_util.Auth // API 认证（可选）
+    Name           string            // 工具名称，从 schema 的 info.title 自动读取
+}
+```
+
+### Skill
+
+技能配置。
+
+```go
+type Skill struct {
+    Dir string // skill 目录路径
+}
+```
+
+### MCP
+
+MCP 服务器配置。
+
+```go
+type MCP struct {
+    Name string // MCP 名称
+    URL  string // MCP SSE/STREAMABLE 服务器地址
+}
+```
+
+## MCP 服务器
+
+`WithMCPs` 用于配置 MCP (Model Context Protocol) 服务器，允许智能体通过 SSE 协议与外部工具交互。
+
+**字段验证**：
+- `Name`：必须非空
+- `URL`：必须非空
+
+```go
+wga_sandbox_option.WithMCPs([]wga_sandbox_option.MCP{
+    {Name: "Jira工单", URL: "https://jira.example.com/sse"},
+    {Name: "Confluence", URL: "https://confluence.example.com/sse"},
+})
+```
+
+生成的 opencode.json 配置：
+
+```json
+{
+  "mcp": {
+    "Jira工单": {
+      "type": "remote",
+      "url": "https://jira.example.com/sse",
+      "enabled": true
+    },
+    "Confluence": {
+      "type": "remote",
+      "url": "https://confluence.example.com/sse",
+      "enabled": true
+    }
+  }
+}
+```
 
 ## 依赖
 

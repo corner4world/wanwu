@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func AuthOpenAPIKey(openApiType string) func(*gin.Context) {
+func AuthOpenAPIKey() func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		token, err := getApiKey(ctx)
 		if err != nil {

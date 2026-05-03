@@ -1,6 +1,8 @@
 package agent_chat_builder
 
 import (
+	"strconv"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/response"
 	"github.com/UnicomAI/wanwu/pkg/util"
@@ -37,24 +39,57 @@ func (*MultiAgentMessageBuilder) FilterMessage(respContext *response.AgentChatRe
 	}
 	return false
 }
-func (*MultiAgentMessageBuilder) BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message, changeStyle *bool) ([]*response.AgentMessageContent, error) {
+func (*MultiAgentMessageBuilder) BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]*response.AgentMessageContent, error) {
 	step := buildAgentStep(req, chatMessage, respContext)
 	switch step {
 	case AgentNoneProcessStep: //无需处理
 		return buildSkipMessage(), nil
 	case AgentAllFinishStep: //直接返回内容
-		return buildMessageContent([]string{chatMessage.Content}, nil), nil
+		return buildFinishMessage(respContext, chatMessage)
 	case AgentChatStep: //智能体内容输出
-		return buildChatMessage(req, respContext, chatMessage, changeStyle, step)
+		return buildChatMessage(req, respContext, chatMessage, step)
 	default: //智能体开始/结束
-		if len(chatMessage.Content) > 0 {
-			if req.AgentChatReq.NewStyle {
-				respContext.IncreaseOrder()
-			}
-			return buildMessageContent([]string{chatMessage.Content}, buildSubAgentEvent(respContext, step)), nil
-		}
-		return buildMessageContent(nil, buildSubAgentEvent(respContext, step)), nil
+		return buildAgentProcessContent(req, respContext, chatMessage, step)
 	}
+}
+
+func buildFinishMessage(respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]*response.AgentMessageContent, error) {
+	var retList []*response.AgentMessageContent
+	if respContext.ThinkChatContext.Thinking {
+		contents := respContext.ThinkChatContext.ThinkMessageByStep(chatMessage, response.ThinkFinish, respContext)
+		if len(contents) > 0 {
+			retList = append(retList, contents...)
+		}
+	}
+	content := buildMessageContent([]string{chatMessage.Content}, nil)
+	if len(content) > 0 {
+		retList = append(retList, content...)
+	}
+	return retList, nil
+}
+
+func buildAgentProcessContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message, step AgentStep) ([]*response.AgentMessageContent, error) {
+	var retList []*response.AgentMessageContent
+	if step == AgentStartStep && respContext.ThinkChatContext.Thinking {
+		contents := respContext.ThinkChatContext.ThinkMessageByStep(chatMessage, response.ThinkFinish, respContext)
+		if len(contents) > 0 {
+			retList = append(retList, contents...)
+		}
+	}
+
+	if len(chatMessage.Content) > 0 {
+		respContext.IncreaseOrder()
+		contents := buildMessageContent([]string{chatMessage.Content}, buildSubAgentEvent(req, respContext, step))
+		if len(contents) > 0 {
+			retList = append(retList, contents...)
+		}
+		return retList, nil
+	}
+	contents := buildMessageContent(nil, buildSubAgentEvent(req, respContext, step))
+	if len(contents) > 0 {
+		retList = append(retList, contents...)
+	}
+	return retList, nil
 }
 
 // buildAgentStep 构建智能体步骤
@@ -83,29 +118,25 @@ func buildAgentStep(req *request.AgentChatContext, chatMessage *schema.Message, 
 }
 
 // buildChatMessage 构造智能体对话消息
-func buildChatMessage(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message, changeStyle *bool, step AgentStep) ([]*response.AgentMessageContent, error) {
-	contentList, err := NewSingleBuilder().BuildContent(req, respContext, chatMessage, changeStyle)
+func buildChatMessage(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message, step AgentStep) ([]*response.AgentMessageContent, error) {
+	contentList, err := NewSingleBuilder().BuildContent(req, respContext, chatMessage)
 	if err != nil {
 		return nil, err
 	}
-	event := buildSubAgentEvent(respContext, step)
+	event := buildSubAgentEvent(req, respContext, step)
+
 	for _, messageContent := range contentList {
 		if event == nil {
 			continue
 		}
 		if messageContent.SubEventData == nil {
-			messageContent.SubEventData = event
+			messageContent.SubEventData = buildSubEventData(respContext, event)
 		} else {
 			if len(messageContent.SubEventData.ParentId) == 0 {
 				messageContent.SubEventData.ParentId = event.Id
 			}
 		}
-		newStyle := buildChangeStyle(changeStyle, req)
-		if !newStyle {
-			messageContent.SubEventData.EventType = buildMultiAgentEventType(messageContent.SubEventData.EventType)
-		}
 
-		//messageContent.SubEventData = event
 		//子智能体的结束消息，不需要输出stop
 		if event.Status == response.EventEndStatus {
 			messageContent.NotStop = true
@@ -115,18 +146,15 @@ func buildChatMessage(req *request.AgentChatContext, respContext *response.Agent
 	return contentList, nil
 }
 
-// buildMultiAgentEventType 构建多智能体事件类型
-func buildMultiAgentEventType(eventType int) int {
-	switch eventType {
-	case response.ToolEventType:
-		return response.SubAgentEventType
-	case response.SkillEventType:
-		return response.SkillEventType
-	case response.SkillTextEventType:
-		return response.SkillTextEventType
-	default:
-		return response.SubAgentEventType
+func buildSubEventData(respContext *response.AgentChatRespContext, event *response.SubEventData) *response.SubEventData {
+	if event.Status == response.EventProcessStatus && event.EventType == response.SubAgentEventType {
+		eventData := event.Copy()
+		eventData.ParentId = event.Id
+		eventData.Id = event.Id + "-" + strconv.Itoa(respContext.Order)
+		eventData.EventType = response.SkillTextEventType
+		return eventData
 	}
+	return event
 }
 
 // agentTransferStart 智能体切换开始
@@ -136,7 +164,7 @@ func agentTransferStart(respContext *response.AgentChatRespContext, chatMessage 
 	respContext.AgentToolContext.DefaultToolId(chatMessage.ToolCalls[0].ID)
 }
 
-func buildSubAgentEvent(respContext *response.AgentChatRespContext, step AgentStep) *response.SubEventData {
+func buildSubAgentEvent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, step AgentStep) *response.SubEventData {
 	switch step {
 	case AgentStartStep:
 		//每切换一次智能体order + 1
@@ -148,6 +176,7 @@ func buildSubAgentEvent(respContext *response.AgentChatRespContext, step AgentSt
 	case AgentStopStep:
 		subAgent := response.BuildEndSubAgent(respContext, util.NowSpanToHMS(respContext.MultiAgentContext.AgentStartTime))
 		respContext.MultiAgentContext.ClearAgent()
+		req.WriteAgent(respContext.MultiAgentContext.CurrentAgentId())
 		return subAgent
 	}
 	return nil
@@ -181,6 +210,8 @@ func writeAgentName(req *request.AgentChatContext, chatMessage *schema.Message, 
 		respContext.MultiAgentContext.WriteAgentName(chatMessage)
 	case response.ToolParamFinishStep:
 		respContext.MultiAgentContext.CreateAgent(req.SubAgentMap)
+		//设置当前智能体id
+		req.WriteAgent(respContext.MultiAgentContext.CurrentAgentId())
 		//智能体参数输出完成
 		respContext.MultiAgentContext.ChangeFinish()
 		finish = true

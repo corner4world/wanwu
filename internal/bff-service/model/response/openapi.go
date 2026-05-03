@@ -1,5 +1,9 @@
 package response
 
+type OpenAPICreateAgentResponse struct {
+	UUID string `json:"uuid"`
+}
+
 type OpenAPIAgentCreateConversationResponse struct {
 	ConversationID string `json:"conversation_id"`
 }

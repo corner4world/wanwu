@@ -37,7 +37,10 @@ func (a *sandboxAgent) Run(ctx context.Context, agentInput *adk.AgentInput, _ ..
 	messages := make([]adk.Message, 0, len(agentInput.Messages)+len(a.options.Messages))
 	messages = append(messages, a.options.Messages...)
 	messages = append(messages, agentInput.Messages...)
-	sandboxOpts := a.buildSandboxOpts(messages)
+	sandboxOpts, err := a.buildSandboxOpts(ctx, messages)
+	if err != nil {
+		return wga_sandbox_converter.ConvertToEinoIteratorWithError(ctx, wga_sandbox_option.RunnerTypeOpencode, err)
+	}
 
 	_, outputCh, err := wga_sandbox.Run(ctx, sandboxOpts...)
 	if err != nil {
@@ -47,7 +50,7 @@ func (a *sandboxAgent) Run(ctx context.Context, agentInput *adk.AgentInput, _ ..
 	return wga_sandbox_converter.ConvertToEinoIterator(ctx, wga_sandbox_option.RunnerTypeOpencode, outputCh)
 }
 
-func (a *sandboxAgent) buildSandboxOpts(messages []adk.Message) []wga_sandbox_option.Option {
+func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Message) ([]wga_sandbox_option.Option, error) {
 	opts := []wga_sandbox_option.Option{
 		wga_sandbox_option.WithRunSession(wga_sandbox_option.RunSession{
 			ThreadID: a.options.RunSession.ThreadID,
@@ -62,22 +65,28 @@ func (a *sandboxAgent) buildSandboxOpts(messages []adk.Message) []wga_sandbox_op
 			ModelName:    a.options.Model.ModelName,
 			Params:       a.options.Model.Params,
 		}),
-		wga_sandbox_option.WithInstruction(a.cfg.Prompt),
 		wga_sandbox_option.WithMessages(messages),
 		wga_sandbox_option.WithEnableThinking(a.cfg.Configure.EnableThinking),
 		wga_sandbox_option.WithRunnerType(wga_sandbox_option.RunnerTypeOpencode),
 		wga_sandbox_option.WithAgentName(a.cfg.ID),
 	}
 
-	// 传递技能
-	if len(a.cfg.Skills) > 0 {
-		skills := make([]wga_sandbox_option.Skill, len(a.cfg.Skills))
-		for i, skill := range a.cfg.Skills {
-			skills[i] = wga_sandbox_option.Skill{
-				Dir: skill.Dir,
-			}
-		}
-		opts = append(opts, wga_sandbox_option.WithSkills(skills))
+	instruction, err := a.options.FormatInstruction(ctx, a.cfg)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, wga_sandbox_option.WithInstruction(instruction))
+
+	// 传递技能（配置文件 + 运行时）
+	var allSkills []wga_sandbox_option.Skill
+	for _, skill := range a.cfg.Skills {
+		allSkills = append(allSkills, wga_sandbox_option.Skill{Dir: skill.Dir})
+	}
+	for _, skill := range a.options.Skills {
+		allSkills = append(allSkills, wga_sandbox_option.Skill{Dir: skill.Dir})
+	}
+	if len(allSkills) > 0 {
+		opts = append(opts, wga_sandbox_option.WithSkills(allSkills))
 	}
 
 	if a.options.Workspace.InputDir != "" {
@@ -105,14 +114,22 @@ func (a *sandboxAgent) buildSandboxOpts(messages []adk.Message) []wga_sandbox_op
 	for _, tc := range a.cfg.ToolCategories {
 		for _, toolCfg := range tc.Tools {
 			var auth *openapi3_util.Auth
-			for _, toolOpt := range a.options.Tools {
-				if toolOpt.Title == toolCfg.Doc.Info.Title {
-					if converted, err := toolOpt.APIAuth.ToOpenapiAuth(); err == nil {
-						auth = converted
+			var err error
+			if toolCfg.AuthRequired {
+				// 需要鉴权的工具必须在 options.Tools 中找到匹配项并获取认证信息；否则视为未配置该工具，不加入沙箱工具列表
+				var matched bool
+				for _, toolOpt := range a.options.Tools {
+					if toolOpt.Title == toolCfg.Doc.Info.Title {
+						if auth, err = toolOpt.APIAuth.ToOpenapiAuth(); err == nil && auth.Type != "none" {
+							matched = true
+						}
+						break
 					}
-					break
 				}
-			}
+				if !matched {
+					continue
+				}
+			} // 无需鉴权的工具直接加入沙箱工具列表
 			var operationIDs []string
 			for _, op := range toolCfg.Operations {
 				operationIDs = append(operationIDs, op.OperationID)
@@ -124,9 +141,34 @@ func (a *sandboxAgent) buildSandboxOpts(messages []adk.Message) []wga_sandbox_op
 			})
 		}
 	}
+	for _, extraTool := range a.options.ExtraTools {
+		var auth *openapi3_util.Auth
+		if extraTool.APIAuth != nil {
+			if converted, err := extraTool.APIAuth.ToOpenapiAuth(); err == nil {
+				auth = converted
+			}
+		}
+		tools = append(tools, wga_sandbox_option.Tool{
+			OpenAPI3Schema: extraTool.OpenAPI3Schema,
+			OperationIDs:   nil,
+			APIAuth:        auth,
+		})
+	}
 	if len(tools) > 0 {
 		opts = append(opts, wga_sandbox_option.WithTools(tools))
 	}
 
-	return opts
+	// 传递 MCP 服务器
+	if len(a.options.MCPs) > 0 {
+		mcps := make([]wga_sandbox_option.MCP, len(a.options.MCPs))
+		for i, mcp := range a.options.MCPs {
+			mcps[i] = wga_sandbox_option.MCP{
+				Name: mcp.Name,
+				URL:  mcp.URL,
+			}
+		}
+		opts = append(opts, wga_sandbox_option.WithMCPs(mcps))
+	}
+
+	return opts, nil
 }

@@ -6,6 +6,16 @@ import (
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
 )
 
+// OpenAPIModelListItem OpenAPI 模型列表仅返回字段,只用于openapi
+type OpenAPIModelListItem struct {
+	UUID        string `json:"uuid"`
+	DisplayName string `json:"displayName"`
+	Provider    string `json:"provider"`
+	ModelType   string `json:"modelType"`
+	Model       string `json:"model"`
+	ScopeType   string `json:"scopeType"`
+}
+
 type ModelInfo struct {
 	ModelId      string                  `json:"modelId"`
 	Uuid         string                  `json:"uuid"`
@@ -40,4 +50,15 @@ type RecommendModel struct {
 	VisionSupport   string         `json:"visionSupport"`
 	FunctionCalling string         `json:"functionCalling"`
 	ThinkingSupport string         `json:"thinkingSupport"`
+}
+
+type ModelTypeItem struct {
+	Key  string `json:"key"`
+	Name string `json:"name"`
+}
+
+type ProviderModelTypes struct {
+	Key      string           `json:"key"`
+	Name     string           `json:"name"`
+	Children []*ModelTypeItem `json:"children"`
 }

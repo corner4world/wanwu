@@ -17,6 +17,7 @@ func BuildMultiAgentParams(multiAgentChatParams *request.MultiAgentChatParams, m
 		Input:      multiAgentChatParams.Input,
 		UploadFile: multiAgentChatParams.UploadFile,
 		Stream:     multiAgentChatParams.Stream,
+		DetailId:   multiAgentChatParams.DetailId,
 		AgentChatBaseParams: &request.AgentChatBaseParams{
 			ModelParams:     buildModelParams(multiAgentConfig.MultiAgent.ModelParams),
 			AgentBaseParams: buildAgentBaseParams(multiAgentConfig.MultiAgent),
@@ -49,8 +50,7 @@ func BuildAgentParams(req *request.AgentChatReq, assistantDetail *assistant_serv
 		Input:               req.Input,
 		Stream:              req.Stream,
 		UploadFile:          req.UploadFile,
-		NewStyle:            newStyle,
-		OriginNewStyle:      newStyle,
+		DetailId:            req.DetailId,
 	}
 }
 

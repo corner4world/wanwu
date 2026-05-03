@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/UnicomAI/wanwu/pkg/log"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	agent_http_client "github.com/UnicomAI/wanwu/internal/agent-service/pkg/http"
 	http_client "github.com/UnicomAI/wanwu/pkg/http-client"
+	"github.com/UnicomAI/wanwu/pkg/log"
 	openapi3_util "github.com/UnicomAI/wanwu/pkg/openapi3-util"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/schema"
@@ -277,6 +277,9 @@ func createHTTPHandler(serverURL, path, method string, auth *openapi3_util.Auth,
 		resp, err := agent_http_client.GetClient().Client.Do(req)
 		respBody, err := buildResult(resp, err)
 		http_client.LogHttpRequest(ctx, "request_tool_call", method, requestURL, arguments, respBody, err, start)
+		//if err != nil {
+		//	return "", err
+		//}
 
 		return respBody, nil
 	}

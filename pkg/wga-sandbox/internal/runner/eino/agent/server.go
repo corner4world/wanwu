@@ -44,7 +44,7 @@ func (s *httpServer) registerRoutes(mux *http.ServeMux) {
 func loadEnvFromFile(path string) map[string]string {
 	envMap, err := godotenv.Read(path)
 	if err != nil {
-		log.Printf("[Env] Failed to read .env from %s: %v", path, err)
+		log.Printf("[Env] Failed to read .env from %s: %v", shared.SanitizeForLog(path), err)
 		return make(map[string]string)
 	}
 	return envMap
@@ -85,7 +85,7 @@ func (s *httpServer) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("[Chat] Workspace: %s, Messages count: %d", workspace, len(req.Messages))
+	log.Printf("[Chat] Workspace: %s, Messages count: %d", shared.SanitizeForLog(workspace), len(req.Messages))
 
 	envPath := filepath.Join(workspace, ".env")
 	envMap := loadEnvFromFile(envPath)
@@ -97,7 +97,7 @@ func (s *httpServer) handleChat(w http.ResponseWriter, r *http.Request) {
 		agentType = "chat-model"
 	}
 
-	log.Printf("[Chat] Agent type: %s", agentType)
+	log.Printf("[Chat] Agent type: %s", shared.SanitizeForLog(agentType))
 
 	cfg := shared.AppConfig{
 		Workspace: workspace,

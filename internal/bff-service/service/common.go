@@ -5,25 +5,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"image"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/UnicomAI/wanwu/api/proto/common"
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
 	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
-	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
-	"github.com/UnicomAI/wanwu/internal/bff-service/pkg/imaging"
 	"github.com/UnicomAI/wanwu/pkg/constant"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
@@ -34,10 +29,14 @@ import (
 )
 
 var (
-	avatarCacheMu       sync.Mutex
-	avatarCacheLocalDir = "cache"
-
-	mcpAvatarCacheLocalDir = "cache/mcp"
+	// AvatarCachePrefix 前端访问avatar的URL前缀
+	AvatarCachePrefix = "/v1/cache/avatar"
+	// workflowAvatarCachePrefix 工作流avatar缓存路径前缀
+	workflowAvatarCachePrefix = "/v1/cache/avatar/workflow"
+	// mcpAvatarCachePrefix MCP服务avatar缓存路径前缀
+	mcpAvatarCachePrefix = "/v1/cache/avatar/mcp"
+	// customAvatarCachePrefix 系统自定义avatar缓存路径前缀
+	customAvatarCachePrefix = "/v1/cache/avatar/custom"
 )
 
 func GetUserPermission(ctx *gin.Context, userID, orgID string) (*response.UserPermission, error) {
@@ -72,7 +71,12 @@ func GetOrgSelect(ctx *gin.Context, userID string) (*response.Select, error) {
 	}, nil
 }
 
-// UploadAvatar 返回avatar在minio的objectPath
+// UploadAvatar 上传用户头像到MinIO
+// 1. 校验文件类型（仅支持jpg/jpeg/png）
+// 2. 读取文件内容到内存
+// 3. 生成UUID文件名，构造存储路径 avatar/{前两位字母}/{文件名}
+// 4. 上传到MinIO的custom-upload桶
+// 返回MinIO中的objectPath，格式：custom-upload/avatar/xx/xxx.jpg
 func UploadAvatar(ctx *gin.Context, fileHeader *multipart.FileHeader) (string, error) {
 	// 校验文件类型
 	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
@@ -105,74 +109,38 @@ func UploadAvatar(ctx *gin.Context, fileHeader *multipart.FileHeader) (string, e
 	return objectPath, nil
 }
 
-// CacheAvatar 将avatar在minio的objectPath转为前端可访问的地址，同时在本地缓存avatar
-// 例如 custom-upload/avatar/abc/def.png => /v1/static/avatar/abc/def.png
-func CacheAvatar(ctx *gin.Context, avatarObjectPath string, isResize bool) request.Avatar {
+// CacheAvatar 将MinIO中的avatar objectPath转为前端可访问的缓存URL
+// 输入：avatarObjectPath = "custom-upload/avatar/xx/xxx.jpg"
+// 输出：avatar.Path = "/v1/cache/avatar/custom-upload/avatar/xx/xxx.jpg"
+func CacheAvatar(avatarObjectPath string) request.Avatar {
 	avatar := request.Avatar{}
 	if avatarObjectPath == "" {
 		return avatar
 	}
-	avatarCacheMu.Lock()
-	defer avatarCacheMu.Unlock()
 
 	avatar.Key = avatarObjectPath
-
-	parts := strings.SplitN(avatarObjectPath, "/", 2)
-	if len(parts) <= 1 {
-		log.Errorf("cache avatar %v err: invalid objectPath", avatarObjectPath)
-		return avatar
-	}
-	bucketName := parts[0]
-	objectName := parts[1]
-	filePath := filepath.Join(avatarCacheLocalDir, objectName)
-
-	_, err := os.Stat(filePath)
-	// 1 文件存在
-	if err == nil {
-		avatar.Path = filepath.Join("/v1", filePath)
-		return avatar
-	}
-	// 2 系统错误
-	if !os.IsNotExist(err) {
-		log.Errorf("cache avatar %v check %v exist err: %v", avatarObjectPath, filePath, err)
-		return avatar
-	}
-	// 3 文件不存在
-	// 3.1 创建目录
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
-		log.Errorf("cache avatar %v mkdir %v err: %v", avatarObjectPath, filepath.Dir(filePath), err)
-		return avatar
-	}
-	// 3.2 下载文件
-	b, err := minio.Custom().GetObject(ctx.Request.Context(), bucketName, objectName)
-	if err != nil {
-		log.Errorf("cache avatar %v minio download err: %v", avatarObjectPath, err)
-		return avatar
-	}
-	// 3.3 压缩图像
-	if isResize {
-		compressedData, err := resizeImage(b)
-		if err != nil {
-			log.Warnf("cache avatar %v compress failed, using original: %v", avatarObjectPath, err)
-			compressedData = b
-		}
-		// 3.3.1 写入压缩文件
-		if err := os.WriteFile(filePath, compressedData, 0644); err != nil {
-			log.Errorf("cache avatar %v write file %v err: %v", avatarObjectPath, filePath, err)
-			return avatar
-		}
-		avatar.Path = filepath.Join("/v1", filePath)
-		return avatar
-	}
-	// 3.4 写入原文件
-	if err := os.WriteFile(filePath, b, 0644); err != nil {
-		log.Errorf("cache avatar %v write file %v err: %v", avatarObjectPath, filePath, err)
-		return avatar
-	}
-	avatar.Path = filepath.Join("/v1", filePath)
+	avatar.Path = path.Join(AvatarCachePrefix, avatarObjectPath)
 	return avatar
 }
 
+// cacheCustomAvatar 将自定义avatar objectPath转为前端可访问的缓存URL
+// 输入：avatarObjectPath = "custom-upload/avatar/xx/xxx.jpg"
+// 输出：avatar.Path = "/v1/cache/avatar/custom/custom-upload/avatar/xx/xxx.jpg"
+func cacheCustomAvatar(avatarObjectPath string) request.Avatar {
+	avatar := request.Avatar{}
+	if avatarObjectPath == "" {
+		return avatar
+	}
+
+	avatar.Key = avatarObjectPath
+	avatar.Path = path.Join(customAvatarCachePrefix, avatarObjectPath)
+	return avatar
+}
+
+// cacheAppAvatar 根据应用类型获取应用avatar的缓存URL
+// 1. Rag类型空avatar返回默认Rag图标
+// 2. Agent类型空avatar返回默认Agent图标
+// 3. 其他类型调用CacheAvatar
 func cacheAppAvatar(ctx *gin.Context, avatarObjectPath, appType string) request.Avatar {
 	avatar := request.Avatar{}
 	if avatarObjectPath == "" && appType == constant.AppTypeRag {
@@ -183,19 +151,24 @@ func cacheAppAvatar(ctx *gin.Context, avatarObjectPath, appType string) request.
 		avatar.Path = config.Cfg().DefaultIcon.AgentIcon
 		return avatar
 	}
-	return CacheAvatar(ctx, avatarObjectPath, true)
+	return CacheAvatar(avatarObjectPath)
 }
 
+// cacheUserAvatar 获取用户头像的缓存URL
+// 1. 空avatar返回默认用户图标
+// 2. 否则调用CacheAvatar转换
 func cacheUserAvatar(ctx *gin.Context, avatarObjectPath string) request.Avatar {
 	avatar := request.Avatar{}
 	if avatarObjectPath == "" {
 		avatar.Path = config.Cfg().DefaultIcon.UserIcon
 		return avatar
 	}
-	return CacheAvatar(ctx, avatarObjectPath, true)
+	return CacheAvatar(avatarObjectPath)
 }
 
-// tool builtin & custom
+// cacheToolAvatar 根据工具类型获取工具avatar的缓存URL
+// 1. Custom类型：空avatar返回默认工具图标，否则调用CacheAvatar
+// 2. BuiltIn类型：调用cacheMCPServiceAvatar
 func cacheToolAvatar(ctx *gin.Context, toolType string, avatarObjectPath string) request.Avatar {
 	avatar := request.Avatar{}
 	switch toolType {
@@ -204,22 +177,26 @@ func cacheToolAvatar(ctx *gin.Context, toolType string, avatarObjectPath string)
 			avatar.Path = config.Cfg().DefaultIcon.ToolIcon
 			return avatar
 		}
-		return CacheAvatar(ctx, avatarObjectPath, true)
+		return CacheAvatar(avatarObjectPath)
 	case constant.ToolTypeBuiltIn:
-		return cacheMCPServiceAvatar(ctx, avatarObjectPath)
+		return cacheMCPServiceAvatar(avatarObjectPath)
 	}
 	return avatar
 }
 
-// skill custom
+// cacheSkillAvatar 获取技能avatar的缓存URL
+// 1. 空avatar返回默认技能图标
+// 2. 否则调用CacheAvatar转换
 func cacheSkillAvatar(ctx *gin.Context, avatarObjectPath string) request.Avatar {
 	if avatarObjectPath == "" {
 		return request.Avatar{Path: config.Cfg().DefaultIcon.CustomSkillIcon}
 	}
-	return CacheAvatar(ctx, avatarObjectPath, true)
+	return CacheAvatar(avatarObjectPath)
 }
 
-// mcp square & custom
+// cacheMCPAvatar 获取MCP广场或自定义MCP的avatar缓存URL
+// 1. squareObjectPath为空时：customObjectPath为空则返回MCP自定义默认图标，否则用customAvatarPrefix缓存
+// 2. squareObjectPath非空时：调用cacheMCPServiceAvatar缓存
 func cacheMCPAvatar(ctx *gin.Context, squareObjectPath, customObjectPath string) request.Avatar {
 	if squareObjectPath == "" {
 		avatar := request.Avatar{}
@@ -227,66 +204,40 @@ func cacheMCPAvatar(ctx *gin.Context, squareObjectPath, customObjectPath string)
 			avatar.Path = config.Cfg().DefaultIcon.McpCustomIcon
 			return avatar
 		}
-		return CacheAvatar(ctx, customObjectPath, true)
+		return CacheAvatar(customObjectPath)
 	}
-	return cacheMCPServiceAvatar(ctx, squareObjectPath)
+	return cacheMCPServiceAvatar(squareObjectPath)
 }
 
-// mcp server
+// cacheMCPServerAvatar 获取自定义MCP的avatar缓存URL
+// 1. 空avatar返回默认自定义MCP图标
+// 2. 否则调用CacheAvatar转换
 func cacheMCPServerAvatar(ctx *gin.Context, avatarObjectPath string) request.Avatar {
 	avatar := request.Avatar{}
 	if avatarObjectPath == "" {
 		avatar.Path = config.Cfg().DefaultIcon.McpServerIcon
 		return avatar
 	}
-	return CacheAvatar(ctx, avatarObjectPath, true)
+	return CacheAvatar(avatarObjectPath)
 }
 
-// 用于缓存 内置工具、MCP广场 的图片（来源于mcp-service）
-func cacheMCPServiceAvatar(ctx *gin.Context, avatarPath string) request.Avatar {
+// cacheMCPServiceAvatar 获取MCP服务的avatar缓存URL
+// 输入：avatarPath = "custom-upload/avatar/xx/xxx.jpg"
+// 输出：avatar.Path = "/v1/cache/avatar/mcp/custom-upload/avatar/xx/xxx.jpg"
+func cacheMCPServiceAvatar(avatarPath string) request.Avatar {
 	avatar := request.Avatar{}
 	if avatarPath == "" {
 		return avatar
 	}
-	avatarCacheMu.Lock()
-	defer avatarCacheMu.Unlock()
 
-	filePath := filepath.Join(mcpAvatarCacheLocalDir, avatarPath)
-
-	_, err := os.Stat(filePath)
-	// 1 文件存在
-	if err == nil {
-		avatar.Path = filepath.Join("/v1", filePath)
-		return avatar
-	}
-	// 2 系统错误
-	if !os.IsNotExist(err) {
-		log.Errorf("cache mcp avatar %v check %v exist err: %v", avatarPath, filePath, err)
-		return avatar
-	}
-	// 3. 文件不存在
-	// 3.1 创建目录
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
-		log.Errorf("cache mcp avatar %v mkdir %v err: %v", avatarPath, filepath.Dir(filePath))
-		return avatar
-	}
-	// 3.2 下载文件
-	resp, err := mcp.GetMCPAvatar(ctx.Request.Context(), &mcp_service.GetMCPAvatarReq{AvatarPath: avatarPath})
-	if err != nil {
-		log.Errorf("cache mcp avatar %v download err: %v", avatarPath, err)
-		return avatar
-	}
-	// 3.3 写入文件
-	if err := os.WriteFile(filePath, resp.Data, 0644); err != nil {
-		log.Errorf("cache mcp avatar %v write file %v err: %v", avatarPath, filePath, err)
-		return avatar
-	}
-	avatar.Path = filepath.Join("/v1", filePath)
+	avatar.Key = avatarPath
+	avatar.Path = path.Join(mcpAvatarCachePrefix, avatarPath)
 	return avatar
 }
 
-// cacheWorkflowAvatar 将avatar http请求地址转为前端统一访问的格式，同时在本地缓存avatar
-// 例如 http://IP:port/api/static/abc/def.jpg => /v1/static/avatar/abc/def.png
+// cacheWorkflowAvatar 将avatar http请求地址转为前端统一访问的格式
+// 例如 http://IP:port/api/static/abc/def.png -> v1/cache/avatar/workflow/def.png
+// 预签名URL会被保留完整路径，如 v1/cache/avatar/workflow/minio/presign/workflow/BIZ_BOT_WORKFLOW/1_xxx.jpg?签名
 func cacheWorkflowAvatar(avatarURL, appType string) request.Avatar {
 	avatar := request.Avatar{}
 	switch appType {
@@ -302,113 +253,58 @@ func cacheWorkflowAvatar(avatarURL, appType string) request.Avatar {
 		}
 	}
 
-	avatarCacheMu.Lock()
-	defer avatarCacheMu.Unlock()
-
 	avatar.Key = avatarURL
 
 	// 提取文件名：先去掉查询参数，再取最后一部分
 	baseURL := avatarURL
+	var queryParams string
 	if idx := strings.Index(avatarURL, "?"); idx != -1 {
 		baseURL = avatarURL[:idx]
+		queryParams = avatarURL[idx:]
 	}
-	// 从路径中提取文件名
+
+	// 从路径中提取文件名（保留 bucket 路径）
 	lastSlash := strings.LastIndex(baseURL, "/")
 	fileName := baseURL[lastSlash+1:]
-	filePath := filepath.Join(avatarCacheLocalDir, fileName)
-	// 检查文件是否已缓存
-	if _, err := os.Stat(filePath); err == nil {
-		avatar.Path = filepath.Join("/v1", filePath)
-		return avatar
-	}
-	var newAvatarURL string
+
+	// 构建缓存路径，保留完整路径信息
+	// 例如：http://localhost:8081/workflow/minio/presign/workflow/BIZ_BOT_WORKFLOW/1_xxx.jpg -> /v1/cache/workflow/minio/presign/workflow/BIZ_BOT_WORKFLOW/1_xxx.jpg
+	var cachePath string
 	if strings.Contains(avatarURL, config.Cfg().Workflow.MinioProxyPrefix) {
-		// 解析原始URL
 		parsedURL, err := url.Parse(avatarURL)
 		if err != nil {
-			log.Errorf("cache avatar parse URL %v failed: %v", avatarURL, err)
+			log.Errorf("cacheWorkflowAvatar parse URL %v failed: %v", avatarURL, err)
+			avatar.Path = path.Join(AvatarCachePrefix, fileName)
 			return avatar
 		}
-		// 去掉 /workflow/minio/presign/ 前缀
-		path := parsedURL.Path
-		path = strings.TrimPrefix(path, config.Cfg().Workflow.MinioProxyPrefix)
-		// 使用 url.JoinPath 构建新URL
-		newAvatarURL, err = url.JoinPath(config.Cfg().Workflow.MinioProxyEndpoint, path)
-		if err != nil {
-			log.Errorf("join path failed: %v", err)
-			avatar.Path = avatarURL
-			return avatar
-		}
-		// 添加查询参数
-		if parsedURL.RawQuery != "" {
-			newAvatarURL += "?" + parsedURL.RawQuery
-		}
-	} else if strings.Contains(avatarURL, config.Cfg().Server.WebBaseUrl) {
-		// 直接转换URL为容器内可访问URL（如 http://localhost:8081/api/static/icon/icon-HTTP.png -> http://workflow-wanuw:8999/api/static/icon/icon-HTTP.png）
-		parsedURL, err := url.Parse(avatarURL)
-		if err != nil {
-			log.Errorf("cache avatar parse URL %v failed: %v", avatarURL, err)
-			return avatar
-		}
-		// 替换为workflow endpoint
-		internalURL, err := url.Parse(config.Cfg().Workflow.Endpoint)
-		if err != nil {
-			log.Errorf("cache avatar invalid Workflow.Endpoint %s", config.Cfg().Workflow.Endpoint)
-			return avatar
-		}
-		parsedURL.Host = internalURL.Host
-		parsedURL.Scheme = internalURL.Scheme
-		newAvatarURL = parsedURL.String()
+		cachePath = path.Join(workflowAvatarCachePrefix, parsedURL.Path)
 	} else {
-		newAvatarURL = avatarURL
+		cachePath = path.Join(workflowAvatarCachePrefix, fileName)
 	}
-	// 从HTTP URL下载文件
-	resp, err := http.Get(newAvatarURL)
-	if err != nil {
-		log.Errorf("cache avatar %v download %v err: %v", avatarURL, newAvatarURL, err)
-		return avatar
+
+	// 添加查询参数
+	if queryParams != "" {
+		cachePath += queryParams
 	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode != http.StatusOK {
-		log.Errorf("cache avatar %v download %v HTTP error: %v", avatarURL, newAvatarURL, resp.Status)
-		return avatar
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Errorf("cache avatar %v download %v read response err: %v", avatarURL, newAvatarURL, err)
-		return avatar
-	}
-	// 压缩图像
-	compressedData, err := resizeImage(body)
-	if err != nil {
-		log.Warnf("cache avatar %v compress failed, using original: %v", avatarURL, err)
-		// 压缩失败时使用原始数据
-		compressedData = body
-	}
-	// 创建目录
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
-		log.Errorf("cache avatar %v mkdir %v err: %v", avatarURL, filepath.Dir(filePath), err)
-		return avatar
-	}
-	// 写入文件
-	if err := os.WriteFile(filePath, compressedData, 0644); err != nil {
-		log.Errorf("cache avatar %v write file %v err: %v", avatarURL, filePath, err)
-		return avatar
-	}
-	avatar.Path = filepath.Join("/v1", filePath)
+	avatar.Path = cachePath
 	return avatar
 }
 
+// cachePromptAvatar 获取Prompt的avatar缓存URL
+// 1. 空avatar返回默认Prompt图标
+// 2. 否则调用CacheAvatar转换
 func cachePromptAvatar(ctx *gin.Context, avatarObjectPath string) request.Avatar {
 	avatar := request.Avatar{}
 	if avatarObjectPath == "" {
 		avatar.Path = config.Cfg().DefaultIcon.PromptIcon
 		return avatar
 	}
-	return CacheAvatar(ctx, avatarObjectPath, true)
+	return CacheAvatar(avatarObjectPath)
 }
 
-// knowledge custom
+// cacheKnowledgeAvatar 获取知识库的avatar缓存URL
+// 1. 空avatar根据knowledgeType返回对应默认图标（知识库/QA）
+// 2. 否则调用CacheAvatar转换
 func cacheKnowledgeAvatar(ctx *gin.Context, avatarObjectPath string, knowledgeType int32) request.Avatar {
 	avatar := request.Avatar{}
 	if avatarObjectPath == "" {
@@ -422,64 +318,19 @@ func cacheKnowledgeAvatar(ctx *gin.Context, avatarObjectPath string, knowledgeTy
 		}
 		return avatar
 	}
-	return CacheAvatar(ctx, avatarObjectPath, true)
+	return CacheAvatar(avatarObjectPath)
 }
 
+// cacheModelAvatar 获取模型的avatar缓存URL
+// 1. 空avatar返回默认模型图标
+// 2. 否则调用CacheAvatar转换
 func cacheModelAvatar(ctx *gin.Context, avatarObjectPath string) request.Avatar {
 	avatar := request.Avatar{}
 	if avatarObjectPath == "" {
 		avatar.Path = config.Cfg().DefaultIcon.ModelIcon
 		return avatar
 	}
-	return CacheAvatar(ctx, avatarObjectPath, true)
-}
-
-// resizeImage 压缩图像
-func resizeImage(imageData []byte) ([]byte, error) {
-	// 先解码获取图像尺寸
-	img, _, err := image.Decode(bytes.NewReader(imageData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode image: %w", err)
-	}
-	bounds := img.Bounds()
-	originalWidth := bounds.Dx()
-	originalHeight := bounds.Dy()
-	// 计算等比例缩放后的尺寸
-	targetWidth, targetHeight := calculateResizeParameters(originalWidth, originalHeight, 200)
-	// 重新创建 reader（因为之前的读取位置已经改变）
-	reader := bytes.NewReader(imageData)
-	// 压缩图像到计算后的尺寸
-	compressedData, err := imaging.Resize(reader, targetWidth, targetHeight)
-	if err != nil {
-		return nil, fmt.Errorf("image resize failed: %w", err)
-	}
-	return compressedData, nil
-}
-
-// 计算等比例缩放尺寸
-func calculateResizeParameters(originalWidth, originalHeight, maxSize int) (int, int) {
-	if originalWidth <= maxSize && originalHeight <= maxSize {
-		// 如果原图已经小于目标尺寸，返回原尺寸
-		return originalWidth, originalHeight
-	}
-	var newWidth, newHeight int
-	if originalWidth > originalHeight {
-		// 宽图：以宽度为基准
-		newWidth = maxSize
-		newHeight = int(float64(originalHeight) * float64(maxSize) / float64(originalWidth))
-	} else {
-		// 高图或正方形：以高度为基准
-		newHeight = maxSize
-		newWidth = int(float64(originalWidth) * float64(maxSize) / float64(originalHeight))
-	}
-	// 确保最小尺寸为1
-	if newWidth < 1 {
-		newWidth = 1
-	}
-	if newHeight < 1 {
-		newHeight = 1
-	}
-	return newWidth, newHeight
+	return CacheAvatar(avatarObjectPath)
 }
 
 func convertStatisticChart(ctx *gin.Context, pbChart *common.StatisticChart) response.StatisticChart {

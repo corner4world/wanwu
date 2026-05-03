@@ -10,7 +10,9 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -56,7 +58,24 @@ func FileExt(filePath string) string {
 }
 
 func NewRandomFile(fileName string) string {
-	return uuid.New().String() + filepath.Ext(fileName)
+	extension := ExtractExtension(fileName)
+	return uuid.New().String() + extension
+}
+
+// ExtractExtension 从路径或 URL 中安全提取扩展名（包含点号）
+func ExtractExtension(raw string) string {
+	// 1. 尝试解析为 URL
+	u, err := url.Parse(raw)
+	if err == nil && (u.Scheme != "" || u.Host != "" || strings.Contains(raw, "?")) {
+		// 这是一个 URL，取其路径部分（忽略查询参数和片段）
+		p := u.Path
+		// 获取路径最后一段（文件名）
+		base := path.Base(p)
+		// 提取扩展名（path.Ext 能正确处理 .tar.gz 等多级扩展名）
+		return path.Ext(base)
+	}
+	// 2. 非 URL，按普通文件路径处理（使用 filepath.Ext 适配 Windows 反斜杠）
+	return filepath.Ext(raw)
 }
 
 // ToFileSizeStr fileSize单位是B，转换规则：小于1M为KB，大于等于1M，单位为M，保留两位小数

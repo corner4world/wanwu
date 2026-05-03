@@ -201,6 +201,7 @@ minio:
   endpoint: localhost:9000
   user: root
   password: Wanwu123456
+  download_url: http://localhost:8081/minio/download/api
 
 redis:
   host: localhost
@@ -268,6 +269,8 @@ workflow:
   export_uri: /api/workflow_api/export
   import_uri: /api/workflow_api/import
   convert_uri: /api/workflow_api/update_meta_by_wanwu
+  # schema
+  list_schema_uri: /v1/workflow/list_schema_by_wanwu
   # run
   workflow_run_by_openapi_uri: /v1/workflow/%v/run_by_wanwu
   workflow_run_latest_version_uri: /v1/workflow/run_by_wanwu
@@ -283,11 +286,11 @@ workflow:
   # upload
   upload_action_uri: /api/common/upload/apply_upload_action
   upload_common_uri: /api/common/upload
-  upload_file_uri: /api/bot/upload_file_by_wanwu
   sign_img_uri: /api/workflow_api/sign_image_url
   # version
   publish_uri: /api/workflow_api/publish
   version_list_uri: /api/workflow_api/version_list
+  multi_version_list_uri: /api/workflow_api/latest_version_list
   update_version_desc_uri: /api/workflow_api/version_description
   rollback_uri: /api/workflow_api/revert
   # model params

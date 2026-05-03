@@ -16,6 +16,155 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/agent/joiner/skills": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取资源库中我添加的skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取我添加的skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.JoinerSkillDetail"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "删除资源库中我添加的skill",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "删除我添加的skill",
+                "parameters": [
+                    {
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeleteJoinerSkillReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/joiner/skills/detail": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取资源库中我添加的skill详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取我添加的skill详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.JoinerSkillDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/agent/skill/conversation": {
             "post": {
                 "security": [
@@ -777,6 +926,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "skill名称",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "skill类型(builtin/custom)",
+                        "name": "skillType",
                         "in": "query"
                     }
                 ],
@@ -1856,6 +2011,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/appspace/assistant/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取智能体应用列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assistant"
+                ],
+                "summary": "获取智能体应用列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "应用名(模糊查询)",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.AppBriefInfo"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/appspace/chatflow": {
             "post": {
                 "security": [
@@ -2477,6 +2695,69 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.RagInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/appspace/rag/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取文本问答应用列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rag"
+                ],
+                "summary": "获取文本问答应用列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "应用名(模糊查询)",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.AppBriefInfo"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -3121,6 +3402,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/assistant/conversation/clear": {
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "清空已发布智能体对话ES数据，不删除会话ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent"
+                ],
+                "summary": "清空已发布智能体对话",
+                "parameters": [
+                    {
+                        "description": "智能体对话清空参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ConversationIdRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/assistant/conversation/detail": {
             "get": {
                 "security": [
@@ -3206,7 +3526,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "删除草稿智能体对话",
+                "description": "删除草稿智能体对话，传detailId删除单条，不传删除全部",
                 "consumes": [
                     "application/json"
                 ],
@@ -3739,7 +4059,7 @@ const docTemplate = `{
                                                         "list": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/response.AppBriefInfo"
+                                                                "$ref": "#/definitions/response.ExplorationAppInfo"
                                                             }
                                                         }
                                                     }
@@ -5827,7 +6147,7 @@ const docTemplate = `{
                                                         "list": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/response.GetGeneralAgentAssistantSelectResp"
+                                                                "$ref": "#/definitions/response.ExplorationAppInfo"
                                                             }
                                                         }
                                                     }
@@ -5872,7 +6192,10 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/response.GetGeneralAgentConfigResp"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/response.GeneralAgentConfigList"
+                                            }
                                         }
                                     }
                                 }
@@ -6470,14 +6793,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/general/agent/copilotkit": {
-            "post": {
+        "/general/agent/mcp/select": {
+            "get": {
                 "security": [
                     {
                         "JWT": []
                     }
                 ],
-                "description": "通用智能体CopilotRuntime协议端点，用于CopilotKit框架调用，支持method=info,agent/connect,agent/run,agent/stop",
+                "description": "获取通用智能体MCP下拉接口列表，用于用户选择MCP进行对话",
                 "consumes": [
                     "application/json"
                 ],
@@ -6487,23 +6810,190 @@ const docTemplate = `{
                 "tags": [
                     "wga"
                 ],
-                "summary": "通用智能体CopilotRuntime协议端点",
+                "summary": "通用智能体MCP下拉接口列表",
                 "parameters": [
                     {
-                        "description": "CopilotRuntime请求参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.GeneralAgentCopilotRuntimeReq"
-                        }
+                        "type": "string",
+                        "description": "MCP名称",
+                        "name": "name",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "CopilotRuntime信息",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.GeneralAgentCopilotRuntimeInfoResp"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.MCPSelect"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/resource/select": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体资源选择列表，包括MCP、Workflow、Skill、智能体四种类型",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "通用智能体资源选择列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GeneralAgentResourceSelectList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/select": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "获取通用智能体skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.CustomSkillDetail"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/sub/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体支持的子智能体列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "获取通用智能体子智能体列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GetGeneralAgentSubListResp"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -6583,6 +7073,15 @@ const docTemplate = `{
                     "wga"
                 ],
                 "summary": "通用智能体工具选择",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "智能体ID，默认为空",
+                        "name": "agentId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -6606,6 +7105,109 @@ const docTemplate = `{
                                                             "type": "array",
                                                             "items": {
                                                                 "$ref": "#/definitions/response.GetGeneralAgentToolSelectResp"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/upload/limit": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体所支持的上传文件格式及大小限制",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "获取通用智能体上传文件格式限制",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GeneralAgentUploadLimitResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/workflow/select": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体工作流列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "通用智能体工作流列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "workflow名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.ExplorationAppInfo"
                                                             }
                                                         }
                                                     }
@@ -6779,6 +7381,62 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/knowledge/doc/by/name": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "根据知识库名称和文档名称获取文档信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "knowledge.doc"
+                ],
+                "summary": "根据知识库名称和文档名称获取文档信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文档名称",
+                        "name": "docName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "知识库名称",
+                        "name": "knowledgeName",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GetDocByKnowledgeNameAndDocNameResp"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -8953,7 +9611,7 @@ const docTemplate = `{
             }
         },
         "/knowledge/qa/pair/list": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "JWT": []
@@ -8999,7 +9657,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "-1：全部 0:待处理 1:导入中 2:导入成功 3:导入失败",
                         "name": "status",
                         "in": "query"
                     }
@@ -10908,8 +11571,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "serverUrl,就是sseUrl(和mcpId传一个)",
+                        "description": "serverUrl,就是sseUrl/streamable(和mcpId传一个)",
                         "name": "serverUrl",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "传输协议类型: sse 或 streamable(仅当serverUrl不为空时生效)",
+                        "name": "transport",
                         "in": "query"
                     }
                 ],
@@ -11318,6 +11987,72 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/model/import/providers": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "根据模型类型筛选支持的供应商，不传则返回全部",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "model"
+                ],
+                "summary": "模型导入-获取供应商列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "模型类型",
+                        "name": "modelType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "供应商",
+                        "name": "provider",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "$ref": "#/definitions/response.ProviderModelTypes"
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -12020,6 +12755,45 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/request.ModelStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/model/validate-thinking": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "对LLM模型进行深度思考功能校验",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "model"
+                ],
+                "summary": "深度思考校验",
+                "parameters": [
+                    {
+                        "description": "模型信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ImportOrUpdateModelRequest"
                         }
                     }
                 ],
@@ -14171,6 +14945,194 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/square/skills": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取探索广场中的skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "获取广场skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.SquareSkillDetail"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/square/skills/detail": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取探索广场中的skill详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "获取广场skill详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SquareSkillDetailInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/square/skills/download": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "下载探索广场中的skill ZIP包",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "下载广场skill",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/square/skills/share": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "将广场中的skill添加到我的资源库",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "添加广场skill到资源库",
+                "parameters": [
+                    {
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ShareSquareSkillReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -17121,6 +18083,9 @@ const docTemplate = `{
                 "multiModalEmbedding": {
                     "$ref": "#/definitions/mp_qwen.MultiModalEmbedding"
                 },
+                "multiModalRerank": {
+                    "$ref": "#/definitions/mp_qwen.MultiModalRerank"
+                },
                 "rerank": {
                     "$ref": "#/definitions/mp_qwen.Rerank"
                 }
@@ -17773,6 +18738,38 @@ const docTemplate = `{
                 }
             }
         },
+        "mp_qwen.MultiModalRerank": {
+            "type": "object",
+            "properties": {
+                "apiKey": {
+                    "type": "string"
+                },
+                "contextSize": {
+                    "type": "integer"
+                },
+                "endpointUrl": {
+                    "type": "string"
+                },
+                "maxImageSize": {
+                    "type": "integer"
+                },
+                "maxTextLength": {
+                    "type": "integer"
+                },
+                "maxVideoClipSize": {
+                    "type": "integer"
+                },
+                "supportFileTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "supportImageInQuery": {
+                    "type": "boolean"
+                }
+            }
+        },
         "mp_qwen.Rerank": {
             "type": "object",
             "properties": {
@@ -18060,15 +19057,16 @@ const docTemplate = `{
         "protocol.Property": {
             "type": "object",
             "properties": {
+                "default": {
+                    "description": "Default specifies the default value for the property."
+                },
                 "description": {
                     "description": "Description is the description of the schema.",
                     "type": "string"
                 },
                 "enum": {
                     "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "items": {}
                 },
                 "items": {
                     "description": "Items specifies which data type an array contains, if the schema type is Array.",
@@ -18092,7 +19090,10 @@ const docTemplate = `{
                     }
                 },
                 "type": {
-                    "$ref": "#/definitions/protocol.DataType"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/protocol.DataType"
+                    }
                 }
             }
         },
@@ -18923,23 +19924,6 @@ const docTemplate = `{
                 }
             }
         },
-        "request.AssistantSelected": {
-            "type": "object",
-            "required": [
-                "assistantId",
-                "assistantType"
-            ],
-            "properties": {
-                "assistantId": {
-                    "description": "智能体ID",
-                    "type": "string"
-                },
-                "assistantType": {
-                    "description": "智能体类型",
-                    "type": "string"
-                }
-            }
-        },
         "request.AssistantSkillAddRequest": {
             "type": "object",
             "required": [
@@ -19471,6 +20455,10 @@ const docTemplate = `{
             "properties": {
                 "assistantId": {
                     "type": "string"
+                },
+                "detailId": {
+                    "description": "可选，传值则删除单条对话，不传则删除全部对话",
+                    "type": "string"
                 }
             }
         },
@@ -19481,6 +20469,10 @@ const docTemplate = `{
             ],
             "properties": {
                 "conversationId": {
+                    "type": "string"
+                },
+                "detailId": {
+                    "description": "可选，传值则删除单条对话，不传则删除全部对话",
                     "type": "string"
                 }
             }
@@ -20262,6 +21254,17 @@ const docTemplate = `{
                 }
             }
         },
+        "request.DeleteJoinerSkillReq": {
+            "type": "object",
+            "required": [
+                "skillId"
+            ],
+            "properties": {
+                "skillId": {
+                    "type": "string"
+                }
+            }
+        },
         "request.DeleteKeywordsReq": {
             "type": "object",
             "properties": {
@@ -20853,8 +21856,34 @@ const docTemplate = `{
                 "threadId"
             ],
             "properties": {
+                "agentId": {
+                    "description": "子智能体ID",
+                    "type": "string"
+                },
                 "threadId": {
                     "description": "对话ID",
+                    "type": "string"
+                }
+            }
+        },
+        "request.GeneralAgentConfigItem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.GeneralAgentConfigToolItem": {
+            "type": "object",
+            "properties": {
+                "toolId": {
+                    "type": "string"
+                },
+                "toolType": {
                     "type": "string"
                 }
             }
@@ -20866,6 +21895,10 @@ const docTemplate = `{
                 "threadId"
             ],
             "properties": {
+                "agentId": {
+                    "description": "智能体ID",
+                    "type": "string"
+                },
                 "messages": {
                     "description": "消息",
                     "type": "array",
@@ -20896,22 +21929,6 @@ const docTemplate = `{
                 "role": {
                     "description": "角色 user",
                     "type": "string"
-                }
-            }
-        },
-        "request.GeneralAgentCopilotRuntimeReq": {
-            "type": "object",
-            "properties": {
-                "body": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "method": {
-                    "type": "string"
-                },
-                "params": {
-                    "type": "object",
-                    "additionalProperties": true
                 }
             }
         },
@@ -21447,8 +22464,7 @@ const docTemplate = `{
             "required": [
                 "desc",
                 "from",
-                "name",
-                "sseUrl"
+                "name"
             ],
             "properties": {
                 "avatar": {
@@ -21477,6 +22493,14 @@ const docTemplate = `{
                 },
                 "sseUrl": {
                     "description": "SSE URL",
+                    "type": "string"
+                },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
                     "type": "string"
                 }
             }
@@ -21668,8 +22692,7 @@ const docTemplate = `{
                 "desc",
                 "from",
                 "mcpId",
-                "name",
-                "sseUrl"
+                "name"
             ],
             "properties": {
                 "avatar": {
@@ -21697,6 +22720,14 @@ const docTemplate = `{
                 },
                 "sseUrl": {
                     "description": "SSE URL",
+                    "type": "string"
+                },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
                     "type": "string"
                 }
             }
@@ -22487,6 +23518,17 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ShareSquareSkillReq": {
+            "type": "object",
+            "required": [
+                "skillId"
+            ],
+            "properties": {
+                "skillId": {
+                    "type": "string"
+                }
+            }
+        },
         "request.SkillConversationChatReq": {
             "type": "object",
             "required": [
@@ -22532,23 +23574,6 @@ const docTemplate = `{
                 },
                 "skillSaveId": {
                     "description": "技能ID",
-                    "type": "string"
-                }
-            }
-        },
-        "request.ToolSelected": {
-            "type": "object",
-            "required": [
-                "toolId",
-                "toolType"
-            ],
-            "properties": {
-                "toolId": {
-                    "description": "工具ID",
-                    "type": "string"
-                },
-                "toolType": {
-                    "description": "工具类型",
                     "type": "string"
                 }
             }
@@ -22746,18 +23771,34 @@ const docTemplate = `{
         "request.UpdateGeneralAgentConfigReq": {
             "type": "object",
             "properties": {
-                "assistantList": {
-                    "description": "智能体ID",
+                "assistant": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/request.AssistantSelected"
+                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
                     }
                 },
-                "toolList": {
-                    "description": "工具ID",
+                "mcp": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/request.ToolSelected"
+                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
+                    }
+                },
+                "skill": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
+                    }
+                },
+                "tool": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.GeneralAgentConfigToolItem"
+                    }
+                },
+                "workflow": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
                     }
                 }
             }
@@ -23451,6 +24492,45 @@ const docTemplate = `{
                 }
             }
         },
+        "response.AgentFileMeta": {
+            "type": "object",
+            "properties": {
+                "createAt": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AgentResponseFile": {
+            "type": "object",
+            "properties": {
+                "fileType": {
+                    "type": "string"
+                },
+                "fileUrl": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "扩展信息：",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/response.AgentFileMeta"
+                        }
+                    ]
+                },
+                "name": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
         "response.AnalysisDocUrlResp": {
             "type": "object",
             "properties": {
@@ -23509,7 +24589,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "publishType": {
-                    "description": "发布类型(public:公开发布,private:私密发布)",
+                    "description": "发布类型(public:公开发布,private:私密发布)，为空表示未发布(草稿)",
                     "type": "string"
                 },
                 "uniqueId": {
@@ -23518,6 +24598,10 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "description": "应用更新时间(用于历史记录排序)",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "已发布应用的版本号(未发布时为空)",
                     "type": "string"
                 }
             }
@@ -24375,6 +25459,12 @@ const docTemplate = `{
                 "response": {
                     "type": "string"
                 },
+                "responseFiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AgentResponseFile"
+                    }
+                },
                 "responseList": {
                     "type": "array",
                     "items": {
@@ -25229,6 +26319,23 @@ const docTemplate = `{
                 }
             }
         },
+        "response.DocAnalyzerTextInfo": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mp_common.Tag"
+                    }
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
         "response.DocChildSegmentResp": {
             "type": "object",
             "properties": {
@@ -25493,7 +26600,7 @@ const docTemplate = `{
                     "description": "文档解析类型 文字提取 / OCR解析  / 模型解析",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/response.DocAnalyzerTextInfo"
                     }
                 },
                 "fileName": {
@@ -25634,7 +26741,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "publishType": {
-                    "description": "发布类型(public:公开发布,private:私密发布)",
+                    "description": "发布类型(public:公开发布,private:私密发布)，为空表示未发布(草稿)",
                     "type": "string"
                 },
                 "uniqueId": {
@@ -25652,6 +26759,10 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.User"
                         }
                     ]
+                },
+                "version": {
+                    "description": "已发布应用的版本号(未发布时为空)",
+                    "type": "string"
                 }
             }
         },
@@ -25671,8 +26782,12 @@ const docTemplate = `{
         "response.GeneralAgentConfigCheckResponse": {
             "type": "object",
             "properties": {
+                "meet": {
+                    "description": "是否符合要求",
+                    "type": "boolean"
+                },
                 "modelMeet": {
-                    "description": "是否符合模型要求",
+                    "description": "是否符合模型要求 FIXME 去掉模型检查",
                     "type": "boolean"
                 },
                 "toolsMeet": {
@@ -25681,10 +26796,18 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/response.GeneralAgentToolCategories"
                     }
+                }
+            }
+        },
+        "response.GeneralAgentConfigList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "列表项"
                 },
-                "valid": {
-                    "description": "是否有效",
-                    "type": "boolean"
+                "listType": {
+                    "description": "类型: mcp, workflow, skill, assistant, tool",
+                    "type": "string"
                 }
             }
         },
@@ -25723,43 +26846,6 @@ const docTemplate = `{
                 }
             }
         },
-        "response.GeneralAgentCopilotRuntimeInfoAgent": {
-            "type": "object",
-            "properties": {
-                "className": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "response.GeneralAgentCopilotRuntimeInfoResp": {
-            "type": "object",
-            "properties": {
-                "a2uiEnabled": {
-                    "type": "boolean"
-                },
-                "agents": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "$ref": "#/definitions/response.GeneralAgentCopilotRuntimeInfoAgent"
-                    }
-                },
-                "audioFileTranscriptionEnabled": {
-                    "type": "boolean"
-                },
-                "mode": {
-                    "type": "string"
-                },
-                "version": {
-                    "type": "string"
-                }
-            }
-        },
         "response.GeneralAgentFileInfo": {
             "type": "object",
             "properties": {
@@ -25780,6 +26866,55 @@ const docTemplate = `{
                 },
                 "type": {
                     "description": "\"file\" or \"directory\"",
+                    "type": "string"
+                }
+            }
+        },
+        "response.GeneralAgentResourceSelectItem": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "description": "作者",
+                    "type": "string"
+                },
+                "avatar": {
+                    "description": "头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "desc": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "类型",
+                    "type": "string"
+                }
+            }
+        },
+        "response.GeneralAgentResourceSelectList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "列表项",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.GeneralAgentResourceSelectItem"
+                    }
+                },
+                "listType": {
+                    "description": "列表类型: mcp, workflow, skill, assistant",
                     "type": "string"
                 }
             }
@@ -25859,6 +26994,37 @@ const docTemplate = `{
                 }
             }
         },
+        "response.GeneralAgentUploadLimit": {
+            "type": "object",
+            "properties": {
+                "extList": {
+                    "description": "支持的文件后缀列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fileType": {
+                    "description": "文件类型，如：image、video、audio、document",
+                    "type": "string"
+                },
+                "maxSize": {
+                    "description": "文件大小限制，单位MB",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.GeneralAgentUploadLimitResp": {
+            "type": "object",
+            "properties": {
+                "uploadLimitList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.GeneralAgentUploadLimit"
+                    }
+                }
+            }
+        },
         "response.GeneralAgentWorkspaceResp": {
             "type": "object",
             "properties": {
@@ -25888,71 +27054,32 @@ const docTemplate = `{
                 }
             }
         },
-        "response.GetGeneralAgentAssistantSelectResp": {
+        "response.GetDocByKnowledgeNameAndDocNameResp": {
             "type": "object",
             "properties": {
-                "appId": {
-                    "description": "应用id",
+                "disable": {
+                    "description": "禁用模式，默认false",
+                    "type": "boolean"
+                },
+                "id": {
+                    "description": "文档ID",
                     "type": "string"
                 },
-                "appType": {
-                    "description": "应用类型",
+                "knowledgeId": {
+                    "description": "知识库ID",
                     "type": "string"
                 },
-                "avatar": {
-                    "description": "应用图标",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/request.Avatar"
-                        }
-                    ]
-                },
-                "category": {
-                    "description": "智能体分类(1:单智能体,2:多智能体)",
-                    "type": "integer"
-                },
-                "createdAt": {
-                    "description": "应用创建时间",
-                    "type": "string"
-                },
-                "desc": {
-                    "description": "应用描述",
+                "knowledgeName": {
+                    "description": "知识库名称",
                     "type": "string"
                 },
                 "name": {
-                    "description": "应用名称",
+                    "description": "文档名称",
                     "type": "string"
                 },
-                "publishType": {
-                    "description": "发布类型(public:公开发布,private:私密发布)",
+                "type": {
+                    "description": "文档类型",
                     "type": "string"
-                },
-                "uniqueId": {
-                    "description": "随机unique id(每次动态生成)",
-                    "type": "string"
-                },
-                "updatedAt": {
-                    "description": "应用更新时间(用于历史记录排序)",
-                    "type": "string"
-                }
-            }
-        },
-        "response.GetGeneralAgentConfigResp": {
-            "type": "object",
-            "properties": {
-                "assistantList": {
-                    "description": "智能体列表",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.AssistantSelected"
-                    }
-                },
-                "toolList": {
-                    "description": "工具列表",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.ToolSelected"
-                    }
                 }
             }
         },
@@ -25970,6 +27097,18 @@ const docTemplate = `{
                 "threadId": {
                     "description": "对话ID",
                     "type": "string"
+                }
+            }
+        },
+        "response.GetGeneralAgentSubListResp": {
+            "type": "object",
+            "properties": {
+                "wgaAgentList": {
+                    "description": "子智能体列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.WgaAgentInfo"
+                    }
                 }
             }
         },
@@ -26048,6 +27187,32 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.JoinerSkillDetail": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "downloadUrl": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                },
+                "skillMarkdown": {
                     "type": "string"
                 }
             }
@@ -27130,8 +28295,16 @@ const docTemplate = `{
                     "description": "SSE URL",
                     "type": "string"
                 },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
                 "summary": {
                     "description": "使用概述",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
                     "type": "string"
                 }
             }
@@ -27174,6 +28347,14 @@ const docTemplate = `{
                 "sseUrl": {
                     "description": "SSE URL",
                     "type": "string"
+                },
+                "streamableUrl": {
+                    "description": "Streamable HTTP URL",
+                    "type": "string"
+                },
+                "transport": {
+                    "description": "传输协议: \"sse\" 或 \"streamable\"",
+                    "type": "string"
                 }
             }
         },
@@ -27215,6 +28396,10 @@ const docTemplate = `{
                     "description": "sseUrl",
                     "type": "string"
                 },
+                "streamableUrl": {
+                    "description": "streamableUrl",
+                    "type": "string"
+                },
                 "toolId": {
                     "description": "工具id",
                     "type": "string"
@@ -27230,6 +28415,10 @@ const docTemplate = `{
                         "mcp",
                         "mcpserver"
                     ]
+                },
+                "transport": {
+                    "description": "传输协议",
+                    "type": "string"
                 },
                 "type": {
                     "type": "string"
@@ -27710,6 +28899,17 @@ const docTemplate = `{
                 }
             }
         },
+        "response.ModelTypeItem": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "response.MyAppItem": {
             "type": "object",
             "properties": {
@@ -27890,6 +29090,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "templateId": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ProviderModelTypes": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ModelTypeItem"
+                    }
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -28454,6 +29671,58 @@ const docTemplate = `{
                 }
             }
         },
+        "response.SquareSkillDetail": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "isShared": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SquareSkillDetailInfo": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "downloadUrl": {
+                    "type": "string"
+                },
+                "isShared": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                },
+                "skillMarkdown": {
+                    "type": "string"
+                }
+            }
+        },
         "response.StatisticChart": {
             "type": "object",
             "properties": {
@@ -29002,6 +30271,31 @@ const docTemplate = `{
                 "picNum": {
                     "description": "视觉配置图片数量",
                     "type": "integer"
+                }
+            }
+        },
+        "response.WgaAgentInfo": {
+            "type": "object",
+            "properties": {
+                "agentId": {
+                    "description": "子智能体ID",
+                    "type": "string"
+                },
+                "agentName": {
+                    "description": "子智能体名称",
+                    "type": "string"
+                },
+                "avatar": {
+                    "description": "logo",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "placeholder": {
+                    "description": "占位提示文本",
+                    "type": "string"
                 }
             }
         },

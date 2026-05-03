@@ -489,3 +489,24 @@ func GetDocUploadLimit(ctx *gin.Context) {
 	resp, err := service.GetDocUploadLimit(ctx, userId, orgId, &req)
 	gin_util.Response(ctx, resp, err)
 }
+
+// GetDocByKnowledgeNameAndDocName
+//
+//	@Tags			knowledge.doc
+//	@Summary		根据知识库名称和文档名称获取文档信息
+//	@Description	根据知识库名称和文档名称获取文档信息
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	query		request.GetDocByKnowledgeNameAndDocNameReq	true	"根据知识库名称和文档名称获取文档信息请求参数"
+//	@Success		200		{object}	response.Response{data=response.GetDocByKnowledgeNameAndDocNameResp}
+//	@Router			/knowledge/doc/by/name [get]
+func GetDocByKnowledgeNameAndDocName(ctx *gin.Context) {
+	userId, orgId := getUserID(ctx), getOrgID(ctx)
+	var req request.GetDocByKnowledgeNameAndDocNameReq
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.GetDocByKnowledgeNameAndDocName(ctx, userId, orgId, &req)
+	gin_util.Response(ctx, resp, err)
+}

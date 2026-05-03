@@ -34,4 +34,5 @@ tool_categories:
           - operation_id: tavily_date_search
 
 skills:
-  # - dir: configs/microservice/bff-service/configs/agent-skills/anthropics
+
+sub_agents:

@@ -879,3 +879,18 @@ func processError(status int, err error) error {
 	}
 	return err
 }
+
+// GetDocByKnowledgeIdAndDocName 根据知识库ID和文档名称查询文档信息
+func GetDocByKnowledgeIdAndDocName(ctx context.Context, userId, orgId, knowledgeId, docName string) (*model.KnowledgeDoc, error) {
+	var doc model.KnowledgeDoc
+	err := sqlopt.SQLOptions(sqlopt.WithPermit(orgId, userId),
+		sqlopt.WithKnowledgeID(knowledgeId),
+		sqlopt.WithName(docName),
+		sqlopt.WithDelete(0)).
+		Apply(db.GetHandle(ctx), &model.KnowledgeDoc{}).
+		First(&doc).Error
+	if err != nil {
+		return nil, err
+	}
+	return &doc, nil
+}

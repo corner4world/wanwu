@@ -54,6 +54,7 @@ func WgaSandboxRun(ctx *gin.Context, req *request.WgaSandboxRunReq) error {
 		}),
 		wga_sandbox_option.WithModelConfig(modelConfig),
 		wga_sandbox_option.WithSandbox(sandbox),
+		wga_sandbox_option.WithRunnerType(wga_sandbox_option.RunnerTypeOpencode),
 		wga_sandbox_option.WithInstruction(req.Instruction),
 		wga_sandbox_option.WithOverallTask(req.OverallTask),
 		wga_sandbox_option.WithEnableThinking(req.EnableThinking),

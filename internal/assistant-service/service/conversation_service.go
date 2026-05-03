@@ -14,7 +14,6 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/es"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
-	"github.com/google/uuid"
 )
 
 const (
@@ -23,6 +22,7 @@ const (
 
 type ConversationParams struct {
 	AssistantId    string           `json:"assistantId"`
+	DetailId       string           `json:"detailId"`
 	ConversationId string           `json:"conversationId"`
 	UserId         string           `json:"userId"`
 	OrgId          string           `json:"orgId"`
@@ -61,7 +61,7 @@ func (cp *ConversationProcessor) Process(ctx context.Context, req *ConversationP
 		//todo delete
 		log.Infof("[Conversation] fullResponse: %s", conversationResp.Response())
 		//保存会话
-		saveConversation(ctx, req, conversationResp)
+		saveConversation(ctx, req, conversationResp, req.DetailId)
 	}()
 	//1.执行请求
 	businessKey, sseResp, cancel, err := sendRequest(ctx)
@@ -79,11 +79,12 @@ func (cp *ConversationProcessor) Process(ctx context.Context, req *ConversationP
 		return err
 	}
 	//3.回写结果
-	err = cp.SSEWriter.WriteStream(stream, nil, conversationLineBuilder(conversationResp), nil)
+	err = cp.SSEWriter.WriteStream(stream, nil, cp.conversationLineBuilder(conversationResp), nil)
 	return err
 }
 
-func conversationLineBuilder(conversationResp *conversation.ConversationResp) func(s sse_util.SSEWriterClient[assistant_service.AssistantConversionStreamResp], strLine string, streamContextParams interface{}) (assistant_service.AssistantConversionStreamResp, bool, error) {
+// conversationLineBuilder 构造agent对话结果行处理器
+func (cp *ConversationProcessor) conversationLineBuilder(conversationResp *conversation.ConversationResp) func(sse_util.SSEWriterClient[assistant_service.AssistantConversionStreamResp], string, interface{}) (assistant_service.AssistantConversionStreamResp, bool, error) {
 	return func(s sse_util.SSEWriterClient[assistant_service.AssistantConversionStreamResp], strLine string, streamContextParams interface{}) (assistant_service.AssistantConversionStreamResp, bool, error) {
 		err := conversation.BuildConversationResp(conversationResp, strLine)
 		if err != nil {
@@ -112,7 +113,7 @@ func buildErrMsg(err error) string {
 }
 
 // 使用独立上下文保存对话的辅助函数
-func saveConversation(originalCtx context.Context, req *ConversationParams, conversationResp *conversation.ConversationResp) {
+func saveConversation(originalCtx context.Context, req *ConversationParams, conversationResp *conversation.ConversationResp, detailId string) {
 	if len(req.ConversationId) == 0 {
 		return
 	}
@@ -121,7 +122,7 @@ func saveConversation(originalCtx context.Context, req *ConversationParams, conv
 		ctx, cancel := context.WithTimeout(context.Background(), esTimeout)
 		defer cancel()
 
-		if err := saveConversationDetailToES(ctx, req, conversationResp); err != nil {
+		if err := saveConversationDetailToES(ctx, req, conversationResp, detailId); err != nil {
 			log.Errorf("保存聊天记录到ES失败，assistantId: %s, conversationId: %s, error: %v",
 				req.AssistantId, req.ConversationId, err)
 		}
@@ -129,45 +130,46 @@ func saveConversation(originalCtx context.Context, req *ConversationParams, conv
 	}
 
 	// 原始上下文未取消时，继续使用它
-	if err := saveConversationDetailToES(originalCtx, req, conversationResp); err != nil {
+	if err := saveConversationDetailToES(originalCtx, req, conversationResp, detailId); err != nil {
 		log.Errorf("保存聊天记录到ES失败，assistantId: %s, conversationId: %s, error: %v",
 			req.AssistantId, req.ConversationId, err)
 	}
 }
 
 // saveConversationDetailToES 保存聊天记录到ES
-func saveConversationDetailToES(ctx context.Context, req *ConversationParams, conversationResp *conversation.ConversationResp) error {
+func saveConversationDetailToES(ctx context.Context, req *ConversationParams, conversationResp *conversation.ConversationResp, detailId string) error {
 	// 根据当前时间生成索引名称，格式为conversation_detail_infos_YYYYMM
 	now := time.Now()
 	indexName := fmt.Sprintf("conversation_detail_infos_%d%02d", now.Year(), now.Month())
 
-	// 组装ConversationDetails数据
-	conversationDetail := buildConversationDetail(req, conversationResp, now.UnixMilli())
+	// 组装ConversationDetails数据，使用传入的detailId
+	conversationDetail := buildConversationDetail(req, conversationResp, now.UnixMilli(), detailId)
 	// 写入ES
 	if err := es.Assistant().IndexDocument(ctx, indexName, conversationDetail); err != nil {
 		return fmt.Errorf("写入ES失败: %v", err)
 	}
 
-	log.Infof("成功保存聊天记录到ES，索引: %s, assistantId: %s, conversationId: %s",
-		indexName, req.AssistantId, req.ConversationId)
+	log.Infof("成功保存聊天记录到ES，索引: %s, assistantId: %s, conversationId: %s, detailId: %s",
+		indexName, req.AssistantId, req.ConversationId, detailId)
 	return nil
 }
 
-func buildConversationDetail(req *ConversationParams, conversationResp *conversation.ConversationResp, nowMilli int64) *model.ConversationDetails {
+func buildConversationDetail(req *ConversationParams, conversationResp *conversation.ConversationResp, nowMilli int64, detailId string) *model.ConversationDetails {
 	return &model.ConversationDetails{
-		Id:                        uuid.New().String(),
+		Id:                        detailId,
 		AssistantId:               req.AssistantId,
 		ConversationId:            req.ConversationId,
 		Prompt:                    req.Query,
 		FileInfo:                  req.FileInfo,
 		ResponseList:              conversationResp.ResponseList(),
-		Response:                  conversationResp.Response(), //todo 联调完删除
+		Response:                  conversationResp.Response(),
 		SearchList:                conversationResp.References(),
 		UserId:                    req.UserId,
 		OrgId:                     req.OrgId,
 		CreatedAt:                 nowMilli,
 		UpdatedAt:                 nowMilli,
 		SubConversationDetailList: buildSubConversationDetailList(conversationResp),
+		ResponseFiles:             conversationResp.ResponseFiles,
 	}
 }
 
@@ -186,20 +188,27 @@ func buildSubConversationDetailList(conversationResp *conversation.ConversationR
 	})
 	var retList []*model.SubConversationDetail
 	for _, subConversationResp := range dataList {
+		eventData := subConversationResp.EventData
+		if eventData == nil {
+			continue
+		}
+		if eventData.Status != model.EventEndStatus &&
+			eventData.Status != model.EventFailStatus {
+			eventData.Status = model.EventEndStatus // 暂定设置成结束状态
+		}
 		retList = append(retList, &model.SubConversationDetail{
-			BusinessId:       subConversationResp.EventData.Id,
+			BusinessId:       eventData.Id,
 			ConversationType: buildConversationType(subConversationResp.EventType),
 			Order:            subConversationResp.Order,
 			Content:          subConversationResp.Response(),
 			SearchList:       subConversationResp.References(),
-			EventData:        subConversationResp.EventData,
+			EventData:        eventData,
 		})
 	}
 	return retList
 }
 
 func buildConversationType(eventType int) model.ConversationType {
-	log.Infof("buildConversationType eventType: %d", eventType)
 	switch eventType {
 	case conversation.SubAgentEventType:
 		return model.SubAgent
@@ -211,8 +220,8 @@ func buildConversationType(eventType int) model.ConversationType {
 		return model.AgentThink
 	case conversation.SkillEventType:
 		return model.AgentSkill
-	case conversation.SkillTextEventType:
-		return model.AgentSkillText
+	case conversation.SubTextEventType:
+		return model.AgentSubText
 
 	default:
 		return model.SubAgent
