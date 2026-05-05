@@ -9,6 +9,7 @@ import (
 	"time"
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
+	"github.com/UnicomAI/wanwu/api/proto/common"
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
@@ -39,6 +40,12 @@ type WgaChatParams struct {
 	AgentID  string
 	ThreadID string
 	Messages []request.GeneralAgentConversationMessage
+
+	// ModelConfig - 模型配置（可选）
+	// 由调用方从自己的配置系统获取，或传 nil 使用默认配置
+	// 通用智能体：从 wga_conversation_config 表获取
+	// 新业务场景：从自己的配置系统获取，或传 nil
+	ModelConfig *common.AppModelConfig
 
 	// WorkspaceStore - 由调用方创建
 	// - 通用智能体：NewGeneralAgentWorkspaceStore(threadID)，store 与 threadID 绑定
@@ -97,21 +104,6 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 		return grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "no user message found in input messages")
 	}
 
-	// 验证 threadId 是否存在
-	existsResp, err := assistant.WgaConversationExists(ctx.Request.Context(), &assistant_service.WgaConversationExistsReq{
-		ThreadId: params.ThreadID,
-		Identity: &assistant_service.Identity{
-			UserId: params.UserID,
-			OrgId:  params.OrgID,
-		},
-	})
-	if err != nil {
-		return err
-	}
-	if !existsResp.Exists {
-		return grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("threadId %s not found", params.ThreadID))
-	}
-
 	// 获取上一次输出的目录信息（如果存在）
 	var lastWorkspaceTotalSize int64
 	var lastWorkspaceFileCount int
@@ -134,7 +126,7 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 	runID := uuid.NewString()
 
 	// 构建 WGA 选项
-	opts, err := buildWgaRunOptions(ctx, params.UserID, params.OrgID, params.AgentID, params.ThreadID, runID, userInputMessage, params.WorkspaceStore, params.WorkspaceReadOnly)
+	opts, err := buildWgaRunOptions(ctx, params.UserID, params.OrgID, params.AgentID, params.ThreadID, runID, userInputMessage, params.ModelConfig, params.WorkspaceStore, params.WorkspaceReadOnly)
 	if err != nil {
 		return err
 	}
@@ -298,7 +290,7 @@ func filterWgaHistoryMessages(ctx *gin.Context, userId, orgId, threadId string) 
 	return messages, nil
 }
 
-func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runID string, userInputMessage *request.GeneralAgentConversationMessage, workspaceStore *wga_persistent.Store, workspaceReadOnly bool) ([]wga_option.Option, error) {
+func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runID string, userInputMessage *request.GeneralAgentConversationMessage, modelConfig *common.AppModelConfig, workspaceStore *wga_persistent.Store, workspaceReadOnly bool) ([]wga_option.Option, error) {
 	// 获取 WGA 配置
 	wgaConfigResp, err := assistant.GetWgaConfig(ctx.Request.Context(), &assistant_service.GetWgaConfigReq{
 		Identity: &assistant_service.Identity{
@@ -314,19 +306,6 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 		wgaConfig = &assistant_service.WgaConfig{}
 	}
 
-	// 获取 WGA Conversation 配置
-	wgaConversationConfigResp, err := assistant.GetWgaConversationConfig(ctx.Request.Context(), &assistant_service.GetWgaConversationConfigReq{
-		ThreadId: threadID,
-		Identity: &assistant_service.Identity{
-			UserId: userID,
-			OrgId:  orgID,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	wgaConversationConfig := wgaConversationConfigResp.Config
-
 	// 解析用户消息中的 @提及资源
 	mentionResources := &wgaMentionResources{}
 	if userInputMessage != nil {
@@ -341,12 +320,12 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 		}),
 	}
 
-	// 校验并构建模型配置选项
-	if wgaConversationConfig != nil && wgaConversationConfig.ModelConfig != nil && wgaConversationConfig.ModelConfig.ModelId != "" {
-		if err := checkModelConfigFromProto(ctx, wgaConversationConfig.GetModelConfig()); err != nil {
+	// 校验并构建模型配置选项（由调用方提供 ModelConfig）
+	if modelConfig != nil && modelConfig.ModelId != "" {
+		if err := checkModelConfigFromProto(ctx, modelConfig); err != nil {
 			return nil, err
 		}
-		modelOpt, err := buildWgaModelOption(ctx, wgaConversationConfig.ModelConfig)
+		modelOpt, err := buildWgaModelOption(ctx, modelConfig)
 		if err != nil {
 			return nil, err
 		}

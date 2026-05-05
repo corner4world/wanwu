@@ -318,6 +318,23 @@ func CheckGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string,
 
 // GeneralAgentConversationChat 通用智能体对话接口
 func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req request.GeneralAgentConversationChatReq) error {
+	// 获取 threadId 的 ModelConfig
+	configResp, err := assistant.GetWgaConversationConfig(ctx.Request.Context(), &assistant_service.GetWgaConversationConfigReq{
+		ThreadId: req.ThreadID,
+		Identity: &assistant_service.Identity{
+			UserId: userId,
+			OrgId:  orgId,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	var modelConfig *common.AppModelConfig
+	if configResp.Config != nil {
+		modelConfig = configResp.Config.ModelConfig
+	}
+
+	// 获取 threadId 的 workspace store
 	var workspaceStore *wga_persistent.Store
 	if config.WgaCfg().Persistent.Enabled {
 		store, err := NewGeneralAgentWorkspaceStore(req.ThreadID)
@@ -339,6 +356,7 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 		AgentID:        agentID,
 		ThreadID:       req.ThreadID,
 		Messages:       req.Messages,
+		ModelConfig:    modelConfig,
 		WorkspaceStore: workspaceStore,
 	})
 }
