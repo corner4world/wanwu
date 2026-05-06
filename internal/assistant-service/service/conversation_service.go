@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	esTimeout = 1 * time.Minute
+	esTimeout         = 1 * time.Minute
+	errorDefaultOrder = 999
 )
 
 type ConversationParams struct {
@@ -53,6 +54,7 @@ func (cp *ConversationProcessor) Process(ctx context.Context, req *ConversationP
 			_ = cp.SSEWriter.WriteLine(assistant_service.AssistantConversionStreamResp{
 				Content: buildErrMsg(err),
 			}, false, nil, nil)
+			conversationResp.WriteError("智能体处理异常，请稍后重试", err.Error(), errorDefaultOrder)
 		}
 		if ctx.Err() != nil {
 			err = ctx.Err()
@@ -100,7 +102,7 @@ func (cp *ConversationProcessor) conversationLineBuilder(conversationResp *conve
 func buildErrMsg(err error) string {
 	var agentChatResp = &AgentChatResp{
 		Code:     1,
-		Message:  "智能体处理异常，请稍后重试",
+		Message:  err.Error(),
 		Response: "智能体处理异常，请稍后重试",
 		Finish:   1,
 	}

@@ -33,10 +33,10 @@ func BuildToolParamsMessage(toolCall []schema.ToolCall) *schema.Message {
 	}
 }
 
-func BuildToolFinishMessage() string {
+func BuildToolFinishMessage(content string) string {
 	message := &schema.Message{
 		Role:    schema.Assistant,
-		Content: "",
+		Content: content,
 		ResponseMeta: &schema.ResponseMeta{
 			FinishReason: "stop",
 		},

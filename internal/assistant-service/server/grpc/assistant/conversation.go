@@ -360,8 +360,10 @@ func buildConversationResponse(response string, conversation []*model.Conversati
 	var retList []*assistant_service.ConversationResponse
 	for _, resp := range conversation {
 		retList = append(retList, &assistant_service.ConversationResponse{
-			Response: resp.Response,
-			Order:    int32(resp.Order),
+			Response:    resp.Response,
+			Order:       int32(resp.Order),
+			ErrMessage:  resp.ErrMessage,
+			ErrResponse: resp.ErrResponse,
 		})
 	}
 	return retList
@@ -398,5 +400,6 @@ func buildSubConversation(detail *model.SubConversationDetail, index int, oldDat
 		Status:           int32(data.Status),
 		ConversationType: string(detail.ConversationType),
 		Order:            int32(order),
+		ErrMessage:       data.ErrMessage,
 	}
 }

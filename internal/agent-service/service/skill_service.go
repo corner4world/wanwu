@@ -204,9 +204,13 @@ func (s *SkillExecutor) runStream(runnerType wga_sandbox_option.RunnerType) (*sc
 	skillOpts := buildSkillOptions(buildModeConfig(s.skill.chatInfo), s.runEnv, s.messages, runnerType)
 	//执行调用
 	_, jsonCh, err := wga_sandbox.Run(s.ctx, skillOpts...)
+	var errResp string
 	if err != nil {
 		log.Errorf("skillTool strem run error: %v", err)
-		return nil, errors.New(agent_util.WgaErr)
+		errResp, err = response.ToolErrResp(err)
+		if err != nil {
+			return nil, errors.New(agent_util.WgaErr)
+		}
 	}
 
 	safe_go_util.SafeGo(func() {
@@ -215,33 +219,36 @@ func (s *SkillExecutor) runStream(runnerType wga_sandbox_option.RunnerType) (*sc
 			// 清理运行环境
 			s.clearEnv()
 		}()
-		for ch := range jsonCh {
-			if conv != nil {
-				contentList, err1 := conv.Convert(ch)
-				if err1 != nil || len(contentList) == 0 {
-					log.Errorf("skillTool Run error: %v", err1)
-					continue
-				}
-				for _, message := range contentList {
-					if message.ResponseMeta != nil && message.ResponseMeta.FinishReason == "stop" {
-						//自己手动添加结束，不需要沙箱的结束
-						message.ResponseMeta = nil
-					}
-					marshal, err2 := json.Marshal(message)
-					if err2 != nil {
+		if len(errResp) == 0 {
+			for ch := range jsonCh {
+				if conv != nil {
+					contentList, err1 := conv.Convert(ch)
+					if err1 != nil || len(contentList) == 0 {
 						log.Errorf("skillTool Run error: %v", err1)
 						continue
 					}
-					log.Infof("skillTool StreamableRun result %s", string(marshal))
-					sw.Send(string(marshal), nil)
+					for _, message := range contentList {
+						if message.ResponseMeta != nil && message.ResponseMeta.FinishReason == "stop" {
+							//自己手动添加结束，不需要沙箱的结束
+							message.ResponseMeta = nil
+						}
+						marshal, err2 := json.Marshal(message)
+						if err2 != nil {
+							log.Errorf("skillTool Run error: %v", err1)
+							continue
+						}
+						log.Infof("skillTool StreamableRun result %s", string(marshal))
+						sw.Send(string(marshal), nil)
+					}
 				}
 			}
+			processor, extra, _ := skillOutputProcessor(s.runEnv.outputDir)
+			if len(processor) > 0 {
+				sw.Send(agent_util.BuildAssistantMessage(processor, extra), nil)
+			}
 		}
-		processor, extra, _ := skillOutputProcessor(s.runEnv.outputDir)
-		if len(processor) > 0 {
-			sw.Send(agent_util.BuildAssistantMessage(processor, extra), nil)
-		}
-		sw.Send(agent_util.BuildToolFinishMessage(), nil)
+
+		sw.Send(agent_util.BuildToolFinishMessage(errResp), nil)
 	})
 
 	return sr, nil

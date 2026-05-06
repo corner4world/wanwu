@@ -123,14 +123,15 @@ func AgentChatSuccessResp(req *request.AgentChatContext, chatMessage *schema.Mes
 		ResponseFiles: respContext.DownloadContext.ResponseFiles(agentFinish),
 	}
 }
-func AgentChatFailResp(detailId string, err error) string {
-	errMsg := buildErrMsg(err)
+func AgentChatFailResp(detailId string, err error, respContext *AgentChatRespContext) string {
+	resp, errMsg := buildErrMsg(err)
 	var agentChatResp = &AgentChatResp{
 		Code:     agentFailCode,
 		Message:  errMsg,
-		Response: errMsg,
+		Response: resp,
 		DetailId: detailId,
 		Finish:   finish,
+		Order:    respContext.Order,
 	}
 	respString, err := buildRespString(agentChatResp)
 	if err != nil {
@@ -140,15 +141,15 @@ func AgentChatFailResp(detailId string, err error) string {
 	return respString
 }
 
-func buildErrMsg(err error) string {
+func buildErrMsg(err error) (string, string) {
 	errMsg := err.Error()
 	if strings.Contains(errMsg, "[direct]") { // 判断是否为直接返回错误
-		return strings.ReplaceAll(errMsg, "[direct]", "")
+		return strings.ReplaceAll(errMsg, "[direct]", ""), ""
 	}
 	if strings.Contains(errMsg, "chat completions err") { // 判断是否为墨子模型错误
-		return "模型调用异常，请检查后重试"
+		return "模型调用异常，请检查后重试", errMsg
 	}
-	return "智能体处理异常，请稍后重试"
+	return "智能体处理异常，请稍后重试", errMsg
 }
 
 func buildRespString(agentChatResp *AgentChatResp) (string, error) {

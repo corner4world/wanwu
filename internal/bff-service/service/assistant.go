@@ -950,8 +950,10 @@ func buildResponseList(conversationResponse []*assistant_service.ConversationRes
 	var retList []*response.ConversationResponse
 	for _, resp := range conversationResponse {
 		retList = append(retList, &response.ConversationResponse{
-			Response: resp.Response,
-			Order:    resp.Order,
+			Response:    resp.Response,
+			Order:       resp.Order,
+			ErrMessage:  resp.ErrMessage,
+			ErrResponse: resp.ErrResponse,
 		})
 	}
 	return retList
@@ -988,6 +990,7 @@ func buildSubConversationList(conversationList []*assistant_service.SubConversat
 			ConversationType: conversation.ConversationType,
 			Order:            conversation.Order,
 			ParentId:         conversation.ParentId,
+			ErrMessage:       conversation.ErrMessage,
 		})
 	}
 	return subConversationList

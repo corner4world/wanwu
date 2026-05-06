@@ -92,8 +92,10 @@ type ConversationInfo struct {
 }
 
 type ConversationResponse struct {
-	Response string `json:"response"`
-	Order    int32  `json:"order"`
+	Response    string `json:"response"`
+	Order       int32  `json:"order"`
+	ErrResponse string `json:"errResponse"`
+	ErrMessage  string `json:"errMessage"`
 }
 
 type ConversationDetailInfo struct {
@@ -127,6 +129,7 @@ type SubConversation struct {
 	Status           int32       `json:"status"`           // 1:成功，2：失败
 	ConversationType string      `json:"conversationType"` // subAgent：子智能体；agentTool：主智能体工具；subAgentTool：子智能体工具
 	Order            int32       `json:"order"`
+	ErrMessage       string      `json:"errMessage"` //错误信息
 }
 
 type AssistantRequestFile struct {

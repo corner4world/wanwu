@@ -3,6 +3,8 @@ package agent_chat_builder
 import (
 	"encoding/json"
 	"fmt"
+	utils "github.com/UnicomAI/wanwu/pkg/util"
+	"github.com/mark3labs/mcp-go/mcp"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -63,6 +65,11 @@ func (*SingleAgentMessageBuilder) FilterMessage(respContext *response.AgentChatR
 }
 
 func (*SingleAgentMessageBuilder) BuildContent(req *request.AgentChatContext, respContext *response.AgentChatRespContext, chatMessage *schema.Message) ([]*response.AgentMessageContent, error) {
+	////适配不返回任何工具，但是工具参数结束的消息
+	//messageTool := response.CreateMessageTool(chatMessage, respContext)
+	//if messageTool.ToolParamsEnd() && !respContext.AgentToolContext.HasTool() && !respContext.MultiAgentContext.AgentChangeStart {
+	//	chatMessage.ResponseMeta.FinishReason = "stop"
+	//}
 	return buildSingleAgentContent(req, respContext, chatMessage)
 }
 
@@ -306,20 +313,9 @@ func buildNewContentByStep(respContext *response.AgentChatRespContext, req *requ
 	case response.ToolResultFinishStep:
 		subEventData = response.BuildEndTool(agentTool)
 		if len(chatMessage.Content) > 0 {
-			var toolResult string
-			if json.Valid([]byte(chatMessage.Content)) {
-				// 尝试从JSON中提取文件URL和文件名
-				fileList := extractFilesFromJSON(chatMessage.Content)
-				if len(fileList) > 0 {
-					respContext.DownloadContext.AddDownloadFile(toolId, fileList)
-				}
-				toolResult = fmt.Sprintf(toolEndJsonFormat, "", chatMessage.Content)
-			} else {
-				toolResult = fmt.Sprintf(toolEndFormat, "", chatMessage.Content)
-			}
+			toolResult := processToolResult(respContext, subEventData, chatMessage.Content, toolId)
 			contentList = append(contentList, toolResult)
 		}
-
 	}
 	return &response.AgentMessageContent{
 		ContentList:  contentList,
@@ -384,6 +380,57 @@ func buildToolAvatar(toolName string, toolMap map[string]*request.ToolConfig, to
 		return response.BuildDefaultAvatarByType(toolEventType)
 	}
 	return toolConfig.Avatar
+}
+
+// processToolResult 处理工具调用结果消息
+func processToolResult(respContext *response.AgentChatRespContext, subEventData *response.SubEventData, content string, toolId string) string {
+	var toolResult string
+	if json.Valid([]byte(content)) {
+		// 尝试从JSON中提取文件URL和文件名
+		fileList := extractFilesFromJSON(content)
+		if len(fileList) > 0 {
+			respContext.DownloadContext.AddDownloadFile(toolId, fileList)
+		}
+		toolResult = fmt.Sprintf(toolEndJsonFormat, "", content)
+		// 尝试判断是否是错误信息
+		errResp := extraErrMessage(content)
+		if len(errResp) > 0 {
+			subEventData.ErrMessage = errResp
+			subEventData.Status = response.EventFailStatus
+		}
+	} else {
+		toolResult = fmt.Sprintf(toolEndFormat, "", content)
+	}
+	return toolResult
+}
+
+// extraErrMessage 获取错误信息
+func extraErrMessage(content string) (result string) {
+	defer utils.PrintPanicStackWithCall(func(panicOccur bool, recoverError error) {
+		if panicOccur {
+			result = ""
+			return
+		}
+	})
+	if len(content) == 0 {
+		return ""
+	}
+	var mcpResult = &mcp.CallToolResult{}
+	err := json.Unmarshal([]byte(content), mcpResult)
+	if err == nil {
+		if len(mcpResult.Content) > 0 {
+			textContent, ok := mcpResult.Content[0].(mcp.TextContent)
+			if ok && textContent.Text != "" && textContent.Type == "text" {
+				content = textContent.Text
+			}
+		}
+	}
+	var errResult = response.AgentToolErrResp{}
+	err = json.Unmarshal([]byte(content), &errResult)
+	if err != nil {
+		return ""
+	}
+	return errResult.ErrorMsg
 }
 
 // extractFilesFromJSON 从JSON内容中提取文件URL和文件名

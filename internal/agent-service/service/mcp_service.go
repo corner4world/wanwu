@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/UnicomAI/wanwu/pkg/log"
 	"time"
 
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
@@ -71,7 +71,7 @@ func createMCPClient(ctx context.Context, url string, transport string) (client.
 		return nil, fmt.Errorf("failed to initialize MCP client: %w", err)
 	}
 
-	log.Printf("MCP client (%s) initialized successfully", transport)
+	log.Infof("MCP client (%s) initialized successfully", transport)
 	return retryMcpClient, nil
 }
 
@@ -83,7 +83,7 @@ func GetToolsFromMCPServers(ctx context.Context, toolParamsList []*request.MCPTo
 	var allTools []tool.BaseTool
 
 	for _, serverInfo := range toolParamsList {
-		log.Printf("Connecting to MCP server: %v", serverInfo)
+		log.Infof("Connecting to MCP server: %v", serverInfo)
 
 		mcpClient, err := createMCPClient(ctx, serverInfo.URL, serverInfo.Transport)
 		if err != nil {
@@ -97,10 +97,10 @@ func GetToolsFromMCPServers(ctx context.Context, toolParamsList []*request.MCPTo
 			ToolNameList: serverInfo.ToolNameList,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to get tools from %v: %v", serverInfo, err)
+			return nil, fmt.Errorf("failed to get mcp tools from %v: %v", serverInfo, err)
 		}
 
-		log.Printf("Loaded %d tools from %v", len(tools), serverInfo)
+		log.Infof("Loaded %d tools from %v", len(tools), serverInfo)
 		allTools = append(allTools, tools...)
 	}
 

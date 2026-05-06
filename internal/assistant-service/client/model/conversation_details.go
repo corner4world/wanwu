@@ -48,17 +48,19 @@ type SubEventData struct {
 	TimeCost    string         `json:"timeCost"`
 	Order       int            `json:"order"`
 	DisplayMode int            `json:"displayMode"`
+	ErrMessage  string         `json:"errMessage"`
 }
 
 func (s *SubEventData) Copy() *SubEventData {
 	return &SubEventData{
-		Status:   s.Status,
-		Id:       s.Id,
-		ParentId: s.ParentId,
-		Name:     s.Name,
-		Profile:  s.Profile,
-		TimeCost: s.TimeCost,
-		Order:    s.Order,
+		Status:     s.Status,
+		Id:         s.Id,
+		ParentId:   s.ParentId,
+		Name:       s.Name,
+		Profile:    s.Profile,
+		TimeCost:   s.TimeCost,
+		Order:      s.Order,
+		ErrMessage: s.ErrMessage,
 	}
 }
 
@@ -73,8 +75,10 @@ type SubConversationDetail struct {
 }
 
 type ConversationResponse struct {
-	Response string `json:"response"`
-	Order    int    `json:"order"`
+	Response    string `json:"response"`
+	ErrResponse string `json:"errResponse"`
+	ErrMessage  string `json:"errMessage"`
+	Order       int    `json:"order"`
 }
 
 type ConversationDetails struct {

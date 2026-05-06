@@ -52,6 +52,20 @@ func (cr *ConversationResp) Write(data string, order int) {
 	cr.FullResponse.WriteString(data)
 }
 
+func (cr *ConversationResp) WriteError(data string, errMessage string, order int) {
+	if cr.FullResponse.Len() > 0 {
+		resp := &model.ConversationResponse{Response: cr.FullResponse.String(), Order: cr.EventOrder}
+		cr.EventOrder = order
+		cr.FullResponseList = append(cr.FullResponseList, resp)
+		cr.FullResponse.Reset()
+		order += 1
+	}
+	resp := &model.ConversationResponse{ErrMessage: errMessage, ErrResponse: data, Order: cr.EventOrder}
+	cr.EventOrder = order
+	cr.FullResponseList = append(cr.FullResponseList, resp)
+	cr.FullResponse.Reset()
+}
+
 func (cr *ConversationResp) References() string {
 	var searchList string
 	if cr.SearchList != nil {
@@ -82,7 +96,10 @@ func (cr *ConversationResp) ResponseList() []*model.ConversationResponse {
 		conversationResponse += terminationMessage
 	}
 	var retList = cr.FullResponseList
-	retList = append(retList, &model.ConversationResponse{Response: conversationResponse, Order: cr.EventOrder})
+	if len(conversationResponse) > 0 {
+		retList = append(retList, &model.ConversationResponse{Response: conversationResponse, Order: cr.EventOrder})
+	}
+
 	return retList
 }
 

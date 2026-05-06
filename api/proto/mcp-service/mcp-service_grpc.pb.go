@@ -115,7 +115,7 @@ type MCPServiceClient interface {
 	CustomSkillGetList(ctx context.Context, in *CustomSkillGetListReq, opts ...grpc.CallOption) (*CustomSkillGetListResp, error)
 	CustomSkillGetBySaveIds(ctx context.Context, in *CustomSkillGetBySaveIdsReq, opts ...grpc.CallOption) (*CustomSkillSaveIdsResp, error)
 	GetCustomSkillDetailByIdList(ctx context.Context, in *CustomSkillDetailByIdListReq, opts ...grpc.CallOption) (*CustomSkillDetailByIdListResp, error)
-	// ================AcquiredSkill================
+	//================AcquiredSkill================
 	AcquiredSkillCreate(ctx context.Context, in *AcquiredSkillCreateReq, opts ...grpc.CallOption) (*AcquiredSkillCreateResp, error)
 	AcquiredSkillDelete(ctx context.Context, in *AcquiredSkillDeleteReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AcquiredSkillGet(ctx context.Context, in *AcquiredSkillGetReq, opts ...grpc.CallOption) (*AcquiredSkill, error)
@@ -601,7 +601,7 @@ type MCPServiceServer interface {
 	CustomSkillGetList(context.Context, *CustomSkillGetListReq) (*CustomSkillGetListResp, error)
 	CustomSkillGetBySaveIds(context.Context, *CustomSkillGetBySaveIdsReq) (*CustomSkillSaveIdsResp, error)
 	GetCustomSkillDetailByIdList(context.Context, *CustomSkillDetailByIdListReq) (*CustomSkillDetailByIdListResp, error)
-	// ================AcquiredSkill================
+	//================AcquiredSkill================
 	AcquiredSkillCreate(context.Context, *AcquiredSkillCreateReq) (*AcquiredSkillCreateResp, error)
 	AcquiredSkillDelete(context.Context, *AcquiredSkillDeleteReq) (*emptypb.Empty, error)
 	AcquiredSkillGet(context.Context, *AcquiredSkillGetReq) (*AcquiredSkill, error)
