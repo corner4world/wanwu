@@ -49,6 +49,7 @@ func GetUserPermission(ctx *gin.Context, userID, orgID string) (*response.UserPe
 	}
 	user, err := iam.GetUserInfo(ctx.Request.Context(), &iam_service.GetUserInfoReq{
 		UserId: userID,
+		OrgId:  orgID,
 	})
 	if err != nil {
 		return nil, err
