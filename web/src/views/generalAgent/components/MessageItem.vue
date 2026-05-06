@@ -112,6 +112,19 @@
                     :execution-time="subFragment.toolCall.executionTime || ''"
                     :default-expanded="false"
                   />
+                  <question-block
+                    v-else-if="
+                      subFragment.type === 'question' && subFragment.questionId
+                    "
+                    :key="'sub-question-' + index + '-' + subIndex"
+                    :question-id="subFragment.questionId"
+                    :run-id="subFragment.runId"
+                    :status="subFragment.status || 'pending'"
+                    :questions="subFragment.questions || []"
+                    :answers="subFragment.answers"
+                    @reply="handleQuestionReply(subFragment, $event)"
+                    @reject="handleQuestionReject(subFragment, $event)"
+                  />
                   <div
                     v-else-if="
                       subFragment.type === 'text' && subFragment.content
@@ -126,6 +139,18 @@
                   </div>
                 </template>
               </activity-block>
+              <!-- Question 片段（Human-in-the-Loop） -->
+              <question-block
+                v-else-if="fragment.type === 'question' && fragment.questionId"
+                :key="'question-' + index"
+                :question-id="fragment.questionId"
+                :run-id="fragment.runId"
+                :status="fragment.status || 'pending'"
+                :questions="fragment.questions || []"
+                :answers="fragment.answers"
+                @reply="handleQuestionReply(fragment, $event)"
+                @reject="handleQuestionReject(fragment, $event)"
+              />
               <!-- 文字片段 -->
               <div
                 v-else-if="fragment.type === 'text' && fragment.content"
@@ -175,6 +200,7 @@ import StreamMarkdown from './StreamMarkdown.vue';
 import TypingCursor from './TypingCursor.vue';
 import WorkspaceActivity from './WorkspaceActivity.vue';
 import ActivityBlock from './ActivityBlock.vue';
+import QuestionBlock from './QuestionBlock.vue';
 import CopyIcon from '@/components/copyIcon.vue';
 
 export default {
@@ -187,6 +213,7 @@ export default {
     TypingCursor,
     WorkspaceActivity,
     ActivityBlock,
+    QuestionBlock,
     CopyIcon,
   },
   props: {
@@ -230,6 +257,7 @@ export default {
             (f.type === 'reasoning' && (f.content || f.isStreaming)) ||
             (f.type === 'tool_call' && f.toolCall) ||
             (f.type === 'workspace' && f.workspaceInfo) ||
+            (f.type === 'question' && f.questionId) ||
             (f.type === 'activity' &&
               f.fragments &&
               checkFragmentContent(f.fragments)),
@@ -310,6 +338,17 @@ export default {
 
     regenerate() {
       this.$emit('regenerate', this.message);
+    },
+
+    handleQuestionReply(fragment, event) {
+      this.$set(fragment, 'status', 'answered');
+      this.$set(fragment, 'answers', event.answers);
+      this.$emit('question-reply', event);
+    },
+
+    handleQuestionReject(fragment, event) {
+      this.$set(fragment, 'status', 'rejected');
+      this.$emit('question-reject', event);
     },
   },
 };

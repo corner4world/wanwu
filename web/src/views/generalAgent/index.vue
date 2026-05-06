@@ -90,6 +90,8 @@
               @regenerate="handleRegenerate"
               @view-workspace="handleViewWorkspace"
               @download-all="handleDownloadAll"
+              @question-reply="handleQuestionReply"
+              @question-reject="handleQuestionReject"
             />
           </div>
 
@@ -1061,6 +1063,20 @@ export default {
       this.$nextTick(() => {
         this.startStreaming(requestMessage);
       });
+    },
+
+    // Human-in-the-Loop: 用户回答问题
+    handleQuestionReply(event) {
+      // QuestionBlock 已处理 API 调用和状态更新
+      // 此处仅用于日志或后续扩展
+      console.log('[GeneralAgent] Question replied:', event);
+    },
+
+    // Human-in-the-Loop: 用户拒绝问题
+    handleQuestionReject(event) {
+      // QuestionBlock 已处理 API 调用和状态更新
+      // 此处仅用于日志或后续扩展
+      console.log('[GeneralAgent] Question rejected:', event);
     },
 
     async handleDeleteConversation(item) {

@@ -95,6 +95,48 @@ export function aggregateEventsToMessages(events) {
             },
             runId: activityContent.runId,
           });
+        } else if (event.activityType === 'question') {
+          // Human-in-the-Loop: 问题交互
+          const questionId = activityContent.questionId;
+          const status = activityContent.status;
+
+          // 对于 answered/rejected 状态，更新已存在的 fragment
+          if (status === 'answered' || status === 'rejected') {
+            const fragments = currentActivity
+              ? currentActivity.fragments
+              : messages;
+            // 递归查找匹配的 question fragment
+            const findQuestionFragment = frags => {
+              for (const frag of frags) {
+                if (frag.type === 'question' && frag.questionId === questionId) {
+                  return frag;
+                }
+                // 检查 activity 内部的 fragments
+                if (frag.type === 'activity' && frag.fragments) {
+                  const found = findQuestionFragment(frag.fragments);
+                  if (found) return found;
+                }
+              }
+              return null;
+            };
+            const existingFragment = findQuestionFragment(fragments);
+            if (existingFragment) {
+              existingFragment.status = status;
+              existingFragment.answers = activityContent.answers || existingFragment.answers;
+            }
+            // answered/rejected 状态不创建新 fragment
+          } else if (status === 'pending') {
+            // 只有 pending 状态创建新 fragment
+            addFragment({
+              type: 'question',
+              questionId: questionId,
+              runId: activityContent.runId,
+              status: status,
+              questions: activityContent.questions || [],
+              answers: activityContent.answers,
+              timestamp: activityContent.timestamp || Date.now(),
+            });
+          }
         }
         break;
       }
@@ -318,6 +360,15 @@ export function mergeToFragments(messages) {
           type: 'workspace',
           workspaceInfo: msg.workspaceInfo,
           runId: msg.runId,
+        });
+      } else if (msg.type === 'question') {
+        currentAssistant.fragments.push({
+          type: 'question',
+          questionId: msg.questionId,
+          runId: msg.runId,
+          status: msg.status,
+          questions: msg.questions || [],
+          answers: msg.answers,
         });
       } else if (msg.type === 'text' && msg.content) {
         currentAssistant.fragments.push({

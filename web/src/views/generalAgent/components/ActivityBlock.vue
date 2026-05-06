@@ -99,6 +99,12 @@ export default {
         f => f.type === 'reasoning' || f.type === 'tool_call',
       ).length;
     },
+    hasPendingQuestion() {
+      if (!this.fragments) return false;
+      return this.fragments.some(
+        f => f.type === 'question' && f.status === 'pending',
+      );
+    },
     formattedTimer() {
       const seconds = Math.floor(this.timer / 1000);
       const minutes = Math.floor(seconds / 60);
@@ -118,10 +124,18 @@ export default {
           this.startTimer();
         } else {
           this.stopTimer();
-          // 从 streaming 变为非 streaming 时自动收起
-          if (oldVal === true) {
+          // 从 streaming 变为非 streaming 时，如果有 pending question 保持展开
+          if (oldVal === true && !this.hasPendingQuestion) {
             this.isExpanded = false;
           }
+        }
+      },
+    },
+    hasPendingQuestion: {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.isExpanded = true;
         }
       },
     },

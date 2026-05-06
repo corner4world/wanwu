@@ -1998,5 +1998,22 @@ export default {
       confirmDeleteConversation:
         'Are you sure you want to delete this conversation?',
     },
+    question: {
+      pleaseSelect: 'Please Select',
+      pending: 'Pending',
+      submit: 'Submit',
+      cancel: 'Cancel',
+      answered: 'Selected',
+      rejected: 'Cancelled',
+      replySuccess: 'Submitted successfully',
+      replyFailed: 'Failed to submit, please try again',
+      rejectSuccess: 'Cancelled',
+      rejectFailed: 'Failed to cancel, please try again',
+      customPlaceholder: 'Enter your answer',
+      singleSelect: 'Single Choice',
+      multiSelect: 'Multiple Choice',
+      questions: 'questions',
+      other: 'Other',
+    },
   },
 };
