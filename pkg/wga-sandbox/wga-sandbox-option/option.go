@@ -56,9 +56,18 @@ type Tool struct {
 	Name           string // 工具名称，从 schema 的 info.title 自动读取
 }
 
+// SkillVariable 技能变量配置。
+type SkillVariable struct {
+	Name          string `json:"name"`          // 变量名称
+	Description   string `json:"description"`   // 变量描述
+	VariableKey   string `json:"variableKey"`   // 变量键（用于环境变量/模板替换）
+	VariableValue string `json:"variableValue"` // 变量值
+}
+
 // Skill 技能配置。
 type Skill struct {
-	Dir string // skill 目录路径
+	Dir       string          `json:"dir"`       // skill 目录路径
+	Variables []SkillVariable `json:"variables"` // 用户自定义变量
 }
 
 // MCP MCP 服务器配置。
@@ -278,6 +287,24 @@ func WithMessages(messages []adk.Message) Option {
 
 func WithSkills(skills []Skill) Option {
 	return OptionFunc(func(opts *RunOption) error {
+		for _, skill := range skills {
+			seen := make(map[string]bool)
+			for _, v := range skill.Variables {
+				if v.Name == "" {
+					return fmt.Errorf("skill [%s] variable name is required", skill.Dir)
+				}
+				if seen[v.Name] {
+					return fmt.Errorf("skill [%s] variable name [%s] duplicate", skill.Dir, v.Name)
+				}
+				if v.VariableKey == "" {
+					return fmt.Errorf("skill [%s] variable [%s] key is required", skill.Dir, v.Name)
+				}
+				if v.VariableValue == "" {
+					return fmt.Errorf("skill [%s] variable [%s] value is required", skill.Dir, v.Name)
+				}
+				seen[v.Name] = true
+			}
+		}
 		opts.Skills = skills
 		return nil
 	})

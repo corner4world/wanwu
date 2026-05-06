@@ -81,10 +81,16 @@ func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Mess
 	// 传递技能（配置文件 + 运行时）
 	var allSkills []wga_sandbox_option.Skill
 	for _, skill := range a.cfg.Skills {
-		allSkills = append(allSkills, wga_sandbox_option.Skill{Dir: skill.Dir})
+		allSkills = append(allSkills, wga_sandbox_option.Skill{
+			Dir:       skill.Dir,
+			Variables: convertSkillVariables(skill.Variables),
+		})
 	}
 	for _, skill := range a.options.Skills {
-		allSkills = append(allSkills, wga_sandbox_option.Skill{Dir: skill.Dir})
+		allSkills = append(allSkills, wga_sandbox_option.Skill{
+			Dir:       skill.Dir,
+			Variables: convertSkillVariables(skill.Variables),
+		})
 	}
 	if len(allSkills) > 0 {
 		opts = append(opts, wga_sandbox_option.WithSkills(allSkills))
@@ -172,4 +178,21 @@ func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Mess
 	}
 
 	return opts, nil
+}
+
+// convertSkillVariables 转换 Skill 变量列表类型。
+func convertSkillVariables(variables []config.SkillVariable) []wga_sandbox_option.SkillVariable {
+	if len(variables) == 0 {
+		return nil
+	}
+	result := make([]wga_sandbox_option.SkillVariable, len(variables))
+	for i, v := range variables {
+		result[i] = wga_sandbox_option.SkillVariable{
+			Name:          v.Name,
+			Description:   v.Description,
+			VariableKey:   v.VariableKey,
+			VariableValue: v.VariableValue,
+		}
+	}
+	return result
 }

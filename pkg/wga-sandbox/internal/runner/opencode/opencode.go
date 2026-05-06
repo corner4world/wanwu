@@ -251,7 +251,7 @@ func (r *Runner) setupConfig(ctx context.Context) error {
 	return nil
 }
 
-// setupSkills 复制 skills 到工作目录。
+// setupSkills 复制 skills 到工作目录，并注入变量到 SKILL.md。
 func (r *Runner) setupSkills(ctx context.Context) error {
 	if len(r.opt.Skills) == 0 {
 		return nil
@@ -265,6 +265,18 @@ func (r *Runner) setupSkills(ctx context.Context) error {
 		dirName := path.Base(skill.Dir)
 		if err := r.sb.CopyToSandbox(ctx, skill.Dir, ".opencode/skills"); err != nil {
 			return fmt.Errorf("failed to copy skill %s to workspace: %w", dirName, err)
+		}
+
+		// 追加变量信息到 SKILL.md
+		if len(skill.Variables) > 0 {
+			skillDir := ".opencode/skills/" + dirName
+			skillPath := fmt.Sprintf("%s/SKILL.md", skillDir)
+			varsContent := formatVariablesContent(skill.Variables)
+			encoded := base64.StdEncoding.EncodeToString([]byte(varsContent))
+			cmd := fmt.Sprintf("echo '%s' | base64 -d >> \"%s\"", encoded, skillPath)
+			if _, err := r.sb.ExecuteSync(ctx, cmd); err != nil {
+				return fmt.Errorf("failed to update SKILL.md for skill %s: %w", dirName, err)
+			}
 		}
 	}
 
@@ -1054,4 +1066,27 @@ func formatAuthContent(auth *openapi3_util.Auth) string {
 		authDesc = fmt.Sprintf("Auth Value: `%s`", auth.Value)
 	}
 	return fmt.Sprintf("\n## API Key\n\n%s\n", authDesc)
+}
+
+// formatVariablesContent 格式化变量信息为 Markdown 格式。
+func formatVariablesContent(variables []wga_sandbox_option.SkillVariable) string {
+	var buf strings.Builder
+	buf.WriteString("\n## Variables\n\n")
+	buf.WriteString("The following variables are configured for this skill:\n\n")
+	for _, v := range variables {
+		// 转义反引号
+		escapedKey := strings.ReplaceAll(v.VariableKey, "`", "\\`")
+		escapedValue := strings.ReplaceAll(v.VariableValue, "`", "\\`")
+
+		if v.Description != "" {
+			escapedDesc := strings.ReplaceAll(v.Description, "`", "\\`")
+			fmt.Fprintf(&buf, "- **%s** (%s): `%s` = `%s`\n",
+				v.Name, escapedDesc, escapedKey, escapedValue)
+		} else {
+			fmt.Fprintf(&buf, "- **%s**: `%s` = `%s`\n",
+				v.Name, escapedKey, escapedValue)
+		}
+	}
+	buf.WriteString("\n")
+	return buf.String()
 }

@@ -44,7 +44,8 @@ type ExtraTool struct {
 
 // Skill 技能配置。
 type Skill struct {
-	Dir string // skill 目录路径（相对程序运行目录）
+	Dir       string                 `json:"dir"`       // skill 目录路径（相对程序运行目录）
+	Variables []config.SkillVariable `json:"variables"` // 用户自定义变量
 }
 
 // MCP MCP 服务器配置。
@@ -233,6 +234,23 @@ func WithSkill(skill Skill) Option {
 	return optionFunc(func(opts *Options) error {
 		if skill.Dir == "" {
 			return fmt.Errorf("skill dir is required")
+		}
+		// 验证变量
+		seen := make(map[string]bool)
+		for _, v := range skill.Variables {
+			if v.Name == "" {
+				return fmt.Errorf("skill [%s] variable name is required", skill.Dir)
+			}
+			if seen[v.Name] {
+				return fmt.Errorf("skill [%s] variable name [%s] duplicate", skill.Dir, v.Name)
+			}
+			if v.VariableKey == "" {
+				return fmt.Errorf("skill [%s] variable [%s] key is required", skill.Dir, v.Name)
+			}
+			if v.VariableValue == "" {
+				return fmt.Errorf("skill [%s] variable [%s] value is required", skill.Dir, v.Name)
+			}
+			seen[v.Name] = true
 		}
 		opts.Skills = append(opts.Skills, skill)
 		return nil

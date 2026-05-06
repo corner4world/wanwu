@@ -11,6 +11,7 @@ type ModelConfig = option.ModelConfig
 type ToolConfig = option.ToolConfig
 type ExtraTool = option.ExtraTool
 type Skill = option.Skill
+type SkillVariable = config.SkillVariable
 type MCP = option.MCP
 type RunSession = option.RunSession
 
