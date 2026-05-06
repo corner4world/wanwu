@@ -56,4 +56,8 @@ export default {
   },
 };
 </script>
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+::v-deep .scroll-card-container {
+  max-height: calc(100vh - 160px);
+}
+</style>

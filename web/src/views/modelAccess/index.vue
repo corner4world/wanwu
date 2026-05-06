@@ -125,7 +125,7 @@
             </el-button>
           </div>
         </div>
-        <div class="card-wrapper">
+        <div class="card-wrapper scroll-card-container">
           <div class="card-item card-item-create">
             <div class="app-card-create" @click="preInsert">
               <div class="create-img-wrap">

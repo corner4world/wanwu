@@ -1,7 +1,7 @@
 <template>
   <div class="templateSquare">
     <div
-      class="page-wrapper"
+      class="page-wrapper page-wrapper-pr-none"
       :style="isPublic ? `background: ${bgColor}; height: 100%` : ''"
     >
       <!--<div class="page-title">

@@ -4,8 +4,11 @@
       <div class="tempSquare-main">
         <div class="tempSquare-content">
           <div class="tempSquare-card-box">
-            <div class="card-loading-box" v-if="list && list.length">
-              <div class="card-box" v-loading="loading">
+            <div
+              class="card-loading-box scroll-card-container"
+              v-if="list && list.length"
+            >
+              <div class="card-box scroll-card-pr" v-loading="loading">
                 <skill-card
                   v-for="(item, index) in list"
                   :key="index"
@@ -106,6 +109,9 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/style/tempSquare.scss';
+.scroll-card-container {
+  max-height: calc(100vh - 120px);
+}
 .tempSquare-management {
   .tempSquare-main {
     padding: 0 !important;

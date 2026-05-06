@@ -13,8 +13,11 @@
               />
             </div>
 
-            <div class="card-loading-box" v-if="list.length">
-              <div class="card-box" v-loading="loading">
+            <div
+              class="card-loading-box scroll-card-container"
+              v-if="list.length"
+            >
+              <div class="card-box scroll-card-pr" v-loading="loading">
                 <skill-card
                   v-for="(item, index) in list"
                   :key="index"

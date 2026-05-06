@@ -16,8 +16,8 @@
               </el-button>
             </div>
 
-            <div class="card-loading-box">
-              <div class="card-box" v-loading="loading">
+            <div class="card-loading-box scroll-card-container">
+              <div class="card-box scroll-card-pr" v-loading="loading">
                 <div
                   class="card card-item-create"
                   id="skill-card-item-create"

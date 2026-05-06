@@ -1,6 +1,6 @@
 <template>
-  <div class="app-card-container">
-    <div class="app-card">
+  <div class="app-card-container scroll-card-container">
+    <div class="app-card scroll-card-pr">
       <div class="smart rl smart-create">
         <div class="app-card-create" @click="showCreate">
           <div class="create-img-wrap">
@@ -158,6 +158,10 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/style/commonCard.scss';
+.scroll-card-container {
+  max-height: calc(100vh - 160px);
+}
+
 .app-card {
   .smart {
     height: 152px;

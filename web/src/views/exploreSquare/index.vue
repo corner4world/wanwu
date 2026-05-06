@@ -195,8 +195,12 @@ export default {
 }
 
 .page-wrapper {
-  padding: 10px 30px 20px;
+  padding: 10px 22px 20px 30px;
   box-sizing: border-box;
+
+  ::v-deep .app-card {
+    padding-right: 8px;
+  }
 
   .header-top {
     display: flex;
@@ -249,6 +253,7 @@ export default {
   }
   .el-tabs__header {
     margin: 0 !important;
+    padding-bottom: 20px !important;
   }
 }
 </style>

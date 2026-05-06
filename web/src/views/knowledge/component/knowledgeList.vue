@@ -1,6 +1,6 @@
 <template>
-  <div class="app-card-container">
-    <div class="app-card">
+  <div class="app-card-container scroll-card-container">
+    <div class="app-card scroll-card-pr">
       <div class="smart rl smart-create">
         <div class="app-card-create" @click="showCreate">
           <div class="create-img-wrap">

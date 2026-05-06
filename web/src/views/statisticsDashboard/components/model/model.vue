@@ -69,7 +69,7 @@
         ></Search>
       </div>
     </div>
-    <div class="statistics_content_box">
+    <div class="statistics_content_box scroll-card-container">
       <div class="item_box">
         <div class="dataOverview">
           <span class="title">

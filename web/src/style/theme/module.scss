@@ -113,3 +113,24 @@
   height: 100%;
   margin-bottom: 0;
 }
+
+.scroll-card-container {
+  max-height: calc(100vh - 180px);
+  overflow-y: scroll;
+  overflow-x: hidden;
+  min-height: 100px;
+}
+
+.scroll-card-pr {
+  padding-right: 8px;
+  padding-bottom: 10px;
+  padding-top: 0 !important;
+}
+
+.page-wrapper-pr-none {
+  padding-right: 0;
+}
+
+.header-form-pr {
+  padding-right: 10px;
+}

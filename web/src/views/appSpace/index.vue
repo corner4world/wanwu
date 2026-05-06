@@ -1,5 +1,5 @@
 <template>
-  <div class="page-wrapper">
+  <div class="page-wrapper page-wrapper-pr-none">
     <!--<div class="page-title">
       <img
         class="page-title-img"
@@ -13,42 +13,44 @@
       </span>
     </div>-->
     <div class="hide-loading-bg" style="padding: 20px" v-loading="loading">
-      <search-input
-        :placeholder="$t('appSpace.search')"
-        ref="searchInput"
-        @handleSearch="handleSearch"
-      />
-      <div class="tabs workflow-tabs" v-if="[workflow, chat].includes(type)">
-        <div
-          :class="['tab', { active: tabActive === workflow }]"
-          @click="tabClick(workflow)"
-        >
-          {{ $t('appSpace.workflow') }}
+      <div class="header-form-pr" style="padding-bottom: 20px">
+        <search-input
+          :placeholder="$t('appSpace.search')"
+          ref="searchInput"
+          @handleSearch="handleSearch"
+        />
+        <div class="tabs workflow-tabs" v-if="[workflow, chat].includes(type)">
+          <div
+            :class="['tab', { active: tabActive === workflow }]"
+            @click="tabClick(workflow)"
+          >
+            {{ $t('appSpace.workflow') }}
+          </div>
+          <div
+            :class="['tab', { active: tabActive === chat }]"
+            @click="tabClick(chat)"
+          >
+            {{ $t('appSpace.chat') }}
+          </div>
         </div>
-        <div
-          :class="['tab', { active: tabActive === chat }]"
-          @click="tabClick(chat)"
-        >
-          {{ $t('appSpace.chat') }}
+        <div class="header-right">
+          <el-button
+            size="mini"
+            type="primary"
+            @click="showImport"
+            v-if="[workflow, chat].includes(type)"
+          >
+            {{ $t('common.button.import') }}
+          </el-button>
+          <el-button
+            size="mini"
+            type="primary"
+            @click="showCreate"
+            icon="el-icon-plus"
+          >
+            {{ $t('common.button.create') }}
+          </el-button>
         </div>
-      </div>
-      <div class="header-right">
-        <el-button
-          size="mini"
-          type="primary"
-          @click="showImport"
-          v-if="[workflow, chat].includes(type)"
-        >
-          {{ $t('common.button.import') }}
-        </el-button>
-        <el-button
-          size="mini"
-          type="primary"
-          @click="showCreate"
-          icon="el-icon-plus"
-        >
-          {{ $t('common.button.create') }}
-        </el-button>
       </div>
       <AppList
         :type="type"
@@ -228,6 +230,12 @@ export default {
 </script>
 <style lang="scss" scoped>
 @import '@/style/tabs.scss';
+.scroll-card-container {
+  max-height: calc(100vh - 125px);
+}
+.scroll-card-container-workflow {
+  max-height: calc(100vh - 175px) !important;
+}
 .header-right {
   display: inline-block;
   float: right;
