@@ -17,10 +17,13 @@ type FrontMatter struct {
 	Description string `yaml:"description"`
 }
 
-var kebabCaseRegex = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
+// skillNameRegex allows kebab-case names with Unicode letters (e.g. Chinese characters),
+// digits, and hyphens. Must start with a letter, end with a letter or digit,
+// and not contain consecutive hyphens.
+var skillNameRegex = regexp.MustCompile(`^[\p{L}][\p{L}\p{N}]*(-[\p{L}\p{N}]+)*$`)
 
 func isValidKebabCase(name string) bool {
-	return kebabCaseRegex.MatchString(name)
+	return skillNameRegex.MatchString(name)
 }
 
 // ParseSkillFrontMatter 解析技能的Markdown内容，提取FrontMatter
