@@ -16,7 +16,7 @@
         </div>
       </div>
 
-      <div class="card-box">
+      <div class="card-box scroll-card-container">
         <div
           v-if="list && list.length"
           class="card"

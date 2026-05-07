@@ -17,7 +17,7 @@
           {{ $t('promptEvaluate.title') }}
         </el-button>
       </div>
-      <div class="card-box">
+      <div class="card-box scroll-card-container">
         <div class="card card-item-create">
           <div class="app-card-create" @click="createPrompt">
             <div class="create-img-wrap">
@@ -164,7 +164,7 @@ export default {
   },
 };
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .mcp-content-box .noData {
   width: 100%;
   text-align: center;
@@ -172,5 +172,8 @@ export default {
   ::v-deep .el-empty__description p {
     color: #b3b1bc;
   }
+}
+.scroll-card-container {
+  max-height: calc(100vh - 125px);
 }
 </style>

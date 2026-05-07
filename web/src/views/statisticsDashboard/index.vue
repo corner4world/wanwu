@@ -64,4 +64,7 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/style/tabs.scss';
+::v-deep .scroll-card-container {
+  max-height: calc(100vh - 200px);
+}
 </style>

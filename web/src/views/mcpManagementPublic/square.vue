@@ -1,5 +1,5 @@
 <template>
-  <div class="page-wrapper mcp-management">
+  <div class="page-wrapper mcp-management page-wrapper-pr-none">
     <div class="common_bg" style="padding-top: 10px">
       <!--<div class="page-title">
         <img class="page-title-img" src="@/assets/imgs/mcp_menu.svg" alt="" />
@@ -9,7 +9,7 @@
         <div class="mcp-main">
           <div class="mcp-content">
             <div class="mcp-card-box">
-              <div class="card-search card-search-cust">
+              <div class="card-search card-search-cust header-form-pr">
                 <div>
                   <span
                     v-for="item in typeList"
@@ -31,8 +31,11 @@
                 />
               </div>
 
-              <div class="card-loading-box" v-if="list.length">
-                <div class="card-box" v-loading="loading">
+              <div
+                class="card-loading-box scroll-card-container scroll-card-container-mcp"
+                v-if="list.length"
+              >
+                <div class="card-box scroll-card-pr" v-loading="loading">
                   <div
                     class="card"
                     v-for="(item, index) in list"
@@ -136,6 +139,9 @@ export default {
 </script>
 
 <style lang="scss">
+.scroll-card-container-mcp {
+  max-height: calc(100vh - 120px);
+}
 .mcp-management {
   height: calc(100% - 50px);
   .common_bg {

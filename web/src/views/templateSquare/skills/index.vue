@@ -69,6 +69,13 @@ export default {
 </script>
 <style lang="scss" scoped>
 @import '@/style/tabs.scss';
+::v-deep .scroll-card-container {
+  max-height: calc(100vh - 165px);
+  .scroll-card-pr {
+    padding-bottom: 0;
+  }
+}
+
 .skill-management {
   height: calc(100% - 50px);
   padding-top: 20px;

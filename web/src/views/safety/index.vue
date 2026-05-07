@@ -1,11 +1,11 @@
 <template>
-  <div class="page-wrapper">
+  <div class="page-wrapper page-wrapper-pr-none">
     <!--<div class="page-title">
       <img class="page-title-img" src="@/assets/imgs/safety.svg" alt="" />
       <span class="page-title-name">{{ $t('safety.title') }}</span>
     </div>-->
     <div style="padding: 20px">
-      <div class="tabs" style="margin: 0">
+      <div class="tabs" style="margin: 0; padding-bottom: 20px">
         <div
           v-for="item in !isSystem
             ? tabList.filter(({ type }) => type === 'personal')
