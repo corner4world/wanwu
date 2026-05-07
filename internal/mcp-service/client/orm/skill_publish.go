@@ -183,16 +183,45 @@ func (c *Client) GetPublishCustomSkillDesc(ctx context.Context, skillId string) 
 }
 
 func (c *Client) GetPublishCustomSkillDescBatch(ctx context.Context, skillIdList []string) ([]*model.CustomSkillPublish, *errs.Status) {
+	if len(skillIdList) == 0 {
+		return []*model.CustomSkillPublish{}, nil
+	}
+	for _, skillId := range skillIdList {
+		if skillId == "" {
+			return nil, toErrStatus("mcp_skill_config_invalid_arg")
+		}
+	}
+	seen := make(map[string]struct{}, len(skillIdList))
+	uniq := make([]string, 0, len(skillIdList))
+	for _, id := range skillIdList {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		uniq = append(uniq, id)
+	}
+	var rows []*model.CustomSkillPublish
+	if err := c.db.WithContext(ctx).
+		Where("skill_id IN ?", uniq).
+		Order("skill_id ASC, created_at DESC, id DESC").
+		Find(&rows).Error; err != nil {
+		return nil, toErrStatus("mcp_custom_skill_publish_get", err.Error())
+	}
+	latestBySkill := make(map[string]*model.CustomSkillPublish, len(uniq))
+	for _, p := range rows {
+		if p == nil {
+			continue
+		}
+		if _, ok := latestBySkill[p.SkillID]; ok {
+			continue
+		}
+		latestBySkill[p.SkillID] = p
+	}
 	list := make([]*model.CustomSkillPublish, 0, len(skillIdList))
 	for _, skillId := range skillIdList {
-		publish, errStatus := c.getLatestCustomSkillPublish(ctx, skillId)
-		if errStatus != nil {
-			if errStatus.TextKey == textKeyCustomSkillPublishNotFound {
-				continue
-			}
-			return nil, errStatus
+		if p, ok := latestBySkill[skillId]; ok {
+			list = append(list, p)
 		}
-		list = append(list, publish)
 	}
 	return list, nil
 }

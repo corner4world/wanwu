@@ -21,6 +21,9 @@ var (
 )
 
 func (s *Service) CreateMCPServer(ctx context.Context, req *mcp_service.CreateMCPServerReq) (*mcp_service.CreateMCPServerResp, error) {
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPCreateMCPServerErr, toErrStatus("mcp_create_mcp_server_err", "identity is empty"))
+	}
 	var mcpServer *model.MCPServer
 	mcpServerId := util.GenUUID()
 	mcpServer = &model.MCPServer{
@@ -79,7 +82,11 @@ func (s *Service) DeleteMCPServer(ctx context.Context, req *mcp_service.DeleteMC
 }
 
 func (s *Service) GetMCPServerList(ctx context.Context, req *mcp_service.GetMCPServerListReq) (*mcp_service.GetMCPServerListResp, error) {
-	infos, err := s.cli.ListMCPServers(ctx, req.Identity.OrgId, req.Identity.UserId, req.Name)
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPGetMCPServerListErr, toErrStatus("mcp_get_mcp_server_list_err", "identity is empty"))
+	}
+	id := req.GetIdentity()
+	infos, err := s.cli.ListMCPServers(ctx, id.GetOrgId(), id.GetUserId(), req.Name)
 	if err != nil {
 		return nil, errStatus(errs.Code_MCPGetMCPServerListErr, err)
 	}

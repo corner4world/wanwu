@@ -11,6 +11,10 @@ import (
 )
 
 func (s *Service) CustomSkillCreate(ctx context.Context, req *mcp_service.CustomSkillCreateReq) (*mcp_service.CustomSkillCreateResp, error) {
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_create", "identity is empty"))
+	}
+
 	skillId, err := s.cli.CreateCustomSkill(ctx, &model.CustomSkill{
 		Name:            req.Name,
 		Avatar:          req.Avatar,
@@ -53,6 +57,9 @@ func (s *Service) CustomSkillGet(ctx context.Context, req *mcp_service.CustomSki
 }
 
 func (s *Service) GetCustomSkillByThreadID(ctx context.Context, req *mcp_service.GetCustomSkillByThreadIDReq) (*mcp_service.GetCustomSkillByThreadIDResp, error) {
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_get_by_wga_thread", "identity is empty"))
+	}
 	skillId, st := s.cli.GetCustomSkillIDByWgaThreadID(ctx, req.GetIdentity().GetUserId(), req.GetIdentity().GetOrgId(), req.GetWgaThreadId())
 	if st != nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, st)
@@ -61,18 +68,28 @@ func (s *Service) GetCustomSkillByThreadID(ctx context.Context, req *mcp_service
 }
 
 func (s *Service) CustomSkillGetList(ctx context.Context, req *mcp_service.CustomSkillGetListReq) (*mcp_service.CustomSkillGetListResp, error) {
-	customSkills, total, err := s.cli.GetCustomSkillList(ctx, req.GetIdentity().GetUserId(), req.GetIdentity().GetOrgId(), req.Name)
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_list", "identity is empty"))
+	}
+	userId, orgId := req.GetIdentity().GetUserId(), req.GetIdentity().GetOrgId()
+	customSkills, total, err := s.cli.GetCustomSkillList(ctx, userId, orgId, req.Name)
+	if err != nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, err)
+	}
+
+	skillIDs := make([]string, 0, len(customSkills))
+	for _, cs := range customSkills {
+		skillIDs = append(skillIDs, util.Int2Str(cs.ID))
+	}
+	varsBySkill, err := s.cli.GetCustomSkillVarsBySkillIDs(ctx, userId, orgId, skillIDs)
 	if err != nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, err)
 	}
 
 	customSkillList := make([]*mcp_service.CustomSkill, 0, len(customSkills))
 	for _, customSkill := range customSkills {
-		variables, err := s.cli.GetCustomSkillVars(ctx, customSkill.UserID, customSkill.OrgID, util.Int2Str(customSkill.ID))
-		if err != nil {
-			return nil, errStatus(errs.Code_MCPCustomSkillErr, err)
-		}
-		customSkillList = append(customSkillList, toCustomSkillInfo(customSkill, toCustomSkillVariables(variables)))
+		sid := util.Int2Str(customSkill.ID)
+		customSkillList = append(customSkillList, toCustomSkillInfo(customSkill, toCustomSkillVariables(varsBySkill[sid])))
 	}
 
 	return &mcp_service.CustomSkillGetListResp{
@@ -103,13 +120,26 @@ func (s *Service) GetCustomSkillDetailByIdList(ctx context.Context, req *mcp_ser
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, err)
 	}
 
-	skillDetails := make([]*mcp_service.CustomSkill, 0, len(customSkills))
-	for _, customSkill := range customSkills {
-		variables, err := s.cli.GetCustomSkillVars(ctx, customSkill.UserID, customSkill.OrgID, util.Int2Str(customSkill.ID))
+	groups := make(map[[2]string][]string)
+	for _, cs := range customSkills {
+		k := [2]string{cs.UserID, cs.OrgID}
+		groups[k] = append(groups[k], util.Int2Str(cs.ID))
+	}
+	varsBySkill := make(map[string][]*model.CustomSkillVariable, len(customSkills))
+	for k, ids := range groups {
+		m, err := s.cli.GetCustomSkillVarsBySkillIDs(ctx, k[0], k[1], ids)
 		if err != nil {
 			return nil, errStatus(errs.Code_MCPCustomSkillErr, err)
 		}
-		skillDetails = append(skillDetails, toCustomSkillInfo(customSkill, toCustomSkillVariables(variables)))
+		for sid, vars := range m {
+			varsBySkill[sid] = vars
+		}
+	}
+
+	skillDetails := make([]*mcp_service.CustomSkill, 0, len(customSkills))
+	for _, customSkill := range customSkills {
+		sid := util.Int2Str(customSkill.ID)
+		skillDetails = append(skillDetails, toCustomSkillInfo(customSkill, toCustomSkillVariables(varsBySkill[sid])))
 	}
 
 	return &mcp_service.CustomSkillDetailByIdListResp{

@@ -11,6 +11,9 @@ import (
 )
 
 func (s *Service) AcquiredSkillCreate(ctx context.Context, req *mcp_service.AcquiredSkillCreateReq) (*mcp_service.AcquiredSkillCreateResp, error) {
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPAcquiredSkillErr, toErrStatus("mcp_acquired_skill_create", "identity is empty"))
+	}
 	acquiredSkillId, err := s.cli.CreateAcquiredSkill(ctx, &model.AcquiredSkill{
 		SquareSkillID:      req.SquareSkillId,
 		Name:               req.Name,
@@ -22,8 +25,8 @@ func (s *Service) AcquiredSkillCreate(ctx context.Context, req *mcp_service.Acqu
 		Markdown:           req.Markdown,
 		Version:            req.Version,
 		VersionDescription: req.VersionDescription,
-		UserID:             req.Identity.UserId,
-		OrgID:              req.Identity.OrgId,
+		UserID:             req.GetIdentity().GetUserId(),
+		OrgID:              req.GetIdentity().GetOrgId(),
 	})
 	if err != nil {
 		return nil, errStatus(errs.Code_MCPAcquiredSkillErr, err)
@@ -56,18 +59,28 @@ func (s *Service) AcquiredSkillGet(ctx context.Context, req *mcp_service.Acquire
 }
 
 func (s *Service) AcquiredSkillGetList(ctx context.Context, req *mcp_service.AcquiredSkillGetListReq) (*mcp_service.AcquiredSkillGetListResp, error) {
-	acquiredSkills, total, err := s.cli.GetAcquiredSkillList(ctx, req.Identity.UserId, req.Identity.OrgId, req.Name)
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPAcquiredSkillErr, toErrStatus("mcp_acquired_skill_list", "identity is empty"))
+	}
+	userId, orgId := req.GetIdentity().GetUserId(), req.GetIdentity().GetOrgId()
+	acquiredSkills, total, err := s.cli.GetAcquiredSkillList(ctx, userId, orgId, req.Name)
+	if err != nil {
+		return nil, errStatus(errs.Code_MCPAcquiredSkillErr, err)
+	}
+
+	skillIDs := make([]string, 0, len(acquiredSkills))
+	for _, as := range acquiredSkills {
+		skillIDs = append(skillIDs, util.Int2Str(as.ID))
+	}
+	varsBySkill, err := s.cli.GetAcquiredSkillVarsBySkillIDs(ctx, userId, orgId, skillIDs)
 	if err != nil {
 		return nil, errStatus(errs.Code_MCPAcquiredSkillErr, err)
 	}
 
 	acquiredSkillList := make([]*mcp_service.AcquiredSkill, 0, len(acquiredSkills))
 	for _, acquiredSkill := range acquiredSkills {
-		variables, err := s.cli.GetAcquiredSkillVars(ctx, acquiredSkill.UserID, acquiredSkill.OrgID, util.Int2Str(acquiredSkill.ID))
-		if err != nil {
-			return nil, errStatus(errs.Code_MCPAcquiredSkillErr, err)
-		}
-		acquiredSkillList = append(acquiredSkillList, toAcquiredSkillInfo(acquiredSkill, toAcquiredSkillVariables(variables)))
+		sid := util.Int2Str(acquiredSkill.ID)
+		acquiredSkillList = append(acquiredSkillList, toAcquiredSkillInfo(acquiredSkill, toAcquiredSkillVariables(varsBySkill[sid])))
 	}
 
 	return &mcp_service.AcquiredSkillGetListResp{

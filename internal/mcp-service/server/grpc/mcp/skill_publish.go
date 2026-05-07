@@ -11,6 +11,9 @@ import (
 )
 
 func (s *Service) PublishCustomSkill(ctx context.Context, req *mcp_service.PublishCustomSkillReq) (*emptypb.Empty, error) {
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_publish", "identity is empty"))
+	}
 	var snap *orm.CustomSkillPublishSnapshot
 	if len(req.GetVariables()) > 0 || req.GetMarkdown() != "" || req.GetObjectPath() != "" {
 		snap = &orm.CustomSkillPublishSnapshot{

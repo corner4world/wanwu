@@ -58,6 +58,7 @@ type IClient interface {
 	UpdateCustomSkillVar(ctx context.Context, userId, orgId string, id uint32, variable *model.CustomSkillVariable) *errs.Status
 	DeleteCustomSkillVar(ctx context.Context, userId, orgId string, id uint32) *errs.Status
 	GetCustomSkillVars(ctx context.Context, userId, orgId, skillId string) ([]*model.CustomSkillVariable, *errs.Status)
+	GetCustomSkillVarsBySkillIDs(ctx context.Context, userId, orgId string, skillIds []string) (map[string][]*model.CustomSkillVariable, *errs.Status)
 	PublishCustomSkill(ctx context.Context, publish *model.CustomSkillPublish, snapshot *orm.CustomSkillPublishSnapshot) *errs.Status
 	UpdatePublishCustomSkill(ctx context.Context, skillId, desc string) *errs.Status
 	GetPublishCustomSkillHistoryList(ctx context.Context, skillId string) ([]*model.CustomSkillPublish, int64, *errs.Status)
@@ -74,6 +75,7 @@ type IClient interface {
 	UpdateAcquiredSkillVar(ctx context.Context, userId, orgId string, id uint32, variable *model.AcquiredSkillVariable) *errs.Status
 	DeleteAcquiredSkillVar(ctx context.Context, userId, orgId string, id uint32) *errs.Status
 	GetAcquiredSkillVars(ctx context.Context, userId, orgId, skillId string) ([]*model.AcquiredSkillVariable, *errs.Status)
+	GetAcquiredSkillVarsBySkillIDs(ctx context.Context, userId, orgId string, skillIds []string) (map[string][]*model.AcquiredSkillVariable, *errs.Status)
 
 	//================BuiltinSkill================
 	CreateBuiltinSkillVar(ctx context.Context, userId, orgId string, variable *model.BuiltinSkillVariable) (uint32, *errs.Status)
