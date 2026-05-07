@@ -54,8 +54,8 @@ type WgaChatParams struct {
 	WorkspaceStore *wga_persistent.Store
 
 	// WorkspaceReadOnly - 工作空间只读模式
-	// - true: 只设置 InputDir，agent 执行产出不写回 workspace
-	// - false: 同时设置 InputDir 和 OutputDir，agent 执行产出写回 workspace
+	// - true: 只设置 InputDir，agent 执行产出不写回 workspace，不注入 workspace 活动事件
+	// - false: 同时设置 InputDir 和 OutputDir，agent 执行产出写回 workspace，注入 workspace 活动事件
 	// - 仅当 WorkspaceStore 不为 nil 时生效，用户上传文件不受此限制
 	WorkspaceReadOnly bool
 }
@@ -178,7 +178,7 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 
 	// 异步保存智能体返回的消息
 	go saveWgaChatHistoryEvent(context.Background(), historyEventCh, params.UserID, params.OrgID, params.ThreadID, runID,
-		params.WorkspaceStore,
+		util.IfElse(params.WorkspaceReadOnly, nil, params.WorkspaceStore), // 只读模式不传 workspaceStore，避免无意义的 workspace 事件注入
 		lastWorkspaceTotalSize,
 		lastWorkspaceFileCount,
 	)
@@ -189,7 +189,7 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 		processedEventCh,
 		params.ThreadID,
 		runID,
-		params.WorkspaceStore,
+		util.IfElse(params.WorkspaceReadOnly, nil, params.WorkspaceStore), // 只读模式不传 workspaceStore，避免无意义的 workspace 事件注入
 		lastWorkspaceTotalSize,
 		lastWorkspaceFileCount,
 	)
