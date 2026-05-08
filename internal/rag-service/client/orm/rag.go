@@ -165,10 +165,10 @@ func (c *Client) GetRagList(ctx context.Context, req *rag_service.RagListReq) (*
 }
 
 func (c *Client) GetRagByIds(ctx context.Context, req *rag_service.GetRagByIdsReq) (*rag_service.AppBriefList, *err_code.Status) {
+	// InRagIds 在 len==0 时不加条件，此处必须短路，否则会查全表。
 	if len(req.RagIdList) == 0 {
-		return nil, toErrStatus("rag_list_err", "ragIdList cannot be empty")
+		return &rag_service.AppBriefList{}, nil
 	}
-
 	info := make([]*model.RagInfo, 0)
 	err := sqlopt.InRagIds(req.RagIdList).Apply(c.db.WithContext(ctx)).Order("updated_at DESC").Find(&info).Error
 	if err != nil {
