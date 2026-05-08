@@ -11867,7 +11867,6 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "format": "int32",
                         "description": "模型体验对话ID",
                         "name": "modelExperienceId",
                         "in": "query",
@@ -17703,10 +17702,9 @@ const docTemplate = `{
                             "custom"
                         ],
                         "type": "string",
-                        "description": "工具类型",
+                        "description": "工具类型，传空或不传时返回全部",
                         "name": "toolType",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -25609,6 +25607,12 @@ const docTemplate = `{
         "response.ConversationResponse": {
             "type": "object",
             "properties": {
+                "errMessage": {
+                    "type": "string"
+                },
+                "errResponse": {
+                    "type": "string"
+                },
                 "order": {
                     "type": "integer"
                 },
@@ -29849,6 +29853,10 @@ const docTemplate = `{
             "properties": {
                 "conversationType": {
                     "description": "subAgent：子智能体；agentTool：主智能体工具；subAgentTool：子智能体工具",
+                    "type": "string"
+                },
+                "errMessage": {
+                    "description": "错误信息",
                     "type": "string"
                 },
                 "id": {

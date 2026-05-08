@@ -22,61 +22,82 @@ import (
 func GetWorkflowToolSelect(ctx *gin.Context, userId, orgId, toolType, name string) (*response.ListResult, error) {
 	switch toolType {
 	case constant.ToolTypeBuiltIn:
-		resp, err := mcp.GetSquareToolList(ctx.Request.Context(), &mcp_service.GetSquareToolListReq{
-			Name: name,
-		})
+		list, err := getBuiltInToolSelect4Workflow(ctx, userId, orgId, name)
 		if err != nil {
 			return nil, err
 		}
-		var list []response.ToolSelect4Workflow
-		for _, item := range resp.Infos {
-			detail, err := GetToolSquareDetail(ctx, userId, orgId, item.ToolSquareId)
-			if err != nil {
-				return nil, err
-			}
-			url, _ := net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, detail.Avatar.Path)
-			list = append(list, response.ToolSelect4Workflow{
-				ToolID:   item.ToolSquareId,
-				ToolName: item.Name,
-				ToolType: constant.ToolTypeBuiltIn,
-				IconUrl:  url,
-				ApiKey:   detail.APIKey,
-				Desc:     detail.Desc,
-				Actions:  builtInToolActions4Workflow(detail.Tools),
-			})
-		}
-		return &response.ListResult{
-			List:  list,
-			Total: int64(len(list)),
-		}, nil
+		return &response.ListResult{List: list, Total: int64(len(list))}, nil
 	case constant.ToolTypeCustom:
-		resp, err := GetCustomToolList(ctx, userId, orgId, name)
+		list, err := getCustomToolSelect4Workflow(ctx, userId, orgId, name)
 		if err != nil {
 			return nil, err
 		}
-		var list []response.ToolSelect4Workflow
-		for _, item := range resp.List.([]response.CustomToolInfo) {
-			detail, err := GetCustomTool(ctx, userId, orgId, item.CustomToolId)
-			if err != nil {
-				return nil, err
-			}
-			url, _ := net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, detail.Avatar.Path)
-			list = append(list, response.ToolSelect4Workflow{
-				ToolID:   item.CustomToolId,
-				ToolName: item.Name,
-				ToolType: constant.ToolTypeCustom,
-				IconUrl:  url,
-				ApiKey:   "",
-				Desc:     detail.Description,
-				Actions:  customToolActions4Workflow(detail.ApiList),
-			})
+		return &response.ListResult{List: list, Total: int64(len(list))}, nil
+	case "":
+		builtInList, err := getBuiltInToolSelect4Workflow(ctx, userId, orgId, name)
+		if err != nil {
+			return nil, err
 		}
-		return &response.ListResult{
-			List:  list,
-			Total: int64(len(list)),
-		}, nil
+		customList, err := getCustomToolSelect4Workflow(ctx, userId, orgId, name)
+		if err != nil {
+			return nil, err
+		}
+		list := append(builtInList, customList...)
+		return &response.ListResult{List: list, Total: int64(len(list))}, nil
 	}
 	return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_tool_select", "unsupported tool type")
+}
+
+func getBuiltInToolSelect4Workflow(ctx *gin.Context, userId, orgId, name string) ([]response.ToolSelect4Workflow, error) {
+	resp, err := mcp.GetSquareToolList(ctx.Request.Context(), &mcp_service.GetSquareToolListReq{
+		Name: name,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var list []response.ToolSelect4Workflow
+	for _, item := range resp.Infos {
+		detail, err := GetToolSquareDetail(ctx, userId, orgId, item.ToolSquareId)
+		if err != nil {
+			return nil, err
+		}
+		url, _ := net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, detail.Avatar.Path)
+		list = append(list, response.ToolSelect4Workflow{
+			ToolID:   item.ToolSquareId,
+			ToolName: item.Name,
+			ToolType: constant.ToolTypeBuiltIn,
+			IconUrl:  url,
+			ApiKey:   detail.APIKey,
+			Desc:     detail.Desc,
+			Actions:  builtInToolActions4Workflow(detail.Tools),
+		})
+	}
+	return list, nil
+}
+
+func getCustomToolSelect4Workflow(ctx *gin.Context, userId, orgId, name string) ([]response.ToolSelect4Workflow, error) {
+	resp, err := GetCustomToolList(ctx, userId, orgId, name)
+	if err != nil {
+		return nil, err
+	}
+	var list []response.ToolSelect4Workflow
+	for _, item := range resp.List.([]response.CustomToolInfo) {
+		detail, err := GetCustomTool(ctx, userId, orgId, item.CustomToolId)
+		if err != nil {
+			return nil, err
+		}
+		url, _ := net_url.JoinPath(config.Cfg().Server.ApiBaseUrl, detail.Avatar.Path)
+		list = append(list, response.ToolSelect4Workflow{
+			ToolID:   item.CustomToolId,
+			ToolName: item.Name,
+			ToolType: constant.ToolTypeCustom,
+			IconUrl:  url,
+			ApiKey:   "",
+			Desc:     detail.Description,
+			Actions:  customToolActions4Workflow(detail.ApiList),
+		})
+	}
+	return list, nil
 }
 
 func GetWorkflowToolDetail(ctx *gin.Context, userId, orgId, toolId, toolType, operationId string) (*response.ToolDetail4Workflow, error) {

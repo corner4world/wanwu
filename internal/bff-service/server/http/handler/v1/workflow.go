@@ -167,7 +167,7 @@ func ImportWorkflow(ctx *gin.Context) {
 //	@Security	JWT
 //	@Accept		json
 //	@Produce	json
-//	@Param		toolType	query		string	true	"工具类型"	Enums(builtin,custom)
+//	@Param		toolType	query		string	false	"工具类型，传空或不传时返回全部"	Enums(builtin,custom)
 //	@Param		name		query		string	false	"工具名称"
 //	@Success	200			{object}	response.Response{data=response.ListResult{list=[]response.ToolSelect4Workflow}}
 //	@Router		/workflow/tool/select [get]

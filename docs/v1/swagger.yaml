@@ -5335,6 +5335,10 @@ definitions:
     type: object
   response.ConversationResponse:
     properties:
+      errMessage:
+        type: string
+      errResponse:
+        type: string
       order:
         type: integer
       response:
@@ -8165,6 +8169,9 @@ definitions:
     properties:
       conversationType:
         description: subAgent：子智能体；agentTool：主智能体工具；subAgentTool：子智能体工具
+        type: string
+      errMessage:
+        description: 错误信息
         type: string
       id:
         description: 事件id
@@ -15649,7 +15656,6 @@ paths:
       description: 获取模型体验对话记录列表
       parameters:
       - description: 模型体验对话ID
-        format: int32
         in: query
         name: modelExperienceId
         required: true
@@ -19027,13 +19033,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: 工具类型
+      - description: 工具类型，传空或不传时返回全部
         enum:
         - builtin
         - custom
         in: query
         name: toolType
-        required: true
         type: string
       - description: 工具名称
         in: query
