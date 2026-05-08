@@ -67,6 +67,38 @@ func (s *Service) GetCustomSkillByThreadID(ctx context.Context, req *mcp_service
 	return &mcp_service.GetCustomSkillByThreadIDResp{SkillId: skillId}, nil
 }
 
+func (s *Service) GetCustomSkillListByThreadIDList(ctx context.Context, req *mcp_service.GetCustomSkillListByThreadIDListReq) (*mcp_service.CustomSkillGetListResp, error) {
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_get_by_wga_thread_list", "identity is empty"))
+	}
+	userId, orgId := req.GetIdentity().GetUserId(), req.GetIdentity().GetOrgId()
+	customSkills, st := s.cli.GetCustomSkillListByWgaThreadIDList(ctx, userId, orgId, req.GetWgaThreadIdList())
+	if st != nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, st)
+	}
+	skillIDs := make([]string, 0, len(customSkills))
+	for _, cs := range customSkills {
+		skillIDs = append(skillIDs, util.Int2Str(cs.ID))
+	}
+	varsBySkill := map[string][]*model.CustomSkillVariable{}
+	if len(skillIDs) > 0 {
+		var errSt *errs.Status
+		varsBySkill, errSt = s.cli.GetCustomSkillVarsBySkillIDs(ctx, userId, orgId, skillIDs)
+		if errSt != nil {
+			return nil, errStatus(errs.Code_MCPCustomSkillErr, errSt)
+		}
+	}
+	out := make([]*mcp_service.CustomSkill, 0, len(customSkills))
+	for _, cs := range customSkills {
+		sid := util.Int2Str(cs.ID)
+		out = append(out, toCustomSkillInfo(cs, toCustomSkillVariables(varsBySkill[sid])))
+	}
+	return &mcp_service.CustomSkillGetListResp{
+		List:  out,
+		Total: int64(len(out)),
+	}, nil
+}
+
 func (s *Service) CustomSkillGetList(ctx context.Context, req *mcp_service.CustomSkillGetListReq) (*mcp_service.CustomSkillGetListResp, error) {
 	if req.GetIdentity() == nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_list", "identity is empty"))

@@ -49,6 +49,8 @@ type IClient interface {
 	GetCustomSkill(ctx context.Context, skillId string) (*model.CustomSkill, *errs.Status)
 	// GetCustomSkillIDByWgaThreadID 按 wga_thread_id 匹配；wgaThreadId 或 identity 不完整时返回 ("", nil)；未找到返回 ("", nil)；仅数据库失败返回 Status。
 	GetCustomSkillIDByWgaThreadID(ctx context.Context, userId, orgId, wgaThreadID string) (skillId string, err *errs.Status)
+	// GetCustomSkillListByWgaThreadIDList 按 wga_thread_id IN 批量查询；去空后列表为空或 userId/orgId 为空时返回空切片；仅数据库失败返回 Status。
+	GetCustomSkillListByWgaThreadIDList(ctx context.Context, userId, orgId string, wgaThreadIDList []string) ([]*model.CustomSkill, *errs.Status)
 	GetCustomSkillList(ctx context.Context, userId, orgId, name string) ([]*model.CustomSkill, int64, *errs.Status)
 	GetCustomSkillBySaveIds(ctx context.Context, saveIds []string) ([]*model.CustomSkill, *errs.Status)
 	GetCustomSkillBySkillIds(ctx context.Context, skillIds []string) ([]*model.CustomSkill, *errs.Status)

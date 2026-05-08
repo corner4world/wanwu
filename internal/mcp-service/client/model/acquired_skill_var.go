@@ -2,7 +2,7 @@ package model
 
 type AcquiredSkillVariable struct {
 	ID            uint32 `gorm:"primarykey"`
-	SkillID       string `gorm:"column:skill_id;uniqueIndex:ux_acquired_skill_var_skill_user_org_name;type:varchar(64);comment:skill id"`
+	SkillID       string `gorm:"column:skill_id;uniqueIndex:ux_acquired_skill_var_skill_user_org_name;type:varchar(128);comment:skill id"`
 	UserID        string `gorm:"column:user_id;uniqueIndex:ux_acquired_skill_var_skill_user_org_name;type:varchar(64);comment:用户id"`
 	OrgID         string `gorm:"column:org_id;uniqueIndex:ux_acquired_skill_var_skill_user_org_name;type:varchar(64);comment:组织id"`
 	Name          string `gorm:"column:name;uniqueIndex:ux_acquired_skill_var_skill_user_org_name;type:varchar(255);comment:工具名称"`

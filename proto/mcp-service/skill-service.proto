@@ -54,6 +54,13 @@ message GetCustomSkillByThreadIDResp {
   string skillId = 1;
 }
 
+// 按 wgaThreadIdList 在 identity 下批量查找 custom skill，返回全量 CustomSkill（含 variables）。
+// 未命中的 threadId 仍占一条：仅 wgaThreadId 有值、skillId 为空，与 GetCustomSkillByThreadID 未命中语义一致。非数据库错误不返回 RPC 错误。
+message GetCustomSkillListByThreadIDListReq {
+  Identity identity = 1;
+  repeated string wgaThreadIdList = 2;
+}
+
 message CustomSkillGetListReq {
   string name = 1;
   int32 page = 2;

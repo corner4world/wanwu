@@ -63,6 +63,7 @@ service MCPService {
   rpc CustomSkillDelete(CustomSkillDeleteReq) returns (google.protobuf.Empty) {}
   rpc CustomSkillGet(CustomSkillGetReq) returns (CustomSkill) {}
   rpc GetCustomSkillByThreadID(GetCustomSkillByThreadIDReq) returns (GetCustomSkillByThreadIDResp) {}
+  rpc GetCustomSkillListByThreadIDList(GetCustomSkillListByThreadIDListReq) returns (CustomSkillGetListResp) {}
   rpc CustomSkillGetList(CustomSkillGetListReq) returns (CustomSkillGetListResp) {}
   rpc CustomSkillGetBySaveIds(CustomSkillGetBySaveIdsReq) returns (CustomSkillSaveIdsResp) {}
   rpc GetCustomSkillDetailByIdList(CustomSkillDetailByIdListReq) returns (CustomSkillDetailByIdListResp) {}

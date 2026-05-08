@@ -195,6 +195,15 @@ func WithCustomSkillWgaThreadId(wgaThreadId string) SQLOption {
 	})
 }
 
+func WithCustomSkillWgaThreadIdList(wgaThreadIdList []string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(wgaThreadIdList) > 0 {
+			return db.Where("wga_thread_id IN ?", wgaThreadIdList)
+		}
+		return db
+	})
+}
+
 func WithCustomSkillSkillId(skillIds []string) SQLOption {
 	if len(skillIds) > 0 {
 		return funcSQLOption(func(db *gorm.DB) *gorm.DB {

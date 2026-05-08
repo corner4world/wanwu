@@ -84,6 +84,28 @@ func (c *Client) GetCustomSkillIDByWgaThreadID(ctx context.Context, userId, orgI
 	return util.Int2Str(cs.ID), nil
 }
 
+// GetCustomSkillListByWgaThreadIDList 在 identity 下按 wga_thread_id IN 批量查询。wgaThreadIdList 去空后为空时返回空切片；仅数据库错误返回 Status。
+func (c *Client) GetCustomSkillListByWgaThreadIDList(ctx context.Context, userId, orgId string, wgaThreadIDList []string) ([]*model.CustomSkill, *err_code.Status) {
+	nonEmpty := make([]string, 0, len(wgaThreadIDList))
+	for _, id := range wgaThreadIDList {
+		if id != "" {
+			nonEmpty = append(nonEmpty, id)
+		}
+	}
+	if len(nonEmpty) == 0 {
+		return []*model.CustomSkill{}, nil
+	}
+	var list []*model.CustomSkill
+	if err := sqlopt.SQLOptions(
+		sqlopt.WithUserID(userId),
+		sqlopt.WithOrgID(orgId),
+		sqlopt.WithCustomSkillWgaThreadIdList(nonEmpty),
+	).Apply(c.db).WithContext(ctx).Find(&list).Error; err != nil {
+		return nil, toErrStatus("mcp_custom_skill_get_by_wga_thread_list", err.Error())
+	}
+	return list, nil
+}
+
 // GetCustomSkillList 返回的 total：无分页，表示当前筛选条件下全量条数，与 len(list) 一致。
 func (c *Client) GetCustomSkillList(ctx context.Context, userId, orgId, name string) ([]*model.CustomSkill, int64, *err_code.Status) {
 	var list []*model.CustomSkill
