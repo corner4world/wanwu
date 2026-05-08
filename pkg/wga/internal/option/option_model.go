@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
 )
@@ -30,10 +29,22 @@ func (options *Options) ToChatModel(ctx context.Context) (model.ToolCallingChatM
 		BaseURL: options.Model.BaseURL,
 	}
 	if options.Model.Params != nil {
-		cfg.Temperature = util.IfElse(options.Model.Params.TemperatureEnable, &options.Model.Params.Temperature, nil)
-		cfg.TopP = util.IfElse(options.Model.Params.TopPEnable, &options.Model.Params.TopP, nil)
-		cfg.FrequencyPenalty = util.IfElse(options.Model.Params.FrequencyPenaltyEnable, &options.Model.Params.FrequencyPenalty, nil)
-		cfg.PresencePenalty = util.IfElse(options.Model.Params.PresencePenaltyEnable, &options.Model.Params.PresencePenalty, nil)
+		if options.Model.Params.TemperatureEnable {
+			temp := float32(options.Model.Params.Temperature)
+			cfg.Temperature = &temp
+		}
+		if options.Model.Params.TopPEnable {
+			topP := float32(options.Model.Params.TopP)
+			cfg.TopP = &topP
+		}
+		if options.Model.Params.FrequencyPenaltyEnable {
+			fp := float32(options.Model.Params.FrequencyPenalty)
+			cfg.FrequencyPenalty = &fp
+		}
+		if options.Model.Params.PresencePenaltyEnable {
+			pp := float32(options.Model.Params.PresencePenalty)
+			cfg.PresencePenalty = &pp
+		}
 	}
 	return openai.NewChatModel(ctx, cfg)
 }

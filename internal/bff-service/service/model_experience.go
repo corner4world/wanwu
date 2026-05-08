@@ -68,20 +68,16 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 		Stream:   &stream,
 	}
 	if req.TemperatureEnable {
-		temp := float64(req.Temperature)
-		llmReq.Temperature = &temp
+		llmReq.Temperature = &req.Temperature
 	}
 	if req.TopPEnable {
-		topP := float64(req.TopP)
-		llmReq.TopP = &topP
+		llmReq.TopP = &req.TopP
 	}
 	if req.PresencePenaltyEnable {
-		presencePenalty := float64(req.PresencePenalty)
-		llmReq.PresencePenalty = &presencePenalty
+		llmReq.PresencePenalty = &req.PresencePenalty
 	}
 	if req.FrequencyPenaltyEnable {
-		frequencyPenalty := float64(req.FrequencyPenalty)
-		llmReq.FrequencyPenalty = &frequencyPenalty
+		llmReq.FrequencyPenalty = &req.FrequencyPenalty
 	}
 	if req.MaxTokensEnable {
 		maxTokens := int(req.MaxTokens)
