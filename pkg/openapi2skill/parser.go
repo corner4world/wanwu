@@ -2,6 +2,7 @@ package openapi2skill
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -43,19 +44,13 @@ func Parse(doc *openapi3.T, opts ParserOptions) SkillDocument {
 
 func parseMeta(doc *openapi3.T, skillName string) SkillMeta {
 	description := ""
-	if doc.Info != nil && doc.Info.Description != "" {
-		description = strings.Split(doc.Info.Description, "\n")[0]
-		if len(description) > 200 {
-			description = description[:200]
-		}
+	if doc.Info != nil {
+		description = doc.Info.Description
 	}
 
 	name := skillName
 	if name == "" && doc.Info != nil {
 		name = toFileName(doc.Info.Title)
-	}
-	if len(name) > 64 {
-		name = name[:64]
 	}
 	name = strings.ToLower(name)
 
@@ -209,7 +204,7 @@ func getResourceNames(path string, operation *openapi3.Operation, groupBy GroupB
 
 func extractResourceFromPath(path string) string {
 	stripped := versionPrefixRe.ReplaceAllString(path, "/")
-	segments := splitPath(segments(stripped))
+	segments := segments(stripped)
 	if len(segments) == 0 {
 		return "default"
 	}
@@ -229,10 +224,6 @@ func segments(path string) []string {
 		}
 	}
 	return result
-}
-
-func splitPath(segs []string) []string {
-	return segs
 }
 
 func parseOperation(path, method string, operation *openapi3.Operation, tag string) OperationDocument {
@@ -752,11 +743,7 @@ func toString(v interface{}) string {
 }
 
 func sortResourcesByOpCount(resources []ResourceDocument) {
-	for i := 0; i < len(resources); i++ {
-		for j := i + 1; j < len(resources); j++ {
-			if len(resources[j].Operations) > len(resources[i].Operations) {
-				resources[i], resources[j] = resources[j], resources[i]
-			}
-		}
-	}
+	sort.Slice(resources, func(i, j int) bool {
+		return len(resources[i].Operations) > len(resources[j].Operations)
+	})
 }

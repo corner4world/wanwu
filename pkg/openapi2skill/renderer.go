@@ -20,7 +20,7 @@ func toFileName(name string) string {
 	if sanitized == "" {
 		return "unnamed"
 	}
-	return sanitized
+	return strings.ToLower(sanitized)
 }
 
 // =============================================================================

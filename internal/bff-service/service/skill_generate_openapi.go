@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"text/template"
 )
 
@@ -26,20 +27,6 @@ func wanwuExternalEndpoint() string {
 		return "http://" + endpoint
 	}
 	return "http://localhost:8081"
-}
-
-// stringBuf is a simple string builder that implements io.Writer for template.Execute.
-type stringBuf struct {
-	data []byte
-}
-
-func (b *stringBuf) Write(p []byte) (int, error) {
-	b.data = append(b.data, p...)
-	return len(p), nil
-}
-
-func (b *stringBuf) String() string {
-	return string(b.data)
 }
 
 // jsonMarshal is a wrapper around json.Marshal for use in template functions.
@@ -96,7 +83,7 @@ func renderWanwuOpenAPISpec(category, uuid, name, desc string) ([]byte, error) {
 		ServerURL: wanwuExternalEndpoint(),
 	}
 
-	var buf stringBuf
+	var buf strings.Builder
 	if err := t.Execute(&buf, data); err != nil {
 		return nil, fmt.Errorf("execute %s openapi template err: %w", category, err)
 	}
