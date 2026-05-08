@@ -161,6 +161,7 @@ type OpenAIReqMsg struct {
 	Content          interface{}   `json:"content"`
 	ToolCallId       *string       `json:"tool_call_id,omitempty"`
 	ReasoningContent *string       `json:"reasoning_content,omitempty"`
+	Reasoning        *string       `json:"reasoning,omitempty"`
 	Name             *string       `json:"name,omitempty"`
 	FunctionCall     *FunctionCall `json:"function_call,omitempty"`
 	ToolCalls        []*ToolCall   `json:"tool_calls,omitempty"`
@@ -199,6 +200,7 @@ type OpenAIMsg struct {
 	Content          string        `json:"content"`
 	ToolCallId       *string       `json:"tool_call_id,omitempty"`
 	ReasoningContent *string       `json:"reasoning_content,omitempty"`
+	Reasoning        *string       `json:"reasoning,omitempty"`
 	Name             *string       `json:"name,omitempty"`
 	FunctionCall     *FunctionCall `json:"function_call,omitempty"`
 	ToolCalls        []*ToolCall   `json:"tool_calls,omitempty"`
@@ -592,8 +594,13 @@ func extractThinkingFromResp(resp *LLMResp) {
 	if msg == nil {
 		return
 	}
+	// 优先级：reasoning_content > reasoning > 从content提取
 	if msg.ReasoningContent == nil || *msg.ReasoningContent == "" {
-		if msg.Content != "" {
+		// 检查 reasoning 字段
+		if msg.Reasoning != nil && *msg.Reasoning != "" {
+			msg.ReasoningContent = msg.Reasoning
+			msg.Reasoning = nil
+		} else if msg.Content != "" {
 			reasoning, cleanContent := extractThinkingFromContent(msg.Content)
 			if reasoning != "" {
 				msg.ReasoningContent = &reasoning
@@ -605,6 +612,13 @@ func extractThinkingFromResp(resp *LLMResp) {
 
 func extractThinkingFromDelta(delta *OpenAIMsg, inThinking bool) (bool, *string) {
 	if delta == nil {
+		return inThinking, nil
+	}
+
+	// 如果 reasoning 字段有值，直接转存到 reasoning_content
+	if delta.Reasoning != nil && *delta.Reasoning != "" {
+		delta.ReasoningContent = delta.Reasoning
+		delta.Reasoning = nil
 		return inThinking, nil
 	}
 
