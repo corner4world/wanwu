@@ -2117,7 +2117,7 @@ export default {
     appName: '应用名称',
     accessUrl: '访问URL',
     copyRight: '版权',
-    shareTip: '分享链接后，可通过网页直接访问智能体应用',
+    shareTip: '个人链接分享，可通过网页访问最新发布的应用版本',
     publishSetting: '发布范围配置',
     publishTypeDesc: '配置应用广场内应用访问权限',
     inputTextDesc: '请输入文本描述',
