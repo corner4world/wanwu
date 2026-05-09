@@ -9,7 +9,7 @@
           class="no-border-select"
           style="margin-left: 15px"
           clearable
-          @change="fetchModels()"
+          @change="changeModelType()"
         >
           <el-option
             v-for="item in modelTypeList"
@@ -69,7 +69,7 @@
         ></Search>
       </div>
     </div>
-    <div class="statistics_content_box">
+    <div class="statistics_content_box scroll-card-container">
       <div class="item_box">
         <div class="dataOverview">
           <span class="title">
@@ -269,12 +269,15 @@ export default {
         models: params.models ? params.models.toString() : '',
       };
     },
+    changeModelType() {
+      this.fetchModels();
+      this.fetchData(
+        this.formatParams({ ...this.params, ...this.modelParams }),
+      );
+    },
     async fetchModels() {
-      if (!this.modelParams.modelType) {
-        this.modelList = [];
-        this.modelParams.models = [];
-        return;
-      }
+      this.modelList = [];
+      this.modelParams.models = [];
 
       const res = await fetchModelList({
         filterScope: '',
@@ -283,15 +286,7 @@ export default {
       const modelList = res.data ? res.data.list || [] : [];
       this.modelList = modelList.filter(item => item.allowEdit);
     },
-    handleSetTime(val) {
-      this.loading = true;
-      this.searchTime = val;
-
-      const params = this.formatParams({
-        startDate: val.time[0],
-        endDate: val.time[1],
-        ...this.modelParams,
-      });
+    fetchData(params) {
       getModelData(params)
         .then(res => {
           const { overview, trend } = res.data || {};
@@ -309,6 +304,17 @@ export default {
           this.loading = false;
         });
       this.$refs.modelList.getTableData(params);
+    },
+    handleSetTime(val) {
+      this.loading = true;
+      this.searchTime = val;
+
+      const params = this.formatParams({
+        startDate: val.time[0],
+        endDate: val.time[1],
+        ...this.modelParams,
+      });
+      this.fetchData(params);
     },
     convertModelIcon(iconPath) {
       return iconPath ? avatarSrc(iconPath) : getModelDefaultIcon();

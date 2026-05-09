@@ -197,7 +197,10 @@
       </div>
 
       <div class="card">
-        <el-row :gutter="20" v-if="res.contentList.length > 0">
+        <el-row
+          v-if="res.contentList.length > 0 && obj.disable !== 'true'"
+          :gutter="20"
+        >
           <el-col
             :span="6"
             v-for="(item, index) in res.contentList"
@@ -296,7 +299,11 @@
         <el-empty v-else :description="$t('knowledgeManage.noData')"></el-empty>
       </div>
 
-      <div class="list-common" style="text-align: right">
+      <div
+        v-if="obj.disable !== 'true'"
+        class="list-common"
+        style="text-align: right"
+      >
         <el-pagination
           background
           @size-change="handleSizeChange"
@@ -947,7 +954,7 @@ export default {
     handleClick(item, index) {
       this.dialogVisible = true;
       this.oldContent = item.content;
-      const obj = JSON.parse(JSON.stringify(item));
+      const obj = structuredClone(item);
       this.$nextTick(() => {
         this.$set(obj, 'childContent', []);
         this.cardObj = [obj];
@@ -1106,6 +1113,26 @@ export default {
       border-left: none;
       border-right: none;
       border-top: none;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+      text-align: left;
+      word-wrap: break-word;
+      word-break: break-all;
+      overflow-wrap: break-word;
+
+      .segment-action {
+        color: #999;
+        font-size: 12px;
+        margin-left: 8px;
+      }
+
+      .auto-save {
+        color: #666;
+        font-size: 12px;
+        margin-left: 8px;
+        font-style: italic;
+      }
     }
 
     ::v-deep .el-collapse-item__header .el-collapse-item__arrow,
@@ -1222,29 +1249,6 @@ export default {
           width: auto;
           max-height: 115px;
         }
-      }
-    }
-
-    ::v-deep .el-collapse-item__content {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.5;
-      text-align: left;
-      word-wrap: break-word;
-      word-break: break-all;
-      overflow-wrap: break-word;
-
-      .segment-action {
-        color: #999;
-        font-size: 12px;
-        margin-left: 8px;
-      }
-
-      .auto-save {
-        color: #666;
-        font-size: 12px;
-        margin-left: 8px;
-        font-style: italic;
       }
     }
   }

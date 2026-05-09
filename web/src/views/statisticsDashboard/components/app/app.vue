@@ -9,7 +9,7 @@
           class="no-border-select"
           style="margin-left: 15px"
           clearable
-          @change="fetchApps()"
+          @change="changeAppType()"
         >
           <el-option
             v-for="key in Object.keys(appTypeObj)"
@@ -56,7 +56,7 @@
         ></Search>
       </div>
     </div>
-    <div class="statistics_content_box">
+    <div class="statistics_content_box scroll-card-container">
       <div class="item_box">
         <div class="dataOverview">
           <span class="title">
@@ -234,25 +234,18 @@ export default {
         apps: params.apps ? params.apps.toString() : '',
       };
     },
+    changeAppType() {
+      this.fetchApps();
+      this.fetchData(this.formatParams({ ...this.params, ...this.appParams }));
+    },
     async fetchApps() {
-      if (!this.appParams.appType) {
-        this.appList = [];
-        this.appParams.apps = [];
-        return;
-      }
+      this.appList = [];
+      this.appParams.apps = [];
 
       const res = await getAppSelect({ appType: this.appParams.appType });
       this.appList = res.data ? res.data.list || [] : [];
     },
-    handleSetTime(val) {
-      this.loading = true;
-      this.searchTime = val;
-
-      const params = this.formatParams({
-        startDate: val.time[0],
-        endDate: val.time[1],
-        ...this.appParams,
-      });
+    fetchData(params) {
       getAppData(params)
         .then(res => {
           const { overview, trend } = res.data || {};
@@ -270,6 +263,17 @@ export default {
           this.loading = false;
         });
       this.$refs.appList.getTableData(params);
+    },
+    handleSetTime(val) {
+      this.loading = true;
+      this.searchTime = val;
+
+      const params = this.formatParams({
+        startDate: val.time[0],
+        endDate: val.time[1],
+        ...this.appParams,
+      });
+      this.fetchData(params);
     },
     convertIcon(iconPath) {
       return iconPath ? avatarSrc(iconPath) : '';

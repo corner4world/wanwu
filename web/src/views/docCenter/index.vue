@@ -4,7 +4,7 @@
       <div class="doc-header__left">
         <img
           v-if="homeLogoPath"
-          style="height: 50px"
+          style="max-height: 50px; max-width: 200px"
           :src="avatarSrc(homeLogoPath)"
         />
         <span v-if="homeTitle">
@@ -294,10 +294,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.main-content {
+  padding: 0 10px 40px 50px !important;
+}
 .doc-page-container {
   height: 100%;
   .doc-outer-container {
-    height: calc(100% - 90px);
+    height: calc(100% - 80px);
     background: #fff;
     width: calc(100% - 130px);
     margin: 0 auto;
@@ -330,7 +333,6 @@ export default {
       .doc-page-main {
         width: 100%;
         height: 100%;
-        min-height: 580px;
         overflow: auto;
         padding-top: 30px;
         background: rgba(255, 255, 255, 0);
@@ -377,10 +379,11 @@ export default {
   }
 }
 .doc-header {
-  padding: 20px 50px;
+  padding: 20px 60px;
   display: flex;
   align-items: center;
   width: 100%;
+  height: 80px;
   .doc-header__left {
     display: flex;
     align-items: center;

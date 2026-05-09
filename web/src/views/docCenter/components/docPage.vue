@@ -1,6 +1,13 @@
 <template>
   <div class="main-content docs-page-content">
-    <MdContent :content="mdContent" />
+    <div class="docs-page-wrapper">
+      <div class="docs-page-main">
+        <MdContent :content="mdContent" />
+      </div>
+      <div class="docs-page-outline">
+        <MdOutline :content="mdContent" />
+      </div>
+    </div>
   </div>
 </template>
 <script>
@@ -8,9 +15,10 @@ import { getMarkdown } from '@/api/docs';
 import { Loading } from 'element-ui';
 import { DOC_FIRST_KEY } from '../constants';
 import MdContent from '@/components/mdContent.vue';
+import MdOutline from '@/components/mdOutline.vue';
 
 export default {
-  components: { MdContent },
+  components: { MdContent, MdOutline },
   data() {
     return {
       mdContent: '',
@@ -60,6 +68,17 @@ export default {
 
 <style lang="scss" scoped>
 .docs-page-content {
-  margin: 0 0 50px;
+  .docs-page-wrapper {
+    display: flex;
+    gap: 24px;
+    .docs-page-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .docs-page-outline {
+      width: 220px;
+      flex-shrink: 0;
+    }
+  }
 }
 </style>

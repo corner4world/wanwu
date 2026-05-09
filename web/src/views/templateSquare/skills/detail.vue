@@ -16,8 +16,8 @@
 import SkillDetail from '@/components/skills/skillDetail.vue';
 import { getCustomSkillInfo, getCustomSkillList } from '@/api/templateSquare';
 import {
-  getJoinerSkillList,
-  getJoinerSkillDetail,
+  getAcquiredSkillList,
+  getAcquiredSkillDetail,
 } from '@/api/skillResource/added';
 import { SKILL, SKILLCUSTOM } from '../constants';
 import { directDownload } from '@/utils/util';
@@ -68,7 +68,7 @@ export default {
       if (this.type === SKILLCUSTOM) {
         res = await getCustomSkillInfo({ skillId: this.templateSquareId });
       } else {
-        res = await getJoinerSkillDetail({ skillId: this.templateSquareId });
+        res = await getAcquiredSkillDetail({ skillId: this.templateSquareId });
       }
       this.detail = res.data || {};
     },
@@ -77,7 +77,7 @@ export default {
       if (this.type === SKILLCUSTOM) {
         res = await getCustomSkillList();
       } else {
-        res = await getJoinerSkillList();
+        res = await getAcquiredSkillList();
       }
 
       const list = res.data?.list || [];

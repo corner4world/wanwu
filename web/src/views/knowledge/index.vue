@@ -1,5 +1,5 @@
 <template>
-  <div class="page-wrapper">
+  <div class="page-wrapper page-wrapper-pr-none">
     <!--<div class="page-title">
       <img class="page-title-img" src="@/assets/imgs/knowledge.svg" alt="" />
       <span class="page-title-name">{{ $t('knowledgeManage.knowledge') }}</span>
@@ -25,7 +25,7 @@
         <!--          {{ $t('knowledgeManage.dbDatabase.title') }}-->
         <!--        </div>-->
       </div>
-      <div class="search-box">
+      <div class="search-box header-form-pr">
         <div class="no-border-input">
           <search-input
             class="cover-input-icon"
@@ -253,6 +253,7 @@ export default {
 .search-box {
   display: flex;
   justify-content: space-between;
+  padding-bottom: 20px;
 }
 
 ::v-deep {

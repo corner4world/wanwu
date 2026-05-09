@@ -10,11 +10,11 @@
         ]"
       >
         <div class="left-header-container">
-          <div style="padding-top: 10px; text-align: center; height: 46px">
+          <div style="padding-top: 15px; text-align: center; height: 46px">
             <div v-if="homeLogoPath">
               <img
                 v-if="!isCollapse"
-                style="height: 46px"
+                style="max-height: 46px; max-width: 80%"
                 :src="avatarSrc(homeLogoPath)"
               />
               <img

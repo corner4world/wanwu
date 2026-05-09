@@ -79,7 +79,7 @@ export default {
           type: 'api',
         },*/
         {
-          name: this.$t('list.version.publishType'),
+          name: this.$t('app.publishSetting'),
           desc: this.$t('app.publishTypeDesc'),
           type: 'scope',
         },

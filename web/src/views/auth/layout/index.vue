@@ -7,7 +7,7 @@
       <div class="header__left">
         <img
           v-if="commonInfo.login.logo && commonInfo.login.logo.path"
-          style="height: 60px; margin: 0 15px 0 22px"
+          style="max-height: 60px; max-width: 220px; margin: 0 15px 0 22px"
           :src="avatarSrc(commonInfo.login.logo.path)"
           alt=""
         />

@@ -447,7 +447,7 @@ export default {
 
 .config-popover {
   padding: 0 !important;
-  width: 400px;
+  width: 500px;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 

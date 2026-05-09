@@ -16,15 +16,18 @@
                 </span>
               </div>
               <search-input
-                style="margin-right: 2px"
+                style="margin-right: 10px"
                 :placeholder="$t('tempSquare.searchText')"
                 ref="searchInput"
                 @handleSearch="doGetPromptTempList"
               />
             </div>
 
-            <div class="card-loading-box" v-if="list.length">
-              <div class="card-box" v-loading="loading">
+            <div
+              class="card-loading-box scroll-card-container"
+              v-if="list.length"
+            >
+              <div class="card-box scroll-card-pr" v-loading="loading">
                 <div
                   class="card"
                   v-for="(item, index) in list"
@@ -151,4 +154,7 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/style/tempSquare.scss';
+.scroll-card-container {
+  max-height: calc(100vh - 160px);
+}
 </style>

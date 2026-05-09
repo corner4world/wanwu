@@ -87,13 +87,12 @@ export default {
       justify-content: space-between;
       .card-name {
         display: block;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 700;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
         color: $create_card_text_color;
-        line-height: 1;
       }
     }
   }

@@ -49,7 +49,7 @@
             :placeholder="$t('ragDialog.descplaceholder')"
             v-model="form.desc"
             show-word-limit
-            maxlength="600"
+            maxlength="200"
           ></el-input>
         </el-form-item>
       </el-form>
@@ -125,7 +125,11 @@ export default {
             message: this.$t('app.inputTextDesc'),
             trigger: 'blur',
           },
-          { max: 600, message: this.$t('app.descLimit600'), trigger: 'blur' },
+          {
+            max: 200,
+            message: this.$t('ragDialog.descRules'),
+            trigger: 'blur',
+          },
         ],
       },
       titleMap: {

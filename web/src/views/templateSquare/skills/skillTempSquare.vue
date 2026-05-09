@@ -13,8 +13,11 @@
               />
             </div>
 
-            <div class="card-loading-box" v-if="list.length">
-              <div class="card-box" v-loading="loading">
+            <div
+              class="card-loading-box scroll-card-container"
+              v-if="list.length"
+            >
+              <div class="card-box scroll-card-pr" v-loading="loading">
                 <skill-card
                   v-for="(item, index) in list"
                   :key="index"
@@ -39,8 +42,8 @@ import SkillCard from './card.vue';
 import { directDownload } from '@/utils/util';
 import SearchInput from '@/components/searchInput.vue';
 import {
-  getJoinerSkillList,
-  deleteJoinerSkill,
+  getAcquiredSkillList,
+  deleteAcquiredSkill,
 } from '@/api/skillResource/added';
 
 export default {
@@ -66,7 +69,7 @@ export default {
         name: searchInput.value,
       };
 
-      getJoinerSkillList(params)
+      getAcquiredSkillList(params)
         .then(res => {
           const { list } = res.data || {};
           this.list = list || [];
@@ -81,7 +84,7 @@ export default {
     },
     async handleDelete(info) {
       try {
-        await deleteJoinerSkill({ skillId: info.skillId });
+        await deleteAcquiredSkill({ skillId: info.skillId });
         this.doGetSkillTempList();
       } catch (error) {
         console.error('Error deleting skill:', error);

@@ -98,28 +98,6 @@ export const deleteCustomPrompt = data => {
 };
 
 /*---Skills---*/
-export const getSkillTempList = data => {
-  return request({
-    url: `${USER_API}/agent/skill/list`,
-    method: 'get',
-    params: data,
-  });
-};
-export const getSkillTempInfo = data => {
-  return request({
-    url: `${USER_API}/agent/skill/detail`,
-    method: 'get',
-    params: data,
-  });
-};
-export const downloadSkill = params => {
-  return request({
-    url: `${USER_API}/agent/skill/download`,
-    method: 'get',
-    params,
-    responseType: 'blob',
-  });
-};
 
 // 获取自定义skills列表
 export const getCustomSkillList = data => {

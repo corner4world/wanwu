@@ -16,7 +16,7 @@
         </div>
       </div>
 
-      <div class="card-box">
+      <div class="card-box scroll-card-container">
         <div class="card card-item-create">
           <div class="app-card-create" @click="handleAddMCP('')">
             <div class="create-img-wrap">

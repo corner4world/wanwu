@@ -5,7 +5,7 @@ import { USER_API } from '@/utils/requestConstants';
 // 获取skill广场列表
 export const getSquareSkillList = data => {
   return request({
-    url: `${USER_API}/square/skills`,
+    url: `${USER_API}/square/skill/list`,
     method: 'get',
     params: data,
   });
@@ -14,7 +14,7 @@ export const getSquareSkillList = data => {
 // 发送skill广场到资源库
 export const sendSquareSkillToResource = data => {
   return request({
-    url: `${USER_API}/square/skills/share`,
+    url: `${USER_API}/square/skill/share`,
     method: 'post',
     data,
   });
@@ -22,7 +22,7 @@ export const sendSquareSkillToResource = data => {
 // 获取skill广场详情
 export const getSquareSkillDetail = data => {
   return request({
-    url: `${USER_API}/square/skills/detail`,
+    url: `${USER_API}/square/skill/detail`,
     method: 'get',
     params: data,
   });
@@ -31,7 +31,7 @@ export const getSquareSkillDetail = data => {
 // 下载skill广场skill
 export const downloadSquareSkill = params => {
   return request({
-    url: `${USER_API}/square/skills/download`,
+    url: `${USER_API}/square/skill/download`,
     method: 'get',
     params,
     responseType: 'blob',

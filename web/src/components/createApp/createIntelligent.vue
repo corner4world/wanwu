@@ -71,7 +71,7 @@
             :placeholder="$t('agentDialog.descplaceholder')"
             v-model="form.desc"
             show-word-limit
-            maxlength="600"
+            maxlength="200"
           ></el-input>
         </el-form-item>
       </el-form>
@@ -164,7 +164,7 @@ export default {
             trigger: 'blur',
           },
           {
-            max: 600,
+            max: 200,
             message: this.$t('agentDialog.descRules'),
             trigger: 'blur',
           },

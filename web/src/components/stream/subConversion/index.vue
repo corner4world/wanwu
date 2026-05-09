@@ -29,8 +29,16 @@
             class="el-icon-circle-check"
             style="color: #67c23a"
           ></i>
+          <el-tooltip
+            v-if="conversion.status === 4 && conversion.errMessage"
+            effect="dark"
+            :content="conversion.errMessage"
+            placement="top"
+          >
+            <i class="el-icon-circle-close" style="color: #f56c6c"></i>
+          </el-tooltip>
           <i
-            v-if="conversion.status === 4"
+            v-else-if="conversion.status === 4"
             class="el-icon-circle-close"
             style="color: #f56c6c"
           ></i>

@@ -387,3 +387,32 @@ export const checkGeneralAgentConversationConfig = data => {
     data,
   });
 };
+
+// ==================== Human-in-the-Loop ====================
+
+/**
+ * 回答问题
+ * @param {string} runId - 运行ID
+ * @param {string} questionId - 问题ID
+ * @param {Array<Array<string>>} answers - 答案数组
+ */
+export const replyQuestion = data => {
+  return service({
+    url: `${BASE_URL}/question/reply`,
+    method: 'post',
+    data,
+  });
+};
+
+/**
+ * 拒绝问题
+ * @param {string} runId - 运行ID
+ * @param {string} questionId - 问题ID
+ */
+export const rejectQuestion = data => {
+  return service({
+    url: `${BASE_URL}/question/reject`,
+    method: 'post',
+    data,
+  });
+};

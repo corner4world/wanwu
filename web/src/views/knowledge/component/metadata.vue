@@ -35,6 +35,7 @@
               style="margin-left: 7px"
               v-if="item.showEdit"
               v-model="item.metaKey"
+              maxlength="64"
               @blur="metakeyBlur(item, index)"
             ></el-input>
             <span v-else class="metaItemKey">

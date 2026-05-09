@@ -25,6 +25,32 @@ export const menuList = [
       },
     ],
   },
+  // {
+  //   name: i18n.t('menu.ontologyAgent'),
+  //   index: 'ontologyAgent',
+  //   icon: 'ontologyAgent',
+  //   // perm: [PERMS.AGENT],
+  //   children: [
+  //     {
+  //       name: i18n.t('menu.ontology'),
+  //       index: 'ontologyAgent-ontology',
+  //       // perm: PERMS.AGENT,
+  //       redirect: () => {
+  //         globalThis.location.href =
+  //           globalThis.location.origin + basePath + '/vega/ontology';
+  //       },
+  //     },
+  //     {
+  //       name: i18n.t('menu.dataConnect'),
+  //       index: 'ontologyAgent-data-connect',
+  //       // perm: PERMS.AGENT,
+  //       redirect: () => {
+  //         globalThis.location.href =
+  //           globalThis.location.origin + basePath + '/vega/data-connect';
+  //       },
+  //     },
+  //   ],
+  // },
   {
     name: i18n.t('menu.modelService'),
     index: 'modelService',

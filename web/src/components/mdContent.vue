@@ -2,6 +2,7 @@
   <div class="mark__content">
     <div
       class="markdown-body"
+      ref="markdownBody"
       v-html="marked(content || $t('common.noData'))"
     ></div>
   </div>
@@ -31,6 +32,27 @@ export default {
   },
   methods: {
     marked,
+    addHeadingIds() {
+      if (!this.$refs.markdownBody) return;
+      const headings = this.$refs.markdownBody.querySelectorAll(
+        'h1, h2, h3, h4, h5, h6',
+      );
+      headings.forEach((heading, index) => {
+        heading.id = `heading-${index}`;
+      });
+    },
+  },
+  watch: {
+    content() {
+      this.$nextTick(() => {
+        this.addHeadingIds();
+      });
+    },
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.addHeadingIds();
+    });
   },
 };
 </script>

@@ -35,6 +35,7 @@ export const EventType = {
 export const ActivityType = {
   SUB_AGENT: 'sub_agent',
   WORKSPACE: 'workspace',
+  QUESTION: 'question',
 };
 
 // 活动状态

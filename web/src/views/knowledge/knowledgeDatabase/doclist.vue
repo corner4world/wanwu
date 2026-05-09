@@ -181,6 +181,28 @@
                   </div>
                 </el-descriptions-item>
                 <el-descriptions-item
+                  v-if="graphLlmModel"
+                  :label="$t('knowledgeManage.graph.graphModel')"
+                  labelStyle="width: 120px"
+                >
+                  <div class="keyword-tags">
+                    {{ graphLlmModel.displayName }}
+                    <template
+                      v-if="graphLlmModel.tags && graphLlmModel.tags.length > 0"
+                    >
+                      <el-tag
+                        v-for="(item, index) in graphLlmModel.tags"
+                        :key="index"
+                        class="keyword-tag"
+                        color="#E6F0FF"
+                        size="small"
+                      >
+                        {{ item.text }}
+                      </el-tag>
+                    </template>
+                  </div>
+                </el-descriptions-item>
+                <el-descriptions-item
                   :label="$t('knowledgeManage.keyWordConfig')"
                   labelStyle="width: 120px"
                 >
@@ -485,6 +507,7 @@ import {
 import exportRecord from '@/views/knowledge/qaDatabase/exportRecord.vue';
 import CopyIcon from '@/components/copyIcon.vue';
 import createKnowledge from '@/views/knowledge/component/create.vue';
+import { selectModelList } from '@/api/modelAccess';
 
 export default {
   components: {
@@ -507,6 +530,7 @@ export default {
       embeddingModel: {},
       keywords: [],
       llmModelId: '',
+      graphLlmModel: null, // 知识图谱解析模型信息
       loading: false,
       tableLoading: false,
       docQuery: {
@@ -656,7 +680,7 @@ export default {
       exportDoc(params)
         .then(res => {
           if (res.code === 0) {
-            this.$message.success(this.$t('common.message.success'));
+            this.$message.success(this.$t('knowledgeManage.exportAllTips'));
             const data = res.data || {};
             const url = data.fileUrl || data.downloadUrl;
             if (url) {
@@ -666,7 +690,6 @@ export default {
             }
           }
         })
-        .catch(() => {})
         .finally(() => {
           this.loading = false;
         });
@@ -841,11 +864,9 @@ export default {
           cancelButtonText: this.$t('common.button.cancel'),
           type: 'warning',
         },
-      )
-        .then(() => {
-          this.handleDelete([data.docId]);
-        })
-        .catch(() => {});
+      ).then(() => {
+        this.handleDelete([data.docId]);
+      });
     },
     handleConfig(docIdList) {
       this.$router.push({
@@ -869,25 +890,59 @@ export default {
           cancelButtonText: this.$t('common.button.cancel'),
           type: 'warning',
         },
-      )
-        .then(() => {
-          this.handleDelete(this.selectedDocIds);
-        })
-        .catch(() => {});
+      ).then(() => {
+        this.handleDelete(this.selectedDocIds);
+      });
     },
     handleBatchExport() {
-      this.exportData(this.selectedDocIds);
+      // 统计URL类型文档数量
+      const urlDocs = this.selectedTableData.filter(
+        doc => doc.docType === 'url',
+      );
+      const nonUrlDocs = this.selectedTableData.filter(
+        doc => doc.docType !== 'url',
+      );
+
+      const totalCount = this.selectedTableData.length;
+      const urlCount = urlDocs.length;
+      const exportCount = nonUrlDocs.length;
+
+      this.$alert(
+        this.$t('knowledgeManage.batchExportTips', {
+          total: totalCount,
+          urlCount: urlCount,
+          exportCount: exportCount,
+        }),
+        this.$t('knowledgeManage.tip'),
+        {
+          confirmButtonText: this.$t('common.button.confirm'),
+          type: 'warning',
+        },
+      ).then(() => {
+        // 用户点击确定后，执行导出（仅当有非URL文档时）
+        if (exportCount > 0) {
+          this.exportData(nonUrlDocs.map(doc => doc.docId));
+        }
+      });
     },
     handleBatchConfig() {
-      const unprocessedDocs = this.selectedTableData.filter(
+      const urlDocs = this.selectedTableData.filter(
+        doc => doc.docType === 'url',
+      );
+      const nonUrlDocs = this.selectedTableData.filter(
+        doc => doc.docType !== 'url',
+      );
+
+      const unprocessedDocs = nonUrlDocs.filter(
         doc => doc.status !== KNOWLEDGE_STATUS_FINISH,
       );
-      const allowedDocs = this.selectedTableData.filter(
+      const allowedDocs = nonUrlDocs.filter(
         doc => doc.status === KNOWLEDGE_STATUS_FINISH,
       );
+
       if (
-        this.selectedTableData.some(doc => doc.isMultimodal === true) &&
-        this.selectedTableData.some(doc => doc.isMultimodal === false)
+        nonUrlDocs.some(doc => doc.isMultimodal === true) &&
+        nonUrlDocs.some(doc => doc.isMultimodal === false)
       ) {
         this.$alert(
           this.$t('knowledgeManage.multimodalMixTips'),
@@ -897,10 +952,10 @@ export default {
             type: 'warning',
           },
         );
-      } else if (unprocessedDocs.length > 0) {
+      } else if (urlDocs.length > 0 || unprocessedDocs.length > 0) {
         let message = this.$t('knowledgeManage.batchConfigTips', {
           total: this.selectedTableData.length,
-          unprocessedNum: unprocessedDocs.length,
+          unprocessedNum: urlDocs.length + unprocessedDocs.length,
         });
         if (allowedDocs.length > 0) {
           message += this.$t('knowledgeManage.continueTips');
@@ -920,7 +975,7 @@ export default {
           });
         }
       } else {
-        this.handleConfig(this.selectedDocIds);
+        this.handleConfig(nonUrlDocs.map(doc => doc.docId));
       }
     },
     async getTableData(data) {
@@ -1012,9 +1067,23 @@ export default {
         this.embeddingModel = tableInfo.docKnowledgeInfo.embeddingModel;
         this.keywords = tableInfo.docKnowledgeInfo.keywords;
         this.llmModelId = tableInfo.docKnowledgeInfo.llmModelId;
+        // 如果开启了知识图谱且有大模型ID，则查询模型详情
+        if (this.graphSwitch && this.llmModelId) {
+          selectModelList().then(res => {
+            if (res.code === 0 && res.data.list) {
+              const model = res.data.list.find(
+                item => item.modelId === this.llmModelId,
+              );
+              this.graphLlmModel = model || null;
+            }
+          });
+        } else {
+          this.graphLlmModel = null;
+        }
       } else {
         this.graphSwitch = false;
         this.showGraphReport = false;
+        this.graphLlmModel = null;
       }
     },
   },
@@ -1253,6 +1322,7 @@ export default {
 
       .el-icon-success {
         display: block;
+        color: #67c23a;
       }
 
       .el-icon-error {
@@ -1285,10 +1355,6 @@ export default {
             display: none;
           }
         }
-      }
-
-      .el-icon-success {
-        color: #67c23a;
       }
 
       .result_icon {

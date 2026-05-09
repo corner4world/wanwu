@@ -199,7 +199,7 @@ export default {
       link.href = url;
       link.download = fileName;
       link.click();
-      window.URL.revokeObjectURL(link.href);
+      globalThis.URL.revokeObjectURL(link.href);
     },
     handleDelete(row) {
       const data = {
@@ -251,8 +251,12 @@ export default {
     border-top: 1px solid #f0f0f0;
   }
 
-  ::v-deep .el-button.is-disabled {
-    background: transparent;
+  ::v-deep .el-button--text.is-disabled {
+    background: transparent !important;
+    span {
+      color: $disabled_color;
+    }
+    cursor: not-allowed;
   }
 }
 
