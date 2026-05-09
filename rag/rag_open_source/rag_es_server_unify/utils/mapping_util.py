@@ -3,6 +3,23 @@ from log.logger import logger
 
 vector_dynamic_templates = [
     {
+        "vector_512": {
+            "match": "*_512_content_vector",
+            "mapping": {
+                "type": "dense_vector",
+                "dims": 512,
+                "element_type": "float",
+                "index": True,
+                "similarity": "cosine",
+                "index_options": {
+                    "type": "hnsw",
+                    "m": 16,
+                    "ef_construction": 100
+                }
+            }
+        }
+    },
+    {
         "vector_768": {
             "match": "*_768_content_vector",
             "mapping": {
@@ -59,6 +76,23 @@ vector_dynamic_templates = [
             "mapping": {
                 "type": "dense_vector",
                 "dims": 2048,
+                "element_type": "float",
+                "index": True,
+                "similarity": "cosine",
+                "index_options": {
+                    "type": "hnsw",
+                    "m": 16,
+                    "ef_construction": 100
+                }
+            }
+        }
+    },
+    {
+        "vector_4096": {
+            "match": "*_4096_content_vector",
+            "mapping": {
+                "type": "dense_vector",
+                "dims": 4096,
                 "element_type": "float",
                 "index": True,
                 "similarity": "cosine",

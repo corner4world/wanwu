@@ -203,7 +203,7 @@ def replace_minio_url(context: str, version: str = "private", image_url_prefix: 
                 continue
             # 检查URL是否是图片（通过扩展名初步判断）
             try:
-                r = requests.get(url, timeout=60)
+                r = requests.get(url, timeout=10)
                 if r.status_code == 200:
                     # 创建临时文件，确保在with块外操作已关闭的文件
                     tmp_fd, img_tmp_path = tempfile.mkstemp(suffix=ext)
