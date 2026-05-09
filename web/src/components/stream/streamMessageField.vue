@@ -2281,8 +2281,7 @@ export default {
           padding: 7px 12px 7px 14px;
           border-radius: 12px 4px 12px 12px;
           margin: 0 !important;
-          line-height: 1.6;
-          font-size: 14px;
+          line-height: 1.5;
           font-weight: 400;
           box-shadow:
             0 2px 6px rgba(97, 113, 230, 0.25),
