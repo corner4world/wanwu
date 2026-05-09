@@ -835,7 +835,7 @@ export default {
   },
   async created() {
     const query = this.$route.query;
-    this.ruleFormBackup = JSON.parse(JSON.stringify(this.ruleForm));
+    this.ruleFormBackup = structuredClone(this.ruleForm);
     if (query.mode === 'config' && this.docIdList.length === 1) {
       await getDocConfig({
         docId: this.docIdList[0],
@@ -843,7 +843,7 @@ export default {
       }).then(res => {
         if (res.code === 0) {
           this.ruleForm = deepMerge(this.ruleForm, res.data);
-          this.ruleFormBackup = JSON.parse(JSON.stringify(this.ruleForm));
+          this.ruleFormBackup = structuredClone(this.ruleForm);
           this.ruleForm.docAnalyzer = [...this.ruleForm.docAnalyzer];
           this.getModelOptions();
         }
@@ -1153,8 +1153,8 @@ export default {
     },
     reset() {
       if (this.source.length > 0) {
-        for (let i = 0; i < this.source.length; i++) {
-          this.source[i].cancel();
+        for (const sourceItem of this.source) {
+          sourceItem.cancel();
         }
       }
       let ids = [];
@@ -1215,7 +1215,7 @@ export default {
     },
     filterSize(size) {
       if (!size) return '';
-      var num = 1024.0; //byte
+      const num = 1024; //byte
       if (size < num) return size + 'B';
       if (size < Math.pow(num, 2)) return (size / num).toFixed(2) + 'KB'; //kb
       if (size < Math.pow(num, 3))
@@ -1313,7 +1313,7 @@ export default {
       });
     },
     formReset() {
-      this.ruleForm = JSON.parse(JSON.stringify(this.ruleFormBackup));
+      this.ruleForm = structuredClone(this.ruleFormBackup);
       this.checkSplitter = {
         splitter: [],
         subSplitter: [],
@@ -1358,11 +1358,9 @@ export default {
       // 开始切片上传(如果没有文件正在上传)
       if (this.file === null) {
         this.startUpload();
-      } else {
+      } else if (this.file.progressStatus === 'success') {
         // 如果上传当中有新的文件加入
-        if (this.file.progressStatus === 'success') {
-          this.startUpload(this.fileIndex);
-        }
+        this.startUpload(this.fileIndex);
       }
     },
     refreshFile(index) {
@@ -1411,6 +1409,9 @@ export default {
       let nameType;
       if (this.fileType === 'fileMultiModal') {
         nameType = this.uploadLimitList.flatMap(item => item.extList || []);
+      } else if (this.fileType === 'fileUrl') {
+        // URL文件上传只允许xlsx格式
+        nameType = ['xlsx'];
       } else {
         nameType = [
           'pdf',
@@ -1481,7 +1482,7 @@ export default {
       }
       return true;
     },
-    //  验证文件格式
+    //  验证文件重复
     verifyRepeat(file) {
       const isDuplicate = this.fileList.some(item => item.name === file.name);
 
