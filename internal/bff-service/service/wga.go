@@ -343,7 +343,7 @@ func GetGeneralAgentConfig(ctx *gin.Context, userId, orgId string) (response.Get
 	for _, o := range resp.Config.OntologyKnowledgeList {
 		ontologyIds = append(ontologyIds, o.OntologyKnowledgeId)
 	}
-	validOntologyIds, _ := getValidOntologyIds(ctx, ontologyIds)
+	validOntologyIds, _ := getValidOntologyIds(ctx, userId, orgId, ontologyIds)
 	var ontologyItems []*response.GeneralAgentConfigItem
 	for _, o := range resp.Config.OntologyKnowledgeList {
 		if validOntologyIds[o.OntologyKnowledgeId] {

@@ -31,7 +31,7 @@ type ontologyKnowledgeNetwork struct {
 }
 
 // getOntologyKnowledgeSelect 获取知识网络选择列表
-func getOntologyKnowledgeSelect(ctx *gin.Context, name string) ([]*response.GeneralAgentResourceSelectItem, error) {
+func getOntologyKnowledgeSelect(ctx *gin.Context, userId, orgId, name string) ([]*response.GeneralAgentResourceSelectItem, error) {
 	if config.Cfg().Ontology.Enable == 0 {
 		return nil, nil
 	}
@@ -59,6 +59,7 @@ func getOntologyKnowledgeSelect(ctx *gin.Context, name string) ([]*response.Gene
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "application/json").
+		SetHeader("X-Account-Id", userId).
 		SetHeaders(workflowHttpReqHeader(ctx)).
 		SetQueryParams(queryParams).
 		SetResult(ret).
@@ -97,7 +98,7 @@ func checkWgaOntologyConfig(ctx *gin.Context, userId, orgId string, ontologyList
 		ontologyIds = append(ontologyIds, o.OntologyKnowledgeId)
 	}
 
-	validIds, err := getValidOntologyIds(ctx, ontologyIds)
+	validIds, err := getValidOntologyIds(ctx, userId, orgId, ontologyIds)
 	if err != nil {
 		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "ontology not found")
 	}
@@ -112,13 +113,13 @@ func checkWgaOntologyConfig(ctx *gin.Context, userId, orgId string, ontologyList
 }
 
 // getValidOntologyIds 批量获取有效的 Ontology ID 映射
-func getValidOntologyIds(ctx *gin.Context, ontologyIds []string) (map[string]bool, error) {
+func getValidOntologyIds(ctx *gin.Context, userId, orgId string, ontologyIds []string) (map[string]bool, error) {
 	if len(ontologyIds) == 0 {
 		return make(map[string]bool), nil
 	}
 
 	// 获取所有 ontology 列表
-	items, err := getOntologyKnowledgeSelect(ctx, "")
+	items, err := getOntologyKnowledgeSelect(ctx, userId, orgId, "")
 	if err != nil {
 		return nil, err
 	}

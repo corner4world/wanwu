@@ -110,7 +110,7 @@ func GetGeneralAgentResourceSelect(ctx *gin.Context, userId, orgId string, name 
 	go func() {
 		defer util.PrintPanicStack()
 		defer wg.Done()
-		list, err := getOntologyKnowledgeSelect(ctx, name)
+		list, err := getOntologyKnowledgeSelect(ctx, userId, orgId, name)
 		if err != nil {
 			ontologyErr = err
 			return
