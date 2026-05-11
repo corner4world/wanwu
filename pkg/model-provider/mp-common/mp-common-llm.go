@@ -340,6 +340,7 @@ type llmResp struct {
 	resp       *LLMResp // 缓存 unmarshal 结果
 	respStr    string   // 缓存 marshal 结果
 	inThinking bool     // 流式思维链状态
+	prefixSep  string   // 流式数据前缀分隔符，保持原始格式
 }
 
 func NewLLMResp(stream bool, raw string) ILLMResp {
@@ -370,7 +371,15 @@ func (resp *llmResp) ConvertResp() (*LLMResp, bool) {
 
 	raw := resp.raw
 	if resp.stream {
-		raw = strings.TrimPrefix(resp.raw, "data:")
+		// 提取原始前缀分隔符格式，保持 data: 或 data: 的一致性
+		afterPrefix := strings.TrimPrefix(resp.raw, "data:")
+		if len(afterPrefix) > 0 && afterPrefix[0] == ' ' {
+			resp.prefixSep = "data: "
+			raw = afterPrefix[1:] // 去掉空格
+		} else {
+			resp.prefixSep = "data:"
+			raw = afterPrefix
+		}
 	}
 
 	ret := &LLMResp{}
@@ -399,7 +408,7 @@ func (resp *llmResp) ConvertResp() (*LLMResp, bool) {
 	if newData, err := json.Marshal(ret); err == nil {
 		prefix := ""
 		if resp.stream {
-			prefix = "data:"
+			prefix = resp.prefixSep
 		}
 		resp.respStr = prefix + string(newData) + "\n"
 	}
