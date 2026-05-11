@@ -74,7 +74,8 @@
                 POWER_TYPE_EDIT,
                 POWER_TYPE_ADMIN,
                 POWER_TYPE_SYSTEM_ADMIN,
-              ].includes(permissionType)
+              ].includes(permissionType) &&
+              obj.disable !== 'true'
             "
           ></span>
         </el-descriptions-item>
@@ -141,7 +142,7 @@
         </el-descriptions-item>
       </el-descriptions>
 
-      <div class="btn">
+      <div v-if="obj.disable !== 'true'" class="btn">
         <search-input
           :placeholder="$t('knowledgeManage.segmentPlaceholder')"
           ref="searchInput"
@@ -1320,8 +1321,6 @@ export default {
     min-width: 980px;
     padding: 15px;
     height: calc(100% - 45px);
-    /*background: #fff;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);*/
     border-radius: 5px;
     overflow: auto;
 
