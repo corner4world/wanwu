@@ -8,7 +8,7 @@ type UpdateGeneralAgentConfigReq struct {
 	Skill     []GeneralAgentConfigItem     `json:"skill"`
 	Assistant []GeneralAgentConfigItem     `json:"assistant"`
 	Knowledge []GeneralAgentConfigItem     `json:"knowledge"`
-	Ontology  []GeneralAgentConfigItem     `json:"ontology"`
+	Ontology  []GeneralAgentConfigItem     `json:"ontology" validate:"max=1"` // 目前限制只能选一个知识网络
 }
 
 // GeneralAgentConfigItem 配置项（带type）
