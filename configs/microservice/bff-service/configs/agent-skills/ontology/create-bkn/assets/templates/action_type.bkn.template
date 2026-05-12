@@ -3,6 +3,7 @@ type: action_type
 id: {action_id}
 name: {行动名称}
 tags: [{标签1}, {标签2}]
+action_type: modify       # 必填，取值仅限 add | modify | delete（详见 SPECIFICATION）
 enabled: false
 risk_level: medium
 requires_approval: true

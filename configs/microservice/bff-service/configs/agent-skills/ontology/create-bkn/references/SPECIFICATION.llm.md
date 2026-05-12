@@ -133,16 +133,31 @@ tags: [tag1, tag2]               # 可选
 type: action_type
 id: {action_id}
 name: {显示名称}
-tags: [tag1, tag2]               # 可选
-enabled: boolean                 # 可选，建议默认 false
-risk_level: low | medium | high  # 可选
-requires_approval: boolean       # 可选
+tags: [tag1, tag2]                  # 可选
+action_type: add | modify | delete  # ⚠️ 必填 —— 后端 ActionTypeMap 硬白名单
+enabled: boolean                    # 可选，建议默认 false
+risk_level: low | medium | high     # 可选
+requires_approval: boolean          # 可选
 ---
 ```
 
+> ⚠️ **`action_type` 字段的三个坑（必须读懂再写）**
+>
+> 1. **位置**：`action_type` 是 **YAML frontmatter 顶级字段**，**不是** `### Bound Object` 表格的"Action Type"列。后端 Go parser 解析 Bound Object 表时**只取第一列 Bound Object，第二列原样丢弃**。
+> 2. **取值**：仅限 **`add`** / **`modify`** / **`delete`**。
+> 3. **后端错误信息有 bug**：缺失或非法时 backend 返回
+>    `"The action type is expected one of [create, update, delete], actual is [...]"`
+>    —— **不要照这串值改！** 这是 backend 历史 bug（错误消息硬编码、未跟实际 enum 同步）。实际白名单就是 `add` / `modify` / `delete`，`create` / `update` 会被拒。
+>
+> **缺失即报错**：每个 ActionType 文件 frontmatter 都必须包含 `action_type:` 这一行，缺了 backend 报 `actual is []`。
+>
+> **只读语义不要建为 ActionType**：ActionType 只承载对实例的写操作。查询/监控/追溯/校验等只读语义请用 **object-type query / subgraph / metric / semantic search**，不要落到 `action_types/*.bkn`。
+
 正文：
 - `## ActionType: {显示名称}` + 简短描述
-- `### Bound Object`（必须）：表格 Bound Object | Action Type（`add` / `modify` / `delete` / `query`，与规范字段表一致）
+- `### Bound Object`（必须）：表格 Bound Object | Action Type
+  - **Bound Object 列**：填实际绑定的 object_type id（后端读这一列）
+  - **Action Type 列**：填 `add` / `modify` / `delete`，与 frontmatter `action_type:` 保持一致（**仅为人类可读**，backend 不解析此列）
 - `### Affect Object`（可选）：表格 Affect Object
 - `### Trigger Condition`（可选）：YAML 代码块，格式：
   ```yaml
@@ -206,7 +221,7 @@ tags: [tag1, tag2]               # 可选
    - 所有类型：type、id、name
    - ObjectType：Data Properties、Keys（Primary Keys + Display Key）
    - RelationType：Endpoint、Mapping Rules（或 Mapping View + Source/Target Mapping）
-   - ActionType：Bound Object、Tool Configuration、Parameter Binding
+   - ActionType：frontmatter `action_type`（add/modify/delete）、Bound Object、Tool Configuration、Parameter Binding
    - ConceptGroup：Object Types
 7. **标题层级**：`#` 网络标题、`##` 类型定义、`###` 定义内 section、`####` 子项（逻辑属性名）
 8. **业务规则放置**：

@@ -40,6 +40,8 @@ BKN is Markdown + YAML frontmatter for schema; one file per definition under typ
 2. **Read spec** — [references/SPECIFICATION.llm.md](references/SPECIFICATION.llm.md) (format rules, sections, frontmatter types)
 3. **Pick templates** — copy/adapt from [assets/templates/](assets/templates/) (`network_type.bkn.template`, `object_type.bkn.template`, …)
 4. **Create `network.bkn`** — root file; align with Network Overview
+   - **MUST**: generate a fresh **UUID v4** locally (e.g. Python `uuid.uuid4()`) and write it as the `id` field in frontmatter at file creation time. Never leave `id` empty, `null`, `~`, or absent — `ontology bkn validate` / `push` both require a non-empty string id, and the bkn-creator flow does **not** call `ontology bkn create` to acquire a server-assigned id.
+   - The locally generated UUID is the final `kn_id`; any other `.bkn` file that references the network id (e.g. `network_id` in `object_types/*.bkn`) must reuse the same UUID.
 5. **Create `object_types/*.bkn`** — one file per object, `{id}.bkn`
 6. **Create `relation_types/*.bkn`** — one file per relation
 7. **Create `action_types/*.bkn`** — one file per action
@@ -47,6 +49,7 @@ BKN is Markdown + YAML frontmatter for schema; one file per definition under typ
 9. **Update `network.bkn`** — list all IDs in Network Overview
 10. **Add root `SKILL.md` in the BKN directory** — same folder as `network.bkn` (this is **not** the create-bkn skill file); agent-facing guide for that network (see [Delivered BKN: root SKILL.md](#delivered-bkn-root-skillmd))
 11. **Review (MUST)** — cross-check [Validation checklist](#validation-checklist) and [Business rules placement](#business-rules-placement); fix IDs, cross-refs, headings
+    - 特别核对 `action_types/*.bkn` 每个文件 frontmatter 是否含 `action_type: add|modify|delete` 这一行（**位置在 frontmatter，不在 markdown body 的 Bound Object 表**），遇到查询/监控/追溯/校验等只读语义，**删掉对应 ActionType 文件并在 `network.bkn` 的 Network Overview 同步移除该 id**
 12. **Validate (MUST)** — `ontology bkn validate <dir>` (see [Validation](#validation))
 13. **Import** (optional) — `ontology bkn push <dir>`
 
@@ -103,6 +106,9 @@ Rules must sit in spec-defined places so import persists them. Full wording: [re
 - [ ] Network Overview lists **all** definition IDs — no missing/extra
 - [ ] Relations/actions reference existing object-type IDs; concept groups list only existing objects
 - [ ] Parameter binding `Source` ∈ `property` | `input` | `const`; YAML blocks (e.g. trigger) parse
+- [ ] **每个 `action_types/*.bkn` 的 frontmatter 都包含 `action_type:` 字段，值 ∈ {`add`, `modify`, `delete`}**（注意：该字段在 **frontmatter**，不在 `### Bound Object` 表格里；缺失或值非法时 backend 返回 `BknBackend.ActionType.InvalidParameter`，错误细节里说的 `[create, update, delete]` 是 backend bug，实际白名单就是 `add/modify/delete`）
+- [ ] **`network.bkn` 的 Network Overview ActionType 列表与 `action_types/*.bkn` 文件名一一对应**（多/少都会导致后端 schema 不一致；CLI 不校验，会静默放过）
+- [ ] **没有把只读语义（查询/监控/追溯/校验）建为 ActionType**——这类应走 object-type query / subgraph / metric / semantic search
 - [ ] Heading hierarchy has no skipped levels
 - [ ] Business rules only in allowed places (see [Business rules placement](#business-rules-placement))
 

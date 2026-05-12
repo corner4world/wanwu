@@ -158,7 +158,11 @@ rule_extraction_check:
 - MUST：目录与落盘位置统一遵循并直接委托 skill `archive-protocol`，不在本流程内定义 `archives/*` 规则
 - 输出目录（`network_dir`）由 `archive-protocol` 提供与校验
 - 质量检查：
-  - `network.bkn` 的 `id` 留空（阶段五回填）
+  - `network.bkn` 的 `id` MUST 在生成 BKN 草案的同时本地生成一个 UUID v4 直接写入（形如 `f47ac10b-58cc-4372-a567-0e02b2c3d479`），不得留空、不得写 `null` / `~`、不得整键缺失
+    - 原因：YAML 空值会被解析为 `None`，`ontology bkn validate` 与 `ontology bkn push` 都要求 `id` 为非空字符串；阶段五不再调用 `bkn create` 申请 id，直接用本地 UUID 作为最终 `kn_id`
+    - 该 UUID 一经写入即为最终 `kn_id`，阶段五 push 时复用同一值；Never 在后续阶段重新生成或替换该 id（除非用户明确"重建网络"，否则视为同一网络）
+    - 若 `object_types/*.bkn` 等需要引用 network id，MUST 同步写入该 UUID
+    - MUST：UUID 标准为 v4 随机版本；Never 使用顺序 id、业务名拼接、占位符字符串
   - `network.bkn` MUST 补齐默认样式：`icon: icon-dip-graph`、`color: #0e5fc5`
   - 所有 `object_types/*.bkn` MUST 设置 `color`，按“随机颜色”策略分配（可复现即可，不要求真正随机源）
   - 对象类 Data Source 标记为“待绑定”，映射字段留空
@@ -284,19 +288,35 @@ rule_extraction_check:
 
 ## 阶段五：推送与验证
 
-推荐方式 A：先创建网络获取 `kn_id`，回填 `network.bkn`，再推送目录。
+id 口径（MUST）：
+
+- `kn_id` 由阶段二生成 `network.bkn` 时本地 UUID v4 写入，阶段五**直接复用**，Never 再调用 `ontology bkn create` 申请 id
+- 推送前 MUST 回读 `network.bkn` 的 `id` 字段，确认其为合法 UUID v4 且非占位符/None；不合法时停在阶段五并修复 `network.bkn`，Never 跳过校验直接 push
+- 若用户明确要求"重建网络"，重新生成 UUID 覆盖原 `id` 后再 push；否则视为同一网络
 
 执行前门禁（MUST）：
 
 - 推送前必须先委托 `ontology-core` 检查同名/相似名称网络（基于 `ontology bkn list` 结果）
-- 若存在同名或相似网络，默认使用“基名 + 最新版本号”创建新网络（如 `_v5`）；Never 尝试更新既有网络
+- 若存在同名或相似网络，默认使用"基名 + 最新版本号"创建新网络（如 `_v5`）；Never 尝试更新既有网络
 - 版本号规则：提取同基名历史版本中的最大版本号并 `+1`；若无版本后缀但已存在同名，则从 `_v2` 起
-- 在执行 `ontology bkn create` / `ontology bkn push` 前，必须先展示命令摘要与影响面
-- 仅当用户明确确认“执行推送”后，才可进入实际执行；Never 自动更新网络
+- 在执行 `ontology bkn push` 前，必须先展示命令摘要与影响面（含 `kn_id` 与 `--user-id`）
+- 仅当用户明确确认"执行推送"后，才可进入实际执行；Never 自动更新网络
+
+推送执行口径（MUST）：
+
+- MUST：阶段五的推送是必执行步骤，不得以"BKN 草案已生成 / 报告已生成 / 文件已落盘"为由跳过；未完成 `ontology bkn push` 之前，阶段五一律视为未完成
+- MUST：所有 `ontology` 命令统一委托 `../ontology-core/SKILL.md` 执行，**必须显式传顶层选项 `--user-id <accountId>`，写在子命令之前**，缺省即视为流程违规并立即报错
+- MUST：`accountId` 必须从当前会话上下文取得；若未取得，停在阶段五并向用户索要，Never 自行编造或留空
+- MUST：命令摘要回显必须包含 `--user-id` 占位（如 `--user-id <accountId>`），不得在摘要中省略该参数
+- Never：用未带 `--user-id` 的命令真实执行 `bkn push`
+- Never：在阶段五调用 `ontology bkn create`（id 已由阶段二本地 UUID 提供）
+
+命令模板（MUST 按此结构委托 ontology-core 执行）：
 
 ```bash
-ontology bkn create --name "名称" --comment "描述"
-ontology bkn push <network_dir> --branch main
+# 直接推送目录（branch 固定为 main；如需业务域显式声明，再追加 -bd <business-domain>）
+# network.bkn 的 id 已由阶段二写入本地生成的 UUID v4，无需再走 bkn create
+ontology --user-id <accountId> bkn push <network_dir> --branch main [-bd <business-domain>]
 ```
 
 推送结果后必须执行（MUST，成功/失败均执行）：
@@ -311,6 +331,13 @@ ontology bkn push <network_dir> --branch main
 - 当推送失败且无法获取任何线上快照时：完整性检查不得跳过，需输出 `integrity_status: unavailable` 与原因；报告仍必须生成，并显式记录“推送失败 + 线上快照不可用”
 - 无论推送成功或失败，都必须在上述两步完成后给出阶段五执行回执
 - 归档回执与归档一致性规则由 `archive-protocol` 统一负责，本流程不重复定义
+
+阶段五退出条件（MUST，缺一不可）：
+
+- `ontology --user-id <accountId> bkn push <network_dir> --branch main` 已**真实执行**并取得回执（成功或失败均算执行；未执行即未退出）
+- `network.bkn` 的 `id` 字段为合法 UUID v4（推送前已通过回读校验，且与 push 命令使用的 `kn_id` 一致）
+- 完整性检查与 HTML 报告均已产出
+- 若用户未确认“执行推送”，必须停在执行前门禁继续等待，Never 以“草案已完整”“报告已生成”等理由跳过推送、宣告阶段五完成
 
 ### HTML 报告生成规范（MUST）
 
@@ -351,9 +378,10 @@ ontology bkn push <network_dir> --branch main
 
 ## 常见失败恢复
 
-- `missing required field 'id'`：先创建网络拿 `kn_id` 并回填后重试
+- `missing required field 'id'` / `id is None`：阶段二未在 `network.bkn` 写入 UUID v4；打开 `network.bkn`，在 frontmatter 写入本地生成的 UUID v4 字符串后重新 push（Never 改回"留空"或写 `null` / `~`）
 - `KnowledgeNetwork.NotFound`：检查是否使用了截断 ID
 - `referential integrity`：检查关系类引用对象是否存在
+- `id format invalid`：确认写入的是 UUID v4（v4 的第 13 位必须是 `4`、第 17 位为 `8/9/a/b`），重新生成一个 UUID v4 替换后再推送
 
 ## 回显模板（对用户）
 
