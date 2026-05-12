@@ -788,6 +788,7 @@ services:
     #   - 4097:4097
     #   - 8080:8080
     volumes:
+      # --- anthropics ---
       - ./configs/microservice/bff-service/configs/agent-skills/anthropics/algorithmic-art:/home/root/.claude/skills/algorithmic-art
       - ./configs/microservice/bff-service/configs/agent-skills/anthropics/brand-guidelines:/home/root/.claude/skills/brand-guidelines
       - ./configs/microservice/bff-service/configs/agent-skills/anthropics/canvas-design:/home/root/.claude/skills/canvas-design
@@ -803,8 +804,10 @@ services:
       - ./configs/microservice/bff-service/configs/agent-skills/anthropics/theme-factory:/home/root/.claude/skills/theme-factory
       - ./configs/microservice/bff-service/configs/agent-skills/anthropics/web-artifacts-builder:/home/root/.claude/skills/web-artifacts-builder
       - ./configs/microservice/bff-service/configs/agent-skills/anthropics/xlsx:/home/root/.claude/skills/xlsx
+      # --- minimax ---
       - ./configs/microservice/bff-service/configs/agent-skills/minimax/minimax-docx:/home/root/.claude/skills/minimax-docx
       - ./configs/microservice/bff-service/configs/agent-skills/minimax/pptx-generator:/home/root/.claude/skills/pptx-generator
+      # --- wanwu ---
       - ./configs/microservice/bff-service/configs/agent-skills/wanwu/pdf:/home/root/.claude/skills/pdf
     environment:
       USER: root
