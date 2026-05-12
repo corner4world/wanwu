@@ -382,12 +382,8 @@
                       :content="displayName(n)"
                       placement="top-start"
                     >
-                      <span>
-                        {{
-                          displayName(n).length > 20
-                            ? displayName(n).substring(0, 20) + '...'
-                            : displayName(n)
-                        }}
+                      <span class="tool-name">
+                        {{ displayName(n) }}
                       </span>
                     </el-tooltip>
                     <el-tooltip
@@ -401,6 +397,7 @@
                         v-if="n.mcpName || n.toolName"
                       ></span>
                     </el-tooltip>
+                    <span class="tag">{{ n.typeName }}</span>
                   </div>
                   <div class="bt">
                     <span
@@ -965,23 +962,28 @@ export default {
       nameMap: {
         workflow: {
           displayName: this.$t('menu.app.workflow'),
+          typeName: this.$t('appSpace.workflow'),
           propName: 'name',
         },
         mcp: {
           displayName: 'MCP' + this.$t('tool.tool'),
+          typeName: 'MCP',
           propName: 'actionName',
         },
         action: {
           displayName: this.$t('menu.app.custom'),
+          typeName: this.$t('agent.toolDialog.tool'),
           propName: 'actionName',
         },
         skill: {
           displayName: this.$t('tempSquare.skills.name'),
+          typeName: 'skill',
           propName: 'skillName',
         },
         // 可以继续添加其他类型
         default: {
           displayName: this.$t('knowledgeManage.docList.unknown'),
+          typeName: this.$t('knowledgeManage.docList.unknown'),
           propName: 'name', // 默认属性名
         },
       },
@@ -1555,18 +1557,22 @@ export default {
           ...this.workFlowInfos.map(item => ({
             ...item,
             type: AGENT_TOOL_TYPE.WORKFLOW,
+            typeName: this.nameMap[AGENT_TOOL_TYPE.WORKFLOW].typeName,
           })),
           ...this.mcpInfos.map(item => ({
             ...item,
             type: AGENT_TOOL_TYPE.MCP,
+            typeName: this.nameMap[AGENT_TOOL_TYPE.MCP].typeName,
           })),
           ...this.actionInfos.map(item => ({
             ...item,
             type: 'action',
+            typeName: this.nameMap['action'].typeName,
           })),
           ...this.skillInfos.map(item => ({
             ...item,
             type: AGENT_TOOL_TYPE.SKILL,
+            typeName: this.nameMap[AGENT_TOOL_TYPE.SKILL].typeName,
           })),
         ];
 
@@ -1818,6 +1824,24 @@ $gap-scale: (
                 display: flex;
                 align-items: center;
                 color: #333;
+                overflow: hidden;
+
+                .tool-name {
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                  min-width: 0;
+                }
+
+                .tag {
+                  padding: 0 8px;
+                  background: rgba(139, 139, 149, 0.15);
+                  color: #4b4a58;
+                  font-size: 12px;
+                  border-radius: 6px;
+                  margin-left: 8px;
+                  white-space: nowrap;
+                }
 
                 .desc-info {
                   color: #ccc;
@@ -1830,6 +1854,7 @@ $gap-scale: (
                   border-radius: 50%;
                   background: #eee;
                   margin-right: 5px;
+                  flex-shrink: 0;
 
                   img {
                     width: 100%;
