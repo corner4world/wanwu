@@ -326,6 +326,7 @@
       :show-close="false"
       v-loading="loading.dialog"
       class="section-dialog"
+      :close-on-click-modal="false"
     >
       <div slot="title">
         <span style="font-size: 16px">

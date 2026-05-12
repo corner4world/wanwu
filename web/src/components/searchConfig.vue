@@ -242,12 +242,7 @@
 </template>
 <script>
 import { getRerankList } from '@/api/modelAccess';
-import {
-  KNOWLEDGE,
-  QA,
-  MULTIMODAL,
-  MIX_MULTIMODAL,
-} from '@/views/knowledge/constants';
+import { KNOWLEDGE, QA, MIX_MULTIMODAL } from '@/views/knowledge/constants';
 import ModelSelect from '@/components/modelSelect.vue';
 export default {
   components: { ModelSelect },
@@ -423,7 +418,6 @@ export default {
       return Object.hasOwn(item, key);
     },
     filteredMixType(item) {
-      console.log(item.mixType, this.category);
       // QA模式下过滤掉权重选项，只保留rerank
       if (this.category && this.category === QA) {
         return item.mixType.filter((_, idx) => idx !== 0);
@@ -462,7 +456,7 @@ export default {
       }));
       if (this.category === KNOWLEDGE) {
         this.formInline.knowledgeMatchParams.priorityMatch =
-          n.value !== 'mix' ? 0 : 1;
+          n.value === 'mix' ? 1 : 0;
       } else {
         this.formInline.knowledgeMatchParams.priorityMatch = 0;
         // 确保QA模式下混合检索默认选中rerank
@@ -538,7 +532,6 @@ export default {
     }
   }
   .vertical-form-item .el-form-item__label {
-    // line-height: unset;
     font-size: 14px;
     font-weight: bold;
   }

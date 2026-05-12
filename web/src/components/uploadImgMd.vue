@@ -15,6 +15,7 @@
       @focus="onFocus"
       @blur="onBlur"
       @input="onInput"
+      @click="$refs.imagePreview.handleImageClick($event)"
       v-html="localContent"
     ></div>
 
@@ -39,6 +40,9 @@
     >
       <i class="el-icon-picture-outline"></i>
     </el-upload>
+
+    <!-- 图片预览组件 -->
+    <ImagePreview ref="imagePreview" />
   </div>
 </template>
 
@@ -47,8 +51,12 @@ import { Md2Img, Img2Md } from '@/utils/util';
 import { POWER_TYPE_EDIT, POWER_TYPE_READ } from '@/views/knowledge/constants';
 import { getDocLimit } from '@/api/knowledge';
 import { uploadFileMD } from '@/api/chunkFile';
+import ImagePreview from './ImagePreview.vue';
 
 export default {
+  components: {
+    ImagePreview,
+  },
   props: {
     value: {
       type: String,
@@ -201,15 +209,15 @@ export default {
           // 元素节点：+1（表示一个节点）
           offset += 1;
           // 递归处理子节点
-          for (let i = 0; i < node.childNodes.length; i++) {
-            traverseNodes(node.childNodes[i]);
+          for (const childNode of node.childNodes) {
+            traverseNodes(childNode);
           }
         }
       }
 
       // 遍历容器内的所有节点
-      for (let i = 0; i < container.childNodes.length; i++) {
-        traverseNodes(container.childNodes[i]);
+      for (const childNode of container.childNodes) {
+        traverseNodes(childNode);
       }
 
       return offset;
@@ -222,7 +230,7 @@ export default {
       if (!editor) return;
 
       const range = document.createRange();
-      const selection = window.getSelection();
+      const selection = getSelection();
       let currentOffset = 0;
 
       // 递归遍历所有节点，包括嵌套的节点
@@ -253,8 +261,8 @@ export default {
           }
           currentOffset += 1;
           // 递归处理子节点
-          for (let i = 0; i < node.childNodes.length; i++) {
-            if (traverseNodes.call(this, node.childNodes[i])) {
+          for (const childNode of node.childNodes) {
+            if (traverseNodes.call(this, childNode)) {
               return true;
             }
           }
@@ -263,8 +271,8 @@ export default {
       }
 
       // 遍历编辑器的所有子节点
-      for (let i = 0; i < editor.childNodes.length; i++) {
-        if (traverseNodes.call(this, editor.childNodes[i])) {
+      for (const childNode of editor.childNodes) {
+        if (traverseNodes.call(this, childNode)) {
           return;
         }
       }
@@ -278,7 +286,7 @@ export default {
     },
 
     saveCaretPosition() {
-      const selection = window.getSelection();
+      const selection = getSelection();
       if (selection && selection.rangeCount > 0) {
         this.savedRange = selection.getRangeAt(0).cloneRange();
         this.savedCharacterOffset = this.getCharacterOffsetFromRange(
@@ -357,6 +365,7 @@ export default {
   ::v-deep img {
     width: auto;
     max-height: 115px;
+    cursor: zoom-in;
   }
 
   .rich-textarea {

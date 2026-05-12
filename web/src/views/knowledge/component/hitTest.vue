@@ -108,7 +108,10 @@
                 </span>
               </div>
               <div>
-                <div class="resultContent">
+                <div
+                  class="resultContent"
+                  @click="$refs.imagePreview.handleImageClick($event)"
+                >
                   <template v-if="item.contentType !== 'qa'">
                     <div v-html="md.render(item.snippet)"></div>
                   </template>
@@ -193,6 +196,9 @@
         <sectionShow ref="sectionShow" />
       </div>
     </div>
+
+    <!-- 图片预览组件 -->
+    <ImagePreview ref="imagePreview" />
   </div>
 </template>
 <script>
@@ -205,6 +211,7 @@ import LinkIcon from '@/components/linkIcon.vue';
 import uploadImg from '@/components/uploadImg.vue';
 import metaSet from '@/components/metaSet';
 import sectionShow from './sectionShow.vue';
+import ImagePreview from '@/components/ImagePreview.vue';
 
 export default {
   components: {
@@ -213,6 +220,7 @@ export default {
     searchConfig,
     metaSet,
     sectionShow,
+    ImagePreview,
   },
   data() {
     return {
@@ -248,19 +256,17 @@ export default {
   mounted() {
     this.$nextTick(() => {
       const config = this.$refs.searchConfig.formInline;
-      this.formInline = JSON.parse(JSON.stringify(config));
+      this.formInline = structuredClone(config);
       if (this.category === 2)
         getDocLimit({ knowledgeId: this.knowledgeId }).then(res => {
           if (res.code === 0) {
-            this.fileType =
-              '.' +
-              res.data.uploadLimitList
-                .find(item => item.fileType === 'image')
-                .flatMap(item => item.extList || [])
-                .join(',.');
-            this.maxSize = res.data.uploadLimitList.find(
+            const imageConfig = res.data.uploadLimitList.find(
               item => item.fileType === 'image',
-            ).maxSize;
+            );
+            if (imageConfig) {
+              this.fileType = '.' + (imageConfig.extList || []).join(',.');
+              this.maxSize = imageConfig.maxSize;
+            }
           }
         });
     });
@@ -279,7 +285,7 @@ export default {
       return '#' + map[contentType];
     },
     sendConfigInfo(data) {
-      this.formInline = JSON.parse(JSON.stringify(data));
+      this.formInline = structuredClone(data);
     },
     startTest() {
       const metaData =
@@ -362,8 +368,8 @@ export default {
       qaHitTest(data)
         .then(res => {
           if (res.code === 0) {
-            this.searchList = res.data !== null ? res.data.searchList : [];
-            this.score = res.data !== null ? res.data.score : [];
+            this.searchList = res.data?.searchList || [];
+            this.score = res.data?.score || [];
             this.resultLoading = false;
           } else {
             this.searchList = [];
@@ -379,8 +385,8 @@ export default {
       hitTest(data)
         .then(res => {
           if (res.code === 0) {
-            this.searchList = res.data !== null ? res.data.searchList : [];
-            this.score = res.data !== null ? res.data.score : [];
+            this.searchList = res.data?.searchList || [];
+            this.score = res.data?.score || [];
             // 设置所有子分段默认展开
             this.activeNames = [];
             this.searchList.forEach((item, index) => {
@@ -402,7 +408,7 @@ export default {
     // 显示分段详情弹框
     showSectionDetail(index) {
       const currentItem = this.searchList[index];
-      const currentScore = parseFloat(this.score[index]) || 0;
+      const currentScore = Number.parseFloat(this.score[index]) || 0;
       const data = {
         searchList: currentItem,
         score: currentScore,
@@ -492,6 +498,7 @@ export default {
         ::v-deep img {
           max-width: 25%;
           max-height: 25%;
+          cursor: zoom-in;
         }
       }
 
