@@ -252,8 +252,14 @@ func (c *DocImportReq) Check() error {
 		}
 	}
 	if c.DocImportType == UrlFileUpload {
+		if len(c.DocInfo) == 0 {
+			return errors.New("url文件不能为空")
+		}
 		if len(c.DocInfo) > 1 {
 			return errors.New("url文件仅可上传一个")
+		}
+		if !strings.HasSuffix(c.DocInfo[0].DocId, ".xlsx") {
+			return errors.New("url文件格式错误,只能上传.xlsx文件")
 		}
 	}
 
