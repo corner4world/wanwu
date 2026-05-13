@@ -110,24 +110,12 @@ func GetToolsFromOpenAPISchema(ctx context.Context, pluginToolList []*request.Pl
 				}
 
 				contentType := getRequestContentType(operation)
-				handler := createHTTPHandler(serverURL, path, method, wrapper.APIAuth, contentType)
+				handler := createHTTPHandler(serverURL, path, method, wrapper.APIAuth, contentType, toolName)
 
 				tools := &openAPITool{
 					info:    einoTool,
 					handler: handler,
 				}
-
-				//// 打印工具详细信息
-				//paramsInfo := "no parameters"
-				//if toolInfo.ParamsOneOf != nil {
-				//	jsonSchema, err := toolInfo.ParamsOneOf.ToJSONSchema()
-				//	if err == nil && jsonSchema != nil {
-				//		paramsJSON, _ := json.MarshalIndent(jsonSchema, "", "  ")
-				//		paramsInfo = string(paramsJSON)
-				//	}
-				//}
-				//log.Printf("Loaded OpenAPI tool: %s\n  Description: %s\n  Method: %s %s\n  Parameters Schema:\n%s",
-				//	toolName, toolDesc, method, path, paramsInfo)
 
 				allTools = append(allTools, tools)
 			}
@@ -183,7 +171,7 @@ func getRequestContentType(operation *openapi3.Operation) string {
 	return "application/json"
 }
 
-func createHTTPHandler(serverURL, path, method string, auth *openapi3_util.Auth, contentType string) func(ctx context.Context, arguments string) (string, error) {
+func createHTTPHandler(serverURL, path, method string, auth *openapi3_util.Auth, contentType, toolName string) func(ctx context.Context, arguments string) (string, error) {
 	return func(ctx context.Context, arguments string) (string, error) {
 		start := time.Now().UnixMilli()
 		requestURL := serverURL + path
@@ -291,7 +279,7 @@ func createHTTPHandler(serverURL, path, method string, auth *openapi3_util.Auth,
 
 		resp, err := agent_http_client.GetClient().Client.Do(req)
 		respBody, err := buildResult(resp, err)
-		http_client.LogHttpRequest(ctx, "request_tool_call", method, requestURL, arguments, respBody, err, start)
+		http_client.LogHttpRequest(ctx, "request_tool_call_"+toolName, method, requestURL, arguments, respBody, err, start)
 		if err != nil {
 			return response.ToolErrResp(err)
 		}

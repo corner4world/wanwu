@@ -108,9 +108,6 @@ func BuildAgentChatResp(req *request.AgentChatContext, chatMessage *schema.Messa
 
 func AgentChatSuccessResp(req *request.AgentChatContext, chatMessage *schema.Message, subAgentEventData *SubEventData, content string, notStop bool, respContext *AgentChatRespContext) *AgentChatResp {
 	agentFinish := buildFinish(chatMessage, notStop)
-	if agentFinish == finish {
-		log.Infof("finish agent: %v", respContext.DownloadContext.DownloadList)
-	}
 	return &AgentChatResp{
 		Code:          agentSuccessCode,
 		Message:       "success",
