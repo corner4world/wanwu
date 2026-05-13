@@ -468,7 +468,30 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 		opts = append(opts, knowledgeOpts...)
 	}
 
-	// 持久化存储
+	// 校验并构建Ontology知识网络的配置选项（追加@提及的Ontology知识网络）
+	ontologyOpts, ontologyMessage, err := buildWgaOntologyKnowledgeOptions(ctx, userID, orgID, agentID, wgaConfig.OntologyKnowledgeList, mentionResources.OntologyList)
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, ontologyOpts...)
+
+	// 历史消息 + @资源提示消息 + 当前用户消息
+	messages, err := filterWgaHistoryMessages(ctx, userID, orgID, threadID)
+	if err != nil {
+		return nil, err
+	}
+	if mentionResources.hasResources() {
+		messages = append(messages, buildWgaMentionResourcesMessage(mentionResources))
+	}
+	// 追加Ontology知识网络系统提示消息
+	if ontologyMessage != nil {
+		messages = append(messages, ontologyMessage)
+	}
+	// 当前用户消息放在最后
+	messages = append(messages, convertWgaMessage(userInputMessage.Role, userInputMessage.Content))
+	opts = append(opts, wga_option.WithMessages(messages))
+
+	// 持久化存储（最后一步，确保前面所有配置校验通过才创建工作空间目录）
 	if workspaceStore != nil {
 		dirs, err := PrepareWgaWorkspaceDirs(workspaceStore, runID, true)
 		if err != nil {
@@ -485,17 +508,6 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 			}
 		}
 	}
-
-	// 历史消息 + @资源提示消息 + 当前用户消息
-	messages, err := filterWgaHistoryMessages(ctx, userID, orgID, threadID)
-	if err != nil {
-		return nil, err
-	}
-	if mentionResources.hasResources() {
-		messages = append(messages, buildWgaMentionResourcesMessage(mentionResources))
-	}
-	messages = append(messages, convertWgaMessage(userInputMessage.Role, userInputMessage.Content))
-	opts = append(opts, wga_option.WithMessages(messages))
 
 	return opts, nil
 }
@@ -623,6 +635,9 @@ func buildWgaMentionResourcesMessage(resources *wgaMentionResources) *schema.Mes
 	}
 	for _, item := range resources.KnowledgeItems {
 		lines = append(lines, fmt.Sprintf("- @%s (knowledge) %s", item.Name, item.Desc))
+	}
+	for _, item := range resources.OntologyItems {
+		lines = append(lines, fmt.Sprintf("- @%s (ontology knowledge network) %s", item.Name, item.Desc))
 	}
 
 	return &schema.Message{

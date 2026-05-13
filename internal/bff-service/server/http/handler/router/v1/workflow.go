@@ -20,6 +20,7 @@ func registerWorkflow(apiV1 *gin.RouterGroup) {
 
 	mid.Sub("app.workflow").Reg(apiV1, "/workflow/tool/action", http.MethodGet, v1.GetWorkflowToolDetail, "获取Tool具体action")
 	mid.Sub("app.workflow").Reg(apiV1, "/workflow/tool/select", http.MethodGet, v1.GetWorkflowToolSelect, "获取Tool列表")
+	mid.Sub("app.workflow").Reg(apiV1, "/workflow/tool/box", http.MethodGet, v1.GetWorkflowToolBoxDetail, "工具箱明细查询（只用于适配本体智能体）")
 
 	mid.Sub("app.workflow").Reg(apiV1, "/workflow/select", http.MethodGet, v1.GetWorkflowSelect, "智能体工作流下拉列表接口")
 

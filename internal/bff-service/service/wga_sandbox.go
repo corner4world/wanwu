@@ -141,6 +141,14 @@ func getWgaSandboxConfig() (wga_sandbox_option.SandboxConfig, error) {
 	return wga_sandbox_option.SandboxReuse(cfg.Host), nil
 }
 
+func getWgaSandboxOntologyConfig() (wga_sandbox_option.SandboxConfig, error) {
+	cfg := config.Cfg().WgaSandbox.SandboxOntology
+	if cfg.Type != "reuse" || cfg.Host == "" {
+		return wga_sandbox_option.SandboxConfig{}, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "sandbox(ontology) config not available or not in reuse mode")
+	}
+	return wga_sandbox_option.SandboxReuse(cfg.Host), nil
+}
+
 func convertWgaSandboxSkillVariables(variables []request.WgaSandboxSkillVariable) []wga_sandbox_option.SkillVariable {
 	if len(variables) == 0 {
 		return nil

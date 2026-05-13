@@ -393,8 +393,25 @@ wga-sandbox:
     type: reuse
     host: wga-sandbox-wanwu
     image-name: ""
+  sandbox-ontology:
+    type: reuse
+    host: wga-sandbox-ontology-wanwu
+    image-name: ""
 
 ontology:
   enable: 0
   endpoint: http://vega-web:3010
   knowledge_network_list_uri: /vega/api/ontology-manager/v1/knowledge-networks
+  smart_data_skills:
+    - name: smart-data-analysis
+      desc: 数据分析总入口，负责意图识别、KN选择、SQL生成和路由
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-data-analysis
+    - name: smart-search-tables
+      desc: 找表/找数编排，在元数据型知识网络下检索表/视图实例
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-search-tables
+    - name: smart-ask-data
+      desc: 问数编排，执行SQL取数
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-ask-data
+    - name: ontology-core
+      desc: ontology CLI命令执行器，所有ontology命令的底层执行
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/ontology-core

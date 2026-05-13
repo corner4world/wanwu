@@ -202,6 +202,31 @@ func GetWorkflowToolDetail(ctx *gin.Context) {
 	gin_util.Response(ctx, data, err)
 }
 
+// GetWorkflowToolBoxDetail
+//
+//	@Tags		workflow
+//	@Summary	工具箱明细查询（已解析 schema），对接本体智能体专用接口
+//	@Description按 box_id + box_type 查询工具箱内的 action 明细，schema 已自动解析展开为 tools[]；支持 tool_id 精确过滤
+//	@Security	JWT
+//	@Accept		json
+//	@Produce	json
+//	@Param		box_id		query		string	false	"工具箱id（对应 toolSquareId 或 customToolId）"
+//	@Param		box_type	query		string	false	"工具箱类型：builtin / custom"
+//	@Param		tool_id		query		string	false	"action 的 operationId，传了则精确过滤"
+//	@Param		page		query		int		false	"当前页码"
+//	@Param		page_size	query		int		false	"每页显示数量"
+//	@Param		status		query		string	false	"工具集状态过滤"
+//	@Success	200			{object}	response.Response{data=response.ToolBoxDetail}
+//	@Router		/workflow/tool/box [get]
+func GetWorkflowToolBoxDetail(ctx *gin.Context) {
+	var req request.ToolBoxDetailReq
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.GetToolBoxDetail(ctx, getUserID(ctx), getOrgID(ctx), &req)
+	gin_util.Response(ctx, resp, err)
+}
+
 // GetWorkflowSelect
 //
 //	@Tags		workflow

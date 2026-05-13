@@ -137,7 +137,8 @@ type DifyKnowledgeConfig struct {
 }
 
 type WgaSandboxConfig struct {
-	Sandbox WgaSandboxSandboxConfig `json:"sandbox" mapstructure:"sandbox"`
+	Sandbox         WgaSandboxSandboxConfig `json:"sandbox" mapstructure:"sandbox"`
+	SandboxOntology WgaSandboxSandboxConfig `json:"sandbox-ontology" mapstructure:"sandbox-ontology"`
 }
 
 type WgaSandboxSandboxConfig struct {
@@ -147,9 +148,16 @@ type WgaSandboxSandboxConfig struct {
 }
 
 type OntologyServiceConfig struct {
-	Enable                  int    `json:"enable" mapstructure:"enable"`
-	Endpoint                string `json:"endpoint" mapstructure:"endpoint"`
-	KnowledgeNetworkListUri string `json:"knowledge_network_list_uri" mapstructure:"knowledge_network_list_uri"`
+	Enable                  int                            `json:"enable" mapstructure:"enable"`
+	Endpoint                string                         `json:"endpoint" mapstructure:"endpoint"`
+	KnowledgeNetworkListUri string                         `json:"knowledge_network_list_uri" mapstructure:"knowledge_network_list_uri"`
+	SmartDataSkills         []OntologySmartDataSkillConfig `json:"smart_data_skills" mapstructure:"smart_data_skills"`
+}
+
+type OntologySmartDataSkillConfig struct {
+	Name      string `json:"name" mapstructure:"name"`
+	Desc      string `json:"desc" mapstructure:"desc"`
+	SkillPath string `json:"skillPath" mapstructure:"skillPath"`
 }
 
 type WorkflowTemplatePathConfig struct {

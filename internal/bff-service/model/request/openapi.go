@@ -59,7 +59,7 @@ type OpenAPICreateAgentRequest struct {
 }
 
 func (req *OpenAPICreateAgentRequest) Check() error {
-	return nil
+	return validateAppBrief(req.AppBriefConfig, "智能体")
 }
 
 type OpenAPIWorkflowRunReq struct {

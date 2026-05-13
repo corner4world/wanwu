@@ -368,6 +368,21 @@ func GeneralAgentReplyQuestion(ctx context.Context, runID string, questionID str
 	if err != nil {
 		return err
 	}
+
+	if config.Cfg().Ontology.Enable != 0 {
+		go func() {
+			defer util.PrintPanicStack()
+			ontologySandboxCfg, err := getWgaSandboxOntologyConfig()
+			if err != nil {
+				log.Errorf("get ontology sandbox config failed: %v", err)
+				return
+			}
+			if err := wga_sandbox.ReplyQuestion(context.Background(), ontologySandboxCfg, runID, questionID, answers); err != nil {
+				log.Warnf("reply ontology question failed, runID: %s, questionID: %s, err: %v", runID, questionID, err)
+			}
+		}()
+	}
+
 	return wga_sandbox.ReplyQuestion(ctx, sandboxCfg, runID, questionID, answers)
 }
 
@@ -376,5 +391,20 @@ func GeneralAgentRejectQuestion(ctx context.Context, runID string, questionID st
 	if err != nil {
 		return err
 	}
+
+	if config.Cfg().Ontology.Enable != 0 {
+		go func() {
+			defer util.PrintPanicStack()
+			ontologySandboxCfg, err := getWgaSandboxOntologyConfig()
+			if err != nil {
+				log.Errorf("get ontology sandbox config failed: %v", err)
+				return
+			}
+			if err := wga_sandbox.RejectQuestion(context.Background(), ontologySandboxCfg, runID, questionID); err != nil {
+				log.Warnf("reject ontology question failed, runID: %s, questionID: %s, err: %v", runID, questionID, err)
+			}
+		}()
+	}
+
 	return wga_sandbox.RejectQuestion(ctx, sandboxCfg, runID, questionID)
 }
