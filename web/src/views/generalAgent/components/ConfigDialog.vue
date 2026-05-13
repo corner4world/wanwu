@@ -3,7 +3,6 @@
     <el-dialog
       :visible.sync="dialogVisible"
       width="50%"
-      min-width="400px"
       custom-class="config-dialog"
       :close-on-click-modal="false"
       @close="handleClose"
@@ -134,7 +133,17 @@
                   {{ item.desc }}
                 </div>
               </div>
+              <el-radio
+                v-if="currentListConfig.type === 'ontology'"
+                :label="item.id"
+                :value="selectedResources[currentListConfig.type]?.[0]?.id"
+                @change="handleToggleItem(item)"
+                @click.native.stop
+              >
+                {{ '' }}
+              </el-radio>
               <el-checkbox
+                v-else
                 :value="isItemSelected(item.id)"
                 @click.native.stop
                 @change="handleToggleItem(item)"
@@ -556,6 +565,19 @@ export default {
 
     handleToggleResource(item, resourceType) {
       const itemId = item.id;
+
+      // ontology 类型使用单选逻辑
+      if (resourceType === 'ontology') {
+        this.$set(this.selectedResources, resourceType, [
+          {
+            id: itemId,
+            type: item.type,
+          },
+        ]);
+        return;
+      }
+
+      // 其他类型使用多选逻辑
       const selectedList = this.selectedResources[resourceType];
       const index = selectedList.findIndex(r => r.id === itemId);
 
@@ -621,6 +643,7 @@ export default {
 
 <style lang="scss">
 .config-dialog {
+  min-width: 1000px;
   .el-dialog__header {
     padding: 16px 20px;
     border-bottom: 1px solid #e5e5e5;
@@ -835,6 +858,10 @@ export default {
     }
 
     .el-checkbox {
+      margin-left: 8px;
+    }
+
+    .el-radio {
       margin-left: 8px;
     }
   }
