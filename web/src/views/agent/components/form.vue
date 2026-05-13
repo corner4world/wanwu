@@ -908,7 +908,7 @@ export default {
           topP: 1,
           frequencyPenalty: 0,
           presencePenalty: 0,
-          maxTokens: 512,
+          maxTokens: 1024,
           maxTokensEnable: true,
           frequencyPenaltyEnable: true,
           temperatureEnable: true,
