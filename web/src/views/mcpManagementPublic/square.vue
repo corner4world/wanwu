@@ -138,7 +138,7 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .scroll-card-container-mcp {
   max-height: calc(100vh - 120px);
 }

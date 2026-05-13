@@ -1485,14 +1485,14 @@ export default {
       send: {
         title: '添加MCP服务',
       },
-      sendHint1: '* 将MCP发送到资源库后，您可在工作流或智能体中直接调用。',
-      sendHint2: '* 您已添加到资源库，可直接在工作流或智能体中直接调用。',
+      sendHint1: '将MCP发送到资源库后，您可在工作流或智能体中直接调用。',
+      sendHint2: '您已添加到资源库，可直接在工作流或智能体中直接调用。',
 
       tool: {
         info: '工具介绍：',
         desc: '描述：',
         params: '参数说明：',
-        setup: '安装说明：',
+        setup: '安装说明',
         cursor: {
           title: '在 Cursor 中安装',
           step1: "1. 点击Cursor右上角'设置'，进入左侧菜单中的'MCP'选项",

@@ -58,21 +58,30 @@
           </div>
         </div>
 
-        <div>
+        <div style="padding-top: 10px">
           <div
             class="overview bg-border"
             v-if="detail.summary || detail.feature || detail.scenario"
           >
             <div class="overview-item" v-if="detail.summary">
-              <div class="item-title">• &nbsp;{{ $t('square.summary') }}</div>
+              <div class="item-title">
+                <img src="@/assets/imgs/detail_title_icon.png" alt="" />
+                <span>{{ $t('square.summary') }}</span>
+              </div>
               <div class="item-desc" v-html="parseTxt(detail.summary)"></div>
             </div>
             <div class="overview-item" v-if="detail.feature">
-              <div class="item-title">• &nbsp;{{ $t('square.feature') }}</div>
+              <div class="item-title">
+                <img src="@/assets/imgs/detail_title_icon.png" alt="" />
+                <span>{{ $t('square.feature') }}</span>
+              </div>
               <div class="item-desc" v-html="parseTxt(detail.feature)"></div>
             </div>
             <div class="overview-item" v-if="detail.scenario">
-              <div class="item-title">• &nbsp;{{ $t('square.scenario') }}</div>
+              <div class="item-title">
+                <img src="@/assets/imgs/detail_title_icon.png" alt="" />
+                <span>{{ $t('square.scenario') }}</span>
+              </div>
               <div class="item-desc">
                 <div v-html="parseTxt(detail.scenario)"></div>
               </div>
@@ -80,11 +89,14 @@
           </div>
           <div class="overview bg-border" v-if="detail.note">
             <div class="overview-item">
-              <div class="item-title">• &nbsp;{{ $t('square.note') }}</div>
+              <div class="item-title">
+                <img src="@/assets/imgs/detail_title_icon.png" alt="" />
+                <span>{{ $t('square.note') }}</span>
+              </div>
               <div class="item-desc" v-html="parseTxt(detail.note)"></div>
             </div>
           </div>
-          <div class="overview bg-border" v-if="detail.skillMarkdown">
+          <div class="overview" v-if="detail.skillMarkdown">
             <div class="overview-item">
               <div class="item-desc">
                 <div class="tempSquare-markdown">
@@ -191,7 +203,7 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/style/tabs.scss';
-@import '@/style/tempSquare-detail.scss';
+@import '@/style/squareDetail.scss';
 .tempSquare-markdown {
   ::v-deep .code-header {
     padding: 0 0 5px 0;

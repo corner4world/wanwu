@@ -368,71 +368,14 @@ export default {
   },
 };
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 @import '@/style/tabs.scss';
+@import '@/style/squareDetail.scss';
+
 .mcp-detail {
-  padding: 20px;
-  overflow: auto;
-
-  .back {
-    color: $color;
-    cursor: pointer;
-  }
-
-  .mcp-title {
-    padding: 20px 0;
-    display: flex;
-    border-bottom: 1px solid #bfbfbf;
-
-    .logo {
-      width: 54px;
-      height: 54px;
-      object-fit: cover;
-    }
-
-    .info {
-      position: relative;
-      width: 100%;
-      margin-left: 15px;
-
-      .name {
-        font-size: 16px;
-        color: #5d5d5d;
-        font-weight: bold;
-      }
-
-      .desc {
-        margin-top: 10px;
-        line-height: 22px;
-        color: #9f9f9f;
-        word-break: break-all;
-      }
-
-      .arrow {
-        position: absolute;
-        display: block;
-        right: 0;
-        bottom: -5px;
-        cursor: pointer;
-        color: $color;
-        margin-left: 10px;
-        font-size: 13px;
-      }
-    }
-
-    .fold {
-      height: auto;
-    }
-  }
-
   .mcp-main {
-    display: flex;
-    margin: 10px 0 0 0;
-
     .info {
       width: 100%;
-      margin-right: 20px;
-
       .tool {
         .tool-item {
           border-bottom: 1px solid #eee;
@@ -455,8 +398,12 @@ export default {
           border-bottom: none;
         }
 
+        ::v-deep .el-table {
+          margin-top: 10px;
+        }
+
         .schema-textarea {
-          .el-textarea__inner {
+          ::v-deep .el-textarea__inner {
             height: 200px !important;
           }
         }
@@ -475,64 +422,7 @@ export default {
         }
       }
     }
-
-    .right-recommend {
-      width: 400px;
-      overflow-y: auto;
-      border-left: 1px solid #eee;
-      padding: 20px;
-      max-height: 900px;
-
-      .recommend-item {
-        position: relative;
-        border: 1px solid $border_color;
-        background: $color_opacity;
-        margin-bottom: 15px;
-        border-radius: 10px;
-        padding: 20px 20px 20px 80px;
-        text-align: left;
-        cursor: pointer;
-
-        .logo {
-          width: 46px;
-          height: 46px;
-          object-fit: cover;
-          position: absolute;
-          left: 20px;
-          border: 1px solid #fff;
-          border-radius: 4px;
-        }
-
-        .name {
-          color: #5d5d5d;
-          font-weight: bold;
-        }
-
-        .intro {
-          height: 36px;
-          color: #5d5d5d;
-          margin-top: 8px;
-          font-size: 13px;
-          overflow: hidden;
-        }
-      }
-    }
   }
-
-  .bg-border {
-    margin-top: 20px;
-    /*min-height: calc(100vh - 360px);*/
-    background-color: rgba(255, 255, 255, 1);
-    box-sizing: border-box;
-    /*border:1px solid rgba(208, 167, 167, 1);*/
-    border-radius: 10px;
-    padding: 10px 20px;
-    box-shadow: 2px 2px 15px $color_opacity;
-  }
-}
-
-.el-button.is-disabled {
-  background: #f9f9f9 !important;
 }
 
 .tooltip {

@@ -1,13 +1,15 @@
 <template>
   <div class="add-dialog">
-    <el-dialog
-      :title="$t('tool.square.send.title')"
+    <el-drawer
       :visible.sync="dialogVisible"
-      width="50%"
-      :show-close="false"
-      :close-on-click-modal="false"
+      size="45%"
+      :before-close="handleCancel"
     >
-      <div>
+      <div slot="title" class="send-title">
+        <img src="@/assets/imgs/detail_send_title_icon.png" alt="" />
+        <span>{{ $t('tool.square.send.title') }}</span>
+      </div>
+      <div class="send-content">
         <el-form
           :model="ruleForm"
           :rules="rules"
@@ -41,26 +43,25 @@
             </el-button>
           </el-form-item>
         </el-form>
-        <el-divider v-if="mcpList.length > 0"></el-divider>
         <ul class="mcpList" v-if="mcpList.length > 0">
           <li v-for="(item, index) in mcpList" :key="index">{{ item.name }}</li>
         </ul>
+        <span class="send-footer">
+          <el-button
+            type="primary"
+            size="mini"
+            :disabled="mcpList.length === 0"
+            @click="submitForm('ruleForm')"
+            :loading="publishLoading"
+          >
+            {{ $t('tool.integrate.publish') }}
+          </el-button>
+          <el-button @click="handleCancel" size="mini">
+            {{ $t('common.button.cancel') }}
+          </el-button>
+        </span>
       </div>
-      <span slot="footer" class="dialog-footer">
-        <el-button
-          type="primary"
-          size="mini"
-          :disabled="mcpList.length === 0"
-          @click="submitForm('ruleForm')"
-          :loading="publishLoading"
-        >
-          {{ $t('tool.integrate.publish') }}
-        </el-button>
-        <el-button @click="handleCancel" size="mini">
-          {{ $t('common.button.cancel') }}
-        </el-button>
-      </span>
-    </el-dialog>
+    </el-drawer>
   </div>
 </template>
 <script>
@@ -163,17 +164,47 @@ export default {
   }
   .mcpList {
     list-style: none;
+    padding-bottom: 30px;
     li {
-      padding: 10px;
-      border: 1px solid #ddd;
+      padding: 5px 10px;
       border-radius: 5px;
       margin-bottom: 10px;
-      background: #fff;
+      background: $color_opacity;
+      color: $color;
     }
   }
   .description-text .el-form-item__content {
     line-height: 24px !important;
     padding: 10px 0;
+  }
+  .send-title {
+    display: flex;
+    align-items: center;
+    img {
+      width: 25px;
+      margin-right: 8px;
+    }
+    span {
+      font-size: 16px;
+      font-weight: bold;
+      color: $color_title;
+    }
+  }
+  ::v-deep .el-drawer__close-btn {
+    margin-top: -14px;
+  }
+  .send-content {
+    padding: 0 20px 50px;
+    overflow-y: scroll;
+  }
+  .send-footer {
+    padding: 20px;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #fff;
+    text-align: right;
   }
 }
 </style>
