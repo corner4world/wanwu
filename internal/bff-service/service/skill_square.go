@@ -83,11 +83,10 @@ func ShareSquareSkill(ctx *gin.Context, userId, orgId, skillId string) error {
 			objectPath = filepath.Join(minio.BucketFileUpload, minio.DirFileNotExpire, fileName)
 		}
 	}
-
+	// 第一次不传 Avatar，因为avatar得图片是内置的，后续用户更新时再传
 	_, err = mcp.AcquiredSkillCreate(ctx.Request.Context(), &mcp_service.AcquiredSkillCreateReq{
 		Identity:      &mcp_service.Identity{UserId: userId, OrgId: orgId},
 		Name:          skillsCfg.Name,
-		Avatar:        skillsCfg.Avatar,
 		SquareSkillId: skillId,
 		Author:        skillsCfg.Author,
 		Desc:          skillsCfg.Desc,
