@@ -31,6 +31,26 @@ export default {
     },
   },
 
+  watch: {
+    // 监听 streamingMap 的变化，自动同步到 skillManager
+    streamingMap: {
+      handler(newVal) {
+        // 检查是否有任何会话在流式传输
+        const anyStreaming = Object.values(newVal).some(
+          state => state?.isStreaming === true,
+        );
+
+        // 直接设置 previewIsStreaming 或 mainIsStreaming
+        if (this.$options.name === 'GeneralAgent') {
+          this.mainIsStreaming = anyStreaming;
+        } else if (this.$options.name === 'PreviewChat') {
+          this.previewIsStreaming = anyStreaming;
+        }
+      },
+      deep: true,
+    },
+  },
+
   beforeDestroy() {
     // 清理所有会话的流式状态
     this.cleanupAllStreams();
@@ -261,7 +281,10 @@ export default {
               // 递归查找匹配的 question fragment
               const findQuestionFragment = frags => {
                 for (const frag of frags) {
-                  if (frag.type === 'question' && frag.questionId === questionId) {
+                  if (
+                    frag.type === 'question' &&
+                    frag.questionId === questionId
+                  ) {
                     return frag;
                   }
                   // 检查 activity 内部的 fragments
@@ -275,7 +298,8 @@ export default {
               const existingFragment = findQuestionFragment(fragments);
               if (existingFragment) {
                 existingFragment.status = status;
-                existingFragment.answers = activityContent.answers || existingFragment.answers;
+                existingFragment.answers =
+                  activityContent.answers || existingFragment.answers;
               }
               // answered/rejected 状态不创建新 fragment，继续处理后续事件
             } else if (status === 'pending') {
@@ -309,10 +333,7 @@ export default {
           break;
 
         case 'REASONING_MESSAGE_CONTENT':
-          if (
-            streamState.currentFragment &&
-            streamState.currentFragment.type === 'reasoning'
-          ) {
+          if (streamState.currentFragment?.type === 'reasoning') {
             streamState.currentFragment.content += parsed.delta;
             if (!streamState.currentActivity) {
               assistantMessage.reasoning += parsed.delta;
@@ -321,10 +342,7 @@ export default {
           break;
 
         case 'REASONING_MESSAGE_END':
-          if (
-            streamState.currentFragment &&
-            streamState.currentFragment.type === 'reasoning'
-          ) {
+          if (streamState.currentFragment?.type === 'reasoning') {
             if (streamState.currentFragment.startTime) {
               streamState.currentFragment.duration = formatDuration(
                 Date.now() - streamState.currentFragment.startTime,
@@ -350,10 +368,7 @@ export default {
           break;
 
         case 'TEXT_MESSAGE_CONTENT':
-          if (
-            streamState.currentFragment &&
-            streamState.currentFragment.type === 'text'
-          ) {
+          if (streamState.currentFragment?.type === 'text') {
             streamState.currentFragment.content += parsed.delta;
             if (!streamState.currentActivity) {
               assistantMessage.content += parsed.delta;
@@ -362,10 +377,7 @@ export default {
           break;
 
         case 'TEXT_MESSAGE_END':
-          if (
-            streamState.currentFragment &&
-            streamState.currentFragment.type === 'text'
-          ) {
+          if (streamState.currentFragment?.type === 'text') {
             streamState.currentFragment.isStreaming = false;
           }
           streamState.currentFragment = null;
@@ -433,7 +445,7 @@ export default {
           const toolCallFragment = fragments.find(
             f => f.type === 'tool_call' && f.toolCall?.id === parsed.toolCallId,
           );
-          if (toolCallFragment && toolCallFragment.toolCall) {
+          if (toolCallFragment?.toolCall) {
             toolCallFragment.toolCall.result = parsed.content;
             toolCallFragment.toolCall.status = 'completed';
             if (toolCallFragment.toolCall.startTime) {
@@ -470,7 +482,7 @@ export default {
      */
     generateId() {
       return (
-        'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+        'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 11)
       );
     },
   },

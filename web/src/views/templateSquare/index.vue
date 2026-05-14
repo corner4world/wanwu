@@ -34,18 +34,16 @@
         :type="prompt"
         v-if="type === prompt"
       />
-      <SkillTempSquare :type="skill" v-if="type === skill" />
     </div>
   </div>
 </template>
 <script>
 import TempSquare from './tempSquare.vue';
 import PromptTempSquare from './prompt/promptTempSquare.vue';
-import SkillTempSquare from './skills/skillTempSquare.vue';
 import { WORKFLOW, PROMPT, SKILL } from './constants';
 
 export default {
-  components: { TempSquare, PromptTempSquare, SkillTempSquare },
+  components: { TempSquare, PromptTempSquare },
   data() {
     return {
       isPublic: true,
@@ -53,7 +51,6 @@ export default {
         'linear-gradient(1deg, rgb(247, 252, 255) 50%, rgb(233, 246, 254) 98%)',
       workflow: WORKFLOW,
       prompt: PROMPT,
-      skill: SKILL,
       type: '',
       tabList: [
         // { name: this.$t('tempSquare.workflow'), type: WORKFLOW },

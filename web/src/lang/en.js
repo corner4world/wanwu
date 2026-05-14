@@ -185,6 +185,7 @@ export default {
       tip: 'Tip',
       download: 'Download',
       retry: 'Retry',
+      convertToSkill: '转化为Skill',
     },
     switch: {
       start: '开启',
@@ -339,7 +340,12 @@ export default {
     detail: {
       backText: '返回Skill广场',
       otherSkill: '其他Skill查看',
+      apiKeyEmptyTips:
+        '请仔细阅读以下文档，若需配置变量，请发送到资源库，进行配置后使用',
+      apiKeyEmptyTips_builtin:
+        '请仔细阅读以下文档，若需配置变量，请到资源库进行配置后使用',
     },
+    builtin: '内置',
   },
   uploadDialog: {
     title: '文件上传',
@@ -722,6 +728,7 @@ export default {
     skills: {
       name: 'skill',
       app: {
+        builtin: 'Built-in',
         myAdded: '我添加的',
         myCreated: '我创建的',
         addText: '创建自定义Skills',
@@ -743,6 +750,15 @@ export default {
         uploadPlaceholder: '选择上传文件',
         uploadTips: '只能上传zip格式文件，文件大小不能超过20M',
         authorPlaceholder: '请填写作者名称',
+        convertTitle: 'Convert Skill',
+        model: 'Model',
+        modelPlaceholder: 'Please select a model',
+        authorRequired: 'Please enter the author',
+        modelRequired: 'Please select a model',
+        missingTarget: 'Missing conversion target information',
+        invalidModel: 'Please select a valid model',
+        convertStart: 'Conversion start!',
+        convertFailed: 'Conversion failed',
       },
       formRules: {
         avatar: '请上传图标',
@@ -750,8 +766,29 @@ export default {
         desc: '请填写描述',
         zipFormat: '请上传zip格式文件',
         zipSize: '文件大小不能超过20M',
-        zipUrl: '请上传文件',
-        zipCheckFailed: '文件校验失败，请重新上传',
+        zipUrl: 'Please upload the file',
+        zipCheckFailed: 'File verification failed, please upload again',
+      },
+      apiKeyConfig: {
+        title: '变量配置',
+        table: {
+          name: 'Name',
+          desc: 'Description',
+          variableKey: 'Variable Key',
+          variableValue: 'Variable Value',
+          operation: 'Actions',
+          emptyText:
+            'No variable configuration available, please click the button to add',
+        },
+        button: {
+          add: '新建变量',
+        },
+        placeholder: {
+          name: 'Enter Name',
+          desc: 'Enter Description',
+          variableKey: 'Enter Variable Key',
+          variableValue: 'Enter Variable Value',
+        },
       },
     },
   },
@@ -1877,9 +1914,11 @@ export default {
     header: {
       welcomeTitle: '你好，我是万悟',
       config: '配置',
+      importSkill: 'Import Skill',
       uploadFile: '上传文件',
       footer: '通用智能体 · 内容由 AI 生成，仅供参考',
       placeholder: '选择一款模型,和我对话吧',
+      workspace: '工作空间',
     },
     message: {
       reasoning: '【思考过程】\n',
@@ -1997,6 +2036,22 @@ export default {
       downloadWorkspaceFailed: 'Failed to download workspace:',
       confirmDeleteConversation:
         'Are you sure you want to delete this conversation?',
+    },
+    skill: {
+      selectModelFirst: 'Please select a model',
+      panel: {
+        preview: '预览',
+        variableConfig: '变量配置',
+      },
+      preview: {
+        placeholder: '请输入内容',
+      },
+      importPrompt: '开始处理这个技能',
+      convertPrompt: '开始处理这个技能',
+      defaultPrompt: '开始处理这个技能',
+      convertTypeError: '该类型不支持转化为技能',
+      invalidSkill: '无效的技能 ID',
+      loadDetailError: '获取技能详情失败',
     },
     question: {
       pleaseSelect: 'Please Select',

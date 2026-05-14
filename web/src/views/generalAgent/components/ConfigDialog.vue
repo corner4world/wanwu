@@ -84,7 +84,6 @@
                       v-if="tool.avatar?.path"
                       :src="avatarSrc(tool.avatar.path)"
                     />
-                    <i v-else class="el-icon-setting"></i>
                   </div>
                   <div class="item-info">
                     <div class="item-name">{{ tool.toolName }}</div>

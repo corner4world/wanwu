@@ -13,13 +13,14 @@
                   v-for="(item, index) in list"
                   :key="index"
                   :info="item"
-                  :type="1"
+                  :type="4"
                   @download="handleDownload"
                   @click="handleCardClick"
                 >
                   <template v-slot:operations="{ info }">
                     <div class="skill-card-operations">
                       <el-tooltip
+                        v-if="showShared"
                         :content="
                           info.isShared
                             ? $t('skillSpace.isShared')
@@ -81,6 +82,10 @@ export default {
     loading: {
       type: Boolean,
       default: false,
+    },
+    showShared: {
+      type: Boolean,
+      default: true,
     },
   },
   data() {

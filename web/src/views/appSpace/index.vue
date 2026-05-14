@@ -60,6 +60,7 @@
         :isShowTool="true"
         :isDev="true"
         @reloadData="getTableData"
+        @convertToSkill="handleConvertToSkill"
       />
       <CreateTotalDialog ref="createTotalDialog" />
       <UploadFileDialog
@@ -68,6 +69,7 @@
         :title="$t('appSpace.workflowExport')"
         ref="uploadFileDialog"
       />
+      <ConvertSkillDialog ref="convertSkillDialog" />
     </div>
   </div>
 </template>
@@ -77,13 +79,20 @@ import SearchInput from '@/components/searchInput.vue';
 import AppList from '@/components/appList.vue';
 import CreateTotalDialog from '@/components/createTotalDialog.vue';
 import UploadFileDialog from '@/components/uploadFileDialog.vue';
+import ConvertSkillDialog from '@/components/skills/convertSkillDialog.vue';
 import { getAppSpaceList, agentTemplateList } from '@/api/appspace';
 import { CHAT, WORKFLOW, RAG, AGENT } from '@/utils/commonSet';
 import { mapGetters } from 'vuex';
 import { fetchPermFirPath } from '@/utils/util';
 
 export default {
-  components: { SearchInput, CreateTotalDialog, UploadFileDialog, AppList },
+  components: {
+    SearchInput,
+    CreateTotalDialog,
+    UploadFileDialog,
+    AppList,
+    ConvertSkillDialog,
+  },
   data() {
     return {
       type: '',
@@ -224,6 +233,13 @@ export default {
           this.$refs.createTotalDialog.openDialog();
           break;
       }
+    },
+    // 转化为 Skill
+    handleConvertToSkill(row) {
+      this.$refs.convertSkillDialog.open({
+        id: row.appId,
+        type: row.appType,
+      });
     },
   },
 };

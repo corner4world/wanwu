@@ -121,9 +121,9 @@ const constantRoutes = [
         meta: { perm: [PERMS.SKILL] },
       },
       {
-        path: '/skill/create',
+        path: '/skill/workshop',
         component: resolve =>
-          require(['@/views/templateSquare/skills/custom/create.vue'], resolve),
+          require(['@/views/templateSquare/skills/skillWorkshop.vue'], resolve),
         meta: { perm: [PERMS.SKILL] },
       },
       {

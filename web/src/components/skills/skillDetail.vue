@@ -49,6 +49,21 @@
 
     <div class="tempSquare-main">
       <div class="left-info">
+        <div class="info-config" v-if="visibleVariableConfig">
+          <div class="tabs">
+            <div class="tab active">
+              {{ $t('tempSquare.skills.apiKeyConfig.title') }}
+            </div>
+          </div>
+
+          <ApiKeyTable
+            :dataList="detail.variables || []"
+            @create-variable="handleCreateVariable"
+            @update-variable="handleUpdateVariable"
+            @delete-variable="handleDeleteVariable"
+          />
+        </div>
+
         <div class="tabs">
           <div
             :class="['tab', { active: tabActive === 0 }]"
@@ -138,10 +153,11 @@
 // 这里不导入任何 API 文件，仅仅作为一个单纯的展示组件 (Dump Component)
 import { avatarSrc } from '@/utils/util';
 import MdRender from '@/components/mdRender.vue';
+import ApiKeyTable from '@/components/skills/ApiKeyTable.vue';
 
 export default {
   name: 'SkillDetail',
-  components: { MdRender },
+  components: { MdRender, ApiKeyTable },
   props: {
     // 详情主数据
     detail: {
@@ -168,6 +184,11 @@ export default {
     backText: {
       type: String,
       default: '',
+    },
+    // 是否显示变量配置区域
+    visibleVariableConfig: {
+      type: Boolean,
+      default: true,
     },
   },
   data() {
@@ -197,6 +218,24 @@ export default {
     fold() {
       this.foldStatus = !this.foldStatus;
     },
+    handleCreateVariable(variable) {
+      this.$emit('create-variable', {
+        skillId: this.detail.skillId,
+        variable,
+      });
+    },
+    handleUpdateVariable(variable) {
+      const { id, ...restVariable } = variable;
+      this.$emit('update-variable', {
+        id,
+        variable: restVariable,
+      });
+    },
+    handleDeleteVariable(variable) {
+      this.$emit('delete-variable', {
+        id: variable.id,
+      });
+    },
   },
 };
 </script>
@@ -208,5 +247,9 @@ export default {
   ::v-deep .code-header {
     padding: 0 0 5px 0;
   }
+}
+
+.info-config {
+  margin-bottom: 10px;
 }
 </style>

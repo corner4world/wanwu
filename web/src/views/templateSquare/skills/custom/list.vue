@@ -11,9 +11,6 @@
                 ref="searchInput"
                 @handleSearch="doGetSkillTempList"
               />
-              <el-button size="mini" type="primary" @click="handleImport">
-                {{ $t('common.button.import') }}
-              </el-button>
             </div>
 
             <div class="card-loading-box scroll-card-container">
@@ -51,21 +48,15 @@
         </div>
       </div>
     </div>
-    <skill-dialog
-      ref="skillDialog"
-      :type="dialogType"
-      @reload="doGetSkillTempList"
-    />
   </div>
 </template>
 <script>
 import SkillCard from '../card.vue';
 import SearchInput from '@/components/searchInput.vue';
-import SkillDialog from './components/SkillDialog.vue';
 import { getCustomSkillList, deleteCustomSkill } from '@/api/templateSquare';
 import { directDownload } from '@/utils/util';
 export default {
-  components: { SearchInput, SkillCard, SkillDialog },
+  components: { SearchInput, SkillCard },
   props: {
     type: '',
   },
@@ -121,20 +112,16 @@ export default {
       });
     },
     handleAddSkill() {
-      const path = '/skill/create';
+      const path = '/skill/workshop';
       this.$router.push({
         path,
+        query: { chatType: 'skill' },
       });
     },
 
     handleDownload(info) {
       const { zipUrl } = info;
       directDownload(zipUrl);
-    },
-    // 打开导入弹框
-    handleImport() {
-      this.dialogType = 'import';
-      this.$refs.skillDialog.openDialog();
     },
   },
 };

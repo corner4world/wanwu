@@ -108,7 +108,10 @@ export function aggregateEventsToMessages(events) {
             // 递归查找匹配的 question fragment
             const findQuestionFragment = frags => {
               for (const frag of frags) {
-                if (frag.type === 'question' && frag.questionId === questionId) {
+                if (
+                  frag.type === 'question' &&
+                  frag.questionId === questionId
+                ) {
                   return frag;
                 }
                 // 检查 activity 内部的 fragments
@@ -122,7 +125,8 @@ export function aggregateEventsToMessages(events) {
             const existingFragment = findQuestionFragment(fragments);
             if (existingFragment) {
               existingFragment.status = status;
-              existingFragment.answers = activityContent.answers || existingFragment.answers;
+              existingFragment.answers =
+                activityContent.answers || existingFragment.answers;
             }
             // answered/rejected 状态不创建新 fragment
           } else if (status === 'pending') {

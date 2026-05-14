@@ -12,13 +12,8 @@ export default {
 
   computed: {
     // 当前会话的消息列表
-    messageList: {
-      get() {
-        return this.messagesMap[this.currentThreadId] || [];
-      },
-      set(val) {
-        this.$set(this.messagesMap, this.currentThreadId, val);
-      },
+    messageList() {
+      return this.messagesMap[this.currentThreadId] || [];
     },
   },
 
@@ -75,25 +70,6 @@ export default {
      */
     clearMessages(threadId) {
       this.$set(this.messagesMap, threadId, []);
-    },
-
-    /**
-     * 迁移消息（用于新建对话时从临时会话迁移到正式会话）
-     */
-    migrateMessages(fromThreadId, toThreadId) {
-      const fromMessages = this.messagesMap[fromThreadId] || [];
-      this.$set(this.messagesMap, toThreadId, fromMessages);
-      this.$delete(this.messagesMap, fromThreadId);
-    },
-
-    /**
-     * 获取工具结果
-     */
-    getToolResultsForMessage(message) {
-      if (message.toolResults && message.toolResults.length > 0) {
-        return message.toolResults;
-      }
-      return [];
     },
   },
 };

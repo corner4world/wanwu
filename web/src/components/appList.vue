@@ -161,6 +161,12 @@
                           : $t('appSpace.workflow'))
                       }}
                     </el-dropdown-item>
+                    <el-dropdown-item
+                      command="convertToSkill"
+                      v-if="[agent, rag, workflow].includes(n.appType)"
+                    >
+                      {{ $t('common.button.convertToSkill') }}
+                    </el-dropdown-item>
                   </el-dropdown-menu>
                 </el-dropdown>
               </div>
@@ -269,6 +275,8 @@ export default {
       basePath: this.$basePath,
       workflow: WORKFLOW,
       chat: CHAT,
+      agent: AGENT,
+      rag: RAG,
       listData: [],
       row: {},
       publishType: 'private',
@@ -429,6 +437,9 @@ export default {
         case 'transform':
           this.workflowTransform(row);
           break;
+        case 'convertToSkill':
+          this.convertToSkill(row);
+          break;
       }
     },
     chatDelete(row) {
@@ -464,6 +475,9 @@ export default {
           break;
         case 'transform':
           this.workflowTransform(row);
+          break;
+        case 'convertToSkill':
+          this.convertToSkill(row);
           break;
       }
     },
@@ -519,6 +533,9 @@ export default {
             query: { appId: row.appId, appType: row.appType, name: row.name },
           });
           break;
+        case 'convertToSkill':
+          this.convertToSkill(row);
+          break;
       }
     },
     txtQuesEdit(row) {
@@ -562,6 +579,9 @@ export default {
             query: { appId: row.appId, appType: row.appType, name: row.name },
           });
           break;
+        case 'convertToSkill':
+          this.convertToSkill(row);
+          break;
       }
     },
     jumpToWorkflowRun(row) {
@@ -592,6 +612,7 @@ export default {
     },
     commonMethods(method, row) {
       const type = row.appType;
+
       switch (type) {
         case AGENT:
           this.intelligentOperation(method, row);
@@ -606,6 +627,10 @@ export default {
           this.chatOperation(method, row);
           break;
       }
+    },
+    // 转化为 Skill
+    convertToSkill(row) {
+      this.$emit('convertToSkill', row);
     },
     handleClick(command, row) {
       this.commonMethods(command, row);

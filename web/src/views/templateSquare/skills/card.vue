@@ -27,19 +27,23 @@
           }"
         >
           <el-tooltip
-            v-if="type === 3"
+            v-if="type === 4"
             :content="$t('tempSquare.skills.save')"
             placement="top"
           >
             <i class="el-icon-collection" @click.stop="sendToResource"></i>
           </el-tooltip>
 
-          <el-tooltip :content="$t('tempSquare.download')" placement="top">
+          <el-tooltip
+            v-if="![2].includes(type)"
+            :content="$t('tempSquare.download')"
+            placement="top"
+          >
             <i class="el-icon-download" @click.stop="downloadTemplate"></i>
           </el-tooltip>
 
           <!-- 自定义类型显示更多操作 -->
-          <el-dropdown v-if="[1, 2].includes(type)" placement="bottom">
+          <el-dropdown v-if="[2, 3].includes(type)" placement="bottom">
             <span class="el-dropdown-link">
               <i class="el-icon-more" @click.stop />
             </span>
@@ -56,7 +60,7 @@
 </template>
 
 <script>
-import { SKILL, SKILLCUSTOM } from '../constants';
+import { SKILLADDED, SKILLCUSTOM, SKILLBUILTIN } from '../constants';
 import { avatarSrc } from '@/utils/util';
 
 export default {
@@ -66,7 +70,7 @@ export default {
       type: Object,
       default: () => ({}),
     },
-    // 1:内置，2:自定义，3:对话中的技能
+    // 1:内置，2:自定义，3:我添加, 4:广场skill
     type: {
       type: Number,
       default: 1,
@@ -80,13 +84,29 @@ export default {
         this.$emit('click', this.info);
         return;
       }
-      if (![1, 2].includes(this.type)) return;
-      const path = '/skill/detail';
-      const type = this.type === 2 ? SKILLCUSTOM : SKILL;
-      this.$router.push({
-        path,
-        query: { templateSquareId: this.info.skillId, type },
-      });
+      if (this.type === 2) {
+        // 我创建的skill直接进入工作台编辑
+        const { skillId } = this.info || {};
+        const path = '/skill/workshop';
+        this.$router.push({
+          path,
+          query: {
+            chatType: 'skill',
+            customSkillId: skillId,
+          },
+        });
+      } else {
+        const path = '/skill/detail';
+        const typeMap = {
+          1: SKILLBUILTIN,
+          3: SKILLADDED,
+        };
+        const type = typeMap[this.type];
+        this.$router.push({
+          path,
+          query: { templateSquareId: this.info.skillId, type },
+        });
+      }
     },
     downloadTemplate() {
       this.$emit('download', this.info);
