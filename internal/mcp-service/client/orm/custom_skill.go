@@ -64,10 +64,10 @@ func (c *Client) GetCustomSkill(ctx context.Context, skillId string) (*model.Cus
 	return &cs, nil
 }
 
-// GetCustomSkillIDByWgaThreadID 仅匹配列 wga_thread_id。参数不完整或记录不存在时返回 ("", nil)；仅查询失败返回 Status。
-func (c *Client) GetCustomSkillIDByWgaThreadID(ctx context.Context, userId, orgId, wgaThreadID string) (string, *err_code.Status) {
+// GetCustomSkillByWgaThreadID 仅匹配列 wga_thread_id。参数不完整或记录不存在时返回 (nil, nil)；仅查询失败返回 Status。
+func (c *Client) GetCustomSkillByWgaThreadID(ctx context.Context, userId, orgId, wgaThreadID string) (*model.CustomSkill, *err_code.Status) {
 	if wgaThreadID == "" || userId == "" || orgId == "" {
-		return "", nil
+		return nil, nil
 	}
 	var cs model.CustomSkill
 	err := sqlopt.SQLOptions(
@@ -76,12 +76,12 @@ func (c *Client) GetCustomSkillIDByWgaThreadID(ctx context.Context, userId, orgI
 		sqlopt.WithCustomSkillWgaThreadId(wgaThreadID),
 	).Apply(c.db).WithContext(ctx).Model(&model.CustomSkill{}).First(&cs).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", nil
+		return nil, nil
 	}
 	if err != nil {
-		return "", toErrStatus("mcp_custom_skill_get_by_wga_thread", err.Error())
+		return nil, toErrStatus("mcp_custom_skill_get_by_wga_thread", err.Error())
 	}
-	return util.Int2Str(cs.ID), nil
+	return &cs, nil
 }
 
 // GetCustomSkillListByWgaThreadIDList 在 identity 下按 wga_thread_id IN 批量查询。wgaThreadIdList 去空后为空时返回空切片；仅数据库错误返回 Status。

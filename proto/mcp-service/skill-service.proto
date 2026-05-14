@@ -51,7 +51,7 @@ message GetCustomSkillByThreadIDReq {
 }
 
 message GetCustomSkillByThreadIDResp {
-  string skillId = 1;
+  CustomSkill skill = 1;
 }
 
 // 按 wgaThreadIdList 在 identity 下批量查找 custom skill，返回全量 CustomSkill（含 variables）。
