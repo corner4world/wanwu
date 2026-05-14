@@ -72,6 +72,7 @@ import { getGeneralAgentResourceSelect } from '@/api/generalAgent';
 import { avatarSrc } from '@/utils/util';
 import XSender from 'x-sender';
 import 'x-sender/style';
+import PinyinMatch from 'pinyin-match';
 
 export default {
   name: 'MentionInput',
@@ -196,17 +197,37 @@ export default {
       }
     },
 
-    // 通用的列表过滤方法
+    // 通用的列表过滤方法 - 支持中英文和拼音混合搜索
     filterList(list) {
       if (!this.mentionSearchText) {
         return list;
       }
-      const searchText = this.mentionSearchText.toLowerCase();
-      return list.filter(
-        item =>
-          item.name?.toLowerCase().includes(searchText) ||
-          item.desc?.toLowerCase().includes(searchText),
-      );
+      // 去除拼音中的撇号,使 ti'a 能匹配到 tia
+      const searchText = this.mentionSearchText.trim().replaceAll("'", '');
+      return list.filter(item => {
+        // 检测是否为"中文+字母"的格式
+        const mixedPattern = /^([\u4e00-\u9fa5]+)([a-zA-Z]+)$/;
+        const match = searchText.match(mixedPattern);
+
+        if (match) {
+          // 中文+拼音模式:如 "地t" 匹配 "高德地图"
+          const [, chinesePart, pinyinPart] = match;
+
+          // 在目标名称中查找中文部分的位置
+          const chineseIndex = item.name.indexOf(chinesePart);
+          if (chineseIndex === -1) {
+            return false;
+          }
+
+          // 获取中文部分之后的剩余文本,用 PinyinMatch 匹配拼音
+          const remainingText = item.name.substring(
+            chineseIndex + chinesePart.length,
+          );
+          return PinyinMatch.match(remainingText, pinyinPart);
+        } else {
+          return PinyinMatch.match(item.name, searchText);
+        }
+      });
     },
 
     initSender() {
@@ -219,7 +240,15 @@ export default {
       this.sender.bus.on('XSender', EVENT_COMMON_CHANGE, () => {
         this.inputValue = this.sender.getText();
         if (this.showConfigPopover) {
-          this.updateMentionSearch();
+          this.updateMentionPosition();
+          this.$nextTick(() => {
+            const allList = this.filterList(this.allResourcesList);
+            if (allList.length === 0) {
+              this.showConfigPopover = false;
+            } else {
+              this.$refs.configPopover?.updatePopper();
+            }
+          });
         }
       });
 
@@ -240,8 +269,9 @@ export default {
           const { instance, offset } = this.sender.getCurrentNode();
           if (instance?.type !== 'Write') return;
           if (instance.text[offset - 1] !== '@') return;
-
-          this.triggerMentionPopover();
+          this.updateMentionPosition();
+          this.showConfigPopover = true;
+          this.selectedIndex = 0;
         }
       });
     },
@@ -253,26 +283,16 @@ export default {
       this.selectedIndex = 0;
     },
 
-    triggerMentionPopover() {
-      this.showConfigPopover = true;
-      this.selectedIndex = 0;
-      this.updateMentionSearch();
-    },
+    // 更新@提及的位置信息
+    updateMentionPosition() {
+      const { instance, offset } = this.sender.getCurrentNode();
+      if (instance?.type !== 'Write') return;
 
-    getCursorPosition() {
-      try {
-        const selection = getSelection();
-        if (!selection || selection.rangeCount === 0) return 0;
+      const currentText = instance.text;
+      const lastAtIndex = currentText.substring(0, offset).lastIndexOf('@');
 
-        const range = selection.getRangeAt(0);
-        const preCaretRange = range.cloneRange();
-        preCaretRange.selectNodeContents(this.sender.chatElement.richText);
-        preCaretRange.setEnd(range.endContainer, range.endOffset);
-        return preCaretRange.toString().length;
-      } catch (e) {
-        console.error('获取光标位置失败:', e);
-        return 0;
-      }
+      this.mentionStartPos = lastAtIndex;
+      this.mentionSearchText = currentText.substring(lastAtIndex + 1, offset);
     },
 
     handleSenderKeydown(e) {
@@ -297,40 +317,6 @@ export default {
         this.$emit('keydown-enter', e);
         this.clear();
       }
-    },
-
-    updateMentionSearch() {
-      if (!this.inputValue || this.inputValue.length === 0) {
-        this.resetMentionState();
-        return;
-      }
-
-      const cursorPos = this.getCursorPosition();
-      const beforeCursor = this.inputValue.substring(0, cursorPos);
-      const lastAtIndex = beforeCursor.lastIndexOf('@');
-
-      if (lastAtIndex === -1) {
-        this.resetMentionState();
-        return;
-      }
-
-      this.mentionStartPos = lastAtIndex;
-      this.mentionSearchText = this.inputValue.substring(
-        lastAtIndex + 1,
-        cursorPos,
-      );
-
-      this.$nextTick(() => {
-        // 如果"全部"列表的搜索结果为空,则隐藏popover
-        if (
-          this.popoverTab === 'all' &&
-          this.currentFilteredList.length === 0
-        ) {
-          this.showConfigPopover = false;
-        } else {
-          this.$refs.configPopover?.updatePopper();
-        }
-      });
     },
 
     handleSenderBlur() {
