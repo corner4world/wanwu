@@ -294,7 +294,7 @@ export default {
 .rag-step-body {
   position: relative;
   margin: 10px 0 4px;
-  padding: 14px 16px 14px 22px;
+  padding: 14px 16px;
   background: linear-gradient(
     180deg,
     rgba(99, 102, 241, 0.07) 0%,
@@ -303,22 +303,6 @@ export default {
   border: 1px solid rgba(99, 102, 241, 0.16);
   border-radius: 10px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-
-  // 左侧装饰竖线：连接上方 Thinking 卡片 header 的视觉延伸
-  &::before {
-    content: '';
-    position: absolute;
-    left: 8px;
-    top: 10px;
-    bottom: 10px;
-    width: 3px;
-    background: linear-gradient(
-      180deg,
-      rgba(99, 102, 241, 0.4) 0%,
-      rgba(99, 102, 241, 0.1) 100%
-    );
-    border-radius: 2px;
-  }
 }
 
 .rag-step-content {

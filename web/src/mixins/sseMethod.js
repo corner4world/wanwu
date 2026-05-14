@@ -963,7 +963,8 @@ export default {
                 const errText = i18nKey ? i18n.t(i18nKey) : i18n.t('sse.error');
                 sessionCom.replaceLastData(lastIndex, {
                   ...commonData,
-                  response: errText,
+                  response: '',
+                  errResponse: errText,
                   errorDetail: data.message || '',
                   error: true,
                   ragSteps: [...ragSteps],

@@ -3,7 +3,7 @@
     <div class="session-error-icon">
       <el-tooltip effect="dark" placement="top">
         <template #content>
-          <div style="white-space: pre-wrap; width: 20vw">{{ desc }}</div>
+          <div style="white-space: pre-wrap; width: 20vw">{{ trimmedDesc }}</div>
         </template>
         <i class="el-icon-warning-outline"></i>
       </el-tooltip>
@@ -12,7 +12,23 @@
       <div class="session-error-title">
         {{ title }}
       </div>
+      <div v-if="desc && expanded" class="session-error-desc">
+        {{ trimmedDesc }}
+      </div>
     </div>
+    <button
+      v-if="desc"
+      type="button"
+      class="session-error-toggle"
+      :aria-expanded="expanded"
+      :title="expanded ? $t('common.button.fold') : $t('common.button.expand')"
+      @click="expanded = !expanded"
+    >
+      <i
+        class="el-icon-arrow-down"
+        :class="{ 'is-expanded': expanded }"
+      ></i>
+    </button>
   </div>
 </template>
 
@@ -27,6 +43,16 @@ export default {
     desc: {
       type: String,
       default: '',
+    },
+  },
+  data() {
+    return {
+      expanded: false,
+    };
+  },
+  computed: {
+    trimmedDesc() {
+      return (this.desc || '').trim();
     },
   },
 };
@@ -77,6 +103,45 @@ export default {
     font-weight: 500;
     color: #1f2937;
     line-height: 20px;
+  }
+
+  .session-error-desc {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 18px;
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+
+  .session-error-toggle {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    margin-top: 1px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.15s;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.04);
+      color: #1f2937;
+    }
+
+    .el-icon-arrow-down {
+      font-size: 14px;
+      transition: transform 0.2s ease;
+      &.is-expanded {
+        transform: rotate(180deg);
+      }
+    }
   }
 }
 </style>
