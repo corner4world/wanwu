@@ -1,24 +1,47 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
 	model_service "github.com/UnicomAI/wanwu/api/proto/model-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
+	"github.com/UnicomAI/wanwu/internal/bff-service/pkg/ahocorasick"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
 func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.ModelExperienceLlmRequest) {
+	// 敏感词检测 - 输入检测
+	matchDicts, err := BuildSensitiveDict(ctx, nil, false)
+	if err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+	matchResults, err := ahocorasick.ContentMatch(req.Content, matchDicts, true)
+	if err != nil {
+		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFSensitiveWordCheck, err.Error()))
+		return
+	}
+	if len(matchResults) > 0 {
+		if matchResults[0].Reply != "" {
+			gin_util.Response(ctx, nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFSensitiveWordCheck, "bff_sensitive_check_req", matchResults[0].Reply))
+			return
+		}
+		gin_util.Response(ctx, nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFSensitiveWordCheck, "bff_sensitive_check_req_default_reply"))
+		return
+	}
 	// model info
 	modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: req.ModelId})
 	if err != nil {
@@ -106,7 +129,8 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
-	_, sseCh, err := iLLM.ChatCompletions(ctx.Request.Context(), iLLMReq)
+	// 使用 context.Background() 避免 ctx 被取消导致请求中断
+	_, sseCh, err := iLLM.ChatCompletions(context.Background(), iLLMReq)
 	if err != nil {
 		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
@@ -131,7 +155,6 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 	var answer string
 	var reasonContent string
 	var (
-		firstTokenTime    time.Time
 		firstTokenLatency int
 		promptTokens      int
 		completionTokens  int
@@ -140,37 +163,67 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 	ctx.Header("Cache-Control", "no-cache")
 	ctx.Header("Connection", "keep-alive")
 	ctx.Header("Content-Type", "text/event-stream; charset=utf-8")
-	var data *mp_common.LLMResp
 
-	for sseResp := range sseCh {
-		data, ok = sseResp.ConvertResp()
-		dataStr := ""
-		if ok && data != nil {
-			if len(data.Choices) > 0 && data.Choices[0].Delta != nil {
-				delta := data.Choices[0].Delta
-				answer = answer + delta.Content
-				if delta.ReasoningContent != nil {
-					reasonContent = reasonContent + *delta.ReasoningContent
+	// 消费 sseCh 时一边统计 token，一边转成 rawCh 交给敏感词处理。
+	rawCh := make(chan string, 1024)
+	go func() {
+		defer util.PrintPanicStack()
+		defer close(rawCh)
+		firstTokenReceived := false
+		for sseResp := range sseCh {
+			resp, ok := sseResp.ConvertResp()
+			if ok && resp != nil {
+				if !firstTokenReceived {
+					firstTokenReceived = true
+					firstTokenLatency = int(time.Since(startTime).Milliseconds())
 				}
+				promptTokens = resp.Usage.PromptTokens
+				completionTokens = resp.Usage.CompletionTokens
+				totalTokens = resp.Usage.TotalTokens
 			}
-
-			dataStr = sseResp.String()
-			if firstTokenTime.IsZero() {
-				firstTokenTime = time.Now()
-				firstTokenLatency = int(time.Since(startTime).Milliseconds())
+			// ConvertResp 失败的空行也是 SSE 事件分隔符，必须保留。
+			dataStr := sseResp.String()
+			if !ok {
+				dataStr = fmt.Sprintf("%v\n", dataStr)
 			}
-			promptTokens = data.Usage.PromptTokens
-			completionTokens = data.Usage.CompletionTokens
-			totalTokens = data.Usage.TotalTokens
-		} else {
-			dataStr = fmt.Sprintf("%v\n", sseResp.String())
+			// 敏感词过滤结束后继续 drain sseCh 统计 token，但不再阻塞写 rawCh。
+			select {
+			case rawCh <- dataStr:
+			default:
+			}
 		}
+		recordModelStatistic(ctx, modelInfo, true,
+			promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
+	}()
+
+	// 敏感词过滤（必须过滤，全局敏感词）
+	outputCh := ProcessSensitiveWords(ctx, rawCh, matchDicts, &modelExperienceSensitiveService{})
+
+	// 从过滤后的 channel 写入 SSE 并累加 answer
+	for dataStr := range outputCh {
 		if _, err = ctx.Writer.Write([]byte(dataStr)); err != nil {
 			log.Errorf("model experience write sse err: %v", err)
 		}
 		ctx.Writer.Flush()
-	}
 
+		// 解析 SSE 内容累加 answer
+		if strings.HasPrefix(dataStr, "data:") {
+			content := strings.TrimSpace(strings.TrimPrefix(dataStr, "data:"))
+			if content == "[DONE]" {
+				continue
+			}
+			var resp mp_common.LLMResp
+			if err := json.Unmarshal([]byte(content), &resp); err == nil {
+				if len(resp.Choices) > 0 && resp.Choices[0].Delta != nil {
+					delta := resp.Choices[0].Delta
+					answer = answer + delta.Content
+					if delta.ReasoningContent != nil {
+						reasonContent = reasonContent + *delta.ReasoningContent
+					}
+				}
+			}
+		}
+	}
 	// save answer
 	if _, err := model.SaveModelExperienceDialogRecord(ctx.Request.Context(), &model_service.SaveModelExperienceDialogRecordReq{
 		UserId:            userId,
@@ -188,8 +241,7 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 
 	ctx.Set(gin_util.STATUS, http.StatusOK)
 	ctx.Set(gin_util.RESULT, answer)
-	recordModelStatistic(ctx, modelInfo, true,
-		promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
+
 }
 
 func SaveModelExperienceDialog(ctx *gin.Context, userId, orgId string, req *request.ModelExperienceDialogRequest) (*response.ModelExperienceDialog, error) {
@@ -305,4 +357,53 @@ func toModelExperienceDialog(dialog *model_service.ModelExperienceDialog) *respo
 		ModelSetting: dialog.ModelSetting,
 		CreatedAt:    dialog.CreatedAt,
 	}
+}
+
+// --- modelExperienceSensitiveService: 实现 chatService 接口，供 ProcessSensitiveWords 使用 ---
+type modelExperienceSensitiveService struct{}
+
+func (m *modelExperienceSensitiveService) serviceType() string {
+	return "ModelExperience"
+}
+
+func (m *modelExperienceSensitiveService) parseContent(raw string) (id, content string) {
+	// SSE 数据格式为 "data: {...}\n\n"，解析出 content + reasoning_content
+	raw = strings.TrimPrefix(raw, "data:")
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "[DONE]" {
+		return "", ""
+	}
+
+	var resp mp_common.LLMResp
+	if err := json.Unmarshal([]byte(raw), &resp); err != nil {
+		return "", ""
+	}
+
+	if len(resp.Choices) > 0 && resp.Choices[0].Delta != nil {
+		delta := resp.Choices[0].Delta
+		content = delta.Content
+		if delta.ReasoningContent != nil && *delta.ReasoningContent != "" {
+			content = content + *delta.ReasoningContent // 合并思维链和正文内容
+		}
+	}
+	return resp.ID, content
+}
+
+func (m *modelExperienceSensitiveService) buildSensitiveResp(id, content string) []string {
+	// 返回 OpenAI delta 格式的 SSE 数据（finish_reason: stop 表示流结束）
+	resp := mp_common.LLMResp{
+		ID: id,
+		Choices: []mp_common.OpenAIRespChoice{
+			{
+				Index: 0,
+				Delta: &mp_common.OpenAIMsg{
+					Role:    mp_common.MsgRoleAssistant,
+					Content: content,
+				},
+				FinishReason: "stop",
+			},
+		},
+	}
+	marshal, _ := json.Marshal(resp)
+	return []string{"data: " + string(marshal) + "\n\n"}
 }
