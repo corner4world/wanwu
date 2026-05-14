@@ -2248,6 +2248,7 @@ export default {
       apiKeyRequired: 'API Key 不能为空',
       apiKeySaveSuccess: 'API Key 保存成功',
       apiKeySaveFailed: '保存失败，请重试',
+      ontologySingleWarning: '本体智能体只能选择一个，已自动替换为最新选择',
       conditionLabels: {
         none: '无要求',
         optional: '可选（至少选一个）',

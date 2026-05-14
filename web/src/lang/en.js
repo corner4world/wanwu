@@ -1984,6 +1984,8 @@ export default {
       apiKeyRequired: 'API Key 不能为空',
       apiKeySaveSuccess: 'API Key 保存成功',
       apiKeySaveFailed: '保存失败，请重试',
+      ontologySingleWarning:
+        'Only one Ontology Agent can be selected, the previous one has been automatically replaced',
       conditionLabels: {
         none: '无要求',
         optional: '可选（至少选一个）',
