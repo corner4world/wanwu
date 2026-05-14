@@ -17,6 +17,349 @@ services:
     command:
       - "exec mysql --host ${WANWU_MYSQL_HOST} -u root -p'${WANWU_MYSQL_PASSWORD}' < /docker-entrypoint-initdb.d/01-init-databases.sql"
 
+
+      # ==================== Vega Services (Java) ====================
+
+  # Data Connection - 数据连接服务
+  data-connection:
+    image: ${WANWU_ONTOLOGY_DATA_CONNECTION_IMAGE}
+    container_name: vega-data-connection
+    environment:
+      - AUTH_ENABLED=${ONTOLOGY_AUTH_ENABLED:-false}
+      - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
+      - DB_NAME=${ONTOLOGY_DB_NAME:-kweaver}
+      - KAFKA_HOST=${WANWU_KAFKA_HOST:-kafka-wanwu}
+      - VEGA_GATEWAY_PRO_HOST=vega-gateway-pro
+      - VEGA_GATEWAY_PRO_PORT=8097
+      - VEGA_GATEWAY_HOST=vega-gateway
+      - VEGA_GATEWAY_PORT=8099
+      - OPENSEARCH_TRUST_ALL=true
+      - JAVA_OPTS=${ONTOLOGY_DATA_CONNECTION_JAVA_OPTS:--Xms256m -Xmx512m}
+    volumes:
+      - ./configs/microservice/ontology/vega-server/data-connection/application.yml:/opt/data-connection/config/application.yml:ro
+      - ./configs/microservice/ontology/vega-server/data-connection:/opt/vega/config:ro
+    # ports:
+    #   - "8098:8098"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  # Vega Gateway - API网关
+  vega-gateway:
+    image: ${WANWU_ONTOLOGY_VEGA_GATEWAY_IMAGE}
+    container_name: vega-gateway
+    environment:
+      - AUTH_ENABLED=${ONTOLOGY_AUTH_ENABLED:-false}
+      - JAVA_OPTS=${ONTOLOGY_VEGA_GATEWAY_JAVA_OPTS:--Xms256m -Xmx512m}
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
+      - VEGA_GATEWAY_PRO_HOST=vega-gateway-pro
+      - VEGA_GATEWAY_PRO_PORT=8097
+    # ports:
+    #   - "8099:8099"
+    depends_on:
+      - data-connection
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  # ==================== Vega Services (Go) ====================
+
+  # Vega Gateway Pro - 高性能查询网关
+  vega-gateway-pro:
+    image: ${WANWU_ONTOLOGY_VEGA_GATEWAY_PRO_IMAGE}
+    container_name: vega-gateway-pro
+    environment:
+      - AUTH_ENABLED=${ONTOLOGY_AUTH_ENABLED:-false}
+      - TZ=${TZ:-Asia/Shanghai}
+      - DATA_CONNECTION_HOST=data-connection
+      - DATA_CONNECTION_PORT=8098
+    volumes:
+      - ./configs/microservice/ontology/vega-server/vega-gateway-pro/private_key.pem:/opt/vega-gateway-pro/config/private_key.pem:ro
+    # ports:
+    #   - "8097:8097"
+    depends_on:
+      - data-connection
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  # Vega Backend - 后端服务
+  vega-backend:
+    image: ${WANWU_ONTOLOGY_VEGA_BACKEND_IMAGE}
+    container_name: vega-backend
+    environment:
+      - AUTH_ENABLED=${ONTOLOGY_AUTH_ENABLED:-false}
+      - TZ=${TZ:-Asia/Shanghai}
+      - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
+      - DB_PORT=${WANWU_MYSQL_PORT:-3306}
+      - DB_USER=${WANWU_MYSQL_USER}
+      - DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
+      - KAFKA_HOST=${WANWU_KAFKA_HOST:-kafka-wanwu}
+      - KAFKA_PORT=${WANWU_KAFKA_PORT:-9092}
+      - KAFKA_USER=${WANWU_KAFKA_USER}
+      - KAFKA_PASSWORD=${WANWU_KAFKA_PASSWORD}
+      - KAFKA_MECHANISM=PLAIN
+      - KAFKA_TENANT=default
+      - OPENSEARCH_HOST=${WANWU_ELASTIC_HOST:-elastic-wanwu}
+      - OPENSEARCH_PORT=${WANWU_ELASTIC_PORT:-9200}
+      - OPENSEARCH_PROTOCOL=${ONTOLOGY_ELASTIC_PROTOCOL:-https}
+      - OPENSEARCH_USER=${WANWU_ELASTIC_USER}
+      - OPENSEARCH_PASSWORD=${WANWU_ELASTIC_PASSWORD}
+      - REDIS_HOST=${WANWU_REDIS_HOST:-redis-wanwu}
+      - REDIS_PORT=${WANWU_REDIS_PORT:-6379}
+      - REDIS_USER=${ONTOLOGY_REDIS_USER}
+      - REDIS_PASSWORD=${WANWU_REDIS_PASSWORD}
+      - DATA_MODEL_HOST=mdl-data-model
+      - DATA_MODEL_PORT=13020
+      - UNIQUERY_HOST=mdl-uniquery
+      - UNIQUERY_PORT=13011
+    volumes:
+      - ${WANWU_PROJECT_DIR}/ontology/vega-backend/server/locale:/opt/vega-backend/locale
+    # ports:
+    #   - "13014:13014"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      es:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  # MDL Data Model - 数据模型管理
+  mdl-data-model:
+    image: ${WANWU_ONTOLOGY_MDL_DATA_MODEL_IMAGE}
+    container_name: vega-mdl-data-model
+    environment:
+      - AUTH_ENABLED=${ONTOLOGY_AUTH_ENABLED:-false}
+      - TZ=${TZ:-Asia/Shanghai}
+      - AES_KEY=${AES_KEY}
+      - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
+      - DB_PORT=${WANWU_MYSQL_PORT:-3306}
+      - DB_USER=${WANWU_MYSQL_USER}
+      - DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
+      - KAFKA_HOST=${WANWU_KAFKA_HOST:-kafka-wanwu}
+      - KAFKA_PORT=${WANWU_KAFKA_PORT:-9092}
+      - KAFKA_USER=${WANWU_KAFKA_USER}
+      - KAFKA_PASSWORD=${WANWU_KAFKA_PASSWORD}
+      - KAFKA_MECHANISM=PLAIN
+      - KAFKA_TENANT=default
+      - DATA_MODEL_JOB_HOST=mdl-data-model-job
+      - DATA_MODEL_JOB_PORT=13025
+      - UNIQUERY_HOST=mdl-uniquery
+      - UNIQUERY_PORT=13011
+      - DATA_CONNECTION_HOST=data-connection
+      - DATA_CONNECTION_PORT=8098
+      - VEGA_GATEWAY_HOST=vega-gateway
+      - VEGA_GATEWAY_PORT=8099
+    volumes:
+      - ${WANWU_PROJECT_DIR}/ontology/mdl-data-model/locale:/opt/data-model/locale
+    # ports:
+    #   - "13020:13020"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  # MDL Uniquery - 统一查询服务
+  mdl-uniquery:
+    image: ${WANWU_ONTOLOGY_MDL_UNIQUERY_IMAGE}
+    container_name: vega-mdl-uniquery
+    environment:
+      - AUTH_ENABLED=${ONTOLOGY_AUTH_ENABLED:-false}
+      - TZ=${TZ:-Asia/Shanghai}
+      - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
+      - DB_PORT=${WANWU_MYSQL_PORT:-3306}
+      - DB_USER=${WANWU_MYSQL_USER}
+      - DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
+      - KAFKA_HOST=${WANWU_KAFKA_HOST:-kafka-wanwu}
+      - KAFKA_PORT=${WANWU_KAFKA_PORT:-9092}
+      - KAFKA_USER=${WANWU_KAFKA_USER}
+      - KAFKA_PASSWORD=${WANWU_KAFKA_PASSWORD}
+      - KAFKA_MECHANISM=PLAIN
+      - KAFKA_TENANT=default
+      - OPENSEARCH_HOST=${WANWU_ELASTIC_HOST:-elastic-wanwu}
+      - OPENSEARCH_PORT=${WANWU_ELASTIC_PORT:-9200}
+      - OPENSEARCH_PROTOCOL=${ONTOLOGY_ELASTIC_PROTOCOL:-https}
+      - OPENSEARCH_USER=${WANWU_ELASTIC_USER}
+      - OPENSEARCH_PASSWORD=${WANWU_ELASTIC_PASSWORD}
+      - DATA_MODEL_HOST=mdl-data-model
+      - DATA_MODEL_PORT=13020
+      - DATA_CONNECTION_HOST=data-connection
+      - DATA_CONNECTION_PORT=8098
+      - VEGA_GATEWAY_PRO_HOST=vega-gateway-pro
+      - VEGA_GATEWAY_PRO_PORT=8097
+      - VEGA_GATEWAY_HOST=vega-gateway
+      - VEGA_GATEWAY_PORT=8099
+    volumes:
+      - ${WANWU_PROJECT_DIR}/ontology/mdl-uniquery/locale:/opt/uniquery/locale
+    # ports:
+    #   - "13011:13011"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      es:
+        condition: service_healthy
+      mdl-data-model:
+        condition: service_started
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  # ==================== BKN Services ====================
+
+  # BKN Backend - 本体后端
+  bkn-backend:
+    image: ${WANWU_ONTOLOGY_BKN_BACKEND_IMAGE}
+    container_name: vega-bkn-backend
+    environment:
+      - AUTH_ENABLED=${ONTOLOGY_AUTH_ENABLED:-false}
+      - BUSINESS_DOMAIN_ENABLED=${ONTOLOGY_BUSINESS_DOMAIN_ENABLED:-false}
+      - TZ=${TZ:-Asia/Shanghai}
+      - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
+      - DB_PORT=${WANWU_MYSQL_PORT:-3306}
+      - DB_USER=${WANWU_MYSQL_USER}
+      - DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
+      - KAFKA_HOST=${WANWU_KAFKA_HOST:-kafka-wanwu}
+      - KAFKA_PORT=${WANWU_KAFKA_PORT:-9092}
+      - KAFKA_USER=${WANWU_KAFKA_USER}
+      - KAFKA_PASSWORD=${WANWU_KAFKA_PASSWORD}
+      - KAFKA_MECHANISM=PLAIN
+      - KAFKA_TENANT=default
+      - OPENSEARCH_HOST=${WANWU_ELASTIC_HOST:-elastic-wanwu}
+      - OPENSEARCH_PORT=${WANWU_ELASTIC_PORT:-9200}
+      - OPENSEARCH_PROTOCOL=${ONTOLOGY_ELASTIC_PROTOCOL:-https}
+      - OPENSEARCH_USER=${WANWU_ELASTIC_USER}
+      - OPENSEARCH_PASSWORD=${WANWU_ELASTIC_PASSWORD}
+      - DATA_MODEL_HOST=mdl-data-model
+      - DATA_MODEL_PORT=13020
+      - UNIQUERY_HOST=mdl-uniquery
+      - UNIQUERY_PORT=13011
+      - VEGA_BACKEND_HOST=vega-backend
+      - VEGA_BACKEND_PORT=13014
+      - ONTOLOGY_QUERY_HOST=ontology-query
+      - ONTOLOGY_QUERY_PORT=13018
+    volumes:
+      - ${WANWU_PROJECT_DIR}/ontology/bkn-backend/locale:/opt/bkn-backend/locale
+    # ports:
+    #   - "13015:13014"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      es:
+        condition: service_healthy
+      mdl-data-model:
+        condition: service_started
+      mdl-uniquery:
+        condition: service_started
+      vega-backend:
+        condition: service_started
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  # Ontology Query - 本体查询服务
+  ontology-query:
+    image: ${WANWU_ONTOLOGY_QUERY_IMAGE}
+    container_name: vega-ontology-query
+    environment:
+      - AUTH_ENABLED=${ONTOLOGY_AUTH_ENABLED:-false}
+      - TZ=${TZ:-Asia/Shanghai}
+      - OPENSEARCH_HOST=${WANWU_ELASTIC_HOST:-elastic-wanwu}
+      - OPENSEARCH_PORT=${WANWU_ELASTIC_PORT:-9200}
+      - OPENSEARCH_PROTOCOL=${ONTOLOGY_ELASTIC_PROTOCOL:-https}
+      - OPENSEARCH_USER=${WANWU_ELASTIC_USER}
+      - OPENSEARCH_PASSWORD=${WANWU_ELASTIC_PASSWORD}
+      - BKN_BACKEND_HOST=bkn-backend
+      - BKN_BACKEND_PORT=13014
+      - UNIQUERY_HOST=mdl-uniquery
+      - UNIQUERY_PORT=13011
+      - VEGA_BACKEND_HOST=vega-backend
+      - VEGA_BACKEND_PORT=13014
+    volumes:
+      - ${WANWU_PROJECT_DIR}/ontology/ontology-query/locale:/opt/ontology-query/locale
+    # ports:
+    #   - "13018:13018"
+    depends_on:
+      es:
+        condition: service_healthy
+      mdl-data-model:
+        condition: service_started
+      mdl-uniquery:
+        condition: service_started
+      vega-backend:
+        condition: service_started
+      bkn-backend:
+        condition: service_started
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  # ==================== Web Frontend ====================
+
+  # Web Frontend - React 前端界面
+  web:
+    image: ${WANWU_ONTOLOGY_VEGA_WEB_IMAGE}
+    container_name: vega-web
+    # ports:
+    #   - "3010:3010"
+    volumes:
+      - ./configs/vega-server/web/public-key.js:/usr/share/nginx/html/vega/config/public-key.js:ro
+    depends_on:
+      - vega-gateway
+      - data-connection
+      - vega-backend
+      - mdl-data-model
+      - mdl-uniquery
+      - bkn-backend
+      - ontology-query
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
+  agent:
+    image: ${WANWU_ONTOLOGY_VEGA_AGENT_IMAGE}
+    container_name: vega-agent
+    # ports:
+    #   - "5001:5000"
+    volumes:
+      - ${WANWU_PROJECT_DIR}/ontology/agent/logs:/opt/vega-agent/logs
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+      - AGENT_PORT=5000
+      - GUNICORN_WORKERS=${ONTOLOGY_AGENT_GUNICORN_WORKERS}
+      - GUNICORN_TIMEOUT=${ONTOLOGY_AGENT_GUNICORN_TIMEOUT}
+      - TOOL_API_BASE_URL=${WANWU_BFF_SERVICE_URL}
+      - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
+      - DB_PORT=${WANWU_MYSQL_PORT:-3306}
+      - DB_USER=${WANWU_MYSQL_USER}
+      - DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
+      - DB_NAME=${ONTOLOGY_DB_NAME:-kweaver}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
+
   # ------ sandbox ------
 
   wga-sandbox-ontology:
