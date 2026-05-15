@@ -429,6 +429,7 @@ The F1 score serving as the comprehensive evaluation metric (the harmonic mean o
 - [LangChain](https://github.com/langchain-ai/langchain)
 - [AIO Sandbox](https://github.com/agent-infra/sandbox)
 - [OpenCode](https://github.com/anomalyco/opencode)
+- [KWeaver Core](https://github.com/kweaver-ai/kweaver-core)
 
 ------
 
