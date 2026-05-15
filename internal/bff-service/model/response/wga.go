@@ -46,10 +46,37 @@ type CreateGeneralAgentConversationResp struct {
 	ThreadID string `json:"threadId"` // 对话ID
 }
 
+type CreateGeneralAgentSkillConversationResp struct {
+	CustomSkillID string `json:"customSkillId"`
+	ThreadID      string `json:"threadId"`
+	PreviewID     string `json:"previewId"`
+}
+
+type ImportGeneralAgentSkillConversationResp struct {
+	CustomSkillID string `json:"customSkillId"`
+	ThreadID      string `json:"threadId"`
+	PreviewID     string `json:"previewId"`
+}
+
+type ConvertGeneralAgentSkillConversationResp struct {
+	CustomSkillID string `json:"customSkillId"`
+	ThreadID      string `json:"threadId"`
+	PreviewID     string `json:"previewId"`
+}
+
+type RefreshGeneralAgentSkillConversationResp struct {
+	CustomSkillID string `json:"customSkillId"`
+	ThreadID      string `json:"threadId"`
+	PreviewID     string `json:"previewId"`
+}
+
 type GeneralAgentConversationInfo struct {
-	ThreadID  string `json:"threadId"`  // 对话ID
-	Title     string `json:"title"`     // 对话标题
-	CreatedAt string `json:"createdAt"` // 创建时间
+	ThreadID            string `json:"threadId"`            // 对话ID
+	Title               string `json:"title"`               // 对话标题
+	CreatedAt           string `json:"createdAt"`           // 创建时间
+	IsSkillConversation bool   `json:"isSkillConversation"` // 是否为skill对话
+	SkillID             string `json:"skillId,omitempty"`   // custom skill ID
+	PreviewID           string `json:"previewId,omitempty"` // skill preview conversation ID
 }
 
 type GetGeneralAgentToolSelectResp struct {

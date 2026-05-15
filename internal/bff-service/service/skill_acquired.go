@@ -21,7 +21,7 @@ func GetAcquiredSkillList(ctx *gin.Context, userId, orgId, name string) (*respon
 
 	list := make([]*response.AcquiredSkillDetail, 0, len(resp.List))
 	for _, skill := range resp.List {
-		list = append(list, toAcquiredSkillDetail(ctx, skill))
+		list = append(list, toAcquiredSkillDetail(ctx, skill, false))
 	}
 
 	return &response.ListResult{
@@ -31,7 +31,10 @@ func GetAcquiredSkillList(ctx *gin.Context, userId, orgId, name string) (*respon
 }
 
 // DeleteAcquiredSkill 资源库-删除已添加的skill
-func DeleteAcquiredSkill(ctx *gin.Context, acquiredSkillId string) error {
+func DeleteAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId string) error {
+	if _, err := getOwnedAcquiredSkill(ctx, userId, orgId, acquiredSkillId); err != nil {
+		return err
+	}
 	_, err := mcp.AcquiredSkillDelete(ctx.Request.Context(), &mcp_service.AcquiredSkillDeleteReq{
 		AcquiredSkillId: acquiredSkillId,
 	})
@@ -40,25 +43,24 @@ func DeleteAcquiredSkill(ctx *gin.Context, acquiredSkillId string) error {
 
 // GetAcquiredSkill 资源库-获取已添加skill详情
 func GetAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId string) (*response.AcquiredSkillDetail, error) {
-	resp, err := mcp.AcquiredSkillGet(ctx.Request.Context(), &mcp_service.AcquiredSkillGetReq{
-		AcquiredSkillId: acquiredSkillId,
-	})
+	resp, err := getOwnedAcquiredSkill(ctx, userId, orgId, acquiredSkillId)
 	if err != nil {
 		return nil, err
 	}
 
-	return toAcquiredSkillDetail(ctx, resp), nil
+	return toAcquiredSkillDetail(ctx, resp, true), nil
 }
 
 // --- internal ---
 
-func toAcquiredSkillDetail(ctx *gin.Context, skill *mcp_service.AcquiredSkill) *response.AcquiredSkillDetail {
+func toAcquiredSkillDetail(ctx *gin.Context, skill *mcp_service.AcquiredSkill, includeVariables bool) *response.AcquiredSkillDetail {
 	if skill == nil {
 		return nil
 	}
 	filePath, _ := url.JoinPath(config.Cfg().Minio.DownloadURL, skill.ObjectPath)
-	return &response.AcquiredSkillDetail{
+	ret := &response.AcquiredSkillDetail{
 		SkillId:       skill.AcquiredSkillId,
+		SquareSkillID: skill.SquareSkillId,
 		Name:          skill.Name,
 		Avatar:        cacheSkillAvatar(ctx, skill.Avatar),
 		Author:        skill.Author,
@@ -66,4 +68,8 @@ func toAcquiredSkillDetail(ctx *gin.Context, skill *mcp_service.AcquiredSkill) *
 		SkillMarkdown: config.FixFrontMatterFormat(skill.Markdown),
 		DownloadUrl:   filePath,
 	}
+	if includeVariables {
+		ret.Variables = toSkillVariables(skill.Variables)
+	}
+	return ret
 }

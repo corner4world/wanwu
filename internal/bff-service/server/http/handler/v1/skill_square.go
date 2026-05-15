@@ -27,6 +27,22 @@ func GetSquareSkillList(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
+// GetSquareBuiltinSkillList 获取广场内置skill列表
+//
+//	@Tags			exploration.skill
+//	@Summary		获取广场内置skill列表
+//	@Description	获取探索广场中的内置skill列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			name	query		string	false	"skill名称"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SquareBuiltinSkillInfo}}
+//	@Router			/square/skill/builtin/list [get]
+func GetSquareBuiltinSkillList(ctx *gin.Context) {
+	resp, err := service.GetSquareBuiltinSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
+	gin_util.Response(ctx, resp, err)
+}
+
 // ShareSquareSkill 添加广场skill到资源库
 //
 //	@Tags			exploration.skill

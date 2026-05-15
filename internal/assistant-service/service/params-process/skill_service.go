@@ -8,7 +8,6 @@ import (
 	"time"
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
-	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	"github.com/UnicomAI/wanwu/internal/assistant-service/client/model"
 	"github.com/UnicomAI/wanwu/internal/assistant-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
@@ -34,6 +33,16 @@ type SkillDetailListResult struct {
 	SkillList []*SkillDetail `json:"skillList"`
 }
 
+type CustomSkillDetailListResp struct {
+	Code int64                        `json:"code"`
+	Msg  string                       `json:"msg"`
+	Data *CustomSkillDetailListResult `json:"data"`
+}
+
+type CustomSkillDetailListResult struct {
+	SkillList []*CustomSkillDetail `json:"skillList"`
+}
+
 type SkillDetail struct {
 	SkillId       string         `json:"skillId"`             // 模板ID
 	Name          string         `json:"name"`                // 模板名称
@@ -42,6 +51,16 @@ type SkillDetail struct {
 	Desc          string         `json:"desc"`                // 模板描述
 	SkillMarkdown string         `json:"skillMarkdown"`       // 模板markdown预览
 	SkillPath     string         `json:"skillPath,omitempty"` // markdown地址，内部使用，不要对外
+}
+
+type CustomSkillDetail struct {
+	SkillId       string         `json:"skillId"`
+	Name          string         `json:"name"`
+	Avatar        request.Avatar `json:"avatar"`
+	Author        string         `json:"author"`
+	Desc          string         `json:"desc"`
+	SkillMarkdown string         `json:"skillMarkdown,omitempty"`
+	ObjectPath    string         `json:"objectPath,omitempty"`
 }
 
 func init() {
@@ -74,14 +93,14 @@ func (k *SkillProcess) Prepare(agent *AgentInfo, prepareParams *AgentPreparePara
 
 	//获取custom skill详情
 	if len(customSkillIds) > 0 {
-		customSkillResp, err := clientInfo.MCP.GetCustomSkillDetailByIdList(context.Background(), &mcp_service.CustomSkillDetailByIdListReq{
-			SkillIds: customSkillIds,
-		})
+		customSkillResp, err := SearchCustomSkillList(context.Background(), &BuiltinSkillIdListParams{SkillIdList: customSkillIds})
 		if err != nil {
 			log.Errorf("Assistant服务获取Custom Skill详情失败，assistantId: %d, error: %v", agent.Assistant.ID, err)
 			return err
 		}
-		prepareParams.CustomSkillList = customSkillResp.SkillDetails
+		if customSkillResp.Data != nil {
+			prepareParams.CustomSkillList = customSkillResp.Data.SkillList
+		}
 	}
 
 	// 获取builtin skill详情
@@ -105,7 +124,7 @@ func (k *SkillProcess) Build(assistant *AgentInfo, prepareParams *AgentPreparePa
 				SkillType:  constant.SkillTypeCustom,
 				Name:       detail.Name,
 				Desc:       detail.Desc,
-				Avatar:     detail.Avatar,
+				Avatar:     detail.Avatar.Key,
 				ObjectPath: detail.ObjectPath,
 			})
 		}
@@ -120,6 +139,37 @@ func (k *SkillProcess) Build(assistant *AgentInfo, prepareParams *AgentPreparePa
 	}
 	agentChatParams.SkillParams.SkillList = skillInfos
 	return nil
+}
+
+// SearchCustomSkillList 批量搜索自定义skill详情
+func SearchCustomSkillList(ctx context.Context, params *BuiltinSkillIdListParams) (*CustomSkillDetailListResp, error) {
+	skillConfig := config.Cfg().Skill
+	if skillConfig.CustomSkillListUri == "" {
+		return nil, errors.New("custom skill list uri is empty")
+	}
+	url, _ := net_url.JoinPath(skillConfig.Endpoint, skillConfig.CustomSkillListUri)
+	reqBody, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	result, err := http_client.Default().PostJson(ctx, &http_client.HttpRequestParams{
+		Url:        url,
+		Body:       reqBody,
+		Timeout:    time.Minute,
+		MonitorKey: "custom_skill_detail_list",
+		LogLevel:   http_client.LogAll,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var detailResp CustomSkillDetailListResp
+	if err = json.Unmarshal(result, &detailResp); err != nil {
+		return nil, err
+	}
+	if detailResp.Code != 0 {
+		return nil, errors.New(detailResp.Msg)
+	}
+	return &detailResp, nil
 }
 
 // SearchBuiltInSkillList 批量搜索内置skill详情

@@ -329,7 +329,7 @@ const docTemplate = `{
         },
         "/callback/v1/skill/builtin/list": {
             "post": {
-                "description": "获取内置工具列表",
+                "description": "获取内置skill详情列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -339,7 +339,7 @@ const docTemplate = `{
                 "tags": [
                     "skill"
                 ],
-                "summary": "获取内置工具列表",
+                "summary": "获取内置skill详情列表",
                 "parameters": [
                     {
                         "description": "请求参数",
@@ -373,6 +373,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/callback/v1/skill/custom/list": {
+            "post": {
+                "description": "获取自定义skill详情列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "skill"
+                ],
+                "summary": "获取自定义skill详情列表",
+                "parameters": [
+                    {
+                        "description": "请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.SearchCustomSkillListReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CustomSkillDetailListResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/callback/v1/skill/detail": {
             "get": {
                 "description": "根据skillId和skillType获取技能详情",
@@ -385,7 +431,7 @@ const docTemplate = `{
                 "tags": [
                     "skill"
                 ],
-                "summary": "获取技能详情（供workflow回调使用）",
+                "summary": "获取技能详情",
                 "parameters": [
                     {
                         "type": "string",
@@ -414,7 +460,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/response.SkillDetailForWorkflow"
+                                            "$ref": "#/definitions/response.CallbackSkillDetail"
                                         }
                                     }
                                 }
@@ -4305,6 +4351,20 @@ const docTemplate = `{
                 }
             }
         },
+        "request.SearchCustomSkillListReq": {
+            "type": "object",
+            "required": [
+                "skillIdList"
+            ],
+            "properties": {
+                "skillIdList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "request.SearchKnowledgeInfoReq": {
             "type": "object",
             "required": [
@@ -4539,6 +4599,69 @@ const docTemplate = `{
                 "schema": {
                     "description": "OpenAPI 3.0 schema JSON 字符串",
                     "type": "string"
+                }
+            }
+        },
+        "response.CallbackSkillDetail": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "objectPath": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                },
+                "skillType": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.CustomSkillDetailListResp": {
+            "type": "object",
+            "properties": {
+                "skillList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CustomSkillListDetail"
+                    }
+                }
+            }
+        },
+        "response.CustomSkillListDetail": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "objectPath": {
+                    "type": "string"
+                },
+                "skillId": {
+                    "type": "string"
+                },
+                "variables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SkillVariable"
+                    }
                 }
             }
         },
@@ -4896,29 +5019,12 @@ const docTemplate = `{
                 "skillPath": {
                     "description": "markdown地址，内部使用，不要对外",
                     "type": "string"
-                }
-            }
-        },
-        "response.SkillDetailForWorkflow": {
-            "type": "object",
-            "properties": {
-                "avatar": {
-                    "type": "string"
                 },
-                "desc": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "objectPath": {
-                    "type": "string"
-                },
-                "skillId": {
-                    "type": "string"
-                },
-                "skillType": {
-                    "type": "string"
+                "variables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SkillVariable"
+                    }
                 }
             }
         },
@@ -4930,6 +5036,26 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/response.SkillDetail"
                     }
+                }
+            }
+        },
+        "response.SkillVariable": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "variableKey": {
+                    "type": "string"
+                },
+                "variableValue": {
+                    "type": "string"
                 }
             }
         },

@@ -55,6 +55,119 @@ const docTemplate = `{
                 }
             }
         },
+        "/agent/acquired/skill/config": {
+            "put": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "编辑资源库中我添加的skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "编辑我添加的skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateSkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "新增资源库中我添加的skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "新增我添加的skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.SkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "删除资源库中我添加的skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "删除我添加的skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeleteSkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/agent/acquired/skill/detail": {
             "get": {
                 "security": [
@@ -153,6 +266,231 @@ const docTemplate = `{
                                                             "type": "array",
                                                             "items": {
                                                                 "$ref": "#/definitions/response.AcquiredSkillDetail"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/builtin/config": {
+            "put": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "编辑内置skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "编辑内置skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateSkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "新增内置skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "新增内置skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.SkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "删除内置skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "删除内置skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeleteSkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/builtin/detail": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取资源库内置skill详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取内置skill详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/builtin/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取资源库内置skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取内置skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.SkillDetail"
                                                             }
                                                         }
                                                     }
@@ -639,6 +977,119 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/custom/config": {
+            "put": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "编辑自定义skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "编辑自定义skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateSkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "新增自定义skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "新增自定义skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.SkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "删除自定义skill变量配置",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "删除自定义skill配置",
+                "parameters": [
+                    {
+                        "description": "skill配置",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeleteSkillConfigReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -5069,6 +5520,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/builtin/skill/download": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "下载内置skill ZIP包",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "下载内置skill",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill ID",
+                        "name": "skillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/chatflow/application/info": {
             "post": {
                 "security": [
@@ -6894,6 +7382,310 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.GeneralAgentResourceSelectList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/conversation": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "Create a dedicated conversation for skill creation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "Create skill conversation",
+                "parameters": [
+                    {
+                        "description": "create skill conversation request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateGeneralAgentSkillConversationReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.CreateGeneralAgentSkillConversationResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/conversation/chat": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "Skill对话流，用于创建自定义技能，SSE流式返回",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "Skill对话流",
+                "parameters": [
+                    {
+                        "description": "Skill对话请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GeneralAgentSkillConversationChatReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE流式返回",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/convert/conversation": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "Convert MCP/tool/agent/workflow/RAG into a skill conversation workspace.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "Convert resource to skill conversation",
+                "parameters": [
+                    {
+                        "description": "convert skill conversation request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ConvertGeneralAgentSkillConversationReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ConvertGeneralAgentSkillConversationResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/import/conversation": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "Import a skill zip into the skill conversation workspace.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "Import skill conversation",
+                "parameters": [
+                    {
+                        "description": "import skill conversation request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.ImportGeneralAgentSkillConversationReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ImportGeneralAgentSkillConversationResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/preview/conversation/detail": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "用于回显 Skill preview 模式的历史消息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "获取 Skill preview 对话详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "创建或导入接口返回的预览对话 ID",
+                        "name": "previewId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.GeneralAgentConversationDetailInfo"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/refresh/conversation": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "Create a new WGA conversation with empty model config and bind it to an existing custom skill.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "Refresh skill conversation",
+                "parameters": [
+                    {
+                        "description": "refresh skill conversation request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.RefreshGeneralAgentSkillConversationReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.RefreshGeneralAgentSkillConversationResp"
                                         }
                                     }
                                 }
@@ -14957,6 +15749,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/square/skill/builtin/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取探索广场中的内置skill列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exploration.skill"
+                ],
+                "summary": "获取广场内置skill列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.SquareBuiltinSkillInfo"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/square/skill/detail": {
             "get": {
                 "security": [
@@ -20527,6 +21382,28 @@ const docTemplate = `{
                 }
             }
         },
+        "request.ConvertGeneralAgentSkillConversationReq": {
+            "type": "object",
+            "required": [
+                "id",
+                "modelConfig",
+                "type"
+            ],
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "modelConfig": {
+                    "$ref": "#/definitions/request.AppModelConfig"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "request.CreateAPIKeyRequest": {
             "type": "object",
             "required": [
@@ -20613,6 +21490,27 @@ const docTemplate = `{
             }
         },
         "request.CreateGeneralAgentConversationReq": {
+            "type": "object",
+            "required": [
+                "modelConfig",
+                "title"
+            ],
+            "properties": {
+                "modelConfig": {
+                    "description": "模型",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.AppModelConfig"
+                        }
+                    ]
+                },
+                "title": {
+                    "description": "标题",
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateGeneralAgentSkillConversationReq": {
             "type": "object",
             "required": [
                 "modelConfig",
@@ -21424,6 +22322,17 @@ const docTemplate = `{
                 }
             }
         },
+        "request.DeleteSkillConfigReq": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
         "request.DeleteSkillConversationReq": {
             "type": "object",
             "required": [
@@ -21978,6 +22887,39 @@ const docTemplate = `{
                 }
             }
         },
+        "request.GeneralAgentSkillConversationChatReq": {
+            "type": "object",
+            "required": [
+                "customSkillId",
+                "messages",
+                "threadId"
+            ],
+            "properties": {
+                "customSkillId": {
+                    "description": "自定义技能ID，用于workspace隔离",
+                    "type": "string"
+                },
+                "messages": {
+                    "description": "消息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.GeneralAgentConversationMessage"
+                    }
+                },
+                "mode": {
+                    "description": "模式：normal/import/convert/preview，默认 normal",
+                    "type": "string"
+                },
+                "previewId": {
+                    "description": "preview模式对话ID，用于历史记录隔离",
+                    "type": "string"
+                },
+                "threadId": {
+                    "description": "对话ID",
+                    "type": "string"
+                }
+            }
+        },
         "request.GetModelRequest": {
             "type": "object",
             "required": [
@@ -21999,6 +22941,27 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "response": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.ImportGeneralAgentSkillConversationReq": {
+            "type": "object",
+            "required": [
+                "modelConfig",
+                "zipUrl"
+            ],
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "modelConfig": {
+                    "$ref": "#/definitions/request.AppModelConfig"
+                },
+                "zipUrl": {
                     "type": "string"
                 }
             }
@@ -23402,6 +24365,17 @@ const docTemplate = `{
                 }
             }
         },
+        "request.RefreshGeneralAgentSkillConversationReq": {
+            "type": "object",
+            "required": [
+                "skillId"
+            ],
+            "properties": {
+                "skillId": {
+                    "type": "string"
+                }
+            }
+        },
         "request.RegisterByEmail": {
             "type": "object",
             "required": [
@@ -23599,6 +24573,21 @@ const docTemplate = `{
                 }
             }
         },
+        "request.SkillConfigReq": {
+            "type": "object",
+            "required": [
+                "skillId",
+                "variable"
+            ],
+            "properties": {
+                "skillId": {
+                    "type": "string"
+                },
+                "variable": {
+                    "$ref": "#/definitions/request.SkillVariable"
+                }
+            }
+        },
         "request.SkillConversationChatReq": {
             "type": "object",
             "required": [
@@ -23644,6 +24633,23 @@ const docTemplate = `{
                 },
                 "skillSaveId": {
                     "description": "技能ID",
+                    "type": "string"
+                }
+            }
+        },
+        "request.SkillVariable": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "variableKey": {
+                    "type": "string"
+                },
+                "variableValue": {
                     "type": "string"
                 }
             }
@@ -24193,6 +25199,21 @@ const docTemplate = `{
                 }
             }
         },
+        "request.UpdateSkillConfigReq": {
+            "type": "object",
+            "required": [
+                "id",
+                "variable"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "variable": {
+                    "$ref": "#/definitions/request.SkillVariable"
+                }
+            }
+        },
         "request.UploadSensitiveVocabularyReq": {
             "type": "object",
             "required": [
@@ -24597,6 +25618,15 @@ const docTemplate = `{
                 },
                 "skillMarkdown": {
                     "type": "string"
+                },
+                "squareSkillId": {
+                    "type": "string"
+                },
+                "variables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SkillVariable"
+                    }
                 }
             }
         },
@@ -25628,6 +26658,20 @@ const docTemplate = `{
                 }
             }
         },
+        "response.ConvertGeneralAgentSkillConversationResp": {
+            "type": "object",
+            "properties": {
+                "customSkillId": {
+                    "type": "string"
+                },
+                "previewId": {
+                    "type": "string"
+                },
+                "threadId": {
+                    "type": "string"
+                }
+            }
+        },
         "response.CozeConnectorInfo": {
             "type": "object",
             "properties": {
@@ -25984,6 +27028,20 @@ const docTemplate = `{
                 }
             }
         },
+        "response.CreateGeneralAgentSkillConversationResp": {
+            "type": "object",
+            "properties": {
+                "customSkillId": {
+                    "type": "string"
+                },
+                "previewId": {
+                    "type": "string"
+                },
+                "threadId": {
+                    "type": "string"
+                }
+            }
+        },
         "response.CreateKnowledgeExternalAPIResp": {
             "type": "object",
             "properties": {
@@ -26241,39 +27299,31 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "author": {
-                    "description": "作者",
                     "type": "string"
                 },
                 "avatar": {
-                    "description": "模板头像",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/request.Avatar"
-                        }
-                    ]
+                    "$ref": "#/definitions/request.Avatar"
                 },
                 "desc": {
-                    "description": "模板描述",
                     "type": "string"
                 },
                 "name": {
-                    "description": "模板名称",
+                    "type": "string"
+                },
+                "previewId": {
                     "type": "string"
                 },
                 "skillId": {
-                    "description": "模板ID",
                     "type": "string"
                 },
-                "skillMarkdown": {
-                    "description": "模板markdown预览",
+                "threadId": {
                     "type": "string"
                 },
-                "skillPath": {
-                    "description": "markdown地址，内部使用，不要对外",
-                    "type": "string"
-                },
-                "zipUrl": {
-                    "type": "string"
+                "variables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SkillVariable"
+                    }
                 }
             }
         },
@@ -26950,6 +28000,18 @@ const docTemplate = `{
                     "description": "创建时间",
                     "type": "string"
                 },
+                "isSkillConversation": {
+                    "description": "是否为skill对话",
+                    "type": "boolean"
+                },
+                "previewId": {
+                    "description": "skill preview conversation ID",
+                    "type": "string"
+                },
+                "skillId": {
+                    "description": "custom skill ID",
+                    "type": "string"
+                },
                 "threadId": {
                     "description": "对话ID",
                     "type": "string"
@@ -27326,6 +28388,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ImportGeneralAgentSkillConversationResp": {
+            "type": "object",
+            "properties": {
+                "customSkillId": {
+                    "type": "string"
+                },
+                "previewId": {
+                    "type": "string"
+                },
+                "threadId": {
                     "type": "string"
                 }
             }
@@ -29436,6 +30512,20 @@ const docTemplate = `{
                 }
             }
         },
+        "response.RefreshGeneralAgentSkillConversationResp": {
+            "type": "object",
+            "properties": {
+                "customSkillId": {
+                    "type": "string"
+                },
+                "previewId": {
+                    "type": "string"
+                },
+                "threadId": {
+                    "type": "string"
+                }
+            }
+        },
         "response.RerankInfo": {
             "type": "object",
             "properties": {
@@ -29714,6 +30804,49 @@ const docTemplate = `{
                 }
             }
         },
+        "response.SkillDetail": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "description": "作者",
+                    "type": "string"
+                },
+                "avatar": {
+                    "description": "模板头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "desc": {
+                    "description": "模板描述",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "模板名称",
+                    "type": "string"
+                },
+                "skillId": {
+                    "description": "模板ID",
+                    "type": "string"
+                },
+                "skillMarkdown": {
+                    "description": "模板markdown预览",
+                    "type": "string"
+                },
+                "skillPath": {
+                    "description": "markdown地址，内部使用，不要对外",
+                    "type": "string"
+                },
+                "variables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SkillVariable"
+                    }
+                }
+            }
+        },
         "response.SkillInfo": {
             "type": "object",
             "properties": {
@@ -29743,6 +30876,46 @@ const docTemplate = `{
                 },
                 "skillType": {
                     "description": "类型",
+                    "type": "string"
+                }
+            }
+        },
+        "response.SkillVariable": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "variableKey": {
+                    "type": "string"
+                },
+                "variableValue": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SquareBuiltinSkillInfo": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "skillId": {
                     "type": "string"
                 }
             }

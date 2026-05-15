@@ -11,6 +11,7 @@ import (
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	"github.com/UnicomAI/wanwu/api/proto/common"
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
+	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	ag_ui_util "github.com/UnicomAI/wanwu/pkg/ag-ui-util"
@@ -498,6 +499,27 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 		}
 	}
 
+	// Skill Preview Agent 模式，需要构建 skill 变量的 schema.Message
+	var skillMessage *schema.Message
+	if agentID == generalAgentSkillChatPreviewAgentID {
+		resp, err := mcp.GetCustomSkillByPreviewID(ctx.Request.Context(), &mcp_service.GetCustomSkillByPreviewIDReq{
+			PreviewThreadId: threadID,
+			Identity: &mcp_service.Identity{
+				UserId: userID,
+				OrgId:  orgID,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if customSkill := resp.GetSkill(); customSkill != nil && len(customSkill.Variables) > 0 {
+			skillMessage = &schema.Message{
+				Role:    schema.System,
+				Content: buildWgaSkillVariablesMessage(customSkill),
+			}
+		}
+	}
+
 	// 历史消息 + @资源提示消息 + 当前用户消息
 	messages, err := filterWgaHistoryMessages(ctx, userID, orgID, threadID)
 	if err != nil {
@@ -505,6 +527,10 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 	}
 	if mentionResources.hasResources() {
 		messages = append(messages, buildWgaMentionResourcesMessage(mentionResources))
+	}
+	// 追加技能变量提示消息（仅 Skill Preview Agent 模式）
+	if skillMessage != nil {
+		messages = append(messages, skillMessage)
 	}
 	messages = append(messages, convertWgaMessage(userInputMessage.Role, userInputMessage.Content))
 	opts = append(opts, wga_option.WithMessages(messages))

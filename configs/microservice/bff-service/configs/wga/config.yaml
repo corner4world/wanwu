@@ -11,6 +11,9 @@ agents:
   - relative_path: ./agents/HTML/config.yaml
   - relative_path: ./agents/DataAnalysis/config.yaml
   - relative_path: ./agents/Excel/config.yaml
+  - relative_path: ./agents/SkillChat/config.yaml
+  - relative_path: ./agents/SkillImport/config.yaml
+  - relative_path: ./agents/SkillPreview/config.yaml
 
 sub_agents:
   - agent_id: "Deep Research Agent"
@@ -33,6 +36,10 @@ sub_agents:
     agent_name: "创建网页"
     avatar_path: /v1/static/agent/web.png
     placeholder: "选择一款模型，告诉我想要生成的网页主题或内容"
+  - agent_id: "Skill Chat Agent"
+    agent_name: "创建Skill"
+    avatar_path: /v1/static/agent/skill.png
+    placeholder: "选择一款模型，告诉我需要创建的skill或直接导入外部skill，也可@相关应用快速创建skill"
 
 server:
   host: "0.0.0.0"
@@ -53,6 +60,7 @@ model:
 persistent:
   enabled: true
   base_dir: /shared/data/wga/bff/versioned
+  skill_base_dir: /shared/data/wga/bff/overwrite
   mode: versioned
 
 upload_limit:

@@ -276,7 +276,7 @@ func SkillConversationSave(ctx *gin.Context, userId, orgId string, req request.S
 	}
 
 	// 保存至资源库自定义Skills
-	return CreateCustomSkill(ctx, userId, orgId, "", skillConversationAuthor, zipUrl, req.SkillSaveId, "skill_conversation")
+	return CreateCustomSkill(ctx, userId, orgId, "", skillConversationAuthor, zipUrl, req.SkillSaveId, customSkillSourceTypeConversation)
 }
 
 // --- internal ---

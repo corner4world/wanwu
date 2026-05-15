@@ -47,6 +47,8 @@ type IClient interface {
 	CreateCustomSkill(ctx context.Context, customSkill *model.CustomSkill) (string, *errs.Status)
 	DeleteCustomSkill(ctx context.Context, skillId string) *errs.Status
 	GetCustomSkill(ctx context.Context, skillId string) (*model.CustomSkill, *errs.Status)
+	// GetCustomSkillByPreviewThreadID 按 preview_thread_id 匹配；previewThreadId 或 identity 不完整时返回 (nil, nil)；未找到返回 (nil, nil)；仅数据库失败返回 Status。
+	GetCustomSkillByPreviewThreadID(ctx context.Context, userId, orgId, previewThreadId string) (*model.CustomSkill, *errs.Status)
 	// GetCustomSkillByWgaThreadID 按 wga_thread_id 匹配；wgaThreadId 或 identity 不完整时返回 (nil, nil)；未找到返回 (nil, nil)；仅数据库失败返回 Status。
 	GetCustomSkillByWgaThreadID(ctx context.Context, userId, orgId, wgaThreadID string) (*model.CustomSkill, *errs.Status)
 	// GetCustomSkillListByWgaThreadIDList 按 wga_thread_id IN 批量查询；去空后列表为空或 userId/orgId 为空时返回空切片；仅数据库失败返回 Status。

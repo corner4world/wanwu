@@ -94,3 +94,4 @@ workflow:
 skill:
   endpoint: http://bff-service:6668
   builtin_skill_list_uri: /callback/v1/skill/builtin/list
+  custom_skill_list_uri: /callback/v1/skill/custom/list

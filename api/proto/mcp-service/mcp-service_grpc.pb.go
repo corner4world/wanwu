@@ -55,6 +55,7 @@ const (
 	MCPService_CustomSkillCreate_FullMethodName                = "/mcp_service.MCPService/CustomSkillCreate"
 	MCPService_CustomSkillDelete_FullMethodName                = "/mcp_service.MCPService/CustomSkillDelete"
 	MCPService_CustomSkillGet_FullMethodName                   = "/mcp_service.MCPService/CustomSkillGet"
+	MCPService_GetCustomSkillByPreviewID_FullMethodName        = "/mcp_service.MCPService/GetCustomSkillByPreviewID"
 	MCPService_GetCustomSkillByThreadID_FullMethodName         = "/mcp_service.MCPService/GetCustomSkillByThreadID"
 	MCPService_GetCustomSkillListByThreadIDList_FullMethodName = "/mcp_service.MCPService/GetCustomSkillListByThreadIDList"
 	MCPService_CustomSkillGetList_FullMethodName               = "/mcp_service.MCPService/CustomSkillGetList"
@@ -134,6 +135,7 @@ type MCPServiceClient interface {
 	CustomSkillCreate(ctx context.Context, in *CustomSkillCreateReq, opts ...grpc.CallOption) (*CustomSkillCreateResp, error)
 	CustomSkillDelete(ctx context.Context, in *CustomSkillDeleteReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CustomSkillGet(ctx context.Context, in *CustomSkillGetReq, opts ...grpc.CallOption) (*CustomSkill, error)
+	GetCustomSkillByPreviewID(ctx context.Context, in *GetCustomSkillByPreviewIDReq, opts ...grpc.CallOption) (*GetCustomSkillByPreviewIDResp, error)
 	GetCustomSkillByThreadID(ctx context.Context, in *GetCustomSkillByThreadIDReq, opts ...grpc.CallOption) (*GetCustomSkillByThreadIDResp, error)
 	GetCustomSkillListByThreadIDList(ctx context.Context, in *GetCustomSkillListByThreadIDListReq, opts ...grpc.CallOption) (*CustomSkillGetListResp, error)
 	CustomSkillGetList(ctx context.Context, in *CustomSkillGetListReq, opts ...grpc.CallOption) (*CustomSkillGetListResp, error)
@@ -526,6 +528,16 @@ func (c *mCPServiceClient) CustomSkillGet(ctx context.Context, in *CustomSkillGe
 	return out, nil
 }
 
+func (c *mCPServiceClient) GetCustomSkillByPreviewID(ctx context.Context, in *GetCustomSkillByPreviewIDReq, opts ...grpc.CallOption) (*GetCustomSkillByPreviewIDResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCustomSkillByPreviewIDResp)
+	err := c.cc.Invoke(ctx, MCPService_GetCustomSkillByPreviewID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mCPServiceClient) GetCustomSkillByThreadID(ctx context.Context, in *GetCustomSkillByThreadIDReq, opts ...grpc.CallOption) (*GetCustomSkillByThreadIDResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCustomSkillByThreadIDResp)
@@ -864,6 +876,7 @@ type MCPServiceServer interface {
 	CustomSkillCreate(context.Context, *CustomSkillCreateReq) (*CustomSkillCreateResp, error)
 	CustomSkillDelete(context.Context, *CustomSkillDeleteReq) (*emptypb.Empty, error)
 	CustomSkillGet(context.Context, *CustomSkillGetReq) (*CustomSkill, error)
+	GetCustomSkillByPreviewID(context.Context, *GetCustomSkillByPreviewIDReq) (*GetCustomSkillByPreviewIDResp, error)
 	GetCustomSkillByThreadID(context.Context, *GetCustomSkillByThreadIDReq) (*GetCustomSkillByThreadIDResp, error)
 	GetCustomSkillListByThreadIDList(context.Context, *GetCustomSkillListByThreadIDListReq) (*CustomSkillGetListResp, error)
 	CustomSkillGetList(context.Context, *CustomSkillGetListReq) (*CustomSkillGetListResp, error)
@@ -1010,6 +1023,9 @@ func (UnimplementedMCPServiceServer) CustomSkillDelete(context.Context, *CustomS
 }
 func (UnimplementedMCPServiceServer) CustomSkillGet(context.Context, *CustomSkillGetReq) (*CustomSkill, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CustomSkillGet not implemented")
+}
+func (UnimplementedMCPServiceServer) GetCustomSkillByPreviewID(context.Context, *GetCustomSkillByPreviewIDReq) (*GetCustomSkillByPreviewIDResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCustomSkillByPreviewID not implemented")
 }
 func (UnimplementedMCPServiceServer) GetCustomSkillByThreadID(context.Context, *GetCustomSkillByThreadIDReq) (*GetCustomSkillByThreadIDResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCustomSkillByThreadID not implemented")
@@ -1749,6 +1765,24 @@ func _MCPService_CustomSkillGet_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MCPService_GetCustomSkillByPreviewID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCustomSkillByPreviewIDReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).GetCustomSkillByPreviewID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_GetCustomSkillByPreviewID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).GetCustomSkillByPreviewID(ctx, req.(*GetCustomSkillByPreviewIDReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MCPService_GetCustomSkillByThreadID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCustomSkillByThreadIDReq)
 	if err := dec(in); err != nil {
@@ -2417,6 +2451,10 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CustomSkillGet",
 			Handler:    _MCPService_CustomSkillGet_Handler,
+		},
+		{
+			MethodName: "GetCustomSkillByPreviewID",
+			Handler:    _MCPService_GetCustomSkillByPreviewID_Handler,
 		},
 		{
 			MethodName: "GetCustomSkillByThreadID",

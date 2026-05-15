@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
@@ -42,7 +43,8 @@ func GenerateSkillFromMCP(ctx *gin.Context, mcpID, outputDir string) error {
 }
 
 // GenerateSkillFromCustomTool generates skill files from a custom tool's OpenAPI schema.
-// It fetches the schema by customToolID via gRPC, then uses openapi2skill to convert.
+// It fetches the schema by customToolID via gRPC, overrides the schema's title with
+// info.Name and prepends info.Description to the schema's description, then converts.
 func GenerateSkillFromCustomTool(ctx *gin.Context, customToolID, outputDir string) error {
 	info, err := mcp.GetCustomToolInfo(ctx.Request.Context(), &mcp_service.GetCustomToolInfoReq{
 		CustomToolId: customToolID,
@@ -51,7 +53,12 @@ func GenerateSkillFromCustomTool(ctx *gin.Context, customToolID, outputDir strin
 		return fmt.Errorf("failed to get custom tool info: %w", err)
 	}
 
-	return generateSkillFromOpenAPISchema(ctx.Request.Context(), []byte(info.Schema), outputDir)
+	specData, err := overrideSchemaMeta([]byte(info.Schema), info.Name, info.Description)
+	if err != nil {
+		return fmt.Errorf("failed to override schema meta: %w", err)
+	}
+
+	return generateSkillFromOpenAPISchema(ctx.Request.Context(), specData, outputDir)
 }
 
 // GenerateSkillFromAgent generates skill files for the wanwu agent API.
@@ -185,4 +192,47 @@ func getRAGMeta(ctx *gin.Context, id string) (string, string, error) {
 		name = id
 	}
 	return name, desc, nil
+}
+
+// overrideSchemaMeta replaces the OpenAPI spec's info.title with name and
+// prepends description to info.description.
+func overrideSchemaMeta(schemaData []byte, name, description string) ([]byte, error) {
+	var spec map[string]json.RawMessage
+	if err := json.Unmarshal(schemaData, &spec); err != nil {
+		return nil, fmt.Errorf("invalid JSON: %w", err)
+	}
+
+	infoRaw, ok := spec["info"]
+	if !ok {
+		return nil, fmt.Errorf("openapi spec missing info section")
+	}
+
+	var info map[string]json.RawMessage
+	if err := json.Unmarshal(infoRaw, &info); err != nil {
+		return nil, fmt.Errorf("invalid info section: %w", err)
+	}
+
+	// Override title with name.
+	if name != "" {
+		title, _ := json.Marshal(name)
+		info["title"] = title
+	}
+
+	// Prepend description to existing description.
+	if description != "" {
+		var newDesc string
+		if existingRaw, exists := info["description"]; exists {
+			var existing string
+			_ = json.Unmarshal(existingRaw, &existing)
+			newDesc = description + ";" + existing
+		} else {
+			newDesc = description
+		}
+		descJSON, _ := json.Marshal(newDesc)
+		info["description"] = descJSON
+	}
+
+	updatedInfo, _ := json.Marshal(info)
+	spec["info"] = updatedInfo
+	return json.Marshal(spec)
 }

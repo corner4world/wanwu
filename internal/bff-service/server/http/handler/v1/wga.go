@@ -234,6 +234,86 @@ func CreateGeneralAgentConversation(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
+// CreateGeneralAgentSkillConversation
+//
+//	@Tags			wga
+//	@Summary		Create skill conversation
+//	@Description	Create a dedicated conversation for skill creation.
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.CreateGeneralAgentSkillConversationReq	true	"create skill conversation request"
+//	@Success		200		{object}	response.Response{data=response.CreateGeneralAgentSkillConversationResp}
+//	@Router			/general/agent/skill/conversation [post]
+func CreateGeneralAgentSkillConversation(ctx *gin.Context) {
+	var req request.CreateGeneralAgentSkillConversationReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.CreateGeneralAgentSkillConversation(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// ImportGeneralAgentSkillConversation
+//
+//	@Tags			wga
+//	@Summary		Import skill conversation
+//	@Description	Import a skill zip into the skill conversation workspace.
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.ImportGeneralAgentSkillConversationReq	true	"import skill conversation request"
+//	@Success		200		{object}	response.Response{data=response.ImportGeneralAgentSkillConversationResp}
+//	@Router			/general/agent/skill/import/conversation [post]
+func ImportGeneralAgentSkillConversation(ctx *gin.Context) {
+	var req request.ImportGeneralAgentSkillConversationReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.ImportGeneralAgentSkillConversation(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// ConvertGeneralAgentSkillConversation
+//
+//	@Tags			wga
+//	@Summary		Convert resource to skill conversation
+//	@Description	Convert MCP/tool/agent/workflow/RAG into a skill conversation workspace.
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.ConvertGeneralAgentSkillConversationReq	true	"convert skill conversation request"
+//	@Success		200		{object}	response.Response{data=response.ConvertGeneralAgentSkillConversationResp}
+//	@Router			/general/agent/skill/convert/conversation [post]
+func ConvertGeneralAgentSkillConversation(ctx *gin.Context) {
+	var req request.ConvertGeneralAgentSkillConversationReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.ConvertGeneralAgentSkillConversation(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// RefreshGeneralAgentSkillConversation
+//
+//	@Tags			wga
+//	@Summary		Refresh skill conversation
+//	@Description	Create a new WGA conversation with empty model config and bind it to an existing custom skill.
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.RefreshGeneralAgentSkillConversationReq	true	"refresh skill conversation request"
+//	@Success		200		{object}	response.Response{data=response.RefreshGeneralAgentSkillConversationResp}
+//	@Router			/general/agent/skill/refresh/conversation [post]
+func RefreshGeneralAgentSkillConversation(ctx *gin.Context) {
+	var req request.RefreshGeneralAgentSkillConversationReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.RefreshGeneralAgentSkillConversation(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, resp, err)
+}
+
 // DeleteGeneralAgentConversation
 //
 //	@Tags			wga
@@ -291,6 +371,25 @@ func GetGeneralAgentConversationDetail(ctx *gin.Context) {
 		return
 	}
 	resp, err := service.GetGeneralAgentConversationDetail(ctx, getUserID(ctx), getOrgID(ctx), req.ThreadID)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentSkillPreviewConversationDetail
+//
+//	@Tags			wga
+//	@Summary		获取 Skill preview 对话详情
+//	@Description	用于回显 Skill preview 模式的历史消息
+//	@Security		JWT
+//	@Produce		json
+//	@Param			previewId	query		string	true	"创建或导入接口返回的预览对话 ID"
+//	@Success		200			{object}	response.Response{data=response.ListResult{list=[]response.GeneralAgentConversationDetailInfo}}
+//	@Router			/general/agent/skill/preview/conversation/detail [get]
+func GetGeneralAgentSkillPreviewConversationDetail(ctx *gin.Context) {
+	var req request.GetGeneralAgentSkillPreviewConversationDetailReq
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.GetGeneralAgentSkillPreviewConversationDetail(ctx, getUserID(ctx), getOrgID(ctx), req)
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -445,6 +544,28 @@ func GeneralAgentConversationChat(ctx *gin.Context) {
 		return
 	}
 	err := service.GeneralAgentConversationChat(ctx, getUserID(ctx), getOrgID(ctx), req)
+	if err != nil {
+		gin_util.Response(ctx, nil, err)
+	}
+}
+
+// GeneralAgentSkillConversationChat
+//
+//	@Tags			wga
+//	@Summary		Skill对话流
+//	@Description	Skill对话流，用于创建自定义技能，SSE流式返回
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		text/event-stream
+//	@Param			data	body		request.GeneralAgentSkillConversationChatReq	true	"Skill对话请求参数"
+//	@Success		200		{object}	string											"SSE流式返回"
+//	@Router			/general/agent/skill/conversation/chat [post]
+func GeneralAgentSkillConversationChat(ctx *gin.Context) {
+	var req request.GeneralAgentSkillConversationChatReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.GeneralAgentSkillConversationChat(ctx, getUserID(ctx), getOrgID(ctx), req)
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 	}

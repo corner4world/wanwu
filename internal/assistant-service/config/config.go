@@ -42,6 +42,7 @@ type Workflow struct {
 type Skill struct {
 	Endpoint            string `mapstructure:"endpoint" json:"endpoint" yaml:"endpoint"`
 	BuiltInSkillListUri string `mapstructure:"builtin_skill_list_uri" json:"builtin_skill_list_uri" yaml:"builtin_skill_list_uri"`
+	CustomSkillListUri  string `mapstructure:"custom_skill_list_uri" json:"custom_skill_list_uri" yaml:"custom_skill_list_uri"`
 }
 
 type ServerConfig struct {

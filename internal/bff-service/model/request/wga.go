@@ -1,5 +1,10 @@
 package request
 
+import (
+	"fmt"
+	"strings"
+)
+
 // UpdateGeneralAgentConfigReq 更新通用智能体配置请求
 type UpdateGeneralAgentConfigReq struct {
 	Tool      []GeneralAgentConfigToolItem `json:"tool"`
@@ -38,6 +43,41 @@ type CreateGeneralAgentConversationReq struct {
 
 func (c *CreateGeneralAgentConversationReq) Check() error { return nil }
 
+type CreateGeneralAgentSkillConversationReq CreateGeneralAgentConversationReq
+
+func (c *CreateGeneralAgentSkillConversationReq) Check() error {
+	return (*CreateGeneralAgentConversationReq)(c).Check()
+}
+
+type ImportGeneralAgentSkillConversationReq struct {
+	CreateCustomSkillReq
+	ModelConfig *AppModelConfig `json:"modelConfig" validate:"required"`
+}
+
+func (c *ImportGeneralAgentSkillConversationReq) Check() error { return nil }
+
+type ConvertGeneralAgentSkillConversationReq struct {
+	ID          string          `json:"id" validate:"required"`
+	Type        string          `json:"type" validate:"required"`
+	ModelConfig *AppModelConfig `json:"modelConfig" validate:"required"`
+	Author      string          `json:"author"`
+}
+
+func (c *ConvertGeneralAgentSkillConversationReq) Check() error {
+	switch strings.TrimSpace(strings.ToLower(c.Type)) {
+	case "mcp", "tool", "agent", "workflow", "rag":
+		return nil
+	default:
+		return fmt.Errorf("unsupported type: %s", c.Type)
+	}
+}
+
+type RefreshGeneralAgentSkillConversationReq struct {
+	SkillID string `json:"skillId" validate:"required"`
+}
+
+func (c *RefreshGeneralAgentSkillConversationReq) Check() error { return nil }
+
 type DeleteGeneralAgentConversationReq struct {
 	ThreadID string `json:"threadId" validate:"required"` // 对话ID
 }
@@ -56,6 +96,12 @@ type GetGeneralAgentConversationDetailReq struct {
 }
 
 func (c *GetGeneralAgentConversationDetailReq) Check() error { return nil }
+
+type GetGeneralAgentSkillPreviewConversationDetailReq struct {
+	PreviewID string `json:"previewId" form:"previewId" validate:"required"`
+}
+
+func (c *GetGeneralAgentSkillPreviewConversationDetailReq) Check() error { return nil }
 
 type GeneralAgentConfigCheckRequest struct {
 	AgentID  string `json:"agentId"`                                      // 子智能体ID
@@ -88,6 +134,28 @@ type GeneralAgentConversationChatReq struct {
 
 func (c *GeneralAgentConversationChatReq) Check() error { return nil }
 
+// GeneralAgentSkillConversationChatReq Skill对话请求
+type GeneralAgentSkillConversationChatReq struct {
+	CustomSkillID string                            `json:"customSkillId" validate:"required"` // 自定义技能ID，用于workspace隔离
+	Mode          string                            `json:"mode"`                              // 模式：normal/import/convert/preview，默认 normal
+	PreviewID     string                            `json:"previewId"`                         // preview模式对话ID，用于历史记录隔离
+	ThreadID      string                            `json:"threadId" validate:"required"`      // 对话ID
+	Messages      []GeneralAgentConversationMessage `json:"messages" validate:"required"`      // 消息
+}
+
+func (c *GeneralAgentSkillConversationChatReq) Check() error {
+	mode := strings.TrimSpace(strings.ToLower(c.Mode))
+	switch mode {
+	case "", "normal", "import", "convert", "preview":
+	default:
+		return fmt.Errorf("unsupported mode: %s", c.Mode)
+	}
+	if mode == "preview" && strings.TrimSpace(c.PreviewID) == "" {
+		return fmt.Errorf("previewId is required when mode is preview")
+	}
+	return nil
+}
+
 type GeneralAgentConversationMessage struct {
 	ID      string      `json:"id"`                          // 消息id
 	Role    string      `json:"role" validate:"required"`    // 角色 user
@@ -115,7 +183,7 @@ func (m *GeneralAgentConversationMessage) GetURLs() map[string]string {
 
 type GeneralAgentWorkspaceDownloadReq struct {
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
-	RunID    string `json:"runId" form:"runId" validate:"required"`       // 运行ID
+	RunID    string `json:"runId" form:"runId"`                           // 运行ID
 	Path     string `json:"path" form:"path"`                             // workspace中路径
 }
 
@@ -123,7 +191,7 @@ func (c *GeneralAgentWorkspaceDownloadReq) Check() error { return nil }
 
 type GeneralAgentWorkspacePreviewReq struct {
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
-	RunID    string `json:"runId" form:"runId" validate:"required"`       // 运行ID
+	RunID    string `json:"runId" form:"runId"`                           // 运行ID
 	Path     string `json:"path" form:"path" validate:"required"`         // 文件路径
 }
 
@@ -131,7 +199,7 @@ func (c *GeneralAgentWorkspacePreviewReq) Check() error { return nil }
 
 type GeneralAgentWorkspaceReq struct {
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
-	RunID    string `json:"runId" form:"runId" validate:"required"`       // 运行ID
+	RunID    string `json:"runId" form:"runId"`                           // 运行ID
 }
 
 func (c *GeneralAgentWorkspaceReq) Check() error { return nil }

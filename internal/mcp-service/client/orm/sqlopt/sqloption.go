@@ -186,6 +186,15 @@ func WithCustomSkillSourceType(sourceType string) SQLOption {
 	})
 }
 
+func WithCustomSkillPreviewThreadId(previewThreadID string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if previewThreadID != "" {
+			return db.Where("preview_thread_id = ?", previewThreadID)
+		}
+		return db
+	})
+}
+
 func WithCustomSkillWgaThreadId(wgaThreadId string) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		if wgaThreadId != "" {

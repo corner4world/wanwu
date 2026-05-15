@@ -87,6 +87,30 @@ func NewGeneralAgentWorkspaceStore(threadID string) (*wga_persistent.Store, erro
 	return wga_persistent.NewStore(mode, cfg.Persistent.BaseDir, threadID)
 }
 
+// NewGeneralAgentSkillWorkspaceStore creates the overwrite workspace used by Skill Chat.
+//
+// The store is bound to customSkillID instead of the WGA business threadID so multiple
+// chat threads can continue editing the same skill workspace.
+func NewGeneralAgentSkillWorkspaceStore(customSkillID string) (*wga_persistent.Store, error) {
+	cfg := config.WgaCfg()
+	if !cfg.Persistent.Enabled {
+		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "persistent not enabled")
+	}
+
+	return wga_persistent.NewStore(wga_persistent.ModeOverwrite, generalAgentSkillWorkspaceBaseDir(cfg), customSkillID)
+}
+
+func generalAgentSkillWorkspaceBaseDir(cfg *config.WgaConfig) string {
+	if cfg.Persistent.SkillBaseDir != "" {
+		return cfg.Persistent.SkillBaseDir
+	}
+	baseDir := cfg.Persistent.BaseDir
+	if baseDir == "" {
+		return ""
+	}
+	return filepath.Join(filepath.Dir(baseDir), "overwrite")
+}
+
 // ============================================================
 // 目录获取方法
 //

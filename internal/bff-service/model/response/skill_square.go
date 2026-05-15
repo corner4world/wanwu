@@ -12,6 +12,15 @@ type SquareSkillInfo struct {
 	IsShared bool           `json:"isShared"`
 }
 
+// SquareBuiltinSkillInfo 探索广场-内置skill列表项
+type SquareBuiltinSkillInfo struct {
+	SkillId string         `json:"skillId"`
+	Name    string         `json:"name"`
+	Avatar  request.Avatar `json:"avatar"`
+	Author  string         `json:"author"`
+	Desc    string         `json:"desc"`
+}
+
 // SquareSkillDetail 探索广场-skill详情
 type SquareSkillDetail struct {
 	SquareSkillInfo

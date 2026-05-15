@@ -10,7 +10,6 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
-	"github.com/UnicomAI/wanwu/pkg/constant"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/minio"
 	"github.com/gin-gonic/gin"
@@ -18,13 +17,7 @@ import (
 
 // GetSquareSkillList 探索广场-skill列表（内置skill配置 + isShared计算）
 func GetSquareSkillList(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
-	var skillsCfgList []*config.SkillsConfig
-	for _, skillsCfg := range config.Cfg().AgentSkills {
-		if name != "" && !strings.Contains(skillsCfg.Name, name) {
-			continue
-		}
-		skillsCfgList = append(skillsCfgList, skillsCfg)
-	}
+	skillsCfgList := getSquareSkillConfigs(name)
 
 	// 查询当前用户已添加的 acquired skill，计算 isShared
 	sharedMap := make(map[string]bool)
@@ -42,6 +35,36 @@ func GetSquareSkillList(ctx *gin.Context, userId, orgId, name string) (*response
 		}
 	}
 
+	list := buildSquareSkillInfoList(skillsCfgList, sharedMap)
+
+	return &response.ListResult{
+		List:  list,
+		Total: int64(len(list)),
+	}, nil
+}
+
+// GetSquareBuiltinSkillList 探索广场-skill广场内置列表。
+func GetSquareBuiltinSkillList(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
+	skillsCfgList := getSquareSkillConfigs(name)
+	list := buildSquareBuiltinSkillInfoList(skillsCfgList)
+	return &response.ListResult{
+		List:  list,
+		Total: int64(len(list)),
+	}, nil
+}
+
+func getSquareSkillConfigs(name string) []*config.SkillsConfig {
+	var skillsCfgList []*config.SkillsConfig
+	for _, skillsCfg := range config.Cfg().AgentSkills {
+		if name != "" && !strings.Contains(skillsCfg.Name, name) {
+			continue
+		}
+		skillsCfgList = append(skillsCfgList, skillsCfg)
+	}
+	return skillsCfgList
+}
+
+func buildSquareSkillInfoList(skillsCfgList []*config.SkillsConfig, sharedMap map[string]bool) []*response.SquareSkillInfo {
 	list := make([]*response.SquareSkillInfo, 0, len(skillsCfgList))
 	for _, skillsCfg := range skillsCfgList {
 		iconUrl := config.Cfg().DefaultIcon.SkillIcon
@@ -57,11 +80,25 @@ func GetSquareSkillList(ctx *gin.Context, userId, orgId, name string) (*response
 			IsShared: sharedMap[skillsCfg.SkillId],
 		})
 	}
+	return list
+}
 
-	return &response.ListResult{
-		List:  list,
-		Total: int64(len(list)),
-	}, nil
+func buildSquareBuiltinSkillInfoList(skillsCfgList []*config.SkillsConfig) []*response.SquareBuiltinSkillInfo {
+	list := make([]*response.SquareBuiltinSkillInfo, 0, len(skillsCfgList))
+	for _, skillsCfg := range skillsCfgList {
+		iconUrl := config.Cfg().DefaultIcon.SkillIcon
+		if skillsCfg.Avatar != "" {
+			iconUrl = skillsCfg.Avatar
+		}
+		list = append(list, &response.SquareBuiltinSkillInfo{
+			SkillId: skillsCfg.SkillId,
+			Name:    skillsCfg.Name,
+			Avatar:  request.Avatar{Path: iconUrl},
+			Author:  skillsCfg.Author,
+			Desc:    skillsCfg.Desc,
+		})
+	}
+	return list
 }
 
 // ShareSquareSkill 探索广场-添加skill到资源库
@@ -92,8 +129,8 @@ func ShareSquareSkill(ctx *gin.Context, userId, orgId, skillId string) error {
 		Author:        skillsCfg.Author,
 		Desc:          skillsCfg.Desc,
 		ObjectPath:    objectPath,
-		AcquiredType:  constant.SkillTypeBuiltIn,
-		Markdown:      string(skillsCfg.SkillMarkdown),
+		// AcquiredType:  constant.SkillTypeBuiltIn,
+		Markdown: string(skillsCfg.SkillMarkdown),
 	})
 	return err
 }

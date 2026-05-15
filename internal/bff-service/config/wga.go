@@ -42,9 +42,10 @@ type WgaModelConfig struct {
 }
 
 type WgaPersistentConfig struct {
-	Enabled bool   `yaml:"enabled" json:"enabled" mapstructure:"enabled"`    // 是否启用持久化
-	BaseDir string `yaml:"base_dir" json:"base_dir" mapstructure:"base_dir"` // 持久化根目录
-	Mode    string `yaml:"mode" json:"mode" mapstructure:"mode"`             // 持久化模式：overwrite 或 versioned
+	Enabled      bool   `yaml:"enabled" json:"enabled" mapstructure:"enabled"`                      // 是否启用持久化
+	BaseDir      string `yaml:"base_dir" json:"base_dir" mapstructure:"base_dir"`                   // 持久化根目录
+	SkillBaseDir string `yaml:"skill_base_dir" json:"skill_base_dir" mapstructure:"skill_base_dir"` // Skill overwrite 持久化根目录
+	Mode         string `yaml:"mode" json:"mode" mapstructure:"mode"`                               // 持久化模式：overwrite 或 versioned
 }
 
 type WgaToolConfig struct {

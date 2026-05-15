@@ -43,6 +43,14 @@ func registerWGA(apiV1 *gin.RouterGroup) {
 	// 通用智能体对话相关接口
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/conversation/chat", http.MethodPost, v1.GeneralAgentConversationChat, "通用智能体流式问答")
 
+	// Skill对话相关接口
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/skill/conversation", http.MethodPost, v1.CreateGeneralAgentSkillConversation, "(Skill专用)创建对话")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/skill/import/conversation", http.MethodPost, v1.ImportGeneralAgentSkillConversation, "导入Skill专用对话")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/skill/convert/conversation", http.MethodPost, v1.ConvertGeneralAgentSkillConversation, "一键转化为Skill专用对话")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/skill/refresh/conversation", http.MethodPost, v1.RefreshGeneralAgentSkillConversation, "刷新Skill专用对话")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/skill/conversation/chat", http.MethodPost, v1.GeneralAgentSkillConversationChat, "Skill对话流")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/skill/preview/conversation/detail", http.MethodGet, v1.GetGeneralAgentSkillPreviewConversationDetail, "Skill preview对话详情")
+
 	// 通用智能体Human-In-The-Loop相关接口
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/question/reply", http.MethodPost, v1.GeneralAgentReplyQuestion, "回答问题")
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/question/reject", http.MethodPost, v1.GeneralAgentRejectQuestion, "拒绝问题")

@@ -64,6 +64,26 @@ func (c *Client) GetCustomSkill(ctx context.Context, skillId string) (*model.Cus
 	return &cs, nil
 }
 
+// GetCustomSkillByPreviewThreadID 仅匹配列 preview_thread_id。参数不完整或记录不存在时返回 (nil, nil)；仅查询失败返回 Status。
+func (c *Client) GetCustomSkillByPreviewThreadID(ctx context.Context, userId, orgId, previewThreadID string) (*model.CustomSkill, *err_code.Status) {
+	if previewThreadID == "" || userId == "" || orgId == "" {
+		return nil, nil
+	}
+	var cs model.CustomSkill
+	err := sqlopt.SQLOptions(
+		sqlopt.WithUserID(userId),
+		sqlopt.WithOrgID(orgId),
+		sqlopt.WithCustomSkillPreviewThreadId(previewThreadID),
+	).Apply(c.db).WithContext(ctx).Model(&model.CustomSkill{}).First(&cs).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, toErrStatus("mcp_custom_skill_get_by_wga_thread", err.Error())
+	}
+	return &cs, nil
+}
+
 // GetCustomSkillByWgaThreadID 仅匹配列 wga_thread_id。参数不完整或记录不存在时返回 (nil, nil)；仅查询失败返回 Status。
 func (c *Client) GetCustomSkillByWgaThreadID(ctx context.Context, userId, orgId, wgaThreadID string) (*model.CustomSkill, *err_code.Status) {
 	if wgaThreadID == "" || userId == "" || orgId == "" {

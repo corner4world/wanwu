@@ -13,18 +13,8 @@ import (
 // then falls back to combining WANWU_EXTERNAL_SCHEME + WANWU_EXTERNAL_ENDPOINT,
 // and finally defaults to "http://localhost:8081".
 func wanwuExternalEndpoint() string {
-	// WANWU_WEB_BASE_URL = http://172.19.160.229:8081 (full URL with scheme)
-	if v := os.Getenv("WANWU_WEB_BASE_URL"); v != "" {
+	if v := os.Getenv("SERVER_WEB_BASE_URL"); v != "" {
 		return v
-	}
-	// Combine scheme + endpoint: http:// + 172.19.160.229:8081
-	scheme := os.Getenv("WANWU_EXTERNAL_SCHEME")
-	endpoint := os.Getenv("WANWU_EXTERNAL_ENDPOINT")
-	if scheme != "" && endpoint != "" {
-		return scheme + "://" + endpoint
-	}
-	if endpoint != "" {
-		return "http://" + endpoint
 	}
 	return "http://localhost:8081"
 }
@@ -36,9 +26,9 @@ func jsonMarshal(v interface{}) ([]byte, error) {
 
 // SkillCategory constants for wanwu API categories.
 const (
-	SkillCategoryAgent     = "agent"
-	SkillCategoryWorkflow  = "workflow"
-	SkillCategoryRAG = "rag"
+	SkillCategoryAgent    = "agent"
+	SkillCategoryWorkflow = "workflow"
+	SkillCategoryRAG      = "rag"
 )
 
 // wanwuOpenAPITemplates maps category names to their OpenAPI JSON templates.
@@ -82,7 +72,6 @@ func renderWanwuOpenAPISpec(category, uuid, name, desc string) ([]byte, error) {
 		Desc:      desc,
 		ServerURL: wanwuExternalEndpoint(),
 	}
-
 	var buf strings.Builder
 	if err := t.Execute(&buf, data); err != nil {
 		return nil, fmt.Errorf("execute %s openapi template err: %w", category, err)
@@ -112,7 +101,7 @@ const agentOpenAPITemplate = `{
   "servers": [
     {
       "url": "{{.ServerURL}}",
-      "description": "默认服务地址"
+      "description": "服务地址"
     }
   ],
   "paths": {
@@ -283,7 +272,7 @@ const workflowOpenAPITemplate = `{
   "servers": [
     {
       "url": "{{.ServerURL}}",
-      "description": "默认服务地址"
+      "description": "服务地址"
     }
   ],
   "paths": {
@@ -396,7 +385,7 @@ const ragOpenAPITemplate = `{
   "servers": [
     {
       "url": "{{.ServerURL}}",
-      "description": "默认服务地址"
+      "description": "服务地址"
     }
   ],
   "paths": {

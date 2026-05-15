@@ -56,6 +56,24 @@ func (s *Service) CustomSkillGet(ctx context.Context, req *mcp_service.CustomSki
 	return toCustomSkillInfo(customSkill, toCustomSkillVariables(variables)), nil
 }
 
+func (s *Service) GetCustomSkillByPreviewID(ctx context.Context, req *mcp_service.GetCustomSkillByPreviewIDReq) (*mcp_service.GetCustomSkillByPreviewIDResp, error) {
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_get_by_preview_thread", "identity is empty"))
+	}
+	customSkill, st := s.cli.GetCustomSkillByPreviewThreadID(ctx, req.GetIdentity().GetUserId(), req.GetIdentity().GetOrgId(), req.GetPreviewThreadId())
+	if st != nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, st)
+	}
+	if customSkill == nil {
+		return &mcp_service.GetCustomSkillByPreviewIDResp{}, nil
+	}
+	variables, err := s.cli.GetCustomSkillVars(ctx, customSkill.UserID, customSkill.OrgID, util.Int2Str(customSkill.ID))
+	if err != nil {
+		return nil, errStatus(errs.Code_MCPCustomSkillErr, err)
+	}
+	return &mcp_service.GetCustomSkillByPreviewIDResp{Skill: toCustomSkillInfo(customSkill, toCustomSkillVariables(variables))}, nil
+}
+
 func (s *Service) GetCustomSkillByThreadID(ctx context.Context, req *mcp_service.GetCustomSkillByThreadIDReq) (*mcp_service.GetCustomSkillByThreadIDResp, error) {
 	if req.GetIdentity() == nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_get_by_wga_thread", "identity is empty"))

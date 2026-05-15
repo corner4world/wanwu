@@ -49,6 +49,7 @@ func Register(callbackAPI *gin.RouterGroup) {
 	// app record
 	mid.Sub("callback").Reg(callbackAPI, "/app/record", http.MethodPost, callback.AppRecord, "应用使用记录")
 	//skill
-	mid.Sub("callback").Reg(callbackAPI, "/skill/builtin/list", http.MethodPost, callback.SearchBuiltInSkillList, "内置工具详情列表")
+	mid.Sub("callback").Reg(callbackAPI, "/skill/builtin/list", http.MethodPost, callback.SearchBuiltInSkillList, "内置skill详情列表")
+	mid.Sub("callback").Reg(callbackAPI, "/skill/custom/list", http.MethodPost, callback.SearchCustomSkillList, "自定义skill详情列表")
 	mid.Sub("callback").Reg(callbackAPI, "/skill/detail", http.MethodGet, callback.GetSkillDetail, "获取技能详情")
 }

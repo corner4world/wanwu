@@ -41,6 +41,7 @@ func ParseSkillFrontMatter(content string) (*FrontMatter, error) {
 	}
 
 	frontMatterStr := strings.TrimSpace(rest[:endIdx])
+	frontMatterStr = strings.ToValidUTF8(frontMatterStr, "")
 
 	var fm FrontMatter
 	if err := yaml.Unmarshal([]byte(frontMatterStr), &fm); err != nil {

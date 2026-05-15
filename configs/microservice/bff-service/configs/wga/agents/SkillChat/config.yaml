@@ -1,0 +1,21 @@
+id: Skill Chat Agent
+type: sandbox
+name: 创建Skill智能体
+description: |
+  用于创建Skill。
+
+configure:
+  enable_thinking: true
+  sandbox:
+    type: reuse
+    host: wga-sandbox-wanwu
+
+prompt_relative_path: ./prompt.md
+
+tool_categories:
+
+skills:
+  - dir: configs/microservice/bff-service/configs/agent-skills/anthropics/skill-creator
+  - dir: configs/microservice/bff-service/configs/agent-skills/security/skill-vetter
+
+sub_agents:

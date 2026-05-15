@@ -44,6 +44,15 @@ message CustomSkillGetReq {
   string skillId = 1;
 }
 
+message GetCustomSkillByPreviewIDReq {
+  string previewThreadId = 1;
+  Identity identity = 2;
+}
+
+message GetCustomSkillByPreviewIDResp {
+  CustomSkill skill = 1;
+}
+
 // 按 wgaThreadId 在 identity 下查找 custom skill；未命中时 skillId 为空。非数据库错误不返回 RPC 错误。
 message GetCustomSkillByThreadIDReq {
   string wgaThreadId = 1;

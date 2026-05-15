@@ -39,7 +39,7 @@ func DeleteAcquiredSkill(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.DeleteAcquiredSkill(ctx, req.SkillId)
+	err := service.DeleteAcquiredSkill(ctx, getUserID(ctx), getOrgID(ctx), req.SkillId)
 	gin_util.Response(ctx, nil, err)
 }
 
@@ -57,4 +57,64 @@ func DeleteAcquiredSkill(ctx *gin.Context) {
 func GetAcquiredSkillDetail(ctx *gin.Context) {
 	resp, err := service.GetAcquiredSkill(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))
 	gin_util.Response(ctx, resp, err)
+}
+
+// CreateAcquiredSkillConfig 新增我添加的skill配置
+//
+//	@Tags			resource.skill
+//	@Summary		新增我添加的skill配置
+//	@Description	新增资源库中我添加的skill变量配置
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.SkillConfigReq	true	"skill配置"
+//	@Success		200		{object}	response.Response
+//	@Router			/agent/acquired/skill/config [post]
+func CreateAcquiredSkillConfig(ctx *gin.Context) {
+	var req request.SkillConfigReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.CreateAcquiredSkillConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, nil, err)
+}
+
+// UpdateAcquiredSkillConfig 编辑我添加的skill配置
+//
+//	@Tags			resource.skill
+//	@Summary		编辑我添加的skill配置
+//	@Description	编辑资源库中我添加的skill变量配置
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.UpdateSkillConfigReq	true	"skill配置"
+//	@Success		200		{object}	response.Response
+//	@Router			/agent/acquired/skill/config [put]
+func UpdateAcquiredSkillConfig(ctx *gin.Context) {
+	var req request.UpdateSkillConfigReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.UpdateAcquiredSkillConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, nil, err)
+}
+
+// DeleteAcquiredSkillConfig 删除我添加的skill配置
+//
+//	@Tags			resource.skill
+//	@Summary		删除我添加的skill配置
+//	@Description	删除资源库中我添加的skill变量配置
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.DeleteSkillConfigReq	true	"skill配置"
+//	@Success		200		{object}	response.Response
+//	@Router			/agent/acquired/skill/config [delete]
+func DeleteAcquiredSkillConfig(ctx *gin.Context) {
+	var req request.DeleteSkillConfigReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.DeleteAcquiredSkillConfig(ctx, getUserID(ctx), getOrgID(ctx), req)
+	gin_util.Response(ctx, nil, err)
 }

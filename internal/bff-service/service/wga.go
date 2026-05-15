@@ -8,6 +8,7 @@ import (
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	"github.com/UnicomAI/wanwu/api/proto/common"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
+	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	model_service "github.com/UnicomAI/wanwu/api/proto/model-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
@@ -17,6 +18,7 @@ import (
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
 	"github.com/UnicomAI/wanwu/pkg/util"
+	wga_persistent "github.com/UnicomAI/wanwu/pkg/wga-persistent"
 	wga_option "github.com/UnicomAI/wanwu/pkg/wga/wga-option"
 	"github.com/gin-gonic/gin"
 )
@@ -363,7 +365,7 @@ func GetGeneralAgentConfig(ctx *gin.Context, userId, orgId string) (response.Get
 }
 
 func GeneralAgentWorkspaceDownload(ctx *gin.Context, userId, orgId string, req request.GeneralAgentWorkspaceDownloadReq) (string, []byte, error) {
-	store, err := NewGeneralAgentWorkspaceStore(req.ThreadID)
+	store, err := newGeneralAgentWorkspaceStoreByThreadID(ctx, userId, orgId, req.ThreadID)
 	if err != nil {
 		return "", nil, err
 	}
@@ -375,7 +377,7 @@ func GeneralAgentWorkspaceDownload(ctx *gin.Context, userId, orgId string, req r
 }
 
 func GeneralAgentWorkspacePreview(ctx *gin.Context, userId, orgId string, req request.GeneralAgentWorkspacePreviewReq) (string, []byte, string, error) {
-	store, err := NewGeneralAgentWorkspaceStore(req.ThreadID)
+	store, err := newGeneralAgentWorkspaceStoreByThreadID(ctx, userId, orgId, req.ThreadID)
 	if err != nil {
 		return "", nil, "", err
 	}
@@ -387,7 +389,7 @@ func GeneralAgentWorkspacePreview(ctx *gin.Context, userId, orgId string, req re
 }
 
 func GeneralAgentWorkspaceInfo(ctx *gin.Context, userId, orgId string, req request.GeneralAgentWorkspaceReq) (*response.GeneralAgentWorkspaceResp, error) {
-	store, err := NewGeneralAgentWorkspaceStore(req.ThreadID)
+	store, err := newGeneralAgentWorkspaceStoreByThreadID(ctx, userId, orgId, req.ThreadID)
 	if err != nil {
 		return nil, err
 	}
@@ -407,6 +409,24 @@ func GeneralAgentWorkspaceInfo(ctx *gin.Context, userId, orgId string, req reque
 		Path:  "",
 		Files: result.Files,
 	}, nil
+}
+
+func newGeneralAgentWorkspaceStoreByThreadID(ctx *gin.Context, userId, orgId, threadID string) (*wga_persistent.Store, error) {
+	if !config.WgaCfg().Persistent.Enabled {
+		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "persistent not enabled")
+	}
+
+	resp, err := mcp.GetCustomSkillByThreadID(ctx.Request.Context(), &mcp_service.GetCustomSkillByThreadIDReq{
+		WgaThreadId: threadID,
+		Identity:    &mcp_service.Identity{UserId: userId, OrgId: orgId},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if customSkill := resp.GetSkill(); customSkill != nil {
+		return NewGeneralAgentSkillWorkspaceStore(customSkill.SkillId)
+	}
+	return NewGeneralAgentWorkspaceStore(threadID)
 }
 
 // --- internal wga model ---

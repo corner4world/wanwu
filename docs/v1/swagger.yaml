@@ -1892,6 +1892,21 @@ definitions:
     - assistantId
     - prompt
     type: object
+  request.ConvertGeneralAgentSkillConversationReq:
+    properties:
+      author:
+        type: string
+      id:
+        type: string
+      modelConfig:
+        $ref: '#/definitions/request.AppModelConfig'
+      type:
+        type: string
+    required:
+    - id
+    - modelConfig
+    - type
+    type: object
   request.CreateAPIKeyRequest:
     properties:
       desc:
@@ -1952,6 +1967,19 @@ definitions:
     - labels
     type: object
   request.CreateGeneralAgentConversationReq:
+    properties:
+      modelConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppModelConfig'
+        description: 模型
+      title:
+        description: 标题
+        type: string
+    required:
+    - modelConfig
+    - title
+    type: object
+  request.CreateGeneralAgentSkillConversationReq:
     properties:
       modelConfig:
         allOf:
@@ -2491,6 +2519,13 @@ definitions:
     required:
     - tableId
     type: object
+  request.DeleteSkillConfigReq:
+    properties:
+      id:
+        type: string
+    required:
+    - id
+    type: object
   request.DeleteSkillConversationReq:
     properties:
       conversationId:
@@ -2877,6 +2912,30 @@ definitions:
     - questionId
     - runId
     type: object
+  request.GeneralAgentSkillConversationChatReq:
+    properties:
+      customSkillId:
+        description: 自定义技能ID，用于workspace隔离
+        type: string
+      messages:
+        description: 消息
+        items:
+          $ref: '#/definitions/request.GeneralAgentConversationMessage'
+        type: array
+      mode:
+        description: 模式：normal/import/convert/preview，默认 normal
+        type: string
+      previewId:
+        description: preview模式对话ID，用于历史记录隔离
+        type: string
+      threadId:
+        description: 对话ID
+        type: string
+    required:
+    - customSkillId
+    - messages
+    - threadId
+    type: object
   request.GetModelRequest:
     properties:
       modelId:
@@ -2892,6 +2951,20 @@ definitions:
         type: string
       response:
         type: string
+    type: object
+  request.ImportGeneralAgentSkillConversationReq:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      modelConfig:
+        $ref: '#/definitions/request.AppModelConfig'
+      zipUrl:
+        type: string
+    required:
+    - modelConfig
+    - zipUrl
     type: object
   request.ImportOrUpdateModelRequest:
     properties:
@@ -3850,6 +3923,13 @@ definitions:
         description: 追问配置开关
         type: boolean
     type: object
+  request.RefreshGeneralAgentSkillConversationReq:
+    properties:
+      skillId:
+        type: string
+    required:
+    - skillId
+    type: object
   request.RegisterByEmail:
     properties:
       code:
@@ -3987,6 +4067,16 @@ definitions:
     required:
     - skillId
     type: object
+  request.SkillConfigReq:
+    properties:
+      skillId:
+        type: string
+      variable:
+        $ref: '#/definitions/request.SkillVariable'
+    required:
+    - skillId
+    - variable
+    type: object
   request.SkillConversationChatReq:
     properties:
       conversationId:
@@ -4019,6 +4109,17 @@ definitions:
     required:
     - conversationId
     - skillSaveId
+    type: object
+  request.SkillVariable:
+    properties:
+      desc:
+        type: string
+      name:
+        type: string
+      variableKey:
+        type: string
+      variableValue:
+        type: string
     type: object
   request.ToolSquareAPIKeyReq:
     properties:
@@ -4392,6 +4493,16 @@ definitions:
     - tableId
     - tableName
     type: object
+  request.UpdateSkillConfigReq:
+    properties:
+      id:
+        type: string
+      variable:
+        $ref: '#/definitions/request.SkillVariable'
+    required:
+    - id
+    - variable
+    type: object
   request.UploadSensitiveVocabularyReq:
     properties:
       fileName:
@@ -4672,6 +4783,12 @@ definitions:
         type: string
       skillMarkdown:
         type: string
+      squareSkillId:
+        type: string
+      variables:
+        items:
+          $ref: '#/definitions/response.SkillVariable'
+        type: array
     type: object
   response.AgentFileMeta:
     properties:
@@ -5348,6 +5465,15 @@ definitions:
       response:
         type: string
     type: object
+  response.ConvertGeneralAgentSkillConversationResp:
+    properties:
+      customSkillId:
+        type: string
+      previewId:
+        type: string
+      threadId:
+        type: string
+    type: object
   response.CozeConnectorInfo:
     properties:
       connector_status:
@@ -5585,6 +5711,15 @@ definitions:
         description: 对话ID
         type: string
     type: object
+  response.CreateGeneralAgentSkillConversationResp:
+    properties:
+      customSkillId:
+        type: string
+      previewId:
+        type: string
+      threadId:
+        type: string
+    type: object
   response.CreateKnowledgeExternalAPIResp:
     properties:
       externalApiId:
@@ -5747,29 +5882,23 @@ definitions:
   response.CustomSkillDetail:
     properties:
       author:
-        description: 作者
         type: string
       avatar:
-        allOf:
-        - $ref: '#/definitions/request.Avatar'
-        description: 模板头像
+        $ref: '#/definitions/request.Avatar'
       desc:
-        description: 模板描述
         type: string
       name:
-        description: 模板名称
+        type: string
+      previewId:
         type: string
       skillId:
-        description: 模板ID
         type: string
-      skillMarkdown:
-        description: 模板markdown预览
+      threadId:
         type: string
-      skillPath:
-        description: markdown地址，内部使用，不要对外
-        type: string
-      zipUrl:
-        type: string
+      variables:
+        items:
+          $ref: '#/definitions/response.SkillVariable'
+        type: array
     type: object
   response.CustomSkillIDResp:
     properties:
@@ -6226,6 +6355,15 @@ definitions:
       createdAt:
         description: 创建时间
         type: string
+      isSkillConversation:
+        description: 是否为skill对话
+        type: boolean
+      previewId:
+        description: skill preview conversation ID
+        type: string
+      skillId:
+        description: custom skill ID
+        type: string
       threadId:
         description: 对话ID
         type: string
@@ -6479,6 +6617,15 @@ definitions:
       id:
         type: string
       name:
+        type: string
+    type: object
+  response.ImportGeneralAgentSkillConversationResp:
+    properties:
+      customSkillId:
+        type: string
+      previewId:
+        type: string
+      threadId:
         type: string
     type: object
   response.KeywordsInfo:
@@ -7886,6 +8033,15 @@ definitions:
       visionSupport:
         type: string
     type: object
+  response.RefreshGeneralAgentSkillConversationResp:
+    properties:
+      customSkillId:
+        type: string
+      previewId:
+        type: string
+      threadId:
+        type: string
+    type: object
   response.RerankInfo:
     properties:
       fileUrl:
@@ -8075,6 +8231,35 @@ definitions:
         description: 会话标题
         type: string
     type: object
+  response.SkillDetail:
+    properties:
+      author:
+        description: 作者
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 模板头像
+      desc:
+        description: 模板描述
+        type: string
+      name:
+        description: 模板名称
+        type: string
+      skillId:
+        description: 模板ID
+        type: string
+      skillMarkdown:
+        description: 模板markdown预览
+        type: string
+      skillPath:
+        description: markdown地址，内部使用，不要对外
+        type: string
+      variables:
+        items:
+          $ref: '#/definitions/response.SkillVariable'
+        type: array
+    type: object
   response.SkillInfo:
     properties:
       author:
@@ -8095,6 +8280,32 @@ definitions:
         type: string
       skillType:
         description: 类型
+        type: string
+    type: object
+  response.SkillVariable:
+    properties:
+      desc:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      variableKey:
+        type: string
+      variableValue:
+        type: string
+    type: object
+  response.SquareBuiltinSkillInfo:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      name:
+        type: string
+      skillId:
         type: string
     type: object
   response.SquareSkillDetail:
@@ -8693,6 +8904,76 @@ paths:
       summary: 删除我添加的skill
       tags:
       - resource.skill
+  /agent/acquired/skill/config:
+    delete:
+      consumes:
+      - application/json
+      description: 删除资源库中我添加的skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeleteSkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 删除我添加的skill配置
+      tags:
+      - resource.skill
+    post:
+      consumes:
+      - application/json
+      description: 新增资源库中我添加的skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.SkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 新增我添加的skill配置
+      tags:
+      - resource.skill
+    put:
+      consumes:
+      - application/json
+      description: 编辑资源库中我添加的skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateSkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 编辑我添加的skill配置
+      tags:
+      - resource.skill
   /agent/acquired/skill/detail:
     get:
       consumes:
@@ -8753,6 +9034,138 @@ paths:
       security:
       - JWT: []
       summary: 获取我添加的skill列表
+      tags:
+      - resource.skill
+  /agent/skill/builtin/config:
+    delete:
+      consumes:
+      - application/json
+      description: 删除内置skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeleteSkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 删除内置skill配置
+      tags:
+      - resource.skill
+    post:
+      consumes:
+      - application/json
+      description: 新增内置skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.SkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 新增内置skill配置
+      tags:
+      - resource.skill
+    put:
+      consumes:
+      - application/json
+      description: 编辑内置skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateSkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 编辑内置skill配置
+      tags:
+      - resource.skill
+  /agent/skill/builtin/detail:
+    get:
+      consumes:
+      - application/json
+      description: 获取资源库内置skill详情
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillDetail'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取内置skill详情
+      tags:
+      - resource.skill
+  /agent/skill/builtin/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取资源库内置skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.SkillDetail'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取内置skill列表
       tags:
       - resource.skill
   /agent/skill/conversation:
@@ -9031,6 +9444,76 @@ paths:
       security:
       - JWT: []
       summary: 校验自定义skill zip包
+      tags:
+      - resource.skill
+  /agent/skill/custom/config:
+    delete:
+      consumes:
+      - application/json
+      description: 删除自定义skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeleteSkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 删除自定义skill配置
+      tags:
+      - resource.skill
+    post:
+      consumes:
+      - application/json
+      description: 新增自定义skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.SkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 新增自定义skill配置
+      tags:
+      - resource.skill
+    put:
+      consumes:
+      - application/json
+      description: 编辑自定义skill变量配置
+      parameters:
+      - description: skill配置
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateSkillConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 编辑自定义skill配置
       tags:
       - resource.skill
   /agent/skill/custom/detail:
@@ -11640,6 +12123,29 @@ paths:
       summary: 邮箱注册验证码发送
       tags:
       - guest
+  /builtin/skill/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载内置skill ZIP包
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 下载内置skill
+      tags:
+      - resource.skill
   /chatflow/application/info:
     post:
       consumes:
@@ -12709,6 +13215,180 @@ paths:
       security:
       - JWT: []
       summary: 通用智能体资源选择列表
+      tags:
+      - wga
+  /general/agent/skill/conversation:
+    post:
+      consumes:
+      - application/json
+      description: Create a dedicated conversation for skill creation.
+      parameters:
+      - description: create skill conversation request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateGeneralAgentSkillConversationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CreateGeneralAgentSkillConversationResp'
+              type: object
+      security:
+      - JWT: []
+      summary: Create skill conversation
+      tags:
+      - wga
+  /general/agent/skill/conversation/chat:
+    post:
+      consumes:
+      - application/json
+      description: Skill对话流，用于创建自定义技能，SSE流式返回
+      parameters:
+      - description: Skill对话请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GeneralAgentSkillConversationChatReq'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE流式返回
+          schema:
+            type: string
+      security:
+      - JWT: []
+      summary: Skill对话流
+      tags:
+      - wga
+  /general/agent/skill/convert/conversation:
+    post:
+      consumes:
+      - application/json
+      description: Convert MCP/tool/agent/workflow/RAG into a skill conversation workspace.
+      parameters:
+      - description: convert skill conversation request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.ConvertGeneralAgentSkillConversationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ConvertGeneralAgentSkillConversationResp'
+              type: object
+      security:
+      - JWT: []
+      summary: Convert resource to skill conversation
+      tags:
+      - wga
+  /general/agent/skill/import/conversation:
+    post:
+      consumes:
+      - application/json
+      description: Import a skill zip into the skill conversation workspace.
+      parameters:
+      - description: import skill conversation request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.ImportGeneralAgentSkillConversationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ImportGeneralAgentSkillConversationResp'
+              type: object
+      security:
+      - JWT: []
+      summary: Import skill conversation
+      tags:
+      - wga
+  /general/agent/skill/preview/conversation/detail:
+    get:
+      description: 用于回显 Skill preview 模式的历史消息
+      parameters:
+      - description: 创建或导入接口返回的预览对话 ID
+        in: query
+        name: previewId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.GeneralAgentConversationDetailInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取 Skill preview 对话详情
+      tags:
+      - wga
+  /general/agent/skill/refresh/conversation:
+    post:
+      consumes:
+      - application/json
+      description: Create a new WGA conversation with empty model config and bind
+        it to an existing custom skill.
+      parameters:
+      - description: refresh skill conversation request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.RefreshGeneralAgentSkillConversationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.RefreshGeneralAgentSkillConversationResp'
+              type: object
+      security:
+      - JWT: []
+      summary: Refresh skill conversation
       tags:
       - wga
   /general/agent/skill/select:
@@ -17434,6 +18114,40 @@ paths:
       summary: 获取词表数据列表
       tags:
       - safety
+  /square/skill/builtin/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取探索广场中的内置skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.SquareBuiltinSkillInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取广场内置skill列表
+      tags:
+      - exploration.skill
   /square/skill/detail:
     get:
       consumes:
