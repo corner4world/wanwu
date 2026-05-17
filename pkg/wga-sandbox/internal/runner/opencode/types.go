@@ -137,15 +137,22 @@ type QuestionPart = questionPart
 // ============================================================================
 // SSE 事件类型（内部使用）
 //
-// 基于 opencode >= v1.4.11 的 SSE 事件格式。
+// 基于 opencode == v1.14.51 的 SSE 事件格式。
 // opencode 通过 /global/event 端点推送两类事件：
 //
 // 1. BusEvent（实时事件）- 对应 opencode/src/bus/bus-event.ts
-//    格式: { "payload": { "type": "event-type", "properties": { ... } } }
+//    格式: { "id": "...", "payload": { "type": "event-type", "properties": { ... } } }
+//          ^-- opencode >= v1.14.51 所有 BusEvent 新增 id 字段（上升标识符）。
+//              本结构体未声明该字段，Go json.Unmarshal 会跳过未声明的字段，
+//              不会报错。后续升级 opencode 时，请确认事件格式无其他重大变化。
 //    事件类型:
 //    - message.part.delta: 流式文本/推理增量
-//    - session.idle: 会话空闲
+//    - session.idle: 会话空闲（deprecated，opencode >= v1.14.51 仍向后兼容发送，
+//                    但推荐考虑切换至 session.status）
+//    - session.status: 会话状态（opencode >= v1.14.51 新增或强化，内含 idle/retry/busy
+//                      三种子状态，若后续 session.idle 停止发送则需改用此事件）
 //    - session.error: 会话错误
+//    - session.compacted: 会话压缩完成（opencode >= v1.14.51 新增，当前未处理）
 //
 // 2. SyncEvent（持久化事件）- 对应 opencode/src/sync/index.ts
 //    格式: { "payload": { "type": "sync", "syncEvent": { "type": "event-type.version", "data": { ... } } } }
@@ -153,6 +160,11 @@ type QuestionPart = questionPart
 //    - message.updated.1: 消息创建/更新
 //    - message.part.updated.1: Part 状态更新
 //    - message.removed.1: 消息删除
+//    - message.part.removed.1: Part 删除（opencode >= v1.14.51 新增，当前未处理）
+//
+// 3. server 事件（通过 /global/event 端点直接发送，不经过 Bus）
+//    - server.connected: SSE 连接确认（opencode >= v1.14.51 新增，properties: {}，无需处理）
+//    - server.heartbeat: 10 秒心跳保活（opencode >= v1.14.51 新增，properties: {}，无需处理）
 // ============================================================================
 
 // sseEvent SSE 事件结构（对应 GlobalEvent）。

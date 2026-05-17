@@ -1,6 +1,6 @@
 // Package opencode 提供 opencode 智能体的运行器实现（基于 HTTP API）。
 //
-// 基于 opencode >= v1.4.11 的 SSE 事件格式实现。
+// 基于 opencode = v1.14.51 的 SSE 事件格式实现。
 // 通过 SSE 连接接收 opencode 事件流，转换为统一的 JSON 格式输出。
 package opencode
 
@@ -635,6 +635,9 @@ func (r *Runner) handleBusEvent(event *sseEvent) (string, bool) {
 		return r.convertDeltaEvent(event), false
 	case "session.idle":
 		// 会话空闲事件（对应 SessionStatus.Event.Idle）
+		// opencode >= v1.14.51 标记 session.idle 为 deprecated，同时发送 session.status。
+		// 若后续版本停止发送 session.idle，需切换至 session.status：
+		//   收到 session.status 且 status.type == "idle" 时视作会话结束
 		if event.Payload.Properties.SessionID != r.sessionID {
 			return "", false
 		}

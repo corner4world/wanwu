@@ -134,7 +134,7 @@ docker-image-wga-sandbox:
 	docker build -f Dockerfile.wga-sandbox --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/wga-sandbox:${WANWU_VERSION}-$(shell git rev-parse --short HEAD)-${WANWU_ARCH} .
 
 docker-image-wga-sandbox-base:
-	docker build -f Dockerfile.wga-sandbox-base --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/wga-sandbox-base:1.0.0.152-opencode1.4.11-${WANWU_ARCH} .
+	docker build -f Dockerfile.wga-sandbox-base --build-arg WANWU_ARCH=${WANWU_ARCH} -t wanwulite/wga-sandbox-base:1.0.0.152-opencode1.14.51-${WANWU_ARCH} .
 
 grpc-protoc:
 	protoc --proto_path=. --go_out=paths=source_relative:api --go-grpc_out=paths=source_relative:api proto/*/*.proto
