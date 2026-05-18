@@ -3,30 +3,45 @@
     <div class="common_bg">
       <!-- tabs -->
       <div class="tabs" style="margin: 0 20px">
-        <div :class="['tab', { active: tabActive === 0 }]" @click="tabClick(0)">
+        <div
+          :class="['tab', { active: tabActive === SKILLBUILTIN }]"
+          @click="tabClick(SKILLBUILTIN)"
+        >
+          {{ $t('tempSquare.skills.app.builtin') }}
+        </div>
+        <div
+          :class="['tab', { active: tabActive === SKILLADDED }]"
+          @click="tabClick(SKILLADDED)"
+        >
           {{ $t('tempSquare.skills.app.myAdded') }}
         </div>
-        <div :class="['tab', { active: tabActive === 1 }]" @click="tabClick(1)">
+        <div
+          :class="['tab', { active: tabActive === SKILLCUSTOM }]"
+          @click="tabClick(SKILLCUSTOM)"
+        >
           {{ $t('tempSquare.skills.app.myCreated') }}
         </div>
       </div>
 
-      <SkillTempSquare ref="skillTempSquare" v-if="tabActive === 0" />
-      <Custom ref="custom" v-if="tabActive === 1" />
+      <Builtin ref="builtin" v-if="tabActive === SKILLBUILTIN" />
+      <Acquired ref="acquired" v-if="tabActive === SKILLADDED" />
+      <Custom ref="custom" v-if="tabActive === SKILLCUSTOM" />
     </div>
   </div>
 </template>
 <script>
-import SkillTempSquare from './skillTempSquare';
+import Builtin from './builtin/list';
+import Acquired from './acquired.vue';
 import Custom from './custom/list';
+import { SKILLBUILTIN, SKILLADDED, SKILLCUSTOM } from '../constants';
+
 export default {
   data() {
     return {
-      tabActive: 0,
-      toolTabObj: {
-        added: 0,
-        custom: 1,
-      },
+      SKILLBUILTIN,
+      SKILLADDED,
+      SKILLCUSTOM,
+      tabActive: SKILLBUILTIN,
     };
   },
   watch: {
@@ -44,25 +59,21 @@ export default {
   methods: {
     setInitTab() {
       const { type } = this.$route.query || {};
-      this.tabActive = this.toolTabObj[type] || 0;
+      this.tabActive = type || SKILLBUILTIN;
     },
-    tabClick(status) {
-      this.tabActive = status;
-      const type = Object.keys(this.toolTabObj).find(
-        key => this.toolTabObj[key] === status,
-      );
-      if (type) {
-        this.$router.replace({
-          query: {
-            ...this.$route.query,
-            type,
-          },
-        });
-      }
+    tabClick(type) {
+      this.tabActive = type;
+      this.$router.replace({
+        query: {
+          ...this.$route.query,
+          type,
+        },
+      });
     },
   },
   components: {
-    SkillTempSquare,
+    Builtin,
+    Acquired,
     Custom,
   },
 };

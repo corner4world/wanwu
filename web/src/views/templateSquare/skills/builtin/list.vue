@@ -13,19 +13,17 @@
               />
             </div>
 
-            <div
-              class="card-loading-box scroll-card-container"
-              v-if="list.length"
-            >
-              <div class="card-box scroll-card-pr" v-loading="loading">
+            <div class="card-loading-box" v-if="list.length">
+              <div class="card-box" v-loading="loading">
                 <skill-card
                   v-for="(item, index) in list"
                   :key="index"
                   :info="item"
                   :type="1"
                   @download="handleDownload"
-                  @delete="handleDelete"
-                />
+                >
+                  <template v-slot:operations></template>
+                </skill-card>
               </div>
             </div>
             <div v-else class="empty">
@@ -38,24 +36,19 @@
   </div>
 </template>
 <script>
-import SkillCard from './card.vue';
-import { directDownload } from '@/utils/util';
+import SkillCard from '../card.vue';
 import SearchInput from '@/components/searchInput.vue';
 import {
-  getAcquiredSkillList,
-  deleteAcquiredSkill,
-} from '@/api/skillResource/added';
+  getResourceBuiltinSkillList,
+  downloadBuiltinSkill,
+} from '@/api/templateSquare';
+import { resDownloadFile } from '@/utils/util';
 
 export default {
   components: { SearchInput, SkillCard },
-  props: {
-    type: '',
-  },
   data() {
     return {
-      basePath: this.$basePath,
       list: [],
-      templateUrl: '',
       loading: false,
     };
   },
@@ -66,10 +59,11 @@ export default {
     doGetSkillTempList() {
       const searchInput = this.$refs.searchInput;
       const params = {
-        name: searchInput.value,
+        name: searchInput?.value,
       };
 
-      getAcquiredSkillList(params)
+      this.loading = true;
+      getResourceBuiltinSkillList(params)
         .then(res => {
           const { list } = res.data || {};
           this.list = list || [];
@@ -77,18 +71,12 @@ export default {
         })
         .catch(() => (this.loading = false));
     },
-    handleDownload(info) {
-      if (info.downloadUrl) {
-        directDownload(info.downloadUrl);
-      }
-    },
-    async handleDelete(info) {
-      try {
-        await deleteAcquiredSkill({ skillId: info.skillId });
-        this.doGetSkillTempList();
-      } catch (error) {
-        console.error('Error deleting skill:', error);
-      }
+    async handleDownload(info) {
+      const { skillId, name } = info;
+      if (!skillId) return;
+
+      const res = await downloadBuiltinSkill({ skillId });
+      resDownloadFile(res, `${name}.zip`);
     },
   },
 };
@@ -100,22 +88,6 @@ export default {
   .card-search-cust {
     justify-content: flex-start;
     margin-top: 10px;
-  }
-
-  .card-item-more {
-    display: flex;
-    height: auto !important;
-    justify-content: center;
-    align-items: center;
-    min-height: 140px;
-    .card-content {
-      font-size: 16px;
-      font-weight: 500;
-      color: #5d5d5d;
-      &:hover {
-        color: $color;
-      }
-    }
   }
 }
 </style>

@@ -153,11 +153,14 @@ export default {
       immediate: true,
       handler(newVal) {
         if (newVal) {
+          this.currentPath = '';
           this.workspaceInfo = {
             fileCount: newVal.fileCount || 0,
             totalSize: newVal.totalSize || 0,
             isDisplay: newVal.isDisplay || false,
           };
+          this.rootFiles = newVal.files || [];
+          this.files = this.processFiles(this.rootFiles);
         }
       },
     },
@@ -168,7 +171,7 @@ export default {
     },
 
     tryLoadWorkspace() {
-      if (!this.runId || !this.threadId) {
+      if (!this.threadId) {
         return;
       }
       const currentRequestId = ++this.loadRequestId;
@@ -219,7 +222,7 @@ export default {
     },
 
     async loadWorkspace() {
-      if (!this.runId || !this.threadId) {
+      if (!this.threadId) {
         this.loading = false;
         return;
       }

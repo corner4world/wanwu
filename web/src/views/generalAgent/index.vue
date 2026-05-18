@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="general-agent-page">
     <!-- 左侧会话列表 - 可折叠 -->
     <div :class="['sidebar', { collapsed: sidebarCollapsed }]">
@@ -47,17 +47,32 @@
         <!-- 顶部标题栏 -->
         <div class="header">
           <div class="header-left">
-            <button class="header-icon-btn" @click="toggleSidebar">
-              <i
-                :class="
-                  sidebarCollapsed ? 'el-icon-s-unfold' : 'el-icon-s-fold'
-                "
-              ></i>
-            </button>
-            <button class="header-icon-btn" @click="initNewConversation">
-              <i class="el-icon-plus"></i>
-            </button>
+            <div v-if="mode !== 'skill'" class="header-btns">
+              <button class="header-icon-btn" @click="toggleSidebar">
+                <i
+                  :class="
+                    sidebarCollapsed ? 'el-icon-s-unfold' : 'el-icon-s-fold'
+                  "
+                ></i>
+              </button>
+              <button class="header-icon-btn" @click="initNewConversation">
+                <i class="el-icon-plus"></i>
+              </button>
+            </div>
+
             <div class="header-title">{{ currentTitle }}</div>
+          </div>
+
+          <div v-if="isSkillType" class="header-right">
+            <button
+              v-if="isSkillType && !workspacePanelVisible"
+              class="header-icon-btn workspace-entry-btn"
+              @click="handleViewSkillWorkspace"
+            >
+              <span class="btn-text">
+                {{ $t('generalAgent.header.workspace') }}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -138,7 +153,6 @@
                 :src="assistantAvatar"
                 alt="Assistant"
               />
-              <i v-else class="el-icon-cpu"></i>
             </div>
             <div class="welcome-title">
               {{ $t('generalAgent.header.welcomeTitle') }}
@@ -213,7 +227,7 @@
                 v-model="inputMessage"
                 :placeholder="inputPlaceholder"
                 @keydown-enter="handleKeyDown"
-                :disabled="isStreaming"
+                :disabled="isStreaming || previewIsStreaming"
               />
             </div>
 
@@ -224,15 +238,30 @@
                   <i class="el-icon-setting"></i>
                   <span>{{ $t('generalAgent.header.config') }}</span>
                 </div>
-                <!-- 已选模式标签 -->
+                <!-- 导入Skill按钮 -->
                 <div
-                  v-for="mode in selectedModes"
-                  :key="mode.value"
-                  class="mode-tag"
+                  v-if="isSkillType && !currentThreadId"
+                  class="config-btn"
+                  @click="openImportSkillDialog"
                 >
-                  <i :class="mode.icon"></i>
-                  <span>{{ mode.label }}</span>
-                  <i class="el-icon-close" @click="removeMode(mode.value)"></i>
+                  <i class="el-icon-download"></i>
+                  <span>{{ $t('generalAgent.header.importSkill') }}</span>
+                </div>
+                <!-- 已选模式标签 -->
+                <div v-if="selectedMode" class="mode-btn mode-btn-selected">
+                  <img
+                    v-if="selectedMode.avatar"
+                    :src="selectedMode.avatar"
+                    alt=""
+                    class="mode-avatar"
+                  />
+                  <i v-else :class="selectedMode.icon"></i>
+                  <span>{{ selectedMode.label }}</span>
+                  <i
+                    v-if="!isSkillType || (isSkillType && !currentThreadId)"
+                    class="el-icon-close"
+                    @click="removeMode(selectedMode.value)"
+                  ></i>
                 </div>
               </div>
               <div class="toolbar-right">
@@ -254,7 +283,7 @@
                   </template>
                 </StreamUploadField>
                 <el-button
-                  v-if="isStreaming"
+                  v-show="isStreaming"
                   class="send-btn stop-btn"
                   circle
                   @click="handleStopClick"
@@ -269,7 +298,7 @@
                   </svg>
                 </el-button>
                 <el-button
-                  v-else
+                  v-show="!isStreaming"
                   type="primary"
                   class="send-btn"
                   circle
@@ -293,14 +322,15 @@
           </div>
           <!-- 可选模式按钮区域 - 仅在未选择模式且有数据时显示 -->
           <div
-            v-if="
-              selectedModes.length === 0 && Object.keys(modeOptions).length > 0
-            "
+            v-if="!selectedMode && Object.keys(modeOptions).length > 0"
             class="mode-buttons"
           >
             <!-- 模式按钮列表 -->
             <div
               v-for="(mode, key) in modeOptions"
+              v-show="
+                mode.value !== MAIN_CHAT_MODES.SKILL_MODE || !currentThreadId
+              "
               :key="key"
               class="mode-btn"
               @click="addMode(mode.value)"
@@ -335,20 +365,45 @@
       </transition>
 
       <!-- 文件预览抽屉 -->
-      <file-preview-drawer
-        :visible.sync="previewVisible"
-        :file="previewFile"
-        :file-path="previewFilePath"
-        :blob="previewBlob"
-        :loading="previewLoading"
-        :panel-style="previewPanelStyle"
-      />
+      <transition name="workspace-slide">
+        <file-preview-drawer
+          v-if="previewVisible"
+          :visible.sync="previewVisible"
+          :file="previewFile"
+          :file-path="previewFilePath"
+          :blob="previewBlob"
+          :loading="previewLoading"
+          @close="previewVisible = false"
+        />
+      </transition>
+
+      <!--
+        预览会话面板生命周期说明：
+        1. 切换会话或 previewId 变化时，skillTabsKey 会变化，组件会卸载重建，用于重置上一轮预览会话及 SSE 状态。
+        2. 打开文件预览抽屉时，仅通过 v-show 隐藏面板，不卸载组件，避免中断正在进行的预览 SSE。
+      -->
+      <transition name="workspace-slide">
+        <SkillTabs
+          v-if="shouldMountSkillTabs"
+          v-show="shouldShowSkillTabs"
+          :key="skillTabsKey"
+          :skillPreviewParams="skillPreviewParams"
+          class="preview-chat-panel"
+          @view-workspace="handleViewWorkspace"
+        />
+      </transition>
 
       <!-- 配置弹窗 -->
       <configDialog
         ref="configDialog"
         :visible.sync="showConfigDialog"
-        :agent-id="selectedModes[0]?.value ?? ''"
+        :agent-id="selectedMode?.value ?? ''"
+      />
+
+      <!-- skill导入弹框 -->
+      <SkillDialog
+        ref="importSkillDialogRef"
+        @submit="handleSkillImportSubmit"
       />
     </div>
   </div>
@@ -360,21 +415,28 @@ import WorkspacePanel from './components/WorkspacePanel.vue';
 import FilePreviewDrawer from './components/FilePreviewDrawer.vue';
 import ConfigDialog from './components/ConfigDialog.vue';
 import MentionInput from './components/MentionInput.vue';
+import SkillTabs from './components/skills/SkillTabs.vue';
+import SkillDialog from './components/skills/SkillDialog.vue';
 import ModelSelect from '@/components/modelSelect.vue';
 import StreamUploadField from '@/components/stream/streamUploadField.vue';
 import {
   chatGeneralAgentConversation,
+  chatGeneralAgentSkillConversation,
   checkGeneralAgentConversationConfig,
   createGeneralAgentConversation,
+  createGeneralAgentSkillConversation,
   deleteGeneralAgentConversation,
   downloadGeneralAgentWorkspace,
   getGeneralAgentConversationConfig,
   getGeneralAgentConversationDetail,
   getGeneralAgentConversationList,
   getGeneralAgentWorkspace,
+  importGeneralAgentSkillConversation,
   previewGeneralAgentWorkspace,
+  refreshGeneralAgentSkillConversation,
   updateGeneralAgentConversationConfig,
 } from '@/api/generalAgent';
+import { getCustomSkillInfo } from '@/api/templateSquare';
 import { selectModelList } from '@/api/modelAccess';
 import { avatarSrc, resDownloadFile } from '@/utils/util';
 import { mapActions, mapGetters, mapState } from 'vuex';
@@ -387,6 +449,10 @@ import messageManager from './mixins/messageManager';
 import fileManager from './mixins/fileManager';
 import scrollController from './mixins/scrollController';
 import modeManager from './mixins/modeManager';
+import skillManager from './mixins/skillManager';
+
+// 引入常量
+import { MAIN_CHAT_MODES } from './constants';
 
 export default {
   name: 'GeneralAgent',
@@ -396,24 +462,33 @@ export default {
     FilePreviewDrawer,
     ConfigDialog: ConfigDialog,
     MentionInput,
+    SkillTabs,
     ModelSelect,
     StreamUploadField,
+    SkillDialog, // skill导入弹框
   },
   mixins: [
+    skillManager,
     streamStateManager,
     messageManager,
     fileManager,
     scrollController,
     modeManager,
   ],
+  props: {
+    mode: {
+      type: String,
+      default: '',
+    },
+  },
   data() {
     return {
+      MAIN_CHAT_MODES,
       sidebarCollapsed: true,
       conversationList: [],
       currentThreadId: '',
       pageNo: 1,
       pageSize: 50,
-      isNewConversation: false,
       isLoadingHistory: false,
 
       inputMessage: '',
@@ -438,6 +513,12 @@ export default {
       previewBlob: null, // 只存储 blob
       workspaceRect: null,
       resizeObserver: null,
+
+      // skill 相关
+      chatType: '', // skill 则 selectedMode.value 为 Skill Chat Agent
+      customSkillId: '',
+      previewId: '',
+      skillChatMode: 'normal', // normal | import | convert
     };
   },
   computed: {
@@ -451,55 +532,74 @@ export default {
 
     currentTitle() {
       if (!this.currentThreadId) return '';
-      const conv = this.conversationList.find(
-        c => c.threadId === this.currentThreadId,
+      return (
+        this.currentConversation?.title ||
+        this.$t('generalAgent.index.newConversation')
       );
-      return conv?.title || this.$t('generalAgent.index.newConversation');
     },
     canSend() {
       const hasContent =
         this.inputMessage.trim() || this.uploadedFiles.length > 0;
       const hasModel = !!this.selectedModel;
-      return hasContent && hasModel;
-    },
-    previewPanelStyle() {
-      // 计算宽度：屏幕宽度的一半，最小 500px
-      const screenWidth = window.screen.width;
-      const halfScreenWidth = Math.floor(screenWidth / 2);
-      const width = Math.max(500, halfScreenWidth);
-
-      if (!this.workspaceRect) {
-        // 默认情况：workspace 未显示时，使用计算值
-        const sidebarWidth = this.sidebarCollapsed ? 0 : 240;
-        const sidebarMargin = this.sidebarCollapsed ? 0 : 16;
-        const workspaceWidth = 400;
-        const pagePadding = 16;
-        return {
-          right: `${pagePadding + sidebarWidth + sidebarMargin + workspaceWidth}px`,
-          width: `${width}px`,
-        };
-      }
-      // workspace 显示时，紧贴其左边缘
-      const rightEdge = window.innerWidth - this.workspaceRect.left;
-      return {
-        right: `${rightEdge}px`,
-        width: `${width}px`,
-      };
+      // 检查当前会话或预览面板是否正在流式传输
+      return (
+        hasContent && hasModel && !this.isStreaming && !this.previewIsStreaming
+      );
     },
     isEmptyConversation() {
       return this.messageList.length === 0;
     },
     inputPlaceholder() {
-      // 如果有选中的模式，使用第一个模式的 placeholder
-      if (this.selectedModes && this.selectedModes.length > 0) {
-        const firstMode = this.selectedModes[0];
-        const modeConfig = this.modeOptions[firstMode.value];
+      // 如果有选中的模式，使用模式的 placeholder
+      if (this.selectedMode) {
+        const modeConfig = this.modeOptions[this.selectedMode.value];
         if (modeConfig && modeConfig.placeholder) {
           return modeConfig.placeholder;
         }
       }
       // 默认 placeholder
       return this.$t('generalAgent.header.placeholder');
+    },
+    // skill预览相关参数
+    skillPreviewParams() {
+      return {
+        customSkillId: this.customSkillId,
+        previewId: this.previewId,
+        threadId: this.currentThreadId,
+      };
+    },
+    // 创建skill模式
+    isSkillType() {
+      return this.chatType === 'skill';
+    },
+    isActiveSkillMode() {
+      return (
+        this.isSkillType &&
+        this.selectedMode?.value === MAIN_CHAT_MODES.SKILL_MODE
+      );
+    },
+    // 控制组件是否挂载：会话身份存在时才挂载，切换会话/previewId 时配合 key 卸载重建以重置 SSE。
+    shouldMountSkillTabs() {
+      return (
+        this.isActiveSkillMode &&
+        !!this.currentThreadId &&
+        !!this.customSkillId &&
+        !!this.previewId
+      );
+    },
+    // 控制组件是否可见：文件预览打开时只隐藏 SkillTabs，不卸载，避免中断内部预览 SSE。
+    shouldShowSkillTabs() {
+      return this.shouldMountSkillTabs && !this.previewVisible;
+    },
+    skillTabsKey() {
+      return `${this.currentThreadId}_${this.previewId}`;
+    },
+    // 当前选中的会话对象
+    currentConversation() {
+      if (!this.currentThreadId) return null;
+      return this.conversationList.find(
+        c => c.threadId === this.currentThreadId,
+      );
     },
   },
   watch: {
@@ -520,12 +620,16 @@ export default {
     },
   },
   mounted() {
-    this.initNewConversation();
+    this.initFromRoute();
     this.fetchModelList();
     this.fetchConversationList();
     this.initUserInfo();
     this.setupResizeObserver();
-    this.fetchModeOptions();
+    this.fetchModeOptions().then(() => {
+      if (this.isSkillType) {
+        this.addMode(MAIN_CHAT_MODES.SKILL_MODE);
+      }
+    });
   },
   beforeDestroy() {
     this.reset();
@@ -553,6 +657,241 @@ export default {
       }
     },
 
+    initFromRoute() {
+      const { chatType, customSkillId, chatMode, threadId } =
+        this.$route.query || {};
+
+      let isNewChatMode = false;
+      let initialChatMode = '';
+
+      if (chatType) {
+        this.chatType = chatType;
+      }
+      if (customSkillId) {
+        this.customSkillId = customSkillId;
+      }
+      if (chatMode) {
+        isNewChatMode = true;
+        initialChatMode = chatMode;
+        this.skillChatMode = 'normal';
+
+        // 防止页面刷新再次进入自动触发模式
+        const newQuery = { ...this.$route.query };
+        delete newQuery.chatMode;
+        this.$router.replace({ query: newQuery }).catch(() => {});
+      }
+
+      // 根据 customSkillId 自动拉取并补全状态
+      if (this.isSkillType && this.customSkillId) {
+        // 如果是从某模式进入（如转换、导入），则由 fetchCustomSkillInfo 补全后触发启动
+        this.fetchCustomSkillInfo(threadId || '', initialChatMode);
+        return;
+      }
+
+      if (threadId) {
+        // 普通 General Agent 路由恢复逻辑
+        this.selectConversation(threadId);
+      } else {
+        this.initNewConversation();
+      }
+    },
+    // 从会话列表设置skill参数
+    setSkillParamsByConversation(c_data) {
+      if (c_data.skillId) {
+        this.customSkillId = c_data.skillId;
+      }
+      if (c_data.previewId) {
+        this.previewId = c_data.previewId;
+      }
+    },
+
+    startSkillPresetConversation(mode) {
+      const promptKey =
+        mode === 'convert'
+          ? 'generalAgent.skill.convertPrompt'
+          : mode === 'import'
+            ? 'generalAgent.skill.importPrompt'
+            : 'generalAgent.skill.defaultPrompt';
+      const content = this.$t(promptKey);
+      const userMessage = this.buildUserMessage(content);
+      const currentConversation = this.conversationList.find(
+        item => item.threadId === this.currentThreadId,
+      );
+
+      if (currentConversation) {
+        this.$set(currentConversation, 'isSkillConversation', true);
+        this.$set(currentConversation, 'skillId', this.customSkillId);
+        this.$set(currentConversation, 'previewId', this.previewId);
+      } else if (this.currentThreadId) {
+        this.conversationList.unshift({
+          threadId: this.currentThreadId,
+          title: content.slice(0, 50),
+          createdAt: new Date().toISOString(),
+          isSkillConversation: true,
+          skillId: this.customSkillId,
+          previewId: this.previewId,
+        });
+      }
+
+      this.ensureMessageList(this.currentThreadId);
+      this.addUserMessage(this.currentThreadId, content);
+      this.$nextTick(() => this.scrollToBottom());
+
+      this.skillChatMode = mode;
+      return this.startStreaming(userMessage);
+    },
+
+    /**
+     * 根据 customSkillId 拉取详情并补全/自愈会话状态
+     * @param {string} routeThreadId 路由中带入的 threadId（如果有）
+     * @param {string} initialChatMode 预设模式（如 convert/import）
+     */
+    async fetchCustomSkillInfo(routeThreadId = '', initialChatMode = '') {
+      if (!this.customSkillId) return;
+
+      this.isLoadingHistory = true;
+      try {
+        const res = await getCustomSkillInfo({ skillId: this.customSkillId });
+
+        if (res.code === 0 && res.data) {
+          const { previewId, threadId } = res.data;
+
+          // 1. 设置预览 ID
+          if (previewId) this.previewId = previewId;
+
+          // 优先级：接口活跃记录 > 路由穿透带入
+          let targetThreadId = threadId;
+          let isNewRefresh = false;
+
+          // 若目标对话不存在（如刚转换完还没有任何会话），主动刷新获取新会话
+          if (!targetThreadId) {
+            targetThreadId = await this.refreshSkillConversation();
+            isNewRefresh = true;
+          }
+
+          if (targetThreadId) {
+            if (initialChatMode) {
+              // 处理特殊模式（如 convert/import）的流式启动
+              this.currentThreadId = targetThreadId;
+              this.resetScrollState();
+              this.clearModes();
+              this.addMode(MAIN_CHAT_MODES.SKILL_MODE);
+              this.hidePanel();
+              this.clearMessages(targetThreadId);
+              this.loadConfig();
+
+              this.$nextTick(() => {
+                this.startSkillPresetConversation(initialChatMode);
+              });
+            } else if (!isNewRefresh) {
+              // 非新创建会话，则走正常加载逻辑
+              this.selectConversation(targetThreadId);
+            } else {
+              // 刚刷新后的新会话且无 initialChatMode，激活模式并加载配置即可
+              this.addMode(MAIN_CHAT_MODES.SKILL_MODE);
+              this.loadConfig();
+            }
+          }
+        } else {
+          this.$message.error(
+            this.$t('generalAgent.skill.invalidSkill') || '无效技能',
+          );
+          this.$router.go(-1);
+        }
+      } catch (error) {
+        console.error('fetchCustomSkillInfo error:', error);
+        this.$message.error(
+          this.$t('generalAgent.skill.loadDetailError') || '获取技能详情失败',
+        );
+        this.$router.go(-1);
+      } finally {
+        this.isLoadingHistory = false;
+      }
+    },
+
+    /**
+     * 刷新 Skill 专用对话
+     * 当 threadId 为空或对话历史丢失时，为已有 customSkillId 重新创建编辑对话
+     * @returns {Promise<string>} 新创建的 threadId
+     */
+    async refreshSkillConversation() {
+      if (!this.customSkillId) {
+        console.warn('refreshSkillConversation: customSkillId 为空，无法刷新');
+        return '';
+      }
+
+      this.isLoadingHistory = true;
+      try {
+        const res = await refreshGeneralAgentSkillConversation({
+          skillId: this.customSkillId,
+        });
+
+        if (res.code === 0 && res.data) {
+          const { customSkillId, threadId, previewId } = res.data;
+
+          // 更新本地状态
+          this.customSkillId = customSkillId || this.customSkillId;
+          this.currentThreadId = threadId;
+          if (previewId) this.previewId = previewId;
+
+          // 清空消息列表，准备空白会话
+          this.clearMessages(threadId);
+
+          // 主动设置模型配置
+          await this.syncModelConfigAfterRefresh(threadId);
+
+          // 将新会话加入左侧会话列表
+          this.conversationList.unshift({
+            threadId,
+            title: this.$t('generalAgent.index.newConversation'),
+            createdAt: new Date().toISOString(),
+            isSkillConversation: true,
+            skillId: this.customSkillId,
+            previewId: this.previewId,
+          });
+
+          // 注意：此处不再静默更新路由保持极简
+          return threadId;
+        } else {
+          this.$message.error(res.msg || '刷新 Skill 对话失败');
+          return '';
+        }
+      } catch (error) {
+        console.error('refreshSkillConversation error:', error);
+        this.$message.error('刷新 Skill 对话失败，请重试');
+        return '';
+      } finally {
+        this.isLoadingHistory = false;
+      }
+    },
+
+    /**
+     * refresh 后主动同步模型配置到新对话
+     * 使用当前已选模型或模型列表中的第一个模型
+     */
+    async syncModelConfigAfterRefresh(threadId) {
+      const modelId = this.selectedModel || this.modelList[0]?.modelId;
+      if (!modelId || !threadId) return;
+
+      const modelConfig = this.modelList.find(m => m.modelId === modelId);
+      if (!modelConfig) return;
+
+      try {
+        await updateGeneralAgentConversationConfig({
+          threadId,
+          modelConfig: {
+            modelId: modelConfig.modelId,
+            model: modelConfig.model,
+            provider: modelConfig.provider,
+            displayName: modelConfig.displayName,
+            modelType: modelConfig.modelType || 'llm',
+            config: modelConfig.config || {},
+          },
+        });
+      } catch (error) {
+        console.error('syncModelConfigAfterRefresh error:', error);
+      }
+    },
     setupResizeObserver() {
       if (typeof ResizeObserver === 'undefined') return;
       this.resizeObserver = new ResizeObserver(() => {
@@ -589,7 +928,6 @@ export default {
     toggleSidebar() {
       this.sidebarCollapsed = !this.sidebarCollapsed;
     },
-
     async fetchModelList() {
       this.modelLoading = true;
       try {
@@ -625,7 +963,6 @@ export default {
 
     initNewConversation() {
       this.currentThreadId = '';
-      this.isNewConversation = true;
       this.clearMessages('');
       // 重置滚动状态
       this.resetScrollState();
@@ -661,7 +998,11 @@ export default {
         config: selectedModelConfig?.config,
       };
 
-      const res = await createGeneralAgentConversation({
+      const creationApi = this.isSkillType
+        ? createGeneralAgentSkillConversation
+        : createGeneralAgentConversation;
+
+      const res = await creationApi({
         title: title || this.$t('generalAgent.index.newConversation'),
         modelConfig,
       });
@@ -670,7 +1011,12 @@ export default {
         const threadId = res.data?.threadId;
         if (threadId) {
           this.currentThreadId = threadId;
-          this.isNewConversation = false;
+
+          // 保存 skill 相关的额外 ID
+          if (this.isSkillType) {
+            this.customSkillId = res.data.customSkillId || '';
+            this.previewId = res.data.previewId || '';
+          }
 
           const oldMessages = this.messagesMap[''] || [];
           this.$set(this.messagesMap, threadId, oldMessages);
@@ -681,6 +1027,13 @@ export default {
             threadId,
             title: title || this.$t('generalAgent.index.newConversation'),
             createdAt: new Date().toISOString(),
+            isSkillConversation: this.isSkillType,
+            ...(this.isSkillType
+              ? {
+                  skillId: this.customSkillId,
+                  previewId: this.previewId,
+                }
+              : {}),
           });
           return threadId;
         } else {
@@ -699,11 +1052,15 @@ export default {
       // 切换会话时，只切换 currentThreadId，不中止 SSE 流
       // SSE 流会继续在后台运行，切换回来时能继续显示
       this.currentThreadId = threadId;
-      this.isNewConversation = false;
       this.isLoadingHistory = true;
       this.resetScrollState();
       // 重置模式选择
       this.clearModes();
+      // 检查当前会话是否是 skill 会话
+      if (this.currentConversation?.isSkillConversation) {
+        this.addMode(MAIN_CHAT_MODES.SKILL_MODE);
+        this.setSkillParamsByConversation(this.currentConversation);
+      }
       this.hidePanel();
       this.fetchHistory();
     },
@@ -745,6 +1102,15 @@ export default {
               this.scrollToBottom(true);
             });
           });
+        } else if (res.code === 0 && !res.data?.list) {
+          // Skill 会话且接口正常返回但历史为空（list 为 null）
+          // 说明 threadId 对应的对话已被删除，调用 refresh 重建
+          if (this.isSkillType && this.customSkillId) {
+            this.isLoadingHistory = false;
+            await this.refreshSkillConversation();
+            return;
+          }
+          this.isLoadingHistory = false;
         } else {
           this.isLoadingHistory = false;
         }
@@ -797,6 +1163,7 @@ export default {
     async sendMessage() {
       const content = this.inputMessage.trim();
       if (!content && this.uploadedFiles.length === 0) return;
+      if (this.previewIsStreaming) return;
 
       // 检查当前会话是否正在流式传输
       const currentStreaming = this.streamingMap[this.currentThreadId];
@@ -815,7 +1182,7 @@ export default {
         return;
       }
 
-      if (this.isNewConversation || !this.currentThreadId) {
+      if (!this.currentThreadId) {
         const title = content.slice(0, 50);
         const threadId = await this.createConversationWithTitle(title);
         if (!threadId) {
@@ -828,7 +1195,7 @@ export default {
 
       // 检查配置是否满足条件（在发送消息前）
       const checkRes = await checkGeneralAgentConversationConfig({
-        agentId: this.selectedModes[0]?.value ?? '',
+        agentId: this.selectedMode?.value ?? '',
         threadId: this.currentThreadId,
       });
 
@@ -860,6 +1227,8 @@ export default {
         }
       }
 
+      if (this.previewIsStreaming) return;
+
       const userMessage = this.buildUserMessage(content);
       this.ensureMessageList(this.currentThreadId);
       this.addUserMessage(this.currentThreadId, content, this.uploadedFiles);
@@ -872,6 +1241,8 @@ export default {
     },
 
     async startStreaming(userMessage) {
+      if (this.previewIsStreaming) return;
+
       if (!this.currentThreadId) {
         this.$message.error(
           this.$t('generalAgent.error.conversationIdNotExist'),
@@ -880,7 +1251,8 @@ export default {
       }
 
       const streamingThreadId = this.currentThreadId;
-      const agentId = this.selectedModes[0]?.value ?? '';
+      const agentId = this.selectedMode?.value ?? '';
+      const currentMode = this.skillChatMode || 'normal';
 
       // 使用 mixin 初始化流式状态
       const { abortController, assistantMessage } =
@@ -895,38 +1267,48 @@ export default {
       const parser = new SSEEventParser();
       let isUserAborted = false;
 
-      try {
-        await chatGeneralAgentConversation({
-          threadId: streamingThreadId,
-          agentId,
-          messages: [userMessage],
-          onMessage: event => {
-            this.handleSSEEvent(
-              event,
-              assistantMessage,
-              parser,
-              streamingThreadId,
+      const chatParams = {
+        threadId: streamingThreadId,
+        messages: [userMessage],
+        onMessage: event => {
+          this.handleSSEEvent(
+            event,
+            assistantMessage,
+            parser,
+            streamingThreadId,
+          );
+        },
+        onError: error => {
+          console.error('SSE Error:', error);
+          if (this.currentThreadId === streamingThreadId) {
+            this.$message.error(
+              this.$t('generalAgent.error.chatRequestFailed'),
             );
-          },
-          onError: error => {
-            console.error('SSE Error:', error);
-            if (this.currentThreadId === streamingThreadId) {
-              this.$message.error(
-                this.$t('generalAgent.error.chatRequestFailed'),
-              );
-            }
-            const streaming = this.streamingMap[streamingThreadId];
-            if (streaming) {
-              streaming.isStreaming = false;
-              streaming.streamingMessage = null;
-            }
-            assistantMessage.isStreaming = false;
+          }
+          // 使用 mixin 的方法来清理状态，确保全局状态也被更新
+          this.cleanupStreamState(streamingThreadId);
+          assistantMessage.isStreaming = false;
+          // 清理所有 fragments 的 isStreaming 状态
+          this.setFragmentsNotStreaming(assistantMessage.fragments);
+        },
+        signal: abortController.signal,
+      };
 
-            // 清理所有 fragments 的 isStreaming 状态
-            this.setFragmentsNotStreaming(assistantMessage.fragments);
-          },
-          signal: abortController.signal,
-        });
+      try {
+        if (this.isSkillType) {
+          // Skill 专用对话流
+          await chatGeneralAgentSkillConversation({
+            ...chatParams,
+            customSkillId: this.customSkillId,
+            mode: currentMode,
+          });
+        } else {
+          // 普通对话流
+          await chatGeneralAgentConversation({
+            ...chatParams,
+            agentId,
+          });
+        }
       } catch (error) {
         console.error('Stream error:', error);
         // 判断是否是用户主动中止
@@ -939,19 +1321,17 @@ export default {
           );
         }
       } finally {
+        if (this.isSkillType) {
+          this.skillChatMode = 'normal';
+        }
         // 只有非用户主动中止时才清理状态（用户中止由 stopStreaming 处理）
         if (!isUserAborted) {
-          const streaming = this.streamingMap[streamingThreadId];
-          if (streaming) {
-            streaming.isStreaming = false;
-            streaming.streamingMessage = null;
-            streaming.abortController = null;
-          }
+          // 使用 mixin 的方法来清理状态，确保全局状态也被更新
+          this.cleanupStreamState(streamingThreadId);
           assistantMessage.isStreaming = false;
 
           // 清理所有 fragments 的 isStreaming 状态
           this.setFragmentsNotStreaming(assistantMessage.fragments);
-
           this.currentStage = '';
           if (this.currentThreadId === streamingThreadId) {
             this.resetScrollState();
@@ -1036,7 +1416,7 @@ export default {
 
     // 重新生成 - 找到上一条用户消息并重新发送
     handleRegenerate(message) {
-      if (this.isStreaming) return;
+      if (this.isStreaming || this.previewIsStreaming) return;
 
       // 找到这条助手消息的索引
       const messageIndex = this.messageList.findIndex(m => m.id === message.id);
@@ -1094,7 +1474,6 @@ export default {
         this.$message.success(this.$t('common.info.delete'));
         if (this.currentThreadId === item.threadId) {
           this.currentThreadId = '';
-          this.isNewConversation = true;
           this.messageList = [];
           this.hidePanel();
         }
@@ -1105,6 +1484,67 @@ export default {
     // 处理停止按钮点击
     handleStopClick() {
       this.stopStreaming(this.currentThreadId);
+    },
+
+    // 打开skill导入弹框
+    openImportSkillDialog() {
+      if (!this.selectedModel) {
+        this.$message.warning(this.$t('generalAgent.skill.selectModelFirst'));
+        return;
+      }
+      this.$refs.importSkillDialogRef?.openDialog();
+    },
+    async handleSkillImportSubmit(formData) {
+      const dialogRef = this.$refs.importSkillDialogRef;
+      dialogRef.btnLoading = true;
+      try {
+        const selectedModelConfig =
+          this.modelList.find(m => m.modelId === this.selectedModel) ||
+          this.modelList[0];
+        const modelConfig = {
+          modelId: selectedModelConfig?.modelId,
+          model: selectedModelConfig?.model,
+          provider: selectedModelConfig?.provider,
+          displayName: selectedModelConfig?.displayName,
+          modelType: selectedModelConfig?.modelType,
+          config: selectedModelConfig?.config,
+        };
+
+        const { author, avatar, zipUrl } = formData;
+        const res = await importGeneralAgentSkillConversation({
+          author,
+          avatar,
+          zipUrl,
+          modelConfig,
+        });
+
+        if (res.code === 0) {
+          const { threadId, customSkillId, previewId } = res.data || {};
+          this.$message.success(this.$t('common.message.success'));
+          dialogRef.dialogVisible = false;
+
+          if (threadId) {
+            this.currentThreadId = threadId;
+            this.customSkillId = customSkillId || '';
+            this.previewId = previewId || '';
+            this.startSkillPresetConversation('import');
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        dialogRef.btnLoading = false;
+      }
+    },
+    // 打开skill工作空间
+    handleViewSkillWorkspace() {
+      // skill时runId可为空
+      this.handleViewWorkspace({
+        threadId: this.currentThreadId,
+        runId: '',
+        fileCount: 0,
+        totalSize: 0,
+      });
     },
   },
 };
@@ -1281,7 +1721,7 @@ $message-max-width: 900px;
   &.has-workspace {
     .main-content-body {
       flex: 1;
-      min-width: 0;
+      min-width: 25vw;
     }
   }
 }
@@ -1310,6 +1750,11 @@ $message-max-width: 900px;
   .header-left {
     display: flex;
     align-items: center;
+    gap: 12px;
+  }
+
+  .header-btns {
+    display: flex;
     gap: 12px;
   }
 
@@ -1346,6 +1791,20 @@ $message-max-width: 900px;
 
     i {
       font-size: 16px;
+    }
+
+    &.workspace-entry-btn {
+      width: auto;
+      padding: 0 12px;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+
+      &:hover {
+        background: $claude-primary;
+        color: #fff;
+        border-color: $claude-primary;
+      }
     }
   }
 }
@@ -1818,22 +2277,54 @@ $message-max-width: 900px;
     }
   }
 
-  // 模式标签样式
-  .mode-tag {
+  // 模式按钮基础样式
+  .mode-btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 8px 4px 12px;
-    border-radius: 16px;
-    background: rgba($claude-primary, 0.08);
-    border: 1px solid rgba($claude-primary, 0.2);
-    color: $claude-primary;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid $claude-border;
+    background: #fff;
+    color: $claude-text-secondary;
     font-size: 13px;
-    font-weight: 500;
-    animation: mode-tag-enter 0.2s ease;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
 
-    i:first-child {
+    .mode-avatar {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    i {
       font-size: 14px;
+    }
+
+    &:hover {
+      background: rgba($claude-primary, 0.06);
+      border-color: rgba($claude-primary, 0.3);
+      color: $claude-primary;
+    }
+
+    .el-icon--right {
+      margin-left: 0;
+      font-size: 12px;
+    }
+  }
+
+  // 已选模式样式
+  .mode-btn-selected {
+    background: rgba($claude-primary, 0.08);
+    border-color: rgba($claude-primary, 0.3);
+    color: $claude-primary;
+    cursor: default;
+
+    &:hover {
+      background: rgba($claude-primary, 0.12);
+      border-color: rgba($claude-primary, 0.4);
     }
 
     .el-icon-close {
@@ -1842,21 +2333,11 @@ $message-max-width: 900px;
       padding: 2px;
       border-radius: 50%;
       transition: all 0.2s;
+      margin-left: 4px;
 
       &:hover {
         background: rgba($claude-primary, 0.2);
       }
-    }
-  }
-
-  @keyframes mode-tag-enter {
-    from {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
     }
   }
 
@@ -1891,7 +2372,7 @@ $message-max-width: 900px;
     margin-top: 12px;
   }
 
-  // 模式按钮样式
+  // 模式按钮容器
   .mode-buttons {
     display: flex;
     align-items: center;
@@ -1899,43 +2380,6 @@ $message-max-width: 900px;
     gap: 8px;
     margin-top: 16px;
     flex-wrap: wrap;
-
-    .mode-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1px solid $claude-border;
-      background: #fff;
-      color: $claude-text-secondary;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-      user-select: none;
-
-      .mode-avatar {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        object-fit: cover;
-      }
-
-      i {
-        font-size: 14px;
-      }
-
-      &:hover {
-        background: rgba($claude-primary, 0.06);
-        border-color: rgba($claude-primary, 0.3);
-        color: $claude-primary;
-      }
-
-      .el-icon--right {
-        margin-left: 0;
-        font-size: 12px;
-      }
-    }
   }
 }
 

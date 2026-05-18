@@ -27,6 +27,7 @@
         <SkillList
           :list="listData"
           :loading="loading"
+          :showShared="active !== 'builtin'"
           @download="handleDownload"
           @link-more="handleLinkMore"
           @card-click="handleCardClick"
@@ -43,9 +44,11 @@ import SkillList from './components/list.vue';
 import CreateTotalDialog from '@/components/createTotalDialog.vue';
 import {
   getSquareSkillList,
+  getBuiltinSquareSkillList,
   downloadSquareSkill,
   sendSquareSkillToResource,
 } from '@/api/skillSquare';
+import { downloadBuiltinSkill } from '@/api/templateSquare';
 import { resDownloadFile } from '@/utils/util';
 
 export default {
@@ -55,13 +58,19 @@ export default {
       placeholder: this.$t('skillSpace.search'),
       searchValue: '',
       loading: false,
-      active: 'all',
+      active: 'builtin',
       tagList: [
+        // {
+        //   name: this.$t('explore.tag.all'),
+        //   value: 'all',
+        //   activeImg: require('@/assets/imgs/all_active.svg'),
+        //   unactiveImg: require('@/assets/imgs/all_unactive.svg'),
+        // },
         {
-          name: this.$t('explore.tag.all'),
-          value: 'all',
-          activeImg: require('@/assets/imgs/all_active.svg'),
-          unactiveImg: require('@/assets/imgs/all_unactive.svg'),
+          name: this.$t('skillSpace.builtin'),
+          value: 'builtin',
+          activeImg: require('@/assets/imgs/mine_active.svg'),
+          unactiveImg: require('@/assets/imgs/mine_unactive.svg'),
         },
         // {
         //   name: this.$t('explore.tag.favorite'),
@@ -96,19 +105,27 @@ export default {
       const params = {
         name: this.searchValue,
       };
+      const requestApi =
+        this.active === 'builtin'
+          ? getBuiltinSquareSkillList
+          : getSquareSkillList;
+
       this.loading = true;
-      getSquareSkillList(params)
+      requestApi(params)
         .then(res => {
           const { list } = res.data || {};
           this.listData = list || [];
           this.loading = false;
         })
-        .catch(err => {
+        .catch(() => {
           this.loading = false;
         });
     },
     handleDownload(info) {
-      downloadSquareSkill({ skillId: info.skillId }).then(response => {
+      const downloadApi =
+        this.active === 'builtin' ? downloadBuiltinSkill : downloadSquareSkill;
+
+      downloadApi({ skillId: info.skillId }).then(response => {
         resDownloadFile(response, `${info.name}.zip`);
       });
     },
@@ -125,9 +142,13 @@ export default {
     },
     handleCardClick(info) {
       const path = '/skillSquare/detail';
+      const query = { skillId: info.skillId };
+      if (this.active === 'builtin') {
+        query.skillType = 'builtin';
+      }
       this.$router.push({
         path,
-        query: { skillId: info.skillId },
+        query: query,
       });
     },
   },

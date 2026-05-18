@@ -416,3 +416,199 @@ export const rejectQuestion = data => {
     data,
   });
 };
+
+// ==================== skill相关 ====================
+/**
+ * 创建 Skill 专用对话
+ * @param {string} title - 对话标题（必填）
+ * @param {object} modelConfig - 模型配置（必填）
+ */
+export const createGeneralAgentSkillConversation = data => {
+  return service({
+    url: `${BASE_URL}/skill/conversation`,
+    method: 'post',
+    data,
+  });
+};
+
+/**
+ * 导入 Skill 专用对话
+ * @param {string} zipUrl - Skill zip 文件地址（必填）
+ * @param {object} modelConfig - 模型配置（必填）
+ */
+export const importGeneralAgentSkillConversation = data => {
+  return service({
+    url: `${BASE_URL}/skill/import/conversation`,
+    method: 'post',
+    data,
+  });
+};
+
+/**
+ * Skill SSE 流式对话
+ * @param {string} customSkillId - Skill 工作区 ID（必填）
+ * @param {string} threadId - 编辑对话 ID（必填）
+ * @param {string} mode - 对话模式 (normal/import/convert/preview)
+ * @param {string} previewId - 预览对话 ID（preview 模式必填）
+ * @param {Array} messages - 消息列表 [{ id, role, content }]（必填）
+ * @param {function} onMessage - 消息回调
+ * @param {function} onError - 错误回调
+ * @param {function} onOpen - 连接建立回调
+ * @param {AbortSignal} signal - 取消信号
+ * @param {number} timeout - 超时时间（毫秒），默认 5 分钟
+ */
+export const chatGeneralAgentSkillConversation = async ({
+  customSkillId,
+  threadId,
+  mode,
+  previewId,
+  messages,
+  onMessage,
+  onError,
+  onOpen,
+  signal,
+  timeout = 5 * 60 * 1000,
+}) => {
+  const token = store.getters['user/token'] || '';
+  const user = store.getters['user/userInfo'] || {};
+  const url = `${window.location.origin}${BASE_URL}/skill/conversation/chat`;
+
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    timeoutController.abort();
+  }, timeout);
+
+  const combinedSignal = signal
+    ? AbortSignal.any
+      ? AbortSignal.any([signal, timeoutController.signal])
+      : timeoutController.signal
+    : timeoutController.signal;
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'x-user-id': user.uid || '',
+        'x-org-id': user.orgId || '',
+      },
+      body: JSON.stringify({
+        customSkillId,
+        threadId,
+        mode,
+        previewId,
+        messages,
+      }),
+      signal: combinedSignal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      if (timeoutController.signal.aborted) {
+        onError?.(new Error('请求超时，请重试'));
+      }
+    } else {
+      onError?.(error);
+    }
+    return;
+  }
+
+  clearTimeout(timeoutId);
+
+  if (!response.ok) {
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const text = await response.text();
+      try {
+        const json = JSON.parse(text);
+        errorMessage = json.msg || json.message || json.error || text;
+      } catch {
+        if (text) {
+          errorMessage = text;
+        }
+      }
+    } catch (e) {
+      // 无法读取响应内容
+    }
+    onError?.(new Error(errorMessage));
+    return;
+  }
+
+  onOpen?.();
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data.trim()) {
+            try {
+              const event = JSON.parse(data);
+              onMessage?.(event);
+            } catch (e) {
+              console.warn('Failed to parse SSE event:', data);
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      onError?.(error);
+    }
+  }
+};
+
+/**
+ * 获取 Skill preview 对话详情
+ * @param {string} previewId - 预览对话 ID（必填）
+ */
+export const getGeneralAgentSkillPreviewConversationDetail = params => {
+  return service({
+    url: `${BASE_URL}/skill/preview/conversation/detail`,
+    method: 'get',
+    params,
+  });
+};
+
+/**
+ * 一键转化为 Skill 专用对话
+ * @param {Object} data - 请求数据
+ * @param {string} data.id - 待转化资源 ID（必填）
+ * @param {string} data.type - 资源类型 (mcp/tool/agent/workflow/rag)（必填）
+ * @param {Object} data.modelConfig - 模型配置（必填）
+ * @param {string} [data.author] - 作者（选填）
+ */
+export const createConvertSkillConversation = data => {
+  return service({
+    url: `${BASE_URL}/skill/convert/conversation`,
+    method: 'post',
+    data,
+  });
+};
+
+/**
+ * 刷新 Skill 专用对话
+ * @param {Object} data - 请求数据
+ * @param {string} data.skillId - 已存在的 custom skill ID（必填）
+ */
+export const refreshGeneralAgentSkillConversation = data => {
+  return service({
+    url: `${BASE_URL}/skill/refresh/conversation`,
+    method: 'post',
+    data,
+  });
+};

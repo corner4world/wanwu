@@ -43,9 +43,7 @@ const mutations = {
   // 设置活跃的工作空间
   SET_ACTIVE_WORKSPACE(state, payload) {
     state.activeWorkspace = payload;
-    if (payload && payload.runId) {
-      state.currentRunId = payload.runId;
-    }
+    state.currentRunId = payload ? payload.runId || '' : null;
   },
 
   // 更新工作空间文件树

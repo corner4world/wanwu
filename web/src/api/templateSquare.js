@@ -126,6 +126,33 @@ export const getCustomSkillInfo = data => {
   });
 };
 
+// 新增自定义skill配置
+export const createCustomSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/skill/custom/config`,
+    method: 'post',
+    data,
+  });
+};
+
+// 修改自定义skill配置
+export const updateCustomSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/skill/custom/config`,
+    method: 'put',
+    data,
+  });
+};
+
+// 删除自定义skill配置
+export const deleteCustomSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/skill/custom/config`,
+    method: 'delete',
+    data,
+  });
+};
+
 // 创建自定义skills会话
 export const createCustomSkillConversation = data => {
   return request({
@@ -209,5 +236,87 @@ export const getSkillSelectList = data => {
     url: `${USER_API}/agent/skill/select`,
     method: 'get',
     params: data,
+  });
+};
+
+// 获取内置skills列表
+export const getResourceBuiltinSkillList = data => {
+  return request({
+    url: `${USER_API}/agent/skill/builtin/list`,
+    method: 'get',
+    params: data,
+  });
+};
+
+// 获取内置skills详情
+export const getResourceBuiltinSkillDetail = data => {
+  return request({
+    url: `${USER_API}/agent/skill/builtin/detail`,
+    method: 'get',
+    params: data,
+  });
+};
+
+// 内置skil下载
+export const downloadBuiltinSkill = data => {
+  return request({
+    url: `${USER_API}/builtin/skill/download`,
+    method: 'get',
+    params: data,
+    responseType: 'blob',
+  });
+};
+
+// 新增内置skill配置
+export const createResourceBuiltinSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/skill/builtin/config`,
+    method: 'post',
+    data,
+  });
+};
+
+// 编辑内置skill配置
+export const updateResourceBuiltinSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/skill/builtin/config`,
+    method: 'put',
+    data,
+  });
+};
+
+// 删除内置skill配置
+export const deleteResourceBuiltinSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/skill/builtin/config`,
+    method: 'delete',
+    data,
+  });
+};
+
+// 新增添加的skill配置
+export const createAcquiredSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/acquired/skill/config`,
+    method: 'post',
+    data,
+  });
+};
+
+// 修改添加的skill配置
+export const updateAcquiredSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/acquired/skill/config`,
+    method: 'put',
+    data,
+  });
+};
+
+// 删除添加的skill配置
+export const deleteAcquiredSkillConfig = data => {
+  return request({
+    url: `${USER_API}/agent/acquired/skill/config`,
+    method: 'delete',
+    data,
   });
 };

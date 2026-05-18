@@ -8,7 +8,7 @@ import { avatarSrc } from '@/utils/util';
 export default {
   data() {
     return {
-      selectedModes: [],
+      selectedMode: null,
       modeOptions: {}, // 从接口获取的可选模式列表
     };
   },
@@ -16,6 +16,19 @@ export default {
   created() {
     // 初始化空对象，后续通过接口填充
     this.modeOptions = {};
+  },
+
+  watch: {
+    'selectedMode.value': {
+      handler(newVal) {
+        if (newVal === 'Skill Chat Agent') {
+          this.chatType = 'skill';
+        } else {
+          this.chatType = '';
+        }
+      },
+      immediate: true,
+    },
   },
 
   methods: {
@@ -42,13 +55,9 @@ export default {
      * 添加模式
      */
     addMode(modeValue) {
-      // 避免重复添加
-      if (this.selectedModes.find(m => m.value === modeValue)) {
-        return;
-      }
       const mode = this.modeOptions[modeValue];
       if (mode) {
-        this.selectedModes.push({ ...mode });
+        this.selectedMode = { ...mode };
       }
     },
 
@@ -56,16 +65,16 @@ export default {
      * 移除模式
      */
     removeMode(modeValue) {
-      this.selectedModes = this.selectedModes.filter(
-        m => m.value !== modeValue,
-      );
+      if (this.selectedMode?.value === modeValue) {
+        this.selectedMode = null;
+      }
     },
 
     /**
-     * 清空所有模式
+     * 清空模式
      */
     clearModes() {
-      this.selectedModes = [];
+      this.selectedMode = null;
     },
   },
 };

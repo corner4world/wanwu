@@ -7,6 +7,7 @@
         @click="gropdownClick"
         type="primary"
         :underline="false"
+        :class="{ 'is-disabled': sessionStatus === 0 }"
         style="color: var(--color); top: 0"
       >
         <span class="el-icon-delete"></span>
@@ -1547,6 +1548,7 @@ export default {
       });
     },
     gropdownClick() {
+      if (this.sessionStatus === 0) return;
       this.$emit('clearHistory');
     },
     getList() {
@@ -2515,6 +2517,11 @@ export default {
         .el-dropdown-menu__item {
           padding: 0 15px !important;
         }
+      }
+      &.is-disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
       }
     }
   }

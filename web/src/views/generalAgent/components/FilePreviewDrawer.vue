@@ -563,24 +563,20 @@ export default {
 </script>
 
 <style scoped>
-/* 预览面板 - 使用 fixed 定位，位置和宽度由父组件通过 panelStyle 控制 */
 .preview-panel {
-  position: fixed;
-  top: 16px;
-  bottom: 16px;
+  position: relative;
+  height: 100%;
   min-width: 500px;
   background: #fff;
-  border-radius: 12px;
-  border: 1px solid #e4e7ed;
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  border-left: 1px solid #e4e7ed;
   display: flex;
   flex-direction: column;
-  z-index: 2000;
+  z-index: 10;
 }
 
 .resize-handle {
   position: absolute;
-  left: 0;
+  left: -3px; /* 拖拽手柄稍微偏移，使其覆盖在边框上 */
   top: 0;
   bottom: 0;
   width: 6px;

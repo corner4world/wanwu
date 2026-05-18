@@ -24,7 +24,7 @@
         <div class="popover-list">
           <div
             v-for="(item, index) in currentFilteredList"
-            :key="`${item._resourceType}_${item.id || item.name}_${index}`"
+            :key="`${item.resourceType}_${item.id || item.name}_${index}`"
             class="popover-item"
             :class="{ selected: index === selectedIndex }"
             @click="selectConfigItem(item)"
@@ -39,10 +39,10 @@
               <div class="item-name-wrapper">
                 <span class="item-name">{{ item.name }}</span>
                 <span
-                  v-if="popoverTab === 'all' && item._resourceType"
+                  v-if="popoverTab === 'all' && item.resourceType"
                   class="tag"
                 >
-                  {{ $t(`generalAgent.config.${item._resourceType}`) }}
+                  {{ $t(`generalAgent.config.${item.resourceType}`) }}
                 </span>
               </div>
               <div v-if="item.author" class="item-desc">
@@ -72,6 +72,7 @@ import { getGeneralAgentResourceSelect } from '@/api/generalAgent';
 import { avatarSrc } from '@/utils/util';
 import XSender from 'x-sender';
 import 'x-sender/style';
+import PinyinMatch from 'pinyin-match';
 
 export default {
   name: 'MentionInput',
@@ -100,6 +101,7 @@ export default {
       mentionSearchText: '',
       selectedIndex: 0,
       sender: null,
+      ontologyId: null, // ontology单选
     };
   },
   computed: {
@@ -117,7 +119,7 @@ export default {
         // 为每个item添加type标识
         const itemsWithType = list.map(item => ({
           ...item,
-          _resourceType: type,
+          resourceType: type,
         }));
         allList.push(...itemsWithType);
       });
@@ -196,17 +198,37 @@ export default {
       }
     },
 
-    // 通用的列表过滤方法
+    // 通用的列表过滤方法 - 支持中英文和拼音混合搜索
     filterList(list) {
       if (!this.mentionSearchText) {
         return list;
       }
-      const searchText = this.mentionSearchText.toLowerCase();
-      return list.filter(
-        item =>
-          item.name?.toLowerCase().includes(searchText) ||
-          item.desc?.toLowerCase().includes(searchText),
-      );
+      // 去除拼音中的撇号,使 ti'a 能匹配到 tia
+      const searchText = this.mentionSearchText.trim().replaceAll("'", '');
+      return list.filter(item => {
+        // 检测是否为"中文+字母"的格式
+        const mixedPattern = /^([\u4e00-\u9fa5]+)([a-zA-Z]+)$/;
+        const match = searchText.match(mixedPattern);
+
+        if (match) {
+          // 中文+拼音模式:如 "地t" 匹配 "高德地图"
+          const [, chinesePart, pinyinPart] = match;
+
+          // 在目标名称中查找中文部分的位置
+          const chineseIndex = item.name.indexOf(chinesePart);
+          if (chineseIndex === -1) {
+            return false;
+          }
+
+          // 获取中文部分之后的剩余文本,用 PinyinMatch 匹配拼音
+          const remainingText = item.name.substring(
+            chineseIndex + chinesePart.length,
+          );
+          return PinyinMatch.match(remainingText, pinyinPart);
+        } else {
+          return PinyinMatch.match(item.name, searchText);
+        }
+      });
     },
 
     initSender() {
@@ -219,7 +241,14 @@ export default {
       this.sender.bus.on('XSender', EVENT_COMMON_CHANGE, () => {
         this.inputValue = this.sender.getText();
         if (this.showConfigPopover) {
-          this.updateMentionSearch();
+          this.updateMentionPosition();
+          this.$nextTick(() => {
+            if (this.mentionStartPos === -1) return;
+            const allList = this.filterList(this.allResourcesList);
+            if (allList.length === 0) {
+              this.showConfigPopover = false;
+            }
+          });
         }
       });
 
@@ -240,8 +269,10 @@ export default {
           const { instance, offset } = this.sender.getCurrentNode();
           if (instance?.type !== 'Write') return;
           if (instance.text[offset - 1] !== '@') return;
-
-          this.triggerMentionPopover();
+          this.popoverTab = 'all';
+          this.updateMentionPosition();
+          this.showConfigPopover = true;
+          this.selectedIndex = 0;
         }
       });
     },
@@ -253,26 +284,18 @@ export default {
       this.selectedIndex = 0;
     },
 
-    triggerMentionPopover() {
-      this.showConfigPopover = true;
-      this.selectedIndex = 0;
-      this.updateMentionSearch();
-    },
+    // 更新@提及的位置信息
+    updateMentionPosition() {
+      const { instance, offset } = this.sender.getCurrentNode();
+      if (instance?.type !== 'Write') return;
 
-    getCursorPosition() {
-      try {
-        const selection = getSelection();
-        if (!selection || selection.rangeCount === 0) return 0;
+      const currentText = instance.text;
+      const lastAtIndex = currentText.substring(0, offset).lastIndexOf('@');
 
-        const range = selection.getRangeAt(0);
-        const preCaretRange = range.cloneRange();
-        preCaretRange.selectNodeContents(this.sender.chatElement.richText);
-        preCaretRange.setEnd(range.endContainer, range.endOffset);
-        return preCaretRange.toString().length;
-      } catch (e) {
-        console.error('获取光标位置失败:', e);
-        return 0;
-      }
+      this.mentionStartPos = lastAtIndex;
+      if (this.mentionStartPos === -1) this.resetMentionState();
+      else
+        this.mentionSearchText = currentText.substring(lastAtIndex + 1, offset);
     },
 
     handleSenderKeydown(e) {
@@ -285,7 +308,8 @@ export default {
           ArrowDown: () => this.handleKeyboardNavigation('ArrowDown'),
           ArrowLeft: () => this.handleTabSwitch('ArrowLeft'),
           ArrowRight: () => this.handleTabSwitch('ArrowRight'),
-          Enter: () => this.selectCurrentItem(),
+          Enter: () =>
+            this.selectConfigItem(this.currentFilteredList[this.selectedIndex]),
         };
 
         if (keyHandlers[e.key]) {
@@ -299,40 +323,6 @@ export default {
       }
     },
 
-    updateMentionSearch() {
-      if (!this.inputValue || this.inputValue.length === 0) {
-        this.resetMentionState();
-        return;
-      }
-
-      const cursorPos = this.getCursorPosition();
-      const beforeCursor = this.inputValue.substring(0, cursorPos);
-      const lastAtIndex = beforeCursor.lastIndexOf('@');
-
-      if (lastAtIndex === -1) {
-        this.resetMentionState();
-        return;
-      }
-
-      this.mentionStartPos = lastAtIndex;
-      this.mentionSearchText = this.inputValue.substring(
-        lastAtIndex + 1,
-        cursorPos,
-      );
-
-      this.$nextTick(() => {
-        // 如果"全部"列表的搜索结果为空,则隐藏popover
-        if (
-          this.popoverTab === 'all' &&
-          this.currentFilteredList.length === 0
-        ) {
-          this.showConfigPopover = false;
-        } else {
-          this.$refs.configPopover?.updatePopper();
-        }
-      });
-    },
-
     handleSenderBlur() {
       setTimeout(() => {
         const popover = this.$refs.configPopover?.$refs?.popper;
@@ -344,28 +334,21 @@ export default {
     },
 
     async fetchConfigData() {
-      try {
-        const res = await getGeneralAgentResourceSelect();
+      const res = await getGeneralAgentResourceSelect();
 
-        if (res?.data && Array.isArray(res.data)) {
-          this.resourceList = {};
+      if (res?.data && Array.isArray(res.data)) {
+        this.resourceList = {};
 
-          res.data.forEach(item => {
-            const { listType, list } = item;
-            if (listType && Array.isArray(list)) {
-              this.resourceList[listType] = list;
-            }
-          });
-        }
-      } catch (error) {
-        console.error('获取配置数据失败:', error);
+        res.data.forEach(item => {
+          const { listType, list } = item;
+          if (listType && Array.isArray(list)) {
+            this.resourceList[listType] = list.map(resource => ({
+              ...resource,
+              resourceType: listType,
+            }));
+          }
+        });
       }
-    },
-
-    selectCurrentItem() {
-      if (this.currentFilteredList.length === 0 || this.selectedIndex < 0)
-        return;
-      this.selectConfigItem(this.currentFilteredList[this.selectedIndex]);
     },
 
     handleKeyboardNavigation(key) {
@@ -399,21 +382,30 @@ export default {
     },
 
     selectConfigItem(item) {
-      if (!this.inputValue || this.mentionStartPos === -1) return;
-
       this.sender.backspace(-(this.mentionSearchText.length + 1));
 
       this.sender.setMention({
         id: item.id,
         name: item.name + ' ', // @Amap-高德地图 帮我查询一下西安钟楼到大雁塔的骑行路线
-        type: this.popoverTab,
       });
 
       this.resetMentionState();
+
+      if (item.resourceType === 'ontology') {
+        if (this.ontologyId) {
+          // 如果已存在 ontology 提及，先删除它
+          this.$message.warning(
+            this.$t('generalAgent.config.ontologySingleWarning'),
+          );
+          this.sender.removeMention([this.ontologyId]);
+        }
+        this.ontologyId = item.id;
+      }
     },
 
     clear() {
       this.sender.reset();
+      this.ontologyId = null;
     },
   },
   mounted() {

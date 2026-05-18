@@ -11,7 +11,7 @@
         <el-button
           circle
           class="chat-clear-btn"
-          :disabled="!hasHistory"
+          :disabled="!hasHistory || sessionStatus === 0"
           @click="handleClearHistory"
         >
           <svg class="chat-clear-icon">
@@ -234,7 +234,7 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('app', ['maxPicNum']),
+    ...mapGetters('app', ['maxPicNum', 'sessionStatus']),
     placeholder() {
       return this.supportReminder
         ? this.$t('common.input.modelChatPlaceholder2')

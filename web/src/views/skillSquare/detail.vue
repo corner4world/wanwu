@@ -5,13 +5,27 @@
     :isPublic="isPublic"
     :bgColor="bgColor"
     :backText="backText"
+    :visibleVariableConfig="false"
     @init="initData"
     @back="handleBack"
     @download="handleDownload"
     @click-recommend="handleClickRecommend"
   >
+    <template #info-header>
+      <div class="apiKeyConfig-tips">
+        <i class="el-icon-info"></i>
+        <span>
+          {{
+            skillType === 'builtin'
+              ? $t('skillSpace.detail.apiKeyEmptyTips_builtin')
+              : $t('skillSpace.detail.apiKeyEmptyTips')
+          }}
+        </span>
+      </div>
+    </template>
     <template #extra-buttons>
       <el-button
+        v-if="skillType !== 'builtin'"
         type="primary"
         size="mini"
         plain
@@ -32,10 +46,12 @@
 import SkillDetail from '@/components/skills/skillDetail.vue';
 import {
   getSquareSkillList,
+  getBuiltinSquareSkillList,
   sendSquareSkillToResource,
   getSquareSkillDetail,
   downloadSquareSkill,
 } from '@/api/skillSquare';
+import { downloadBuiltinSkill } from '@/api/templateSquare';
 import { resDownloadFile } from '@/utils/util';
 
 export default {
@@ -45,6 +61,7 @@ export default {
   data() {
     return {
       skillId: '',
+      skillType: '',
       detail: {},
       recommendList: [],
       isPublic: false,
@@ -66,8 +83,9 @@ export default {
   },
   methods: {
     initData() {
-      const { skillId } = this.$route.query || {};
+      const { skillId, skillType } = this.$route.query || {};
       this.skillId = skillId;
+      this.skillType = skillType;
 
       this.getDetailData();
       this.getRecommendList();
@@ -83,12 +101,20 @@ export default {
       this.detail = res.data || {};
     },
     async getRecommendList() {
-      const res = await getSquareSkillList();
+      const requestApi =
+        this.skillType === 'builtin'
+          ? getBuiltinSquareSkillList
+          : getSquareSkillList;
+      const res = await requestApi();
       this.recommendList =
         res.data.list.filter(item => item.skillId !== this.skillId) || [];
     },
     async handleDownload(item) {
-      const res = await downloadSquareSkill({ skillId: item.skillId });
+      const downloadApi =
+        this.skillType === 'builtin'
+          ? downloadBuiltinSkill
+          : downloadSquareSkill;
+      const res = await downloadApi({ skillId: item.skillId });
       resDownloadFile(res, `${item.name}.zip`);
     },
     handleSendToResource(info) {
@@ -105,13 +131,44 @@ export default {
     },
     handleClickRecommend(val) {
       const skillId = val.skillId;
+      const query = { skillId: skillId };
+      if (this.skillType === 'builtin') {
+        query.skillType = 'builtin';
+      }
       this.$router.push({
         path: this.$route.path,
-        query: { skillId: skillId },
+        query,
       });
     },
   },
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.apiKeyConfig-tips {
+  display: flex;
+  align-items: flex-start;
+  background: #f0f7ff;
+  border: 1px solid #ddecff;
+  border-left: 4px solid #409eff;
+  color: #5e6d82;
+  font-size: 13px;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin: 15px 0;
+  line-height: 1.6;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.02);
+
+  i {
+    font-size: 16px;
+    color: #409eff;
+    margin-right: 10px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+}
+</style>

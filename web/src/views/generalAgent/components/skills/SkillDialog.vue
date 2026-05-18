@@ -145,7 +145,7 @@
 
 <script>
 import { uploadAvatar } from '@/api/user';
-import { createCustomSkill, checkCustomSkill } from '@/api/templateSquare';
+import { checkCustomSkill } from '@/api/templateSquare';
 import { avatarSrc, filterSize } from '@/utils/util';
 import uploadChunk from '@/mixins/uploadChunk';
 
@@ -331,20 +331,7 @@ export default {
     async doSubmit() {
       await this.$refs.form.validate(async valid => {
         if (valid) {
-          this.btnLoading = true;
-          try {
-            const { author, avatar, zipUrl } = this.form;
-            const res = await createCustomSkill({ author, avatar, zipUrl });
-            if (res.code === 0) {
-              this.$message.success(this.$t('common.message.success'));
-              this.dialogVisible = false;
-              this.$emit('reload');
-            }
-          } catch (error) {
-            console.error(error);
-          } finally {
-            this.btnLoading = false;
-          }
+          this.$emit('submit', this.form);
         }
       });
     },

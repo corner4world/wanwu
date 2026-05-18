@@ -11,6 +11,15 @@ export const getSquareSkillList = data => {
   });
 };
 
+// 获取skill广场列表-内置
+export const getBuiltinSquareSkillList = data => {
+  return request({
+    url: `${USER_API}/square/skill/builtin/list`,
+    method: 'get',
+    params: data,
+  });
+};
+
 // 发送skill广场到资源库
 export const sendSquareSkillToResource = data => {
   return request({

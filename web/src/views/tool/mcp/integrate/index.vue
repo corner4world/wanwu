@@ -69,6 +69,9 @@
                 <el-dropdown-item @click.native="handleDelete(item)">
                   {{ $t('common.button.delete') }}
                 </el-dropdown-item>
+                <el-dropdown-item @click.native="handleConvertToSkill(item)">
+                  {{ $t('common.button.convertToSkill') }}
+                </el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </div>
@@ -95,16 +98,18 @@
       @handleFetch="fetchList()"
       @handleClose="handleClose"
     ></addDialog>
+    <ConvertSkillDialog ref="convertSkillDialog" />
   </div>
 </template>
 <script>
 import addDialog from './addDialog.vue';
 import SearchInput from '@/components/searchInput.vue';
+import ConvertSkillDialog from '@/components/skills/convertSkillDialog.vue';
 import { getList, setDelete } from '@/api/mcp';
 import LinkIcon from '@/components/linkIcon.vue';
 import { avatarSrc } from '@/utils/util';
 export default {
-  components: { LinkIcon, SearchInput, addDialog },
+  components: { LinkIcon, SearchInput, addDialog, ConvertSkillDialog },
   data() {
     return {
       defaultAvatar: require('@/assets/imgs/mcp_active.svg'),
@@ -181,6 +186,13 @@ export default {
             this.$message.error(res.msg || this.$t('common.info.deleteErr'));
           }
         });
+      });
+    },
+    // 转化为 Skill
+    handleConvertToSkill(item) {
+      this.$refs.convertSkillDialog.open({
+        id: item.mcpId,
+        type: 'mcp',
       });
     },
   },

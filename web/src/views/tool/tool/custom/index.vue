@@ -62,6 +62,9 @@
                 <el-dropdown-item @click.native="handleDelete(item)">
                   {{ $t('common.button.delete') }}
                 </el-dropdown-item>
+                <el-dropdown-item @click.native="handleConvertToSkill(item)">
+                  {{ $t('common.button.convertToSkill') }}
+                </el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </div>
@@ -75,15 +78,17 @@
       ></el-empty>
     </div>
     <addDialog ref="addDialog" @handleFetch="fetchList"></addDialog>
+    <ConvertSkillDialog ref="convertSkillDialog" />
   </div>
 </template>
 <script>
 import addDialog from './addDialog.vue';
 import SearchInput from '@/components/searchInput.vue';
+import ConvertSkillDialog from '@/components/skills/convertSkillDialog.vue';
 import { getCustomList, deleteCustom } from '@/api/mcp';
 import { avatarSrc } from '@/utils/util';
 export default {
-  components: { SearchInput, addDialog },
+  components: { SearchInput, addDialog, ConvertSkillDialog },
   data() {
     return {
       defaultAvatar: require('@/assets/imgs/toolImg.png'),
@@ -132,6 +137,13 @@ export default {
             this.$message.error(res.msg || this.$t('common.info.deleteErr'));
           }
         });
+      });
+    },
+    // 转化为 Skill
+    handleConvertToSkill(item) {
+      this.$refs.convertSkillDialog.open({
+        id: item.customToolId,
+        type: 'tool',
       });
     },
   },
