@@ -15,7 +15,7 @@ func (s *Service) AcquiredSkillCreate(ctx context.Context, req *mcp_service.Acqu
 		return nil, errStatus(errs.Code_MCPAcquiredSkillErr, toErrStatus("mcp_acquired_skill_create", "identity is empty"))
 	}
 	acquiredSkillId, err := s.cli.CreateAcquiredSkill(ctx, &model.AcquiredSkill{
-		SquareSkillID:      req.SquareSkillId,
+		CustomSkillID:      req.SquareSkillId,
 		Name:               req.Name,
 		Avatar:             req.Avatar,
 		Author:             req.Author,
@@ -95,7 +95,7 @@ func toAcquiredSkillInfo(acquiredSkill *model.AcquiredSkill, variables []*mcp_se
 	}
 	return &mcp_service.AcquiredSkill{
 		AcquiredSkillId:    util.Int2Str(acquiredSkill.ID),
-		SquareSkillId:      acquiredSkill.SquareSkillID,
+		SquareSkillId:      acquiredSkill.CustomSkillID,
 		Name:               acquiredSkill.Name,
 		Avatar:             acquiredSkill.Avatar,
 		Author:             acquiredSkill.Author,

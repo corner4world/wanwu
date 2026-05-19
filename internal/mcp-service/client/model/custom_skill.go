@@ -10,8 +10,6 @@ type CustomSkill struct {
 	Author          string `gorm:"column:author;comment:作者"`
 	ObjectPath      string `gorm:"column:object_path;comment:skill数据minio对象路径(zip压缩包)"`
 	Markdown        string `gorm:"column:markdown;type:text;comment:skill markdown内容"`
-	SaveId          string `gorm:"column:save_id;index:idx_custom_skill_save_id;comment:保存id"`
-	SourceType      string `gorm:"column:source_type;index:idx_custom_skill_source_type;comment:来源类型"`
 	WgaThreadID     string `gorm:"column:wga_thread_id;index:idx_custom_skill_wga_thread_id;comment:WGA线程id"`
 	PreviewThreadID string `gorm:"column:preview_thread_id;index:idx_custom_skill_preview_thread_id;comment:预览线程id"`
 	CreatedAt       int64  `gorm:"autoCreateTime:milli;comment:创建时间"`
