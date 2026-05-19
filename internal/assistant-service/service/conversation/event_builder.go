@@ -39,14 +39,16 @@ type ConversationResp struct {
 }
 
 func CreateConversationResp() *ConversationResp {
-	return &ConversationResp{FullResponse: &strings.Builder{}, ConversationEventMap: make(map[string]*ConversationResp)}
+	return &ConversationResp{FullResponse: &strings.Builder{}, ConversationEventMap: make(map[string]*ConversationResp), Order: -1}
 }
 
 func (cr *ConversationResp) Write(data string, order int) {
 	if order != cr.EventOrder {
 		resp := &model.ConversationResponse{Response: cr.FullResponse.String(), Order: cr.EventOrder}
 		cr.EventOrder = order
-		cr.FullResponseList = append(cr.FullResponseList, resp)
+		if !resp.Empty() {
+			cr.FullResponseList = append(cr.FullResponseList, resp)
+		}
 		cr.FullResponse.Reset()
 	}
 	cr.FullResponse.WriteString(data)
@@ -60,7 +62,7 @@ func (cr *ConversationResp) WriteError(data string, errMessage string, order int
 		cr.FullResponse.Reset()
 		order += 1
 	}
-	resp := &model.ConversationResponse{ErrMessage: errMessage, ErrResponse: data, Order: cr.EventOrder}
+	resp := &model.ConversationResponse{ErrMessage: errMessage, ErrResponse: data, Order: order}
 	cr.EventOrder = order
 	cr.FullResponseList = append(cr.FullResponseList, resp)
 	cr.FullResponse.Reset()
@@ -95,7 +97,16 @@ func (cr *ConversationResp) ResponseList() []*model.ConversationResponse {
 		}
 		conversationResponse += terminationMessage
 	}
-	var retList = cr.FullResponseList
+	list := cr.FullResponseList
+	var retList []*model.ConversationResponse
+	if len(list) > 0 {
+		for _, data := range list {
+			if data.Order < 0 {
+				continue
+			}
+			retList = append(retList, data)
+		}
+	}
 	if len(conversationResponse) > 0 {
 		retList = append(retList, &model.ConversationResponse{Response: conversationResponse, Order: cr.EventOrder})
 	}

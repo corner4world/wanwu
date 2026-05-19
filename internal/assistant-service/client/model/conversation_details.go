@@ -81,6 +81,10 @@ type ConversationResponse struct {
 	Order       int    `json:"order"`
 }
 
+func (c *ConversationResponse) Empty() bool {
+	return len(c.Response) == 0 && len(c.ErrResponse) == 0 && len(c.ErrMessage) == 0
+}
+
 type ConversationDetails struct {
 	Id                        string                   `json:"id"`
 	AssistantId               string                   `json:"assistantId"`
