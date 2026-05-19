@@ -295,6 +295,7 @@
                       v-if="item.errMsg || item.errResponse"
                       :title="item.errResponse || item.response"
                       :desc="item.errMsg"
+                      :class="{ 'agent-error-card': chatType === 'agent' }"
                     />
                   </div>
                 </template>
@@ -600,6 +601,7 @@
                 v-if="n.error && n.errResponse"
                 :title="n.errResponse || n.response"
                 :desc="n.errorDetail"
+                :class="{ 'agent-error-card': chatType === 'agent' }"
               />
             </div>
           </div>
@@ -3166,5 +3168,16 @@ img.failed::after {
 
 .gap-10px {
   gap: 10px;
+}
+
+::v-deep .agent-error-card {
+  .session-error-toggle {
+    .el-icon-arrow-down {
+      transform: rotate(90deg);
+      &.is-expanded {
+        transform: rotate(0deg);
+      }
+    }
+  }
 }
 </style>

@@ -3,7 +3,9 @@
     <div class="session-error-icon">
       <el-tooltip effect="dark" placement="top">
         <template #content>
-          <div style="white-space: pre-wrap; width: 20vw">{{ trimmedDesc }}</div>
+          <div style="white-space: pre-wrap; width: 20vw">
+            {{ trimmedDesc }}
+          </div>
         </template>
         <i class="el-icon-warning-outline"></i>
       </el-tooltip>
@@ -24,10 +26,7 @@
       :title="expanded ? $t('common.button.fold') : $t('common.button.expand')"
       @click="expanded = !expanded"
     >
-      <i
-        class="el-icon-arrow-down"
-        :class="{ 'is-expanded': expanded }"
-      ></i>
+      <i class="el-icon-arrow-down" :class="{ 'is-expanded': expanded }"></i>
     </button>
   </div>
 </template>
@@ -60,7 +59,7 @@ export default {
 
 <style lang="scss" scoped>
 .session-error {
-  display: inline-flex;
+  display: flex;
   align-items: flex-start;
   gap: 10px;
   max-width: 100%;
