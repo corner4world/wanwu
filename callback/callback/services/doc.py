@@ -179,6 +179,7 @@ def parse_doc_only(file_url):
     url = config.callback_cfg["URL"]["RAG_DOC_PARSER"]
     sentence_size = int(config.callback_cfg["DOC"]["CHUNK_SIZE"])
     overlap_size = float(config.callback_cfg["DOC"]["OVERLAP_RATIO"])
+    max_output_size = float(config.callback_cfg["DOC"]["MAX_OUTPUT_SIZE"])
     payload = json.dumps(
         {
             "url": file_url,
