@@ -59,7 +59,6 @@ const (
 	MCPService_GetCustomSkillByThreadID_FullMethodName         = "/mcp_service.MCPService/GetCustomSkillByThreadID"
 	MCPService_GetCustomSkillListByThreadIDList_FullMethodName = "/mcp_service.MCPService/GetCustomSkillListByThreadIDList"
 	MCPService_CustomSkillGetList_FullMethodName               = "/mcp_service.MCPService/CustomSkillGetList"
-	MCPService_CustomSkillGetBySaveIds_FullMethodName          = "/mcp_service.MCPService/CustomSkillGetBySaveIds"
 	MCPService_GetCustomSkillDetailByIdList_FullMethodName     = "/mcp_service.MCPService/GetCustomSkillDetailByIdList"
 	MCPService_UpdateCustomSkillBasicMeta_FullMethodName       = "/mcp_service.MCPService/UpdateCustomSkillBasicMeta"
 	MCPService_UpdateCustomSkillThreadMeta_FullMethodName      = "/mcp_service.MCPService/UpdateCustomSkillThreadMeta"
@@ -71,6 +70,8 @@ const (
 	MCPService_AcquiredSkillDelete_FullMethodName              = "/mcp_service.MCPService/AcquiredSkillDelete"
 	MCPService_AcquiredSkillGet_FullMethodName                 = "/mcp_service.MCPService/AcquiredSkillGet"
 	MCPService_AcquiredSkillGetList_FullMethodName             = "/mcp_service.MCPService/AcquiredSkillGetList"
+	MCPService_AcquiredSkillGetByIDList_FullMethodName         = "/mcp_service.MCPService/AcquiredSkillGetByIDList"
+	MCPService_AcquiredSkillGetHistoryList_FullMethodName      = "/mcp_service.MCPService/AcquiredSkillGetHistoryList"
 	MCPService_CreateAcquiredSkillVar_FullMethodName           = "/mcp_service.MCPService/CreateAcquiredSkillVar"
 	MCPService_GetAcquiredSkillVars_FullMethodName             = "/mcp_service.MCPService/GetAcquiredSkillVars"
 	MCPService_UpdateAcquiredSkillVar_FullMethodName           = "/mcp_service.MCPService/UpdateAcquiredSkillVar"
@@ -79,12 +80,13 @@ const (
 	MCPService_DeleteBuiltinSkillVar_FullMethodName            = "/mcp_service.MCPService/DeleteBuiltinSkillVar"
 	MCPService_GetBuiltinSkillVars_FullMethodName              = "/mcp_service.MCPService/GetBuiltinSkillVars"
 	MCPService_UpdateBuiltinSkillVar_FullMethodName            = "/mcp_service.MCPService/UpdateBuiltinSkillVar"
-	MCPService_PublishCustomSkill_FullMethodName               = "/mcp_service.MCPService/PublishCustomSkill"
+	MCPService_CreatePublishCustomSkill_FullMethodName         = "/mcp_service.MCPService/CreatePublishCustomSkill"
 	MCPService_UpdatePublishCustomSkill_FullMethodName         = "/mcp_service.MCPService/UpdatePublishCustomSkill"
 	MCPService_GetPublishCustomSkillHistoryList_FullMethodName = "/mcp_service.MCPService/GetPublishCustomSkillHistoryList"
-	MCPService_OverwriteCustomSkillDraft_FullMethodName        = "/mcp_service.MCPService/OverwriteCustomSkillDraft"
-	MCPService_GetPublishCustomSkillDesc_FullMethodName        = "/mcp_service.MCPService/GetPublishCustomSkillDesc"
-	MCPService_GetPublishCustomSkillDescBatch_FullMethodName   = "/mcp_service.MCPService/GetPublishCustomSkillDescBatch"
+	MCPService_GetPublishCustomSkillByLatest_FullMethodName    = "/mcp_service.MCPService/GetPublishCustomSkillByLatest"
+	MCPService_GetPublishCustomSkillByVersion_FullMethodName   = "/mcp_service.MCPService/GetPublishCustomSkillByVersion"
+	MCPService_GetPublishCustomSkillList_FullMethodName        = "/mcp_service.MCPService/GetPublishCustomSkillList"
+	MCPService_GetPublishCustomSkillByIDList_FullMethodName    = "/mcp_service.MCPService/GetPublishCustomSkillByIDList"
 )
 
 // MCPServiceClient is the client API for MCPService service.
@@ -134,12 +136,11 @@ type MCPServiceClient interface {
 	// --- custom skill ---
 	CustomSkillCreate(ctx context.Context, in *CustomSkillCreateReq, opts ...grpc.CallOption) (*CustomSkillCreateResp, error)
 	CustomSkillDelete(ctx context.Context, in *CustomSkillDeleteReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CustomSkillGet(ctx context.Context, in *CustomSkillGetReq, opts ...grpc.CallOption) (*CustomSkill, error)
+	CustomSkillGet(ctx context.Context, in *CustomSkillGetReq, opts ...grpc.CallOption) (*PublishCustomSkill, error)
 	GetCustomSkillByPreviewID(ctx context.Context, in *GetCustomSkillByPreviewIDReq, opts ...grpc.CallOption) (*GetCustomSkillByPreviewIDResp, error)
 	GetCustomSkillByThreadID(ctx context.Context, in *GetCustomSkillByThreadIDReq, opts ...grpc.CallOption) (*GetCustomSkillByThreadIDResp, error)
 	GetCustomSkillListByThreadIDList(ctx context.Context, in *GetCustomSkillListByThreadIDListReq, opts ...grpc.CallOption) (*CustomSkillGetListResp, error)
 	CustomSkillGetList(ctx context.Context, in *CustomSkillGetListReq, opts ...grpc.CallOption) (*CustomSkillGetListResp, error)
-	CustomSkillGetBySaveIds(ctx context.Context, in *CustomSkillGetBySaveIdsReq, opts ...grpc.CallOption) (*CustomSkillSaveIdsResp, error)
 	GetCustomSkillDetailByIdList(ctx context.Context, in *CustomSkillDetailByIdListReq, opts ...grpc.CallOption) (*CustomSkillDetailByIdListResp, error)
 	UpdateCustomSkillBasicMeta(ctx context.Context, in *UpdateCustomSkillBasicMetaReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateCustomSkillThreadMeta(ctx context.Context, in *UpdateCustomSkillThreadMetaReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -152,6 +153,8 @@ type MCPServiceClient interface {
 	AcquiredSkillDelete(ctx context.Context, in *AcquiredSkillDeleteReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	AcquiredSkillGet(ctx context.Context, in *AcquiredSkillGetReq, opts ...grpc.CallOption) (*AcquiredSkill, error)
 	AcquiredSkillGetList(ctx context.Context, in *AcquiredSkillGetListReq, opts ...grpc.CallOption) (*AcquiredSkillGetListResp, error)
+	AcquiredSkillGetByIDList(ctx context.Context, in *AcquiredSkillGetByIDListReq, opts ...grpc.CallOption) (*AcquiredSkillGetByIDListResp, error)
+	AcquiredSkillGetHistoryList(ctx context.Context, in *AcquiredSkillGetHistoryListReq, opts ...grpc.CallOption) (*AcquiredSkillHistoryListResp, error)
 	CreateAcquiredSkillVar(ctx context.Context, in *CreateAcquiredSkillVarReq, opts ...grpc.CallOption) (*SkillVariableCreateResp, error)
 	GetAcquiredSkillVars(ctx context.Context, in *GetAcquiredSkillVarsReq, opts ...grpc.CallOption) (*AcquiredSkillVars, error)
 	UpdateAcquiredSkillVar(ctx context.Context, in *UpdateAcquiredSkillVarReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -162,12 +165,13 @@ type MCPServiceClient interface {
 	GetBuiltinSkillVars(ctx context.Context, in *GetBuiltinSkillVarsReq, opts ...grpc.CallOption) (*BuiltinSkillVars, error)
 	UpdateBuiltinSkillVar(ctx context.Context, in *UpdateBuiltinSkillVarReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// --- skill publish ---
-	PublishCustomSkill(ctx context.Context, in *PublishCustomSkillReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreatePublishCustomSkill(ctx context.Context, in *PublishCustomSkillReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdatePublishCustomSkill(ctx context.Context, in *UpdatePublishCustomSkillReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetPublishCustomSkillHistoryList(ctx context.Context, in *GetPublishCustomSkillHistoryListReq, opts ...grpc.CallOption) (*PublishCustomSkillHistoryListResp, error)
-	OverwriteCustomSkillDraft(ctx context.Context, in *OverwriteCustomSkillDraftReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetPublishCustomSkillDesc(ctx context.Context, in *GetPublishCustomSkillDescReq, opts ...grpc.CallOption) (*PublishCustomSkillDescResp, error)
-	GetPublishCustomSkillDescBatch(ctx context.Context, in *GetPublishCustomSkillDescBatchReq, opts ...grpc.CallOption) (*PublishCustomSkillDescBatchResp, error)
+	GetPublishCustomSkillByLatest(ctx context.Context, in *GetPublishCustomSkillByLatestReq, opts ...grpc.CallOption) (*PublishCustomSkill, error)
+	GetPublishCustomSkillByVersion(ctx context.Context, in *GetPublishCustomSkillByVersionReq, opts ...grpc.CallOption) (*PublishCustomSkill, error)
+	GetPublishCustomSkillList(ctx context.Context, in *GetPublishCustomSkillListReq, opts ...grpc.CallOption) (*GetPublishCustomSkillListResp, error)
+	GetPublishCustomSkillByIDList(ctx context.Context, in *GetPublishCustomSkillByIDListReq, opts ...grpc.CallOption) (*GetPublishCustomSkillByIDListResp, error)
 }
 
 type mCPServiceClient struct {
@@ -518,9 +522,9 @@ func (c *mCPServiceClient) CustomSkillDelete(ctx context.Context, in *CustomSkil
 	return out, nil
 }
 
-func (c *mCPServiceClient) CustomSkillGet(ctx context.Context, in *CustomSkillGetReq, opts ...grpc.CallOption) (*CustomSkill, error) {
+func (c *mCPServiceClient) CustomSkillGet(ctx context.Context, in *CustomSkillGetReq, opts ...grpc.CallOption) (*PublishCustomSkill, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CustomSkill)
+	out := new(PublishCustomSkill)
 	err := c.cc.Invoke(ctx, MCPService_CustomSkillGet_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -562,16 +566,6 @@ func (c *mCPServiceClient) CustomSkillGetList(ctx context.Context, in *CustomSki
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CustomSkillGetListResp)
 	err := c.cc.Invoke(ctx, MCPService_CustomSkillGetList_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *mCPServiceClient) CustomSkillGetBySaveIds(ctx context.Context, in *CustomSkillGetBySaveIdsReq, opts ...grpc.CallOption) (*CustomSkillSaveIdsResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CustomSkillSaveIdsResp)
-	err := c.cc.Invoke(ctx, MCPService_CustomSkillGetBySaveIds_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -688,6 +682,26 @@ func (c *mCPServiceClient) AcquiredSkillGetList(ctx context.Context, in *Acquire
 	return out, nil
 }
 
+func (c *mCPServiceClient) AcquiredSkillGetByIDList(ctx context.Context, in *AcquiredSkillGetByIDListReq, opts ...grpc.CallOption) (*AcquiredSkillGetByIDListResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AcquiredSkillGetByIDListResp)
+	err := c.cc.Invoke(ctx, MCPService_AcquiredSkillGetByIDList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mCPServiceClient) AcquiredSkillGetHistoryList(ctx context.Context, in *AcquiredSkillGetHistoryListReq, opts ...grpc.CallOption) (*AcquiredSkillHistoryListResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AcquiredSkillHistoryListResp)
+	err := c.cc.Invoke(ctx, MCPService_AcquiredSkillGetHistoryList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mCPServiceClient) CreateAcquiredSkillVar(ctx context.Context, in *CreateAcquiredSkillVarReq, opts ...grpc.CallOption) (*SkillVariableCreateResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SkillVariableCreateResp)
@@ -768,10 +782,10 @@ func (c *mCPServiceClient) UpdateBuiltinSkillVar(ctx context.Context, in *Update
 	return out, nil
 }
 
-func (c *mCPServiceClient) PublishCustomSkill(ctx context.Context, in *PublishCustomSkillReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *mCPServiceClient) CreatePublishCustomSkill(ctx context.Context, in *PublishCustomSkillReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, MCPService_PublishCustomSkill_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, MCPService_CreatePublishCustomSkill_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -798,30 +812,40 @@ func (c *mCPServiceClient) GetPublishCustomSkillHistoryList(ctx context.Context,
 	return out, nil
 }
 
-func (c *mCPServiceClient) OverwriteCustomSkillDraft(ctx context.Context, in *OverwriteCustomSkillDraftReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *mCPServiceClient) GetPublishCustomSkillByLatest(ctx context.Context, in *GetPublishCustomSkillByLatestReq, opts ...grpc.CallOption) (*PublishCustomSkill, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, MCPService_OverwriteCustomSkillDraft_FullMethodName, in, out, cOpts...)
+	out := new(PublishCustomSkill)
+	err := c.cc.Invoke(ctx, MCPService_GetPublishCustomSkillByLatest_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mCPServiceClient) GetPublishCustomSkillDesc(ctx context.Context, in *GetPublishCustomSkillDescReq, opts ...grpc.CallOption) (*PublishCustomSkillDescResp, error) {
+func (c *mCPServiceClient) GetPublishCustomSkillByVersion(ctx context.Context, in *GetPublishCustomSkillByVersionReq, opts ...grpc.CallOption) (*PublishCustomSkill, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PublishCustomSkillDescResp)
-	err := c.cc.Invoke(ctx, MCPService_GetPublishCustomSkillDesc_FullMethodName, in, out, cOpts...)
+	out := new(PublishCustomSkill)
+	err := c.cc.Invoke(ctx, MCPService_GetPublishCustomSkillByVersion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *mCPServiceClient) GetPublishCustomSkillDescBatch(ctx context.Context, in *GetPublishCustomSkillDescBatchReq, opts ...grpc.CallOption) (*PublishCustomSkillDescBatchResp, error) {
+func (c *mCPServiceClient) GetPublishCustomSkillList(ctx context.Context, in *GetPublishCustomSkillListReq, opts ...grpc.CallOption) (*GetPublishCustomSkillListResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PublishCustomSkillDescBatchResp)
-	err := c.cc.Invoke(ctx, MCPService_GetPublishCustomSkillDescBatch_FullMethodName, in, out, cOpts...)
+	out := new(GetPublishCustomSkillListResp)
+	err := c.cc.Invoke(ctx, MCPService_GetPublishCustomSkillList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mCPServiceClient) GetPublishCustomSkillByIDList(ctx context.Context, in *GetPublishCustomSkillByIDListReq, opts ...grpc.CallOption) (*GetPublishCustomSkillByIDListResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPublishCustomSkillByIDListResp)
+	err := c.cc.Invoke(ctx, MCPService_GetPublishCustomSkillByIDList_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -875,12 +899,11 @@ type MCPServiceServer interface {
 	// --- custom skill ---
 	CustomSkillCreate(context.Context, *CustomSkillCreateReq) (*CustomSkillCreateResp, error)
 	CustomSkillDelete(context.Context, *CustomSkillDeleteReq) (*emptypb.Empty, error)
-	CustomSkillGet(context.Context, *CustomSkillGetReq) (*CustomSkill, error)
+	CustomSkillGet(context.Context, *CustomSkillGetReq) (*PublishCustomSkill, error)
 	GetCustomSkillByPreviewID(context.Context, *GetCustomSkillByPreviewIDReq) (*GetCustomSkillByPreviewIDResp, error)
 	GetCustomSkillByThreadID(context.Context, *GetCustomSkillByThreadIDReq) (*GetCustomSkillByThreadIDResp, error)
 	GetCustomSkillListByThreadIDList(context.Context, *GetCustomSkillListByThreadIDListReq) (*CustomSkillGetListResp, error)
 	CustomSkillGetList(context.Context, *CustomSkillGetListReq) (*CustomSkillGetListResp, error)
-	CustomSkillGetBySaveIds(context.Context, *CustomSkillGetBySaveIdsReq) (*CustomSkillSaveIdsResp, error)
 	GetCustomSkillDetailByIdList(context.Context, *CustomSkillDetailByIdListReq) (*CustomSkillDetailByIdListResp, error)
 	UpdateCustomSkillBasicMeta(context.Context, *UpdateCustomSkillBasicMetaReq) (*emptypb.Empty, error)
 	UpdateCustomSkillThreadMeta(context.Context, *UpdateCustomSkillThreadMetaReq) (*emptypb.Empty, error)
@@ -893,6 +916,8 @@ type MCPServiceServer interface {
 	AcquiredSkillDelete(context.Context, *AcquiredSkillDeleteReq) (*emptypb.Empty, error)
 	AcquiredSkillGet(context.Context, *AcquiredSkillGetReq) (*AcquiredSkill, error)
 	AcquiredSkillGetList(context.Context, *AcquiredSkillGetListReq) (*AcquiredSkillGetListResp, error)
+	AcquiredSkillGetByIDList(context.Context, *AcquiredSkillGetByIDListReq) (*AcquiredSkillGetByIDListResp, error)
+	AcquiredSkillGetHistoryList(context.Context, *AcquiredSkillGetHistoryListReq) (*AcquiredSkillHistoryListResp, error)
 	CreateAcquiredSkillVar(context.Context, *CreateAcquiredSkillVarReq) (*SkillVariableCreateResp, error)
 	GetAcquiredSkillVars(context.Context, *GetAcquiredSkillVarsReq) (*AcquiredSkillVars, error)
 	UpdateAcquiredSkillVar(context.Context, *UpdateAcquiredSkillVarReq) (*emptypb.Empty, error)
@@ -903,12 +928,13 @@ type MCPServiceServer interface {
 	GetBuiltinSkillVars(context.Context, *GetBuiltinSkillVarsReq) (*BuiltinSkillVars, error)
 	UpdateBuiltinSkillVar(context.Context, *UpdateBuiltinSkillVarReq) (*emptypb.Empty, error)
 	// --- skill publish ---
-	PublishCustomSkill(context.Context, *PublishCustomSkillReq) (*emptypb.Empty, error)
+	CreatePublishCustomSkill(context.Context, *PublishCustomSkillReq) (*emptypb.Empty, error)
 	UpdatePublishCustomSkill(context.Context, *UpdatePublishCustomSkillReq) (*emptypb.Empty, error)
 	GetPublishCustomSkillHistoryList(context.Context, *GetPublishCustomSkillHistoryListReq) (*PublishCustomSkillHistoryListResp, error)
-	OverwriteCustomSkillDraft(context.Context, *OverwriteCustomSkillDraftReq) (*emptypb.Empty, error)
-	GetPublishCustomSkillDesc(context.Context, *GetPublishCustomSkillDescReq) (*PublishCustomSkillDescResp, error)
-	GetPublishCustomSkillDescBatch(context.Context, *GetPublishCustomSkillDescBatchReq) (*PublishCustomSkillDescBatchResp, error)
+	GetPublishCustomSkillByLatest(context.Context, *GetPublishCustomSkillByLatestReq) (*PublishCustomSkill, error)
+	GetPublishCustomSkillByVersion(context.Context, *GetPublishCustomSkillByVersionReq) (*PublishCustomSkill, error)
+	GetPublishCustomSkillList(context.Context, *GetPublishCustomSkillListReq) (*GetPublishCustomSkillListResp, error)
+	GetPublishCustomSkillByIDList(context.Context, *GetPublishCustomSkillByIDListReq) (*GetPublishCustomSkillByIDListResp, error)
 	mustEmbedUnimplementedMCPServiceServer()
 }
 
@@ -1021,7 +1047,7 @@ func (UnimplementedMCPServiceServer) CustomSkillCreate(context.Context, *CustomS
 func (UnimplementedMCPServiceServer) CustomSkillDelete(context.Context, *CustomSkillDeleteReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CustomSkillDelete not implemented")
 }
-func (UnimplementedMCPServiceServer) CustomSkillGet(context.Context, *CustomSkillGetReq) (*CustomSkill, error) {
+func (UnimplementedMCPServiceServer) CustomSkillGet(context.Context, *CustomSkillGetReq) (*PublishCustomSkill, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CustomSkillGet not implemented")
 }
 func (UnimplementedMCPServiceServer) GetCustomSkillByPreviewID(context.Context, *GetCustomSkillByPreviewIDReq) (*GetCustomSkillByPreviewIDResp, error) {
@@ -1035,9 +1061,6 @@ func (UnimplementedMCPServiceServer) GetCustomSkillListByThreadIDList(context.Co
 }
 func (UnimplementedMCPServiceServer) CustomSkillGetList(context.Context, *CustomSkillGetListReq) (*CustomSkillGetListResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CustomSkillGetList not implemented")
-}
-func (UnimplementedMCPServiceServer) CustomSkillGetBySaveIds(context.Context, *CustomSkillGetBySaveIdsReq) (*CustomSkillSaveIdsResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CustomSkillGetBySaveIds not implemented")
 }
 func (UnimplementedMCPServiceServer) GetCustomSkillDetailByIdList(context.Context, *CustomSkillDetailByIdListReq) (*CustomSkillDetailByIdListResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCustomSkillDetailByIdList not implemented")
@@ -1072,6 +1095,12 @@ func (UnimplementedMCPServiceServer) AcquiredSkillGet(context.Context, *Acquired
 func (UnimplementedMCPServiceServer) AcquiredSkillGetList(context.Context, *AcquiredSkillGetListReq) (*AcquiredSkillGetListResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AcquiredSkillGetList not implemented")
 }
+func (UnimplementedMCPServiceServer) AcquiredSkillGetByIDList(context.Context, *AcquiredSkillGetByIDListReq) (*AcquiredSkillGetByIDListResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcquiredSkillGetByIDList not implemented")
+}
+func (UnimplementedMCPServiceServer) AcquiredSkillGetHistoryList(context.Context, *AcquiredSkillGetHistoryListReq) (*AcquiredSkillHistoryListResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcquiredSkillGetHistoryList not implemented")
+}
 func (UnimplementedMCPServiceServer) CreateAcquiredSkillVar(context.Context, *CreateAcquiredSkillVarReq) (*SkillVariableCreateResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateAcquiredSkillVar not implemented")
 }
@@ -1096,8 +1125,8 @@ func (UnimplementedMCPServiceServer) GetBuiltinSkillVars(context.Context, *GetBu
 func (UnimplementedMCPServiceServer) UpdateBuiltinSkillVar(context.Context, *UpdateBuiltinSkillVarReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateBuiltinSkillVar not implemented")
 }
-func (UnimplementedMCPServiceServer) PublishCustomSkill(context.Context, *PublishCustomSkillReq) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PublishCustomSkill not implemented")
+func (UnimplementedMCPServiceServer) CreatePublishCustomSkill(context.Context, *PublishCustomSkillReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatePublishCustomSkill not implemented")
 }
 func (UnimplementedMCPServiceServer) UpdatePublishCustomSkill(context.Context, *UpdatePublishCustomSkillReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePublishCustomSkill not implemented")
@@ -1105,14 +1134,17 @@ func (UnimplementedMCPServiceServer) UpdatePublishCustomSkill(context.Context, *
 func (UnimplementedMCPServiceServer) GetPublishCustomSkillHistoryList(context.Context, *GetPublishCustomSkillHistoryListReq) (*PublishCustomSkillHistoryListResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPublishCustomSkillHistoryList not implemented")
 }
-func (UnimplementedMCPServiceServer) OverwriteCustomSkillDraft(context.Context, *OverwriteCustomSkillDraftReq) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method OverwriteCustomSkillDraft not implemented")
+func (UnimplementedMCPServiceServer) GetPublishCustomSkillByLatest(context.Context, *GetPublishCustomSkillByLatestReq) (*PublishCustomSkill, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPublishCustomSkillByLatest not implemented")
 }
-func (UnimplementedMCPServiceServer) GetPublishCustomSkillDesc(context.Context, *GetPublishCustomSkillDescReq) (*PublishCustomSkillDescResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPublishCustomSkillDesc not implemented")
+func (UnimplementedMCPServiceServer) GetPublishCustomSkillByVersion(context.Context, *GetPublishCustomSkillByVersionReq) (*PublishCustomSkill, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPublishCustomSkillByVersion not implemented")
 }
-func (UnimplementedMCPServiceServer) GetPublishCustomSkillDescBatch(context.Context, *GetPublishCustomSkillDescBatchReq) (*PublishCustomSkillDescBatchResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPublishCustomSkillDescBatch not implemented")
+func (UnimplementedMCPServiceServer) GetPublishCustomSkillList(context.Context, *GetPublishCustomSkillListReq) (*GetPublishCustomSkillListResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPublishCustomSkillList not implemented")
+}
+func (UnimplementedMCPServiceServer) GetPublishCustomSkillByIDList(context.Context, *GetPublishCustomSkillByIDListReq) (*GetPublishCustomSkillByIDListResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPublishCustomSkillByIDList not implemented")
 }
 func (UnimplementedMCPServiceServer) mustEmbedUnimplementedMCPServiceServer() {}
 func (UnimplementedMCPServiceServer) testEmbeddedByValue()                    {}
@@ -1837,24 +1869,6 @@ func _MCPService_CustomSkillGetList_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MCPService_CustomSkillGetBySaveIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CustomSkillGetBySaveIdsReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MCPServiceServer).CustomSkillGetBySaveIds(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MCPService_CustomSkillGetBySaveIds_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MCPServiceServer).CustomSkillGetBySaveIds(ctx, req.(*CustomSkillGetBySaveIdsReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _MCPService_GetCustomSkillDetailByIdList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CustomSkillDetailByIdListReq)
 	if err := dec(in); err != nil {
@@ -2053,6 +2067,42 @@ func _MCPService_AcquiredSkillGetList_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MCPService_AcquiredSkillGetByIDList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AcquiredSkillGetByIDListReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).AcquiredSkillGetByIDList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_AcquiredSkillGetByIDList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).AcquiredSkillGetByIDList(ctx, req.(*AcquiredSkillGetByIDListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MCPService_AcquiredSkillGetHistoryList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AcquiredSkillGetHistoryListReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).AcquiredSkillGetHistoryList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_AcquiredSkillGetHistoryList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).AcquiredSkillGetHistoryList(ctx, req.(*AcquiredSkillGetHistoryListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MCPService_CreateAcquiredSkillVar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateAcquiredSkillVarReq)
 	if err := dec(in); err != nil {
@@ -2197,20 +2247,20 @@ func _MCPService_UpdateBuiltinSkillVar_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MCPService_PublishCustomSkill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _MCPService_CreatePublishCustomSkill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PublishCustomSkillReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MCPServiceServer).PublishCustomSkill(ctx, in)
+		return srv.(MCPServiceServer).CreatePublishCustomSkill(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MCPService_PublishCustomSkill_FullMethodName,
+		FullMethod: MCPService_CreatePublishCustomSkill_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MCPServiceServer).PublishCustomSkill(ctx, req.(*PublishCustomSkillReq))
+		return srv.(MCPServiceServer).CreatePublishCustomSkill(ctx, req.(*PublishCustomSkillReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2251,56 +2301,74 @@ func _MCPService_GetPublishCustomSkillHistoryList_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MCPService_OverwriteCustomSkillDraft_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OverwriteCustomSkillDraftReq)
+func _MCPService_GetPublishCustomSkillByLatest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPublishCustomSkillByLatestReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MCPServiceServer).OverwriteCustomSkillDraft(ctx, in)
+		return srv.(MCPServiceServer).GetPublishCustomSkillByLatest(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MCPService_OverwriteCustomSkillDraft_FullMethodName,
+		FullMethod: MCPService_GetPublishCustomSkillByLatest_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MCPServiceServer).OverwriteCustomSkillDraft(ctx, req.(*OverwriteCustomSkillDraftReq))
+		return srv.(MCPServiceServer).GetPublishCustomSkillByLatest(ctx, req.(*GetPublishCustomSkillByLatestReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MCPService_GetPublishCustomSkillDesc_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPublishCustomSkillDescReq)
+func _MCPService_GetPublishCustomSkillByVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPublishCustomSkillByVersionReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MCPServiceServer).GetPublishCustomSkillDesc(ctx, in)
+		return srv.(MCPServiceServer).GetPublishCustomSkillByVersion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MCPService_GetPublishCustomSkillDesc_FullMethodName,
+		FullMethod: MCPService_GetPublishCustomSkillByVersion_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MCPServiceServer).GetPublishCustomSkillDesc(ctx, req.(*GetPublishCustomSkillDescReq))
+		return srv.(MCPServiceServer).GetPublishCustomSkillByVersion(ctx, req.(*GetPublishCustomSkillByVersionReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MCPService_GetPublishCustomSkillDescBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPublishCustomSkillDescBatchReq)
+func _MCPService_GetPublishCustomSkillList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPublishCustomSkillListReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(MCPServiceServer).GetPublishCustomSkillDescBatch(ctx, in)
+		return srv.(MCPServiceServer).GetPublishCustomSkillList(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: MCPService_GetPublishCustomSkillDescBatch_FullMethodName,
+		FullMethod: MCPService_GetPublishCustomSkillList_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MCPServiceServer).GetPublishCustomSkillDescBatch(ctx, req.(*GetPublishCustomSkillDescBatchReq))
+		return srv.(MCPServiceServer).GetPublishCustomSkillList(ctx, req.(*GetPublishCustomSkillListReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MCPService_GetPublishCustomSkillByIDList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPublishCustomSkillByIDListReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).GetPublishCustomSkillByIDList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_GetPublishCustomSkillByIDList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).GetPublishCustomSkillByIDList(ctx, req.(*GetPublishCustomSkillByIDListReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2469,10 +2537,6 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MCPService_CustomSkillGetList_Handler,
 		},
 		{
-			MethodName: "CustomSkillGetBySaveIds",
-			Handler:    _MCPService_CustomSkillGetBySaveIds_Handler,
-		},
-		{
 			MethodName: "GetCustomSkillDetailByIdList",
 			Handler:    _MCPService_GetCustomSkillDetailByIdList_Handler,
 		},
@@ -2517,6 +2581,14 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MCPService_AcquiredSkillGetList_Handler,
 		},
 		{
+			MethodName: "AcquiredSkillGetByIDList",
+			Handler:    _MCPService_AcquiredSkillGetByIDList_Handler,
+		},
+		{
+			MethodName: "AcquiredSkillGetHistoryList",
+			Handler:    _MCPService_AcquiredSkillGetHistoryList_Handler,
+		},
+		{
 			MethodName: "CreateAcquiredSkillVar",
 			Handler:    _MCPService_CreateAcquiredSkillVar_Handler,
 		},
@@ -2549,8 +2621,8 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MCPService_UpdateBuiltinSkillVar_Handler,
 		},
 		{
-			MethodName: "PublishCustomSkill",
-			Handler:    _MCPService_PublishCustomSkill_Handler,
+			MethodName: "CreatePublishCustomSkill",
+			Handler:    _MCPService_CreatePublishCustomSkill_Handler,
 		},
 		{
 			MethodName: "UpdatePublishCustomSkill",
@@ -2561,16 +2633,20 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MCPService_GetPublishCustomSkillHistoryList_Handler,
 		},
 		{
-			MethodName: "OverwriteCustomSkillDraft",
-			Handler:    _MCPService_OverwriteCustomSkillDraft_Handler,
+			MethodName: "GetPublishCustomSkillByLatest",
+			Handler:    _MCPService_GetPublishCustomSkillByLatest_Handler,
 		},
 		{
-			MethodName: "GetPublishCustomSkillDesc",
-			Handler:    _MCPService_GetPublishCustomSkillDesc_Handler,
+			MethodName: "GetPublishCustomSkillByVersion",
+			Handler:    _MCPService_GetPublishCustomSkillByVersion_Handler,
 		},
 		{
-			MethodName: "GetPublishCustomSkillDescBatch",
-			Handler:    _MCPService_GetPublishCustomSkillDescBatch_Handler,
+			MethodName: "GetPublishCustomSkillList",
+			Handler:    _MCPService_GetPublishCustomSkillList_Handler,
+		},
+		{
+			MethodName: "GetPublishCustomSkillByIDList",
+			Handler:    _MCPService_GetPublishCustomSkillByIDList_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

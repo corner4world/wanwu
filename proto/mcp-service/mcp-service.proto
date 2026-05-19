@@ -61,12 +61,11 @@ service MCPService {
   // --- custom skill ---
   rpc CustomSkillCreate(CustomSkillCreateReq) returns (CustomSkillCreateResp) {}
   rpc CustomSkillDelete(CustomSkillDeleteReq) returns (google.protobuf.Empty) {}
-  rpc CustomSkillGet(CustomSkillGetReq) returns (CustomSkill) {}
+  rpc CustomSkillGet(CustomSkillGetReq) returns (PublishCustomSkill) {}
   rpc GetCustomSkillByPreviewID(GetCustomSkillByPreviewIDReq) returns (GetCustomSkillByPreviewIDResp) {}
   rpc GetCustomSkillByThreadID(GetCustomSkillByThreadIDReq) returns (GetCustomSkillByThreadIDResp) {}
   rpc GetCustomSkillListByThreadIDList(GetCustomSkillListByThreadIDListReq) returns (CustomSkillGetListResp) {}
   rpc CustomSkillGetList(CustomSkillGetListReq) returns (CustomSkillGetListResp) {}
-  rpc CustomSkillGetBySaveIds(CustomSkillGetBySaveIdsReq) returns (CustomSkillSaveIdsResp) {}
   rpc GetCustomSkillDetailByIdList(CustomSkillDetailByIdListReq) returns (CustomSkillDetailByIdListResp) {}
   rpc UpdateCustomSkillBasicMeta(UpdateCustomSkillBasicMetaReq) returns (google.protobuf.Empty) {}
   rpc UpdateCustomSkillThreadMeta(UpdateCustomSkillThreadMetaReq) returns (google.protobuf.Empty) {}
@@ -80,6 +79,8 @@ service MCPService {
   rpc AcquiredSkillDelete(AcquiredSkillDeleteReq) returns (google.protobuf.Empty) {}
   rpc AcquiredSkillGet(AcquiredSkillGetReq) returns (AcquiredSkill) {}
   rpc AcquiredSkillGetList(AcquiredSkillGetListReq) returns (AcquiredSkillGetListResp) {}
+  rpc AcquiredSkillGetByIDList(AcquiredSkillGetByIDListReq) returns (AcquiredSkillGetByIDListResp) {}
+  rpc AcquiredSkillGetHistoryList(AcquiredSkillGetHistoryListReq) returns (AcquiredSkillHistoryListResp) {}
   rpc CreateAcquiredSkillVar(CreateAcquiredSkillVarReq) returns (SkillVariableCreateResp) {}
   rpc GetAcquiredSkillVars(GetAcquiredSkillVarsReq) returns (AcquiredSkillVars) {}
   rpc UpdateAcquiredSkillVar(UpdateAcquiredSkillVarReq) returns (google.protobuf.Empty) {}
@@ -93,12 +94,13 @@ service MCPService {
 
 
   // --- skill publish ---
-  rpc PublishCustomSkill(PublishCustomSkillReq) returns (google.protobuf.Empty) {}
+  rpc CreatePublishCustomSkill(PublishCustomSkillReq) returns (google.protobuf.Empty) {}
   rpc UpdatePublishCustomSkill(UpdatePublishCustomSkillReq) returns (google.protobuf.Empty) {}
   rpc GetPublishCustomSkillHistoryList(GetPublishCustomSkillHistoryListReq) returns (PublishCustomSkillHistoryListResp) {}
-  rpc OverwriteCustomSkillDraft(OverwriteCustomSkillDraftReq) returns (google.protobuf.Empty) {}
-  rpc GetPublishCustomSkillDesc(GetPublishCustomSkillDescReq) returns (PublishCustomSkillDescResp) {}
-  rpc GetPublishCustomSkillDescBatch(GetPublishCustomSkillDescBatchReq) returns (PublishCustomSkillDescBatchResp) {}
+  rpc GetPublishCustomSkillByLatest(GetPublishCustomSkillByLatestReq) returns (PublishCustomSkill) {}
+  rpc GetPublishCustomSkillByVersion(GetPublishCustomSkillByVersionReq) returns (PublishCustomSkill) {}
+  rpc GetPublishCustomSkillList(GetPublishCustomSkillListReq) returns (GetPublishCustomSkillListResp) {}
+  rpc GetPublishCustomSkillByIDList(GetPublishCustomSkillByIDListReq) returns (GetPublishCustomSkillByIDListResp) {}
 }
 
 // --- req ---
