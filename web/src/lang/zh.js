@@ -420,6 +420,8 @@ export default {
       user: '用户名搜索',
     },
     table: {
+      row: '问题行',
+      reason: '失败原因',
       username: '用户名',
       company: '单位名',
       role: '角色',
@@ -436,6 +438,9 @@ export default {
       remark: '备注',
       passwordError: '密码格式错误',
       phoneError: '手机号格式错误',
+      total: '总共：',
+      failed: '失败数：',
+      success: '成功数：',
     },
     inviteDialog: {
       user: '选择用户',

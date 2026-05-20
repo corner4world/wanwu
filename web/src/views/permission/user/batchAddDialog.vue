@@ -46,6 +46,39 @@
         </el-button>
       </span>
     </el-dialog>
+    <el-dialog
+      :title="$t('common.confirm.title')"
+      :visible.sync="hintVisible"
+      append-to-body
+      :close-on-click-modal="false"
+      width="600px"
+    >
+      <div style="margin-top: -20px">
+        <p>
+          <span>{{ $t('user.dialog.total') }}{{ errorData?.total || 0 }}</span>
+          <span style="margin-left: 20px">
+            {{ $t('user.dialog.failed') }}{{ errorData?.failed || 0 }}
+          </span>
+          <span style="margin-left: 20px">
+            {{ $t('user.dialog.success') }}{{ errorData?.success || 0 }}
+          </span>
+        </p>
+        <el-table :data="errorData?.errors || []">
+          <el-table-column
+            prop="row"
+            :label="$t('user.table.row')"
+          ></el-table-column>
+          <el-table-column
+            prop="username"
+            :label="$t('user.table.username')"
+          ></el-table-column>
+          <el-table-column
+            prop="reason"
+            :label="$t('user.table.reason')"
+          ></el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -70,6 +103,8 @@ export default {
         ],
       },
       uploading: false,
+      errorData: {},
+      hintVisible: false,
     };
   },
   methods: {
@@ -105,7 +140,13 @@ export default {
           }
           this.uploading = true;
           batchCreateUser(formData, config)
-            .then(() => {
+            .then(res => {
+              const { errors } = res.data || {};
+              if (errors && errors.length > 0) {
+                this.errorData = res.data || {};
+                this.hintVisible = true;
+                return;
+              }
               this.uploading = false;
               this.$message.success(this.$t('common.message.success'));
               this.handleClose();
