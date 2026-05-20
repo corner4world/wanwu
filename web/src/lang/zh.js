@@ -930,6 +930,8 @@ export default {
     operate: '操作',
     segmentConfig: '分段设置',
     view: '查看',
+    docProgress: '任务进度',
+    graphProgress: '图谱进度',
     ribbon: {
       internal: '内部',
       external: '外部',

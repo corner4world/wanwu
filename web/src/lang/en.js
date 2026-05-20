@@ -953,6 +953,8 @@ export default {
     currentStatus: '当前状态',
     operate: '操作',
     view: '查看',
+    docProgress: 'Task Progress',
+    graphProgress: 'Graph Progress',
     ribbon: {
       internal: '内部',
       external: '外部',

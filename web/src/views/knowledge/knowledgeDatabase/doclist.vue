@@ -334,7 +334,27 @@
                     ></i>
                   </template>
                 </el-table-column>
-                <el-table-column v-if="graphSwitch" prop="graphStatus">
+                <!-- 任务进度列 -->
+                <el-table-column
+                  :label="$t('knowledgeManage.docProgress')"
+                  prop="docProgress"
+                  width="120"
+                >
+                  <template slot-scope="scope">
+                    <el-progress
+                      :percentage="scope.row.docProgress || 0"
+                      :status="getProgressStatus(scope.row.status)"
+                      :stroke-width="6"
+                      :width="60"
+                      type="circle"
+                    />
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  v-if="graphSwitch"
+                  prop="graphStatus"
+                  width="150"
+                >
                   <template #header>
                     <div style="display: flex; align-items: center">
                       <span>{{ $t('knowledgeManage.graph.graphStatus') }}</span>
@@ -364,6 +384,23 @@
                         style="margin-left: 5px; color: #e6a23c"
                       ></span>
                     </el-tooltip>
+                  </template>
+                </el-table-column>
+                <!-- 图谱进度列 -->
+                <el-table-column
+                  v-if="graphSwitch"
+                  :label="$t('knowledgeManage.graphProgress')"
+                  prop="graphProgress"
+                  width="120"
+                >
+                  <template slot-scope="scope">
+                    <el-progress
+                      :percentage="scope.row.graphProgress || 0"
+                      :status="getGraphProgressStatus(scope.row.graphStatus)"
+                      :stroke-width="6"
+                      :width="60"
+                      type="circle"
+                    />
                   </template>
                 </el-table-column>
                 <el-table-column
@@ -502,6 +539,7 @@ import {
   KNOWLEDGE_STATUS_ANALYSING,
   KNOWLEDGE_STATUS_CHECK_FAIL,
   KNOWLEDGE_STATUS_FAIL,
+  STATUS_FINISHED,
 } from '@/views/knowledge/constants';
 import exportRecord from '@/views/knowledge/qaDatabase/exportRecord.vue';
 import CopyIcon from '@/components/copyIcon.vue';
@@ -561,6 +599,7 @@ export default {
       KNOWLEDGE_GRAPH_STATUS_OPTIONS,
       dropdownGroups: DROPDOWN_GROUPS.slice(0, 1),
       graphDropdownGroups: DROPDOWN_GROUPS.slice(2),
+      STATUS_FINISHED,
       STATUS_FAILED,
       POWER_TYPE_EDIT,
       POWER_TYPE_ADMIN,
@@ -1024,6 +1063,28 @@ export default {
       return statusOption
         ? statusOption.label
         : this.$t('knowledgeManage.noStatus');
+    },
+    // 根据状态获取进度条的状态
+    getProgressStatus(status) {
+      if (status === KNOWLEDGE_STATUS_FINISH) {
+        return 'success';
+      }
+      if (status === KNOWLEDGE_STATUS_FAIL) {
+        return 'exception';
+      }
+      // 处理中状态不设置status，显示默认蓝色
+      return undefined;
+    },
+    // 根据图谱状态获取进度条的状态
+    getGraphProgressStatus(graphStatus) {
+      if (graphStatus === STATUS_FINISHED) {
+        return 'success';
+      }
+      if (graphStatus === STATUS_FAILED) {
+        return 'exception';
+      }
+      // 处理中状态不设置status，显示默认蓝色
+      return undefined;
     },
     handleView(row) {
       this.$router.push({
