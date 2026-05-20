@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/url"
 	"regexp"
+	"sort"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
@@ -217,56 +218,138 @@ func UpdateUserAvatar(ctx *gin.Context, userID, key string) error {
 	return err
 }
 
-func CreateUserByFile(ctx *gin.Context, creatorID, orgID string) error {
+func CreateUserByFile(ctx *gin.Context, creatorID, orgID string) (*response.UserBatchImportResult, error) {
 	fileHeader, err := ctx.FormFile("file")
 	if err != nil {
-		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("get file err: %v", err))
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("get file err: %v", err))
 	}
 	file, err := fileHeader.Open()
 	if err != nil {
-		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("open file err: %v", err))
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("open file err: %v", err))
 	}
 	defer func() { _ = file.Close() }()
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("read file err: %v", err))
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("read file err: %v", err))
 	}
 
 	users, err := parseUserExcel(fileBytes)
 	if err != nil {
-		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("parse excel err: %v", err))
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("parse excel err: %v", err))
 	}
 
-	if len(users) > MaxBatchCreateUsersLimit {
-		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("批量创建用户条数不能超过%d条", MaxBatchCreateUsersLimit))
+	// BFF层校验（收集错误，不中断）
+	// validUsers: 保存有效用户及其行号
+	type userWithRow struct {
+		user *iam_service.CreateUsersInfo
+		row  int // 行号
 	}
+	var validUsers []userWithRow
+	var skippedRows int // 跳过的空行数
+	result := &response.UserBatchImportResult{}
+	for i, user := range users {
+		// 跳过空行（所有字段都为空的行）
+		if user.UserName == "" && user.Password == "" && user.Phone == "" && user.Company == "" && user.Remark == "" && user.RoleName == "" {
+			skippedRows++
+			continue
+		}
 
-	for _, user := range users {
+		row := i + 2 // Excel行号（第1行是表头）
+
 		if err := validateUsername(user.UserName); err != nil {
-			return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("username %s: %v", user.UserName, err))
+			result.Errors = append(result.Errors, response.UserBatchImportError{
+				Row:      row,
+				Username: user.UserName,
+				Reason:   err.Error(),
+			})
+			continue
 		}
 		if err := validatePassword(user.Password); err != nil {
-			return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("username %s: %v", user.UserName, err))
+			result.Errors = append(result.Errors, response.UserBatchImportError{
+				Row:      row,
+				Username: user.UserName,
+				Reason:   err.Error(),
+			})
+			continue
 		}
 		if config.Cfg().CustomInfo.UserPhoneRequired != 0 && user.Phone == "" {
-			return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("username %s: phone is empty", user.UserName))
+			result.Errors = append(result.Errors, response.UserBatchImportError{
+				Row:      row,
+				Username: user.UserName,
+				Reason:   "电话号码不能为空",
+			})
+			continue
 		}
 		if user.Phone != "" {
 			if err := validatePhone(user.Phone); err != nil {
-				return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("phone %s: %v", user.Phone, err))
+				result.Errors = append(result.Errors, response.UserBatchImportError{
+					Row:      row,
+					Username: user.UserName,
+					Reason:   err.Error(),
+				})
+				continue
 			}
 		}
 		if user.Company == "" {
-			return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("username %s: company is empty", user.UserName))
+			result.Errors = append(result.Errors, response.UserBatchImportError{
+				Row:      row,
+				Username: user.UserName,
+				Reason:   "单位不能为空",
+			})
+			continue
+		}
+
+		validUsers = append(validUsers, userWithRow{
+			user: user,
+			row:  row, // 保存行号
+		})
+	}
+	result.Total = len(users) - skippedRows
+	if result.Total > MaxBatchCreateUsersLimit {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_user_batch_import_file", fmt.Sprintf("批量创建用户条数不能超过%d条", MaxBatchCreateUsersLimit))
+	}
+
+	if len(validUsers) > 0 {
+		// 构建请求，只传递有效用户
+		var validUsersInfo []*iam_service.CreateUsersInfo
+		for _, v := range validUsers {
+			validUsersInfo = append(validUsersInfo, v.user)
+		}
+
+		resp, err := iam.CreateUsers(ctx.Request.Context(), &iam_service.CreateUsersReq{
+			CreatorId: creatorID,
+			OrgId:     orgID,
+			Users:     validUsersInfo,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		result.Success = int(resp.Success)
+
+		// 合并IAM层的错误
+		// IAM返回的index是在validUsers数组中的索引，需要映射回原始行号
+		for _, e := range resp.Errors {
+			iamIndex := int(e.Index)
+			// iamIndex是validUsers数组的索引
+			if iamIndex >= 0 && iamIndex < len(validUsers) {
+				result.Errors = append(result.Errors, response.UserBatchImportError{
+					Row:      validUsers[iamIndex].row,
+					Username: validUsers[iamIndex].user.UserName,
+					Reason:   e.Reason,
+				})
+			}
 		}
 	}
 
-	_, err = iam.CreateUsers(ctx.Request.Context(), &iam_service.CreateUsersReq{
-		CreatorId: creatorID,
-		OrgId:     orgID,
-		Users:     users,
+	// 按行号排序
+	sort.Slice(result.Errors, func(i, j int) bool {
+		return result.Errors[i].Row < result.Errors[j].Row
 	})
-	return err
+
+	result.Failed = len(result.Errors)
+
+	return result, nil
 }
 
 func parseUserExcel(fileData []byte) ([]*iam_service.CreateUsersInfo, error) {
@@ -320,9 +403,7 @@ func parseUserExcel(fileData []byte) ([]*iam_service.CreateUsersInfo, error) {
 
 	var users []*iam_service.CreateUsersInfo
 	for _, record := range records {
-		if record["userName"] == "" {
-			continue
-		}
+		// 保留所有行（包括userName为空的行），保持索引与Excel行号对应
 		users = append(users, &iam_service.CreateUsersInfo{
 			UserName: record["userName"],
 			Password: record["password"],

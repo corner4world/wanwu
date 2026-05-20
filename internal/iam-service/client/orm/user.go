@@ -130,59 +130,99 @@ func (c *Client) CreateUser(ctx context.Context, user *model.User, orgID uint32,
 	})
 }
 
-func (c *Client) CreateUsers(ctx context.Context, users []*UsersInfo, creatorID, orgID uint32) *errs.Status {
+func (c *Client) CreateUsers(ctx context.Context, users []*UsersInfo, creatorID, orgID uint32) (*CreateUsersResult, *errs.Status) {
 	return createUsersTx(c.db.WithContext(ctx), users, creatorID, orgID)
 }
 
-func createUsersTx(tx *gorm.DB, users []*UsersInfo, creatorID, orgID uint32) *errs.Status {
+func createUsersTx(tx *gorm.DB, users []*UsersInfo, creatorID, orgID uint32) (*CreateUsersResult, *errs.Status) {
+	result := &CreateUsersResult{
+		Total: len(users),
+	}
+
+	// 前置校验（组织、创建者）
 	if err := sqlopt.WithID(orgID).Apply(tx).First(&model.Org{}).Error; err != nil {
-		return toErrStatus("iam_user_batch_create", err.Error())
+		return nil, toErrStatus("iam_user_batch_create", err.Error())
 	}
 	if creatorID != 0 {
 		if err := sqlopt.WithID(creatorID).Apply(tx).First(&model.User{}).Error; err != nil {
-			return toErrStatus("iam_user_batch_create", err.Error())
+			return nil, toErrStatus("iam_user_batch_create", err.Error())
 		}
 	}
+
+	// 获取角色映射
 	var orgRoles []*model.OrgRole
 	if err := sqlopt.WithOrgID(orgID).Apply(tx).Find(&orgRoles).Error; err != nil {
-		return toErrStatus("iam_roles_get", util.Int2Str(orgID), err.Error())
+		return nil, toErrStatus("iam_roles_get", util.Int2Str(orgID), err.Error())
 	}
 	roleNameMap := make(map[string]*model.OrgRole)
 	for i := range orgRoles {
 		roleNameMap[orgRoles[i].Name] = orgRoles[i]
 	}
 
-	for i, userInfo := range users {
-		var existingUser model.User
-		nameExists := sqlopt.WithName(userInfo.UserName).Apply(tx).First(&existingUser).Error == nil
-		phoneExists := false
-		var existingPhoneUser model.User
-		if userInfo.Phone != "" {
-			phoneExists = sqlopt.WithPhone(userInfo.Phone).Apply(tx).First(&existingPhoneUser).Error == nil
+	// 预先查询已存在的用户名和电话号码
+	existingNames := make(map[string]bool)
+	existingPhones := make(map[string]bool)
+	for _, userInfo := range users {
+		var user model.User
+		if sqlopt.WithName(userInfo.UserName).Apply(tx).First(&user).Error == nil {
+			existingNames[userInfo.UserName] = true
 		}
-		if nameExists && phoneExists {
+		if userInfo.Phone != "" {
+			if sqlopt.WithPhone(userInfo.Phone).Apply(tx).First(&user).Error == nil {
+				existingPhones[userInfo.Phone] = true
+			}
+		}
+	}
+
+	// 遍历处理每个用户
+	for i, userInfo := range users {
+		// 检查用户名和电话号码是否都已存在（跳过）
+		if existingNames[userInfo.UserName] && existingPhones[userInfo.Phone] {
+			result.Errors = append(result.Errors, CreateUserError{
+				Index:  i,
+				Reason: "用户名和电话号码都已存在",
+			})
 			continue
 		}
-		if nameExists {
-			return toErrStatus("iam_user_batch_create_name", userInfo.UserName)
-		}
-		if phoneExists {
-			return toErrStatus("iam_user_batch_create_phone", userInfo.UserName, userInfo.Phone)
+
+		// 检查用户名是否已存在
+		if existingNames[userInfo.UserName] {
+			result.Errors = append(result.Errors, CreateUserError{
+				Index:  i,
+				Reason: "用户名已存在",
+			})
+			continue
 		}
 
+		// 检查电话号码是否已存在
+		if userInfo.Phone != "" && existingPhones[userInfo.Phone] {
+			result.Errors = append(result.Errors, CreateUserError{
+				Index:  i,
+				Reason: fmt.Sprintf("电话号码%s已存在", userInfo.Phone),
+			})
+			continue
+		}
+
+		// 获取角色ID
 		var roleID uint32
 		var isAdmin bool
 		if userInfo.RoleName != "" {
 			orgRole, ok := roleNameMap[userInfo.RoleName]
-			if ok {
-				roleID = orgRole.RoleID
-				isAdmin = orgRole.IsAdmin
+			if !ok {
+				result.Errors = append(result.Errors, CreateUserError{
+					Index:  i,
+					Reason: fmt.Sprintf("角色'%s'不存在", userInfo.RoleName),
+				})
+				continue
 			}
+			roleID = orgRole.RoleID
+			isAdmin = orgRole.IsAdmin
 		}
 
+		// 创建用户（使用保存点，失败不影响其他用户）
 		savePoint := fmt.Sprintf("user_create_%d", i)
 		if err := tx.SavePoint(savePoint).Error; err != nil {
-			return toErrStatus("iam_user_batch_create", err.Error())
+			return nil, toErrStatus("iam_user_batch_create", err.Error())
 		}
 
 		user := &model.User{
@@ -196,18 +236,28 @@ func createUsersTx(tx *gorm.DB, users []*UsersInfo, creatorID, orgID uint32) *er
 		}
 		if err := tx.Create(user).Error; err != nil {
 			tx.RollbackTo(savePoint)
-			return toErrStatus("iam_user_batch_create", err.Error())
+			result.Errors = append(result.Errors, CreateUserError{
+				Index:  i,
+				Reason: "创建用户失败: " + err.Error(),
+			})
+			continue
 		}
-		orgUsers := []*model.OrgUser{
-			{OrgID: orgID, UserID: user.ID},
-		}
+
+		// 创建组织用户关联
+		orgUsers := []*model.OrgUser{{OrgID: orgID, UserID: user.ID}}
 		if orgID != config.TopOrgID() {
 			orgUsers = append(orgUsers, &model.OrgUser{OrgID: config.TopOrgID(), UserID: user.ID})
 		}
 		if err := tx.Create(orgUsers).Error; err != nil {
 			tx.RollbackTo(savePoint)
-			return toErrStatus("iam_user_batch_create", err.Error())
+			result.Errors = append(result.Errors, CreateUserError{
+				Index:  i,
+				Reason: "创建组织关联失败",
+			})
+			continue
 		}
+
+		// 创建用户角色关联
 		if roleID != 0 {
 			userRole := &model.UserRole{
 				OrgID:   orgID,
@@ -217,12 +267,24 @@ func createUsersTx(tx *gorm.DB, users []*UsersInfo, creatorID, orgID uint32) *er
 			}
 			if err := tx.Create(userRole).Error; err != nil {
 				tx.RollbackTo(savePoint)
-				return toErrStatus("iam_user_batch_create", err.Error())
+				result.Errors = append(result.Errors, CreateUserError{
+					Index:  i,
+					Reason: "创建角色关联失败",
+				})
+				continue
 			}
 		}
 
+		// 成功：更新已存在记录，防止后续重复
+		existingNames[userInfo.UserName] = true
+		if userInfo.Phone != "" {
+			existingPhones[userInfo.Phone] = true
+		}
+		result.Success++
 	}
-	return nil
+
+	result.Failed = len(result.Errors)
+	return result, nil
 }
 
 func createUserTx(tx *gorm.DB, user *model.User, orgID uint32, roleIDs []uint32) *errs.Status {
