@@ -86,7 +86,7 @@ type IAMServiceClient interface {
 	// 创建用户
 	CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*IDName, error)
 	// 批量导入用户
-	CreateUsers(ctx context.Context, in *CreateUsersReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateUsers(ctx context.Context, in *CreateUsersReq, opts ...grpc.CallOption) (*CreateUsersResp, error)
 	// 编辑用户
 	UpdateUser(ctx context.Context, in *UpdateUserReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 删除用户
@@ -236,9 +236,9 @@ func (c *iAMServiceClient) CreateUser(ctx context.Context, in *CreateUserReq, op
 	return out, nil
 }
 
-func (c *iAMServiceClient) CreateUsers(ctx context.Context, in *CreateUsersReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *iAMServiceClient) CreateUsers(ctx context.Context, in *CreateUsersReq, opts ...grpc.CallOption) (*CreateUsersResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
+	out := new(CreateUsersResp)
 	err := c.cc.Invoke(ctx, IAMService_CreateUsers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -691,7 +691,7 @@ type IAMServiceServer interface {
 	// 创建用户
 	CreateUser(context.Context, *CreateUserReq) (*IDName, error)
 	// 批量导入用户
-	CreateUsers(context.Context, *CreateUsersReq) (*emptypb.Empty, error)
+	CreateUsers(context.Context, *CreateUsersReq) (*CreateUsersResp, error)
 	// 编辑用户
 	UpdateUser(context.Context, *UpdateUserReq) (*emptypb.Empty, error)
 	// 删除用户
@@ -806,7 +806,7 @@ func (UnimplementedIAMServiceServer) GetUserInfo(context.Context, *GetUserInfoRe
 func (UnimplementedIAMServiceServer) CreateUser(context.Context, *CreateUserReq) (*IDName, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
-func (UnimplementedIAMServiceServer) CreateUsers(context.Context, *CreateUsersReq) (*emptypb.Empty, error) {
+func (UnimplementedIAMServiceServer) CreateUsers(context.Context, *CreateUsersReq) (*CreateUsersResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUsers not implemented")
 }
 func (UnimplementedIAMServiceServer) UpdateUser(context.Context, *UpdateUserReq) (*emptypb.Empty, error) {

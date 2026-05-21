@@ -130,6 +130,20 @@ type UsersInfo struct {
 	RoleName string
 }
 
+// CreateUserError 单条用户创建错误
+type CreateUserError struct {
+	Index  int    // 数据索引（在请求users数组中的索引）
+	Reason string
+}
+
+// CreateUsersResult 批量创建用户结果
+type CreateUsersResult struct {
+	Total   int
+	Success int
+	Failed  int
+	Errors  []CreateUserError
+}
+
 func toErrStatus(key string, args ...string) *err_code.Status {
 	return &err_code.Status{
 		TextKey: key,

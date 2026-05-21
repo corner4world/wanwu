@@ -17743,7 +17743,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/response.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.UserBatchImportResult"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -31687,6 +31699,47 @@ const docTemplate = `{
                 "userName": {
                     "description": "用户名称",
                     "type": "string"
+                }
+            }
+        },
+        "response.UserBatchImportError": {
+            "type": "object",
+            "properties": {
+                "reason": {
+                    "description": "失败原因",
+                    "type": "string"
+                },
+                "row": {
+                    "description": "Excel行号（从2开始，1是表头）",
+                    "type": "integer"
+                },
+                "username": {
+                    "description": "用户名",
+                    "type": "string"
+                }
+            }
+        },
+        "response.UserBatchImportResult": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "description": "失败详情",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UserBatchImportError"
+                    }
+                },
+                "failed": {
+                    "description": "失败数",
+                    "type": "integer"
+                },
+                "success": {
+                    "description": "成功数",
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "总数",
+                    "type": "integer"
                 }
             }
         },

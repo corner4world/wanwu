@@ -8777,6 +8777,35 @@ definitions:
         description: 用户名称
         type: string
     type: object
+  response.UserBatchImportError:
+    properties:
+      reason:
+        description: 失败原因
+        type: string
+      row:
+        description: Excel行号（从2开始，1是表头）
+        type: integer
+      username:
+        description: 用户名
+        type: string
+    type: object
+  response.UserBatchImportResult:
+    properties:
+      errors:
+        description: 失败详情
+        items:
+          $ref: '#/definitions/response.UserBatchImportError'
+        type: array
+      failed:
+        description: 失败数
+        type: integer
+      success:
+        description: 成功数
+        type: integer
+      total:
+        description: 总数
+        type: integer
+    type: object
   response.UserID:
     properties:
       userId:
@@ -19443,7 +19472,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UserBatchImportResult'
+              type: object
       security:
       - JWT: []
       summary: 批量导入用户
