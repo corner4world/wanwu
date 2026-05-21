@@ -51,12 +51,18 @@ func newReactAgent(ctx context.Context, cfg *config.Agent, options option.Option
 	if err != nil {
 		return nil, err
 	}
+	var middlewares []adk.AgentMiddleware
+	if option.NeedsDeepSeekCompat(options.Model) {
+		middlewares = append(middlewares, option.DeepSeekCompatMiddleware())
+	}
+
 	return adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
 		Name:        cfg.ID,
 		Description: cfg.Description,
 		Instruction: instruction,
 		Model:       model,
 		ToolsConfig: tools,
+		Middlewares: middlewares,
 
 		MaxIterations: cfg.Configure.MaxIterations,
 	})
@@ -133,6 +139,11 @@ func newDeepAgent(ctx context.Context, cfg *config.Agent, options option.Options
 		}
 		subAgents = append(subAgents, subAgent)
 	}
+	var middlewares []adk.AgentMiddleware
+	if option.NeedsDeepSeekCompat(options.Model) {
+		middlewares = append(middlewares, option.DeepSeekCompatMiddleware())
+	}
+
 	return deep.New(ctx, &deep.Config{
 		Name:        cfg.ID,
 		Description: cfg.Description,
@@ -143,6 +154,7 @@ func newDeepAgent(ctx context.Context, cfg *config.Agent, options option.Options
 
 		MaxIteration:      cfg.Configure.MaxIterations,
 		WithoutWriteTodos: true,
+		Middlewares:       middlewares,
 	})
 }
 
