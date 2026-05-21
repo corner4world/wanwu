@@ -29226,6 +29226,10 @@ const docTemplate = `{
                     "description": "文档名称",
                     "type": "string"
                 },
+                "docProgress": {
+                    "description": "文档解析进度百分比 (0-100)",
+                    "type": "integer"
+                },
                 "docType": {
                     "description": "文档类型",
                     "type": "string"
@@ -29241,6 +29245,10 @@ const docTemplate = `{
                 "graphErrMsg": {
                     "description": "图谱错误信息",
                     "type": "string"
+                },
+                "graphProgress": {
+                    "description": "图谱解析进度百分比 (0-100)",
+                    "type": "integer"
                 },
                 "graphStatus": {
                     "description": "图谱状态 0:待处理，1.解析中，2.解析成功，3.解析失败 -1. 当文档状态为解析失败时，显示 -",

@@ -702,10 +702,11 @@ func buildFileTypeLimit(fileType, extStr string) *knowledgebase_doc_service.File
 }
 
 func checkDocStatus(docList []*model.KnowledgeDoc) ([]uint32, []*model.KnowledgeDoc, error) {
+	analyzingStatusList := util.BuildAnalyzingStatus()
 	var docIdList []uint32
 	var docResultList []*model.KnowledgeDoc
 	for _, doc := range docList {
-		if doc.Status == model.DocProcessing {
+		if lo.Contains(analyzingStatusList, doc.Status) {
 			return nil, nil, errors.New("解析中的文档无法删除")
 		}
 		docIdList = append(docIdList, doc.Id)
@@ -754,7 +755,8 @@ func buildDocListResp(list []*model.KnowledgeDoc, importTaskList []*model.Knowle
 }
 
 func buildDocInfo(item *model.KnowledgeDoc, segmentConfigMap map[string]*model.SegmentConfig, importTask *model.KnowledgeImportTask) *knowledgebase_doc_service.DocInfo {
-	status, message := model.BuildGraphShowStatus(item.GraphStatus, util.BuildDocRespStatus(item.Status))
+	docStatus := util.BuildDocRespStatus(item.Status)
+	graphStatus, message := model.BuildGraphShowStatus(item.GraphStatus, docStatus)
 	return &knowledgebase_doc_service.DocInfo{
 		DocId:         item.DocId,
 		DocName:       item.Name,
@@ -762,14 +764,16 @@ func buildDocInfo(item *model.KnowledgeDoc, segmentConfigMap map[string]*model.S
 		DocType:       item.FileType,
 		KnowledgeId:   item.KnowledgeId,
 		UploadTime:    pkgUtil.Time2Str(item.CreatedAt),
-		Status:        int32(util.BuildDocRespStatus(item.Status)),
+		Status:        int32(docStatus),
 		ErrorMsg:      item.ErrorMsg,
 		SegmentMethod: buildSegmentMethod(item, segmentConfigMap),
 		UserId:        item.UserId,
-		GraphStatus:   int32(status),
+		GraphStatus:   int32(graphStatus),
 		GraphErrMsg:   message,
 		DocConfigInfo: buildDocConfigInfo(importTask),
 		IsMultimodal:  buildIsMultimodal(item.FileType),
+		DocProgress:   int32(util.BuildDocProgress(item.Status)),
+		GraphProgress: int32(model.BuildGraphProgress(item.GraphStatus)),
 	}
 }
 

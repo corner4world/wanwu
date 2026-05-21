@@ -280,6 +280,8 @@ message DocInfo{
   string graphErrMsg = 12;//错误信息
   DocConfigInfo docConfigInfo = 13;//文档配置信息,只有detail接口参数needConfig为true才会返回
   bool isMultimodal = 14; // 是否为多模态文件
+  int32 docProgress = 15;//文档解析进度百分比 (0-100)
+  int32 graphProgress = 16;//图谱解析进度百分比 (0-100)
 }
 
 message DocConfigInfo {
