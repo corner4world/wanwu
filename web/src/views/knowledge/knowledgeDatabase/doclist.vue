@@ -239,6 +239,7 @@
                   type="selection"
                   reserve-selection
                   v-if="hasManagePerm"
+                  key="selection"
                   width="55"
                 ></el-table-column>
                 <el-table-column
@@ -352,6 +353,7 @@
                 </el-table-column>
                 <el-table-column
                   v-if="graphSwitch"
+                  key="graphStatus"
                   prop="graphStatus"
                   width="150"
                 >
@@ -372,9 +374,7 @@
                     <el-tooltip
                       class="item"
                       effect="light"
-                      :content="
-                        scope.row.graphErrMsg ? scope.row.graphErrMsg : ''
-                      "
+                      :content="scope.row.graphErrMsg ?? ''"
                       placement="top"
                       v-if="scope.row.graphStatus === STATUS_FAILED"
                       popper-class="custom-tooltip"
@@ -389,6 +389,7 @@
                 <!-- 图谱进度列 -->
                 <el-table-column
                   v-if="graphSwitch"
+                  key="graphProgress"
                   :label="$t('knowledgeManage.graphProgress')"
                   prop="graphProgress"
                   width="120"
