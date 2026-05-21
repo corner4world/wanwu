@@ -206,6 +206,15 @@ func (s *Service) UpdateRagConfig(ctx context.Context, in *rag_service.UpdateRag
 		log.Debugf("knowConfig = %s", qaKnowledgeConfig)
 	}
 
+	var recommendQuestionStr string
+	if len(in.RecommendQuestion) > 0 {
+		rqBytes, err := json.Marshal(in.RecommendQuestion)
+		if err != nil {
+			return nil, grpc_util.ErrorStatusWithKey(errs.Code_RagChatErr, "rag_update_err", "marshal err:", err.Error())
+		}
+		recommendQuestionStr = string(rqBytes)
+	}
+
 	if err := s.cli.UpdateRagConfig(ctx, &model.RagInfo{
 		RagID: in.RagId,
 		ModelConfig: model.AppModelConfig{
@@ -239,6 +248,7 @@ func (s *Service) UpdateRagConfig(ctx context.Context, in *rag_service.UpdateRag
 		VisionConfig: model.VisionConfig{
 			PicNum: in.VisionConfig.PicNum,
 		},
+		RecommendQuestion: recommendQuestionStr,
 	}); err != nil {
 		return nil, errStatus(errs.Code_RagUpdateErr, err)
 	}
@@ -308,6 +318,7 @@ func (s *Service) CopyRag(ctx context.Context, in *rag_service.CopyRagReq) (*rag
 		QAKnowledgebaseConfig: info.QAKnowledgebaseConfig,
 		SensitiveConfig:       info.SensitiveConfig,
 		VisionConfig:          info.VisionConfig,
+		RecommendQuestion:     info.RecommendQuestion,
 		PublicModel:           info.PublicModel,
 	})
 	if err != nil {

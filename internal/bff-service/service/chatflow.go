@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -232,7 +231,7 @@ func ChatflowChat(ctx *gin.Context, userId, orgId, workflowId, conversationId, m
 	ctx.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
 
-	scan := bufio.NewScanner(resp.RawBody())
+	scan := util.NewScanner(resp.RawBody())
 
 	// 设置适当的缓冲区大小以避免扫描错误
 	const (

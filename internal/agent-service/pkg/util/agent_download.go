@@ -24,6 +24,33 @@ var imageExt = map[string]bool{
 	".tiff": true,
 }
 
+// ExtractFileNameFromURL 从URL中提取文件名
+func ExtractFileNameFromURL(fileURL string) string {
+	parsedURL, err := url.Parse(fileURL)
+	if err != nil {
+		return ""
+	}
+
+	path := parsedURL.Path
+	if path == "" || path == "/" {
+		return ""
+	}
+
+	// 获取路径的最后一部分
+	fileName := filepath.Base(path)
+
+	// 如果有查询参数中的文件名，优先使用
+	if queryName := parsedURL.Query().Get("filename"); queryName != "" {
+		fileName = queryName
+	} else if queryName = parsedURL.Query().Get("name"); queryName != "" {
+		fileName = queryName
+	} else if queryName = parsedURL.Query().Get("file"); queryName != "" {
+		fileName = queryName
+	}
+
+	return fileName
+}
+
 // ExtractURLFromJSON 通用URL提取工具
 func ExtractURLFromJSON(jsonStr string) (string, error) {
 	// 1. 把JSON解析为通用map

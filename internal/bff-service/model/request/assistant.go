@@ -33,6 +33,7 @@ type MemoryConfig struct {
 }
 
 func (a *AssistantConfig) Check() error {
+	a.RecommendQuestion = filterBlankStrings(a.RecommendQuestion)
 	return nil
 }
 

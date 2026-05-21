@@ -500,20 +500,22 @@ func buildDocUpdateSegmentStatusParams(req *knowledgebase_doc_service.UpdateDocS
 	if req.All {
 		return &service.DocSegmentStatusUpdateAllParams{
 			DocSegmentStatusUpdateParams: service.DocSegmentStatusUpdateParams{
-				UserId:        knowledge.UserId,
-				KnowledgeName: knowledge.RagName,
-				FileName:      service.RebuildFileName(docInfo.DocId, docInfo.FileType, docInfo.Name),
-				ContentId:     req.ContentId,
+				UserId:          knowledge.UserId,
+				KnowledgeBaseId: knowledge.KnowledgeId,
+				KnowledgeName:   knowledge.RagName,
+				FileName:        service.RebuildFileName(docInfo.DocId, docInfo.FileType, docInfo.Name),
+				ContentId:       req.ContentId,
 			},
 			All: status,
 		}
 	} else {
 		return &service.DocSegmentStatusUpdateParams{
-			UserId:        knowledge.UserId,
-			KnowledgeName: knowledge.RagName,
-			FileName:      service.RebuildFileName(docInfo.DocId, docInfo.FileType, docInfo.Name),
-			ContentId:     req.ContentId,
-			Status:        status,
+			UserId:          knowledge.UserId,
+			KnowledgeBaseId: knowledge.KnowledgeId,
+			KnowledgeName:   knowledge.RagName,
+			FileName:        service.RebuildFileName(docInfo.DocId, docInfo.FileType, docInfo.Name),
+			ContentId:       req.ContentId,
+			Status:          status,
 		}
 	}
 }

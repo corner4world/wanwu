@@ -122,6 +122,7 @@ func UpdateRagConfig(ctx *gin.Context, req request.RagConfig) error {
 		QAknowledgeBaseConfig: qaKnowledgeBaseConfig,
 		SensitiveConfig:       sensitiveConfig,
 		VisionConfig:          visionConfig,
+		RecommendQuestion:     req.RecommendQuestion,
 	})
 	return err
 }
@@ -397,6 +398,7 @@ func GetRag(ctx *gin.Context, req request.RagReq, needPublished bool) (*response
 		SafetyConfig:          ragSafetyConfigProto2Model(ctx, resp.SensitiveConfig),
 		AppPublishConfig:      request.AppPublishConfig{PublishType: appInfo.GetPublishType()},
 		VisionConfig:          ragVisionConfigProto2Model(resp.VisionConfig),
+		RecommendQuestion:    resp.RecommendQuestion,
 	}
 
 	return ragInfo, nil

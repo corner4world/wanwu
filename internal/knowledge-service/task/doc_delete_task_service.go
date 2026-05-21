@@ -181,9 +181,10 @@ func batchRagDelete(ctx context.Context, knowledge *model.KnowledgeBase, docList
 		}
 		var fileName = service.RebuildFileName(doc.DocId, doc.FileType, doc.Name)
 		err := service.RagDeleteDoc(ctx, &service.RagDeleteDocParams{
-			UserId:        knowledge.UserId,
-			KnowledgeBase: knowledge.RagName,
-			FileName:      fileName,
+			UserId:          knowledge.UserId,
+			KnowledgeBaseId: knowledge.KnowledgeId,
+			KnowledgeBase:   knowledge.RagName,
+			FileName:        fileName,
 		})
 		if err != nil {
 			return err

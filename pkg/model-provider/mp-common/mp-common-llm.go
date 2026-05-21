@@ -1,7 +1,6 @@
 package mp_common
 
 import (
-	"bufio"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -531,7 +530,7 @@ func chatCompletionsStream(ctx context.Context, provider, apiKey, url string, re
 		close(errChan)
 
 		var inThinking bool
-		scan := bufio.NewScanner(resp.RawResponse.Body)
+		scan := util.NewScanner(resp.RawResponse.Body)
 		for scan.Scan() {
 			sseData := scan.Text()
 			sseResp := respConverter(true, sseData)

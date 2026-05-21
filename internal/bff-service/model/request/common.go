@@ -1,6 +1,20 @@
 package request
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
+
+// filterBlankStrings 过滤掉切片里的空字符串和纯空白字符串
+func filterBlankStrings(items []string) []string {
+	result := make([]string, 0, len(items))
+	for _, s := range items {
+		if strings.TrimSpace(s) != "" {
+			result = append(result, s)
+		}
+	}
+	return result
+}
 
 // 预编译恶意文件名检测正则表达式（不区分大小写）
 var (

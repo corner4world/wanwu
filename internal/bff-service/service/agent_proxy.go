@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bufio"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -235,7 +234,7 @@ func agentStreamProxy(ctx context.Context, url string, req map[string]interface{
 
 		close(errCh)
 
-		scan := bufio.NewScanner(resp.RawResponse.Body)
+		scan := util.NewScanner(resp.RawResponse.Body)
 		for scan.Scan() {
 			sseData := scan.Text()
 			data := parseAgentSSEData(sseData)

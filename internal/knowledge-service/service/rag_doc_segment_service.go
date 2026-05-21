@@ -87,6 +87,7 @@ type RagDeleteDocSegmentParams struct {
 type RagGetDocSegmentParams struct {
 	UserId            string `json:"userId"`
 	KnowledgeBaseName string `json:"knowledgeBase"`
+	KnowledgeBaseId   string `json:"kb_id"`
 	FileName          string `json:"fileName"`
 	PageSize          int32  `json:"page_size"`
 	SearchAfter       int32  `json:"search_after"`
@@ -101,11 +102,12 @@ type RagGetDocChildSegmentParams struct {
 }
 
 type DocSegmentStatusUpdateParams struct {
-	UserId        string `json:"userId"`
-	KnowledgeName string `json:"knowledgeBase"`
-	FileName      string `json:"fileName"`
-	ContentId     string `json:"content_id"`
-	Status        bool   `json:"status"`
+	UserId          string `json:"userId"`
+	KnowledgeBaseId string `json:"kb_id"`
+	KnowledgeName   string `json:"knowledgeBase"`
+	FileName        string `json:"fileName"`
+	ContentId       string `json:"content_id"`
+	Status          bool   `json:"status"`
 }
 
 type DocSegmentStatusUpdateAllParams struct {

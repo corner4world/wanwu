@@ -179,6 +179,7 @@ def parse_doc_only(file_url):
     url = config.callback_cfg["URL"]["RAG_DOC_PARSER"]
     sentence_size = int(config.callback_cfg["DOC"]["CHUNK_SIZE"])
     overlap_size = float(config.callback_cfg["DOC"]["OVERLAP_RATIO"])
+    max_output_size = int(config.callback_cfg["DOC"]["MAX_OUTPUT_SIZE"])
     payload = json.dumps(
         {
             "url": file_url,
@@ -194,5 +195,22 @@ def parse_doc_only(file_url):
     if not docs:
         raise BizError("No document content parsed.")
 
-    full_text = "\n".join([doc.get("text", "") for doc in docs])
+    # 在循环时截断
+    parts = []
+    current_size = 0
+
+    for doc in docs:
+        text = doc.get("text", "")
+        text_size = len(text.encode("utf-8"))
+        if max_output_size > 0 and current_size + text_size > max_output_size:
+            # 剩余空间不足，截断当前文本
+            remaining = max_output_size - current_size
+            if remaining > 0:
+                truncated = text.encode("utf-8")[:remaining].decode("utf-8", errors="ignore")
+                parts.append(truncated)
+            break
+        parts.append(text)
+        current_size += text_size
+
+    full_text = "\n".join(parts)
     return full_text

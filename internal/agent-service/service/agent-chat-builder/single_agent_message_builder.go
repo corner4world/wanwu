@@ -3,6 +3,7 @@ package agent_chat_builder
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/UnicomAI/wanwu/pkg/log"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -456,14 +457,17 @@ func extractFilesFromJSON(content string) []*response.DownloadFileInfo {
 		return fileList
 	}
 
-	// 递归提取文件
-	extractFilesFromValue(data, &fileList)
+	// 递归提取文件,最多2层
+	extractFilesFromValue(data, 2, &fileList)
 
 	return fileList
 }
 
 // extractFilesFromValue 递归从值中提取文件信息
-func extractFilesFromValue(data interface{}, fileList *[]*response.DownloadFileInfo) {
+func extractFilesFromValue(data interface{}, depth int, fileList *[]*response.DownloadFileInfo) {
+	if depth <= 0 {
+		return
+	}
 	switch v := data.(type) {
 	case map[string]interface{}:
 		// 尝试从当前对象提取文件
@@ -472,11 +476,13 @@ func extractFilesFromValue(data interface{}, fileList *[]*response.DownloadFileI
 		}
 		// 递归处理所有值
 		for _, val := range v {
-			extractFilesFromValue(val, fileList)
+			depth = depth - 1
+			extractFilesFromValue(val, depth, fileList)
 		}
 	case []interface{}:
+		depth = depth - 1
 		for _, item := range v {
-			extractFilesFromValue(item, fileList)
+			extractFilesFromValue(item, depth, fileList)
 		}
 	}
 }
@@ -514,6 +520,7 @@ func extractFileInfoFromMap(m map[string]interface{}) *response.DownloadFileInfo
 	for _, key := range nameKeys {
 		if val, ok := m[key]; ok {
 			if str, ok := val.(string); ok && str != "" {
+				log.Infof("nameKeys key %s, val %s", key, str)
 				fileName = str
 				break
 			}
@@ -524,7 +531,7 @@ func extractFileInfoFromMap(m map[string]interface{}) *response.DownloadFileInfo
 	if fileURL != "" {
 		// 如果没有文件名，从URL中提取
 		if fileName == "" {
-			fileName = extractFileNameFromURL(fileURL)
+			fileName = util.ExtractFileNameFromURL(fileURL)
 		}
 		return &response.DownloadFileInfo{
 			FileName: fileName,
@@ -564,31 +571,4 @@ func isValidFileURL(s string) bool {
 func isLikelyNameField(s string) bool {
 	// 简单判断：如果字符串很短且不包含常见URL特征
 	return len(s) < 10 && !strings.Contains(s, "/") && !strings.Contains(s, ".")
-}
-
-// extractFileNameFromURL 从URL中提取文件名
-func extractFileNameFromURL(fileURL string) string {
-	parsedURL, err := url.Parse(fileURL)
-	if err != nil {
-		return ""
-	}
-
-	path := parsedURL.Path
-	if path == "" || path == "/" {
-		return ""
-	}
-
-	// 获取路径的最后一部分
-	fileName := filepath.Base(path)
-
-	// 如果有查询参数中的文件名，优先使用
-	if queryName := parsedURL.Query().Get("filename"); queryName != "" {
-		fileName = queryName
-	} else if queryName := parsedURL.Query().Get("name"); queryName != "" {
-		fileName = queryName
-	} else if queryName := parsedURL.Query().Get("file"); queryName != "" {
-		fileName = queryName
-	}
-
-	return fileName
 }

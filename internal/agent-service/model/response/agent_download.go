@@ -1,6 +1,7 @@
 package response
 
 import (
+	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	"path/filepath"
 	"strings"
 
@@ -190,7 +191,10 @@ func buildAgentFile(file *DownloadFileInfo) *AgentFile {
 	fileExt := filepath.Ext(file.FileName)
 	fileType := strings.TrimPrefix(fileExt, ".")
 	fileNameWithoutExt := strings.TrimSuffix(file.FileName, fileExt)
-	fileName := filepath.Base(file.FilePath)
+	var fileName = file.FileName
+	if len(fileName) == 0 {
+		fileName = util.ExtractFileNameFromURL(file.FilePath)
+	}
 
 	return &AgentFile{
 		Name:     fileName,

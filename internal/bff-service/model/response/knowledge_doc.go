@@ -60,6 +60,8 @@ type ListDocResp struct {
 	GraphStatus   int32  `json:"graphStatus"`   //图谱状态 0:待处理，1.解析中，2.解析成功，3.解析失败 -1. 当文档状态为解析失败时，显示 -
 	GraphErrMsg   string `json:"graphErrMsg"`   //图谱错误信息
 	IsMultimodal  bool   `json:"isMultimodal"`  // 是否为多模态文件
+	DocProgress   int32  `json:"docProgress"`   //文档解析进度百分比 (0-100)
+	GraphProgress int32  `json:"graphProgress"` //图谱解析进度百分比 (0-100)
 }
 
 type DocImportTipResp struct {

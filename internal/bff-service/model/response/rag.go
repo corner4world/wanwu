@@ -13,6 +13,7 @@ type RagInfo struct {
 	SafetyConfig          request.AppSafetyConfig          `json:"safetyConfig"`                              // 敏感词表配置
 	AppPublishConfig      request.AppPublishConfig         `json:"appPublishConfig"`                          // 发布配置
 	VisionConfig          request.VisionConfig             `json:"visionConfig"`                              // 视觉开关
+	RecommendQuestion     []string                         `json:"recommendQuestion"`                         // 推荐问题
 }
 
 type RagUploadResult struct {

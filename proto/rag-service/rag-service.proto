@@ -84,6 +84,7 @@ message UpdateRagConfigReq{
   RagQAKnowledgeBaseConfig QAknowledgeBaseConfig = 6; // 问答库配置
   RagSensitiveConfig sensitiveConfig = 7;                 // 安全护栏
   RagVisionConfig visionConfig = 8; // 视觉配置
+  repeated string recommendQuestion = 9; // 推荐问题
 }
 
 message RagVisionConfig{
@@ -110,6 +111,7 @@ message RagInfo {
   RagSensitiveConfig sensitiveConfig = 8; // 安全护栏
   RagVisionConfig visionConfig = 9; // 视觉配置
   Identity identity = 10;
+  repeated string recommendQuestion = 11; // 推荐问题
 }
 
 message RagDeleteReq {

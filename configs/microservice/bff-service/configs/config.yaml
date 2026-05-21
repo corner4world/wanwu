@@ -123,7 +123,7 @@ doc-center:
     - key: safety
       val: 2.资源库/安全护栏.md
     - key: rag
-      val: 3.应用开发/文本问答.md
+      val: 3.应用开发/知识问答.md
     - key: agent
       val: 3.应用开发/智能体.md
     - key: workflow-1

@@ -45,6 +45,11 @@
       - 识别其中的 `@xxx`，与已配置的技能/MCP 进行匹配，**不得修改匹配到的结果**,完成相应的技能/MCP转换
       - 如果有多个`@xxx`，则向用户询问是将每一个`@xxx`转换为skill，还是将所有`@xxx`转换为一个skill。
       - 若匹配到技能，且任务是创建技能，则把技能复制到与.opencode目录在同一级的`skill/`目录下，完成转换任务
+      - 若匹配到MCP
+         - 从配置文件`opencode.json`中获取MCP的信息
+         - 使用`mcp2skill`技能转换为skill
+         - `mcp2skill`的name参数为`@xxx`去除`@`,比如`@Amap高德地图`转换为`Amap高德地图`
+      - 跳至第3步，执行测试与自检
 2. 创建或更新 Skill
    - 创建时，调用内置 `skill-creator` 生成 Skill，并落到 `skill/<唯一 Skill 目录>/`。
    - 修改时，读取当前唯一 Skill 的内容，把用户反馈作为对该 Skill 的变更要求；可以调用 `skill-creator` 辅助改进，但最终必须回写到同一个 Skill，不得生成并保留第二个 Skill。

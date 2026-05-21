@@ -24,7 +24,12 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux GOARCH=$WANWU_ARCH go build -ldflags="-s -w" -o eino-agent ./pkg/wga-sandbox/internal/runner/eino/agent
 
-FROM crpi-6pj79y7ddzdpexs8.cn-hangzhou.personal.cr.aliyuncs.com/wanwulite/wga-sandbox-base:1.0.0.152-opencode1.4.11
+# 编译 mcp2skill 二进制
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux GOARCH=$WANWU_ARCH go build -ldflags="-s -w" -o mcp2skill ./pkg/mcp2skill/cmd
+
+FROM crpi-6pj79y7ddzdpexs8.cn-hangzhou.personal.cr.aliyuncs.com/wanwulite/wga-sandbox-base:1.0.0.152-opencode1.14.51
 
 USER root
 
@@ -70,6 +75,7 @@ RUN set -eux; \
         reportlab==4.2.0 \
         imageio==2.34.0 \
         "markitdown[pptx]" \
+        "mcp[cli]==1.27.1" \
         --break-system-packages;
 
 # ----------------------
@@ -116,6 +122,10 @@ RUN set -eux; \
 # eino-agent 安装
 COPY --from=builder /build/eino-agent /usr/local/bin/eino-agent
 RUN chmod 755 /usr/local/bin/eino-agent
+
+# mcp2skill 安装
+COPY --from=builder /build/mcp2skill /usr/local/bin/mcp2skill
+RUN chmod 755 /usr/local/bin/mcp2skill
 
 # eino-agent HTTP 服务配置
 RUN printf '[program:eino-agent]\n\

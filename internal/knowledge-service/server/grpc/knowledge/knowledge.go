@@ -365,11 +365,11 @@ func (s *Service) GetKnowledgeGraph(ctx context.Context, req *knowledgebase_serv
 	var processCount, successCount, failCount int32
 	for _, info := range docInfo {
 		switch info.GraphStatus {
-		case model.GraphProcessing:
+		case model.GraphProcessing, model.GraphSchemaSuccess, model.GraphChunkSuccess, model.GraphExtractSuccess, model.GraphStoreSuccess:
 			processCount++
 		case model.GraphSuccess:
 			successCount++
-		case model.GraphChunkFail, model.GraphExtractFail, model.GraphStoreFail:
+		case model.GraphChunkFail, model.GraphExtractFail, model.GraphStoreFail, model.GraphSchemaFail:
 			failCount++
 		}
 	}

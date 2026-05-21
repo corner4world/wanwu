@@ -22,6 +22,7 @@ type RagConfig struct {
 	QAKnowledgeBaseConfig *AppQAKnowledgebaseConfig `json:"qaKnowledgeBaseConfig" validate:"required"` // 问答库（不用传知识图谱开关）
 	SafetyConfig          *AppSafetyConfig          `json:"safetyConfig"`                              // 敏感词表配置
 	VisionConfig          *VisionConfig             `json:"visionConfig"`                              // 视觉开关配置
+	RecommendQuestion     []string                  `json:"recommendQuestion"`                         // 推荐问题
 }
 
 type ChatRagRequest struct {
@@ -51,7 +52,8 @@ func (r RagBrief) Check() error {
 	return validateAppBrief(r.AppBriefConfig, "知识问答")
 }
 
-func (r RagConfig) Check() error {
+func (r *RagConfig) Check() error {
+	r.RecommendQuestion = filterBlankStrings(r.RecommendQuestion)
 	return nil
 }
 

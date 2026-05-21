@@ -2,7 +2,6 @@
 package eino
 
 import (
-	"bufio"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -324,8 +323,7 @@ func (r *Runner) connectSSE(ctx context.Context) (<-chan string, error) {
 }
 
 func (r *Runner) readSSEStream(body io.ReadCloser, sseCh chan<- string, ctx context.Context) {
-	scanner := bufio.NewScanner(body)
-	scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024)
+	scanner := util.NewScanner(body)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "data: ") {

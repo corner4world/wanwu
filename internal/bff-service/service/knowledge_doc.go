@@ -119,6 +119,11 @@ func GetDocDetail(ctx *gin.Context, userId, orgId, docId string) (*response.List
 		FileSize:      data.DocSize,
 		KnowledgeId:   data.KnowledgeId,
 		SegmentMethod: data.SegmentMethod,
+		GraphStatus:   data.GraphStatus,
+		GraphErrMsg:   data.GraphErrMsg,
+		IsMultimodal:  data.IsMultimodal,
+		DocProgress:   data.DocProgress,
+		GraphProgress: data.GraphProgress,
 	}, nil
 }
 
@@ -373,6 +378,8 @@ func buildDocRespList(ctx *gin.Context, dataList []*knowledgebase_doc_service.Do
 			GraphStatus:   data.GraphStatus,
 			GraphErrMsg:   data.GraphErrMsg,
 			IsMultimodal:  data.IsMultimodal,
+			DocProgress:   data.DocProgress,
+			GraphProgress: data.GraphProgress,
 		})
 	}
 	return retList

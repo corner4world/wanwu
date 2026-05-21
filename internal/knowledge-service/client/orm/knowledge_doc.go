@@ -442,9 +442,10 @@ func CopyDocAndRemoveRag(ctx context.Context, knowledge *model.KnowledgeBase, do
 		//2.rag删除
 		var fileName = service.RebuildFileName(knowledgeDoc.DocId, knowledgeDoc.FileType, knowledgeDoc.Name)
 		err = service.RagDeleteDoc(ctx, &service.RagDeleteDocParams{
-			UserId:        knowledge.UserId,
-			KnowledgeBase: knowledge.RagName,
-			FileName:      fileName,
+			UserId:          knowledge.UserId,
+			KnowledgeBaseId: knowledge.KnowledgeId,
+			KnowledgeBase:   knowledge.RagName,
+			FileName:        fileName,
 		})
 		if err != nil {
 			return processError(status, err)
@@ -686,6 +687,7 @@ func CreateKnowledgeUrlDoc(ctx context.Context, doc *model.KnowledgeDoc, importT
 			SplitType:         service.RebuildSplitType(config.SegmentMethod),
 			Separators:        config.Splitter,
 			KnowledgeBaseName: knowledge.RagName,
+			KnowledgeBaseId:   knowledge.KnowledgeId,
 			OcrModelId:        importTask.OcrModelId,
 			PreProcess:        preProcess.PreProcessList,
 			RagMetaDataParams: ragMetaList,
@@ -840,7 +842,14 @@ func stopDocGraphProcess(tx *gorm.DB) error {
 		"graph_status": model.GraphInterruptFail,
 	}
 	//会锁表风险极高
-	return tx.Model(&model.KnowledgeDoc{}).Where("graph_status = ?", model.GraphProcessing).Updates(updateDoc).Error
+	processingStatusList := []model.GraphStatus{
+		model.GraphProcessing,
+		model.GraphSchemaSuccess,
+		model.GraphChunkSuccess,
+		model.GraphExtractSuccess,
+		model.GraphStoreSuccess,
+	}
+	return tx.Model(&model.KnowledgeDoc{}).Where("graph_status IN ?", processingStatusList).Updates(updateDoc).Error
 }
 
 func stopKnowledgeReport(tx *gorm.DB) error {

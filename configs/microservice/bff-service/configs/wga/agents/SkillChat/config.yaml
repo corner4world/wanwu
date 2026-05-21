@@ -17,5 +17,6 @@ tool_categories:
 skills:
   - dir: configs/microservice/bff-service/configs/agent-skills/anthropics/skill-creator
   - dir: configs/microservice/bff-service/configs/agent-skills/security/skill-vetter
+  - dir: configs/microservice/bff-service/configs/agent-skills/wanwu/mcp2skill
 
 sub_agents:

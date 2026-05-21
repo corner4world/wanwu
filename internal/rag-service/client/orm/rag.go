@@ -86,6 +86,14 @@ func BuildRagInfo(info *model.RagInfo) (*rag_service.RagInfo, *err_code.Status) 
 		}
 	}
 
+	// 反序列化推荐问题
+	var recommendQuestion []string
+	if info.RecommendQuestion != "" {
+		if err := json.Unmarshal([]byte(info.RecommendQuestion), &recommendQuestion); err != nil {
+			return nil, toErrStatus("rag_get_err", "recommend_question "+err.Error())
+		}
+	}
+
 	// 填充 rag 的信息
 	resp := &rag_service.RagInfo{
 		RagId: info.RagID,
@@ -127,6 +135,7 @@ func BuildRagInfo(info *model.RagInfo) (*rag_service.RagInfo, *err_code.Status) 
 		VisionConfig: &rag_service.RagVisionConfig{
 			PicNum: info.VisionConfig.PicNum,
 		},
+		RecommendQuestion: recommendQuestion,
 	}
 	return resp, nil
 }
@@ -305,6 +314,8 @@ func (c *Client) UpdateRagConfig(ctx context.Context, rag *model.RagInfo) *err_c
 				"sensitive_table_ids": rag.SensitiveConfig.TableIds,
 
 				"vision_pic_num": rag.VisionConfig.PicNum,
+
+				"recommend_question": rag.RecommendQuestion,
 			}
 
 			// 只更新指定 ragID 的记录
