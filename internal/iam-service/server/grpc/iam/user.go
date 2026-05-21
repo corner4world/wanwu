@@ -78,11 +78,23 @@ func (s *Service) CreateUser(ctx context.Context, req *iam_service.CreateUserReq
 	return &iam_service.IDName{Id: strconv.Itoa(int(userID)), Name: req.UserName}, nil
 }
 
-func (s *Service) CreateUsers(ctx context.Context, req *iam_service.CreateUsersReq) (*emptypb.Empty, error) {
-	if err := s.cli.CreateUsers(ctx, toUsersInfo(req.Users), util.MustU32(req.CreatorId), util.MustU32(req.OrgId)); err != nil {
+func (s *Service) CreateUsers(ctx context.Context, req *iam_service.CreateUsersReq) (*iam_service.CreateUsersResp, error) {
+	result, err := s.cli.CreateUsers(ctx, toUsersInfo(req.Users), util.MustU32(req.CreatorId), util.MustU32(req.OrgId))
+	if err != nil {
 		return nil, errStatus(errs.Code_IAMUser, err)
 	}
-	return &emptypb.Empty{}, nil
+	resp := &iam_service.CreateUsersResp{
+		Total:   int32(result.Total),
+		Success: int32(result.Success),
+		Failed:  int32(result.Failed),
+	}
+	for _, e := range result.Errors {
+		resp.Errors = append(resp.Errors, &iam_service.CreateUsersError{
+			Index:  int32(e.Index),
+			Reason: e.Reason,
+		})
+	}
+	return resp, nil
 }
 
 func (s *Service) UpdateUser(ctx context.Context, req *iam_service.UpdateUserReq) (*emptypb.Empty, error) {

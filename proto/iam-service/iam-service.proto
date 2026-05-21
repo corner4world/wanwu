@@ -22,7 +22,7 @@ service IAMService {
   // 创建用户
   rpc CreateUser(CreateUserReq) returns (IDName) {}
   // 批量导入用户
-  rpc CreateUsers(CreateUsersReq) returns (google.protobuf.Empty) {}
+  rpc CreateUsers(CreateUsersReq) returns (CreateUsersResp) {}
   // 编辑用户
   rpc UpdateUser(UpdateUserReq) returns (google.protobuf.Empty) {}
   // 删除用户
@@ -219,6 +219,18 @@ message CreateUsersReq {
   string creatorId = 1;
   string orgId = 2;
   repeated CreateUsersInfo users = 3;
+}
+
+message CreateUsersResp {
+  int32 total = 1;                       // 总数
+  int32 success = 2;                     // 成功数
+  int32 failed = 3;                      // 失败数
+  repeated CreateUsersError errors = 4;  // 失败详情
+}
+
+message CreateUsersError {
+  int32 index = 1;   // 数据索引（在请求users数组中的索引）
+  string reason = 2; // 失败原因
 }
 
 message UpdateUserReq {
