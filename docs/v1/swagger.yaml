@@ -4780,20 +4780,38 @@ definitions:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
-      downloadUrl:
-        type: string
       name:
         type: string
       skillId:
         type: string
       skillMarkdown:
         type: string
-      squareSkillId:
-        type: string
       variables:
         items:
           $ref: '#/definitions/response.SkillVariable'
         type: array
+    type: object
+  response.AcquiredSkillListItem:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      name:
+        type: string
+      skillId:
+        type: string
+    type: object
+  response.AcquiredSkillVersionInfo:
+    properties:
+      desc:
+        type: string
+      updatedAt:
+        type: string
+      version:
+        type: string
     type: object
   response.AgentFileMeta:
     properties:
@@ -5892,9 +5910,13 @@ definitions:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
+      isPublished:
+        type: boolean
       name:
         type: string
       previewId:
+        type: string
+      publishType:
         type: string
       skillId:
         type: string
@@ -5904,10 +5926,35 @@ definitions:
         items:
           $ref: '#/definitions/response.SkillVariable'
         type: array
+      version:
+        type: string
     type: object
   response.CustomSkillIDResp:
     properties:
       skillId:
+        type: string
+    type: object
+  response.CustomSkillListItem:
+    properties:
+      author:
+        type: string
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      desc:
+        type: string
+      isPublished:
+        type: boolean
+      name:
+        type: string
+      previewId:
+        type: string
+      publishType:
+        type: string
+      skillId:
+        type: string
+      threadId:
+        type: string
+      version:
         type: string
     type: object
   response.CustomTab:
@@ -8335,8 +8382,6 @@ definitions:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
-      downloadUrl:
-        type: string
       isShared:
         type: boolean
       name:
@@ -9067,7 +9112,7 @@ info:
   title: AI Agent Productivity Platform API
   version: v0.0.1
 paths:
-  /agent/acquired/skill:
+  /agent/skill/acquired:
     delete:
       consumes:
       - application/json
@@ -9091,7 +9136,7 @@ paths:
       summary: 删除我添加的skill
       tags:
       - resource.skill
-  /agent/acquired/skill/config:
+  /agent/skill/acquired/config:
     delete:
       consumes:
       - application/json
@@ -9161,7 +9206,7 @@ paths:
       summary: 编辑我添加的skill配置
       tags:
       - resource.skill
-  /agent/acquired/skill/detail:
+  /agent/skill/acquired/detail:
     get:
       consumes:
       - application/json
@@ -9189,7 +9234,30 @@ paths:
       summary: 获取我添加的skill详情
       tags:
       - resource.skill
-  /agent/acquired/skill/list:
+  /agent/skill/acquired/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载资源库中我添加的最新版本skill
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 下载我添加的skill
+      tags:
+      - resource.skill
+  /agent/skill/acquired/list:
     get:
       consumes:
       - application/json
@@ -9214,13 +9282,48 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.AcquiredSkillDetail'
+                          $ref: '#/definitions/response.AcquiredSkillListItem'
                         type: array
                     type: object
               type: object
       security:
       - JWT: []
       summary: 获取我添加的skill列表
+      tags:
+      - resource.skill
+  /agent/skill/acquired/version/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取资源库中我添加的skill历史版本列表
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.AcquiredSkillVersionInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取我添加的skill历史版本列表
       tags:
       - resource.skill
   /agent/skill/builtin/config:
@@ -9756,13 +9859,39 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.CustomSkillDetail'
+                          $ref: '#/definitions/response.CustomSkillListItem'
                         type: array
                     type: object
               type: object
       security:
       - JWT: []
       summary: 获取自定义skill列表
+      tags:
+      - resource.skill
+  /agent/skill/custom/version/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载我创建的自定义skill指定版本ZIP包
+      parameters:
+      - in: query
+        name: skillId
+        required: true
+        type: string
+      - in: query
+        name: version
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 下载自定义skill指定版本
       tags:
       - resource.skill
   /agent/skill/select:
@@ -13600,7 +13729,7 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.CustomSkillDetail'
+                          $ref: '#/definitions/response.CustomSkillListItem'
                         type: array
                     type: object
               type: object
@@ -18331,15 +18460,15 @@ paths:
       summary: 获取广场内置skill列表
       tags:
       - exploration.skill
-  /square/skill/detail:
+  /square/skill/created/detail:
     get:
       consumes:
       - application/json
-      description: 获取探索广场中的skill详情
+      description: 获取我发布的skill详情
       parameters:
-      - description: skill ID
+      - description: custom skill ID
         in: query
-        name: skillId
+        name: customSkillId
         required: true
         type: string
       produces:
@@ -18352,34 +18481,80 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/response.SquareSkillDetail'
+                  $ref: '#/definitions/response.CustomSkillDetail'
               type: object
       security:
       - JWT: []
-      summary: 获取广场skill详情
+      summary: 获取我发布skill详情
       tags:
       - exploration.skill
-  /square/skill/download:
+  /square/skill/created/list:
     get:
       consumes:
       - application/json
-      description: 下载探索广场中的skill ZIP包
+      description: 获取我发布的skill列表
       parameters:
-      - description: skill ID
+      - description: skill名称
         in: query
-        name: skillId
-        required: true
+        name: name
         type: string
       produces:
-      - application/octet-stream
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.CustomSkillListItem'
+                        type: array
+                    type: object
+              type: object
       security:
       - JWT: []
-      summary: 下载广场skill
+      summary: 获取我发布skill列表
+      tags:
+      - exploration.skill
+  /square/skill/created/version/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取我发布的skill版本历史列表
+      parameters:
+      - description: custom skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.AcquiredSkillVersionInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取我发布skill版本列表
       tags:
       - exploration.skill
   /square/skill/list:
@@ -18420,7 +18595,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 将广场中的skill添加到我的资源库
+      description: 将共享skill添加到我的资源库
       parameters:
       - description: skill ID
         in: body
@@ -18437,7 +18612,127 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - JWT: []
-      summary: 添加广场skill到资源库
+      summary: 添加共享skill到资源库
+      tags:
+      - exploration.skill
+  /square/skill/share/detail:
+    get:
+      consumes:
+      - application/json
+      description: 获取共享skill详情
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SquareSkillDetail'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取共享skill详情
+      tags:
+      - exploration.skill
+  /square/skill/share/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载共享skill ZIP包
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 下载共享skill
+      tags:
+      - exploration.skill
+  /square/skill/share/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取探索广场中的共享skill列表
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.SquareSkillInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取广场共享skill列表
+      tags:
+      - exploration.skill
+  /square/skill/share/version/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取共享skill的版本历史列表
+      parameters:
+      - description: skill ID
+        in: query
+        name: skillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.AcquiredSkillVersionInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取共享skill版本列表
       tags:
       - exploration.skill
   /statistic/api:

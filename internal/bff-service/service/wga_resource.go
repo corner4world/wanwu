@@ -62,19 +62,32 @@ func GetGeneralAgentResourceSelect(ctx *gin.Context, userId, orgId string, name 
 		}
 	}()
 
-	// 获取 Skill 列表
+	// 获取 Skill 列表（custom 已发布 + acquired，不包括 builtin）
 	wg.Add(1)
 	go func() {
 		defer util.PrintPanicStack()
 		defer wg.Done()
-		resp, err := GetSkillSelect(ctx, userId, orgId, name, constant.SkillTypeCustom)
+		// custom、acquired
+		var allSkills []*response.SkillInfo
+		// 获取已发布的 custom skill
+		customResp, err := GetSkillSelect(ctx, userId, orgId, name, constant.SkillTypeCustom)
 		if err != nil {
 			skillErr = err
 			return
 		}
-		if list, ok := resp.List.([]*response.SkillInfo); ok {
-			skillList = list
+		if list, ok := customResp.List.([]*response.SkillInfo); ok {
+			allSkills = append(allSkills, list...)
 		}
+		// 获取 acquired skill
+		acquiredResp, err := GetSkillSelect(ctx, userId, orgId, name, constant.SkillTypeAcquired)
+		if err != nil {
+			skillErr = err
+			return
+		}
+		if list, ok := acquiredResp.List.([]*response.SkillInfo); ok {
+			allSkills = append(allSkills, list...)
+		}
+		skillList = allSkills
 	}()
 
 	// 获取 Assistant 列表

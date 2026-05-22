@@ -16,6 +16,7 @@ const (
 	AppTypeRag       = "rag"       // 文本问答
 	AppTypeWorkflow  = "workflow"  // 工作流
 	AppTypeChatflow  = "chatflow"  // 对话流
+	AppTypeSkill     = "skill"     // Skill
 	AppTypeMCPServer = "mcpserver" // mcp server
 )
 
@@ -67,8 +68,9 @@ const (
 
 // skill type
 const (
-	SkillTypeBuiltIn = "builtin" // 内置技能
-	SkillTypeCustom  = "custom"  // 自定义技能
+	SkillTypeBuiltIn  = "builtin"  // 内置技能
+	SkillTypeCustom   = "custom"   // 自定义技能
+	SkillTypeAcquired = "acquired" // 添加的技能
 )
 
 // safety type
