@@ -67,6 +67,7 @@
             type="webChat"
             :fileLimit="100"
             :supportReminder="true"
+            :visibleClearHistory="false"
             @preSend="preSend"
           />
         </div>
