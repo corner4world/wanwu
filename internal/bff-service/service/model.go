@@ -21,11 +21,13 @@ import (
 
 type ModelInfoOptions struct {
 	UserId string
+	OrgId  string
 }
 
 func DefaultModelInfoOptions() *ModelInfoOptions {
 	return &ModelInfoOptions{
 		UserId: "",
+		OrgId:  "",
 	}
 }
 
@@ -83,7 +85,7 @@ func GetModel(ctx *gin.Context, userId, orgId string, req *request.GetModelReque
 	if err != nil {
 		return nil, err
 	}
-	return toModelInfo(ctx, resp, &ModelInfoOptions{UserId: userId})
+	return toModelInfo(ctx, resp, &ModelInfoOptions{UserId: userId, OrgId: orgId})
 }
 
 func GetModelById(ctx *gin.Context, req *request.GetModelRequest) (*response.ModelInfo, error) {
@@ -104,7 +106,7 @@ func ListModels(ctx *gin.Context, userId, orgId string, req *request.ListModelsR
 	if err != nil {
 		return nil, err
 	}
-	list, err := toModelInfos(ctx, resp.Models, &ModelInfoOptions{UserId: userId})
+	list, err := toModelInfos(ctx, resp.Models, &ModelInfoOptions{UserId: userId, OrgId: orgId})
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +138,7 @@ func ListTypeModels(ctx *gin.Context, userId, orgId string, req *request.ListTyp
 	if err != nil {
 		return nil, err
 	}
-	list, err := toModelInfos(ctx, resp.Models, &ModelInfoOptions{UserId: userId})
+	list, err := toModelInfos(ctx, resp.Models, &ModelInfoOptions{UserId: userId, OrgId: orgId})
 	if err != nil {
 		return nil, err
 	}
@@ -278,14 +280,17 @@ func toModelInfo(ctx *gin.Context, modelInfo *model_service.ModelInfo, opts ...*
 		return nil, err
 	}
 
-	// 判断模型是否支持 编辑
+	// 判断模型是否支持编辑
 	option := DefaultModelInfoOptions()
 	if len(opts) > 0 && opts[0] != nil {
 		if opts[0].UserId != "" {
 			option.UserId = opts[0].UserId
 		}
+		if opts[0].OrgId != "" {
+			option.OrgId = opts[0].OrgId
+		}
 	}
-	allowEdit := modelInfo.UserId == option.UserId
+	allowEdit := checkAllowEdit(modelInfo, option)
 
 	// 不支持编辑，则不展示apiKey
 	if !allowEdit && modelConfig != nil {
@@ -320,6 +325,30 @@ func toModelInfo(ctx *gin.Context, modelInfo *model_service.ModelInfo, opts ...*
 		ImportSource: modelInfo.ImportSource,
 	}
 	return res, nil
+}
+
+// checkAllowEdit 检查用户是否有编辑权限
+// 编辑权限要求：创建者本人 + 组织匹配（公开模型要求在顶层组织）
+func checkAllowEdit(modelInfo *model_service.ModelInfo, option *ModelInfoOptions) bool {
+	// 首先检查是否是创建者
+	if modelInfo.UserId != option.UserId {
+		return false
+	}
+
+	// 根据模型范围类型检查组织
+	switch modelInfo.ScopeType {
+	case config.ModelScopeTypePrivate:
+		// 私有模型：创建者 + 组织匹配
+		return modelInfo.OrgId == option.OrgId
+	case config.ModelScopeTypePublic:
+		// 公开模型：创建者 + 必须在顶层组织操作
+		return option.OrgId == config.TopOrgID
+	case config.ModelScopeTypeOrg:
+		// 组织模型：创建者 + 组织匹配
+		return modelInfo.OrgId == option.OrgId
+	default:
+		return false
+	}
 }
 
 // getModelAllTags 获取模型所有标签
