@@ -6,6 +6,7 @@ import (
 	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
+	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	rag_service "github.com/UnicomAI/wanwu/api/proto/rag-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
@@ -199,6 +200,35 @@ func PublishApp(ctx *gin.Context, userId, orgId string, req request.PublishAppRe
 			return err
 		}
 	}
+	if req.AppType == constant.AppTypeSkill {
+		resp, err := getLatestPublishCustomSkill(ctx, req.AppId)
+		if err == nil && resp != nil && resp.GetVersion() != "" {
+			if err := util.IsVersionGreaterThan(req.Version, resp.GetVersion()); err != nil {
+				return grpc_util.ErrorStatusWithKey(err_code.Code_BFFGeneral, "bff_app_publish_version", resp.GetVersion(), req.Version, err.Error())
+			}
+		}
+		objectPath, markdown, err := buildCustomSkillPublishPackage(ctx, req.AppId)
+		if err != nil {
+			return err
+		}
+		// skill, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
+		// 	SkillId: req.AppId,
+		// })
+		if err != nil {
+			return err
+		}
+		_, err = mcp.CreatePublishCustomSkill(ctx.Request.Context(), &mcp_service.PublishCustomSkillReq{
+			SkillId:     req.AppId,
+			Version:     req.Version,
+			VersionDesc: req.Desc,
+			Identity:    &mcp_service.Identity{UserId: userId, OrgId: orgId},
+			ObjectPath:  objectPath,
+			Markdown:    markdown,
+		})
+		if err != nil {
+			return err
+		}
+	}
 	_, err := app.PublishApp(ctx.Request.Context(), &app_service.PublishAppReq{
 		AppId:       req.AppId,
 		AppType:     req.AppType,
@@ -250,7 +280,7 @@ func GetAppList(ctx *gin.Context, userId, orgId, appType string) (*response.List
 func getAppVersionBatch(ctx *gin.Context, userId, orgId string, publishAppMap map[string]*app_service.AppInfo) map[string]string {
 	versionMap := make(map[string]string)
 
-	var ragIds, assistantIds, workflowIds, chatflowIds []string
+	var ragIds, assistantIds, workflowIds, chatflowIds, skillIds []string
 	for appId, appInfo := range publishAppMap {
 		switch appInfo.AppType {
 		case constant.AppTypeRag:
@@ -261,6 +291,8 @@ func getAppVersionBatch(ctx *gin.Context, userId, orgId string, publishAppMap ma
 			workflowIds = append(workflowIds, appId)
 		case constant.AppTypeChatflow:
 			chatflowIds = append(chatflowIds, appId)
+		case constant.AppTypeSkill:
+			skillIds = append(skillIds, appId)
 		}
 
 	}
@@ -320,6 +352,16 @@ func getAppVersionBatch(ctx *gin.Context, userId, orgId string, publishAppMap ma
 		} else {
 			for _, item := range resp {
 				versionMap[item.WorkflowID] = item.Version
+			}
+		}
+	}
+	if len(skillIds) > 0 {
+		publishBySkill, err := getLatestPublishCustomSkillMap(ctx, skillIds)
+		if err != nil {
+			log.Errorf("getAppVersionBatch skill batch query failed, userId=%s orgId=%s skillCount=%d err=%v", userId, orgId, len(skillIds), err)
+		} else {
+			for skillId, item := range publishBySkill {
+				versionMap[skillId] = item.GetVersion()
 			}
 		}
 	}

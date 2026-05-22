@@ -1,13 +1,17 @@
 package v1
 
 import (
+	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/gin-gonic/gin"
 )
 
-// GetAcquiredSkillList 获取我添加的skill列表
+// GetAcquiredSkillList
 //
 //	@Tags			resource.skill
 //	@Summary		获取我添加的skill列表
@@ -16,14 +20,14 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	query		string	false	"skill名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AcquiredSkillDetail}}
-//	@Router			/agent/acquired/skill/list [get]
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AcquiredSkillListItem}}
+//	@Router			/agent/skill/acquired/list [get]
 func GetAcquiredSkillList(ctx *gin.Context) {
 	resp, err := service.GetAcquiredSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
 	gin_util.Response(ctx, resp, err)
 }
 
-// DeleteAcquiredSkill 删除我添加的skill
+// DeleteAcquiredSkill
 //
 //	@Tags			resource.skill
 //	@Summary		删除我添加的skill
@@ -33,7 +37,7 @@ func GetAcquiredSkillList(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			skillId	body		request.DeleteAcquiredSkillReq	true	"skill ID"
 //	@Success		200		{object}	response.Response
-//	@Router			/agent/acquired/skill [delete]
+//	@Router			/agent/skill/acquired [delete]
 func DeleteAcquiredSkill(ctx *gin.Context) {
 	var req request.DeleteAcquiredSkillReq
 	if !gin_util.Bind(ctx, &req) {
@@ -43,7 +47,7 @@ func DeleteAcquiredSkill(ctx *gin.Context) {
 	gin_util.Response(ctx, nil, err)
 }
 
-// GetAcquiredSkillDetail 获取我添加的skill详情
+// GetAcquiredSkillDetail
 //
 //	@Tags			resource.skill
 //	@Summary		获取我添加的skill详情
@@ -53,13 +57,56 @@ func DeleteAcquiredSkill(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			skillId	query		string	true	"skill ID"
 //	@Success		200		{object}	response.Response{data=response.AcquiredSkillDetail}
-//	@Router			/agent/acquired/skill/detail [get]
+//	@Router			/agent/skill/acquired/detail [get]
 func GetAcquiredSkillDetail(ctx *gin.Context) {
-	resp, err := service.GetAcquiredSkill(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))
+	skillId := ctx.Query("skillId")
+	resp, err := service.GetAcquiredSkill(ctx, getUserID(ctx), getOrgID(ctx), skillId)
 	gin_util.Response(ctx, resp, err)
 }
 
-// CreateAcquiredSkillConfig 新增我添加的skill配置
+// DownloadAcquiredSkill
+//
+//	@Tags			resource.skill
+//	@Summary		下载我添加的skill
+//	@Description	下载资源库中我添加的最新版本skill
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		application/octet-stream
+//	@Param			skillId	query		string	true	"skill ID"
+//	@Success		200		{object}	response.Response
+//	@Router			/agent/skill/acquired/download [get]
+func DownloadAcquiredSkill(ctx *gin.Context) {
+	skillId := ctx.Query("skillId")
+	fileName := fmt.Sprintf("%s.zip", skillId)
+	resp, err := service.DownloadAcquiredSkill(ctx, getUserID(ctx), getOrgID(ctx), skillId)
+	if err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+	ctx.Header("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(fileName))
+	ctx.Header("Content-Type", "application/octet-stream")
+	ctx.Header("Access-Control-Expose-Headers", "Content-Disposition")
+	ctx.Data(http.StatusOK, "application/octet-stream", resp)
+}
+
+// GetAcquiredSkillVersionList
+//
+//	@Tags			resource.skill
+//	@Summary		获取我添加的skill历史版本列表
+//	@Description	获取资源库中我添加的skill历史版本列表
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			skillId	query		string	true	"skill ID"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.AcquiredSkillVersionInfo}}
+//	@Router			/agent/skill/acquired/version/list [get]
+func GetAcquiredSkillVersionList(ctx *gin.Context) {
+	skillId := ctx.Query("skillId")
+	resp, err := service.GetAcquiredSkillVersionList(ctx, getUserID(ctx), getOrgID(ctx), skillId)
+	gin_util.Response(ctx, resp, err)
+}
+
+// CreateAcquiredSkillConfig
 //
 //	@Tags			resource.skill
 //	@Summary		新增我添加的skill配置
@@ -69,7 +116,7 @@ func GetAcquiredSkillDetail(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			data	body		request.SkillConfigReq	true	"skill配置"
 //	@Success		200		{object}	response.Response
-//	@Router			/agent/acquired/skill/config [post]
+//	@Router			/agent/skill/acquired/config [post]
 func CreateAcquiredSkillConfig(ctx *gin.Context) {
 	var req request.SkillConfigReq
 	if !gin_util.Bind(ctx, &req) {
@@ -79,7 +126,7 @@ func CreateAcquiredSkillConfig(ctx *gin.Context) {
 	gin_util.Response(ctx, nil, err)
 }
 
-// UpdateAcquiredSkillConfig 编辑我添加的skill配置
+// UpdateAcquiredSkillConfig
 //
 //	@Tags			resource.skill
 //	@Summary		编辑我添加的skill配置
@@ -89,7 +136,7 @@ func CreateAcquiredSkillConfig(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			data	body		request.UpdateSkillConfigReq	true	"skill配置"
 //	@Success		200		{object}	response.Response
-//	@Router			/agent/acquired/skill/config [put]
+//	@Router			/agent/skill/acquired/config [put]
 func UpdateAcquiredSkillConfig(ctx *gin.Context) {
 	var req request.UpdateSkillConfigReq
 	if !gin_util.Bind(ctx, &req) {
@@ -99,7 +146,7 @@ func UpdateAcquiredSkillConfig(ctx *gin.Context) {
 	gin_util.Response(ctx, nil, err)
 }
 
-// DeleteAcquiredSkillConfig 删除我添加的skill配置
+// DeleteAcquiredSkillConfig
 //
 //	@Tags			resource.skill
 //	@Summary		删除我添加的skill配置
@@ -109,7 +156,7 @@ func UpdateAcquiredSkillConfig(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			data	body		request.DeleteSkillConfigReq	true	"skill配置"
 //	@Success		200		{object}	response.Response
-//	@Router			/agent/acquired/skill/config [delete]
+//	@Router			/agent/skill/acquired/config [delete]
 func DeleteAcquiredSkillConfig(ctx *gin.Context) {
 	var req request.DeleteSkillConfigReq
 	if !gin_util.Bind(ctx, &req) {

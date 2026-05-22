@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
@@ -54,12 +55,11 @@ func CreateCustomSkill(ctx *gin.Context, userId, orgId string, avatarKey, author
 	}
 
 	createResp, err := mcp.CustomSkillCreate(ctx.Request.Context(), &mcp_service.CustomSkillCreateReq{
-		Name:       skillName,
-		Avatar:     avatarKey,
-		Author:     author,
-		Desc:       skillDesc,
-		SourceType: sourceType,
-		Identity:   &mcp_service.Identity{UserId: userId, OrgId: orgId},
+		Name:     skillName,
+		Avatar:   avatarKey,
+		Author:   author,
+		Desc:     skillDesc,
+		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	if err != nil {
 		return nil, err
@@ -69,23 +69,68 @@ func CreateCustomSkill(ctx *gin.Context, userId, orgId string, avatarKey, author
 }
 
 func GetCustomSkill(ctx *gin.Context, userId, orgId, skillId string) (*response.CustomSkillDetail, error) {
-	resp, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
+	publish, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
 		SkillId: skillId,
 	})
 	if err != nil {
 		return nil, err
 	}
+	skill := customSkillFromPublish(publish)
+	if skill == nil {
+		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "skill_not_found", "custom skill not found")
+	}
+	variables, err := getCustomSkillVariables(ctx, skill.SkillId)
+	if err != nil {
+		return nil, err
+	}
 
-	return &response.CustomSkillDetail{
-		SkillId:   resp.SkillId,
-		Name:      resp.Name,
-		Avatar:    cacheSkillAvatar(ctx, resp.Avatar),
-		Author:    resp.Author,
-		Desc:      resp.Desc,
-		Variables: toSkillVariables(resp.Variables),
-		ThreadID:  resp.WgaThreadId,
-		PreviewID: resp.PreviewThreadId,
-	}, nil
+	detail := &response.CustomSkillDetail{
+		SkillId:       skill.SkillId,
+		Name:          skill.Name,
+		Avatar:        cacheSkillAvatar(ctx, skill.Avatar),
+		Author:        skill.Author,
+		Desc:          skill.Desc,
+		Variables:     toSkillVariables(variables),
+		ThreadID:      skill.WgaThreadId,
+		PreviewID:     skill.PreviewThreadId,
+		SkillMarkdown: config.FixFrontMatterFormat(publish.GetMarkdown()),
+	}
+
+	// 填充发布信息
+	enrichCustomSkillDetailPublishInfo(ctx, detail)
+
+	return detail, nil
+}
+
+// enrichCustomSkillDetailPublishInfo 填充单个 skill 详情的发布信息
+func enrichCustomSkillDetailPublishInfo(ctx *gin.Context, detail *response.CustomSkillDetail) {
+	if detail == nil || detail.SkillId == "" {
+		return
+	}
+
+	// 查询 PublishType
+	appResp, err := app.GetAppListByIds(ctx.Request.Context(), &app_service.GetAppListByIdsReq{
+		AppIdsList: []string{detail.SkillId},
+		AppType:    constant.AppTypeSkill,
+	})
+	if err != nil {
+		log.Errorf("enrichCustomSkillDetailPublishInfo app list failed, skillId=%s err=%v", detail.SkillId, err)
+	}
+	if appResp != nil && len(appResp.Infos) > 0 {
+		detail.PublishType = appResp.Infos[0].PublishType
+	}
+
+	// 查询 Version
+	versionResp, err := getLatestPublishCustomSkill(ctx, detail.SkillId)
+	if err != nil {
+		log.Errorf("enrichCustomSkillDetailPublishInfo version failed, skillId=%s err=%v", detail.SkillId, err)
+	}
+	if versionResp != nil {
+		detail.Version = versionResp.GetVersion()
+	}
+
+	// 判断是否已发布
+	detail.IsPublished = detail.PublishType != "" || detail.Version != ""
 }
 
 func ensureLegacyCustomSkillWorkspace(ctx *gin.Context, skill *mcp_service.CustomSkill) error {
@@ -174,6 +219,74 @@ func importLegacyCustomSkillWorkspace(ctx *gin.Context, skillId, zipURL string) 
 	return nil
 }
 
+func rollbackCustomSkillWorkspace(ctx *gin.Context, skillId, version string) error {
+	objectPath, err := getCustomSkillVersionObjectPath(ctx, skillId, version)
+	if err != nil {
+		return err
+	}
+	data, err := downloadCustomSkillZip(ctx, objectPath)
+	if err != nil {
+		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("download skill version zip err: %v", err))
+	}
+	return overwriteCustomSkillWorkspaceFromZip(ctx, skillId, data)
+}
+
+func getCustomSkillVersionObjectPath(ctx *gin.Context, skillId, version string) (string, error) {
+	publish, err := mcp.GetPublishCustomSkillByVersion(ctx.Request.Context(), &mcp_service.GetPublishCustomSkillByVersionReq{
+		SkillId: skillId,
+		Version: version,
+	})
+	if err != nil {
+		return "", err
+	}
+	if publish.GetObjectPath() == "" {
+		return "", grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "skill_version_package_not_available", "skill version package objectPath is empty")
+	}
+	return publish.GetObjectPath(), nil
+}
+
+func overwriteCustomSkillWorkspaceFromZip(ctx *gin.Context, skillId string, data []byte) error {
+	store, err := NewGeneralAgentSkillWorkspaceStore(skillId)
+	if err != nil {
+		return err
+	}
+	dirs, err := PrepareWgaWorkspaceDirs(store, util.GenUUID(), true)
+	if err != nil {
+		return err
+	}
+	skillDir := filepath.Join(dirs.OutputDir, generalAgentSkillImportDirName)
+	stagingDir := filepath.Join(dirs.OutputDir, ".skill-rollback-"+util.GenUUID())
+	defer func() { _ = os.RemoveAll(stagingDir) }()
+
+	if _, err := importSkillDataIntoWorkspace(data, stagingDir); err != nil {
+		return err
+	}
+	return replaceCustomSkillDir(skillDir, stagingDir)
+}
+
+func replaceCustomSkillDir(skillDir, stagingDir string) error {
+	backupDir := filepath.Join(filepath.Dir(skillDir), ".skill-rollback-backup-"+util.GenUUID())
+	backupCreated := false
+	defer func() { _ = os.RemoveAll(backupDir) }()
+
+	if _, err := os.Stat(skillDir); err == nil {
+		if err := os.Rename(skillDir, backupDir); err != nil {
+			return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("backup current skill workspace err: %v", err))
+		}
+		backupCreated = true
+	} else if !os.IsNotExist(err) {
+		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("stat current skill workspace err: %v", err))
+	}
+
+	if err := os.Rename(stagingDir, skillDir); err != nil {
+		if backupCreated {
+			_ = os.Rename(backupDir, skillDir)
+		}
+		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("replace skill workspace err: %v", err))
+	}
+	return nil
+}
+
 func downloadCustomSkillZip(ctx *gin.Context, zipURL string) ([]byte, error) {
 	zipURL = strings.TrimSpace(zipURL)
 	if isHTTPURL(zipURL) {
@@ -204,13 +317,23 @@ func isHTTPURL(rawURL string) bool {
 }
 
 func DeleteCustomSkill(ctx *gin.Context, userId, orgId, skillId string) error {
-	skill, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
+	publish, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
 		SkillId: skillId,
 	})
 	if err != nil {
 		return err
 	}
+	skill := customSkillFromPublish(publish)
+	if skill == nil {
+		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, "skill_not_found", "custom skill not found")
+	}
 
+	if _, err := app.DeleteApp(ctx.Request.Context(), &app_service.DeleteAppReq{
+		AppId:   skillId,
+		AppType: constant.AppTypeSkill,
+	}); err != nil {
+		return err
+	}
 	if skill.WgaThreadId != "" {
 		if err := deleteGeneralAgentConversationForSkillDelete(ctx, userId, orgId, request.DeleteGeneralAgentConversationReq{ThreadID: skill.WgaThreadId}); err != nil {
 			return err
@@ -221,14 +344,13 @@ func DeleteCustomSkill(ctx *gin.Context, userId, orgId, skillId string) error {
 			return err
 		}
 	}
-	if err := cleanupCustomSkillWorkspace(skill.SkillId); err != nil {
+
+	if _, err := mcp.CustomSkillDelete(ctx.Request.Context(), &mcp_service.CustomSkillDeleteReq{
+		SkillId: skillId,
+	}); err != nil {
 		return err
 	}
-
-	_, err = mcp.CustomSkillDelete(ctx.Request.Context(), &mcp_service.CustomSkillDeleteReq{
-		SkillId: skillId,
-	})
-	return err
+	return cleanupCustomSkillWorkspace(skill.SkillId)
 }
 
 func GetCustomSkillList(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
@@ -240,10 +362,11 @@ func GetCustomSkillList(ctx *gin.Context, userId, orgId, name string) (*response
 		return nil, err
 	}
 
-	customSkillList := make([]*response.CustomSkillDetail, 0, len(resp.List))
+	customSkillList := make([]*response.CustomSkillListItem, 0, len(resp.List))
 	for _, skill := range resp.List {
-		customSkillList = append(customSkillList, toCustomSkill(ctx, skill))
+		customSkillList = append(customSkillList, toCustomSkillListItem(ctx, skill))
 	}
+	enrichCustomSkillPublishInfo(ctx, userId, orgId, customSkillList)
 
 	return &response.ListResult{
 		List:  customSkillList,
@@ -253,53 +376,35 @@ func GetCustomSkillList(ctx *gin.Context, userId, orgId, name string) (*response
 
 func GetCustomSkillListDetail(ctx *gin.Context, skillIdList []string) (*response.CustomSkillDetailListResp, error) {
 	skillIdList = uniqueSkillIDs(skillIdList)
-	resp, err := mcp.GetCustomSkillDetailByIdList(ctx.Request.Context(), &mcp_service.CustomSkillDetailByIdListReq{
-		SkillIds: skillIdList,
-	})
+	publishBySkill, err := getLatestPublishCustomSkillMap(ctx, skillIdList)
 	if err != nil {
 		return nil, err
 	}
 
-	skillMap := make(map[string]*mcp_service.CustomSkill)
-	if resp != nil {
-		for _, skill := range resp.SkillDetails {
-			if skill != nil {
-				skillMap[skill.SkillId] = skill
-			}
-		}
-	}
-
 	skillDetailList := make([]*response.CustomSkillListDetail, 0, len(skillIdList))
 	for _, skillId := range skillIdList {
-		skill := skillMap[skillId]
-		if skill == nil {
+		publish := publishBySkill[skillId]
+		if publish == nil || publish.GetSkill() == nil {
+			log.Warnf("callback custom skill list ignored unpublished skill, skillId: %s", skillId)
 			continue
 		}
-		objectPath, err := buildCustomSkillListDetailObjectPath(ctx, skill)
-		if err != nil {
-			return nil, err
+		if publish.GetObjectPath() == "" {
+			log.Warnf("callback custom skill list ignored skill with empty latest publish objectPath, skillId: %s", skillId)
+			continue
 		}
+		skill := publish.GetSkill()
 		skillDetailList = append(skillDetailList, &response.CustomSkillListDetail{
-			SkillId:    skill.SkillId,
-			Name:       skill.Name,
-			Avatar:     cacheSkillAvatar(ctx, skill.Avatar),
-			Author:     skill.Author,
-			Desc:       skill.Desc,
-			ObjectPath: objectPath,
+			SkillId:    skill.GetSkillId(),
+			Name:       skill.GetName(),
+			Avatar:     cacheSkillAvatar(ctx, skill.GetAvatar()),
+			Author:     skill.GetAuthor(),
+			Desc:       skill.GetDesc(),
+			ObjectPath: publish.GetObjectPath(),
 			// Variables:  toSkillVariables(skill.Variables),
 		})
 	}
 
 	return &response.CustomSkillDetailListResp{SkillList: skillDetailList}, nil
-}
-
-func buildCustomSkillListDetailObjectPath(ctx *gin.Context, skill *mcp_service.CustomSkill) (string, error) {
-	if exists, _, err := customSkillOverwriteWorkspaceExists(skill.SkillId); err != nil {
-		return "", err
-	} else if !exists {
-		return skill.ObjectPath, nil
-	}
-	return buildCustomSkillExpireObjectPath(ctx, skill.SkillId)
 }
 
 func uniqueSkillIDs(skillIdList []string) []string {
@@ -315,23 +420,47 @@ func uniqueSkillIDs(skillIdList []string) []string {
 	return result
 }
 
-func buildCustomSkillExpireObjectPath(ctx *gin.Context, skillId string) (string, error) {
-	skillDir, err := findFirstCustomSkillDir(skillId)
+func buildCustomSkillPermanentObjectPath(ctx *gin.Context, skillId string) (string, error) {
+	zipBytes, err := buildCustomSkillZipBytes(skillId)
 	if err != nil {
 		return "", err
 	}
-	if err := ensureNoSymlink(skillDir); err != nil {
-		return "", grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("custom skill %s contains symlink: %v", skillId, err))
-	}
-	zipBytes, err := util.ZipDir(skillDir + string(os.PathSeparator) + ".")
-	if err != nil {
-		return "", grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("zip custom skill %s err: %v", skillId, err))
-	}
-	fileName, _, err := minio.UploadFileCommon(ctx.Request.Context(), bytes.NewReader(zipBytes), customSkillFileType, int64(len(zipBytes)), false)
+	fileName, _, err := minio.UploadFileCommon(ctx.Request.Context(), bytes.NewReader(zipBytes), customSkillFileType, int64(len(zipBytes)), true)
 	if err != nil {
 		return "", grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("upload custom skill %s zip err: %v", skillId, err))
 	}
-	return path.Join(minio.BucketFileUpload, minio.DirFileExpire, fileName), nil
+	return path.Join(minio.BucketFileUpload, minio.DirFileNotExpire, fileName), nil
+}
+
+func buildCustomSkillZipBytes(skillId string) ([]byte, error) {
+	skillDir, err := findFirstCustomSkillDir(skillId)
+	if err != nil {
+		return nil, err
+	}
+	if err := ensureNoSymlink(skillDir); err != nil {
+		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("custom skill %s contains symlink: %v", skillId, err))
+	}
+	zipBytes, err := util.ZipDir(skillDir + string(os.PathSeparator) + ".")
+	if err != nil {
+		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("zip custom skill %s err: %v", skillId, err))
+	}
+	return zipBytes, nil
+}
+
+func buildCustomSkillPublishPackage(ctx *gin.Context, skillId string) (string, string, error) {
+	zipBytes, err := buildCustomSkillZipBytes(skillId)
+	if err != nil {
+		return "", "", err
+	}
+	markdown, _, err := util.ExtractSkillMarkdownFromZip(zipBytes)
+	if err != nil {
+		return "", "", grpc_util.ErrorStatus(errs.Code_BFFSkillParse, err.Error())
+	}
+	fileName, _, err := minio.UploadFileCommon(ctx.Request.Context(), bytes.NewReader(zipBytes), customSkillFileType, int64(len(zipBytes)), true)
+	if err != nil {
+		return "", "", grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("upload custom skill %s zip err: %v", skillId, err))
+	}
+	return path.Join(minio.BucketFileUpload, minio.DirFileNotExpire, fileName), markdown, nil
 }
 
 func findFirstCustomSkillDir(skillId string) (string, error) {
@@ -436,6 +565,78 @@ func toCustomSkill(ctx *gin.Context, skill *mcp_service.CustomSkill) *response.C
 	}
 }
 
+func toCustomSkillListItem(ctx *gin.Context, publish *mcp_service.PublishCustomSkill) *response.CustomSkillListItem {
+	skill := customSkillFromPublish(publish)
+	if skill == nil {
+		return nil
+	}
+
+	return &response.CustomSkillListItem{
+		SkillId:   skill.SkillId,
+		Name:      skill.Name,
+		Avatar:    cacheSkillAvatar(ctx, skill.Avatar),
+		Author:    skill.Author,
+		Desc:      skill.Desc,
+		ThreadID:  skill.WgaThreadId,
+		PreviewID: skill.PreviewThreadId,
+	}
+}
+
+func enrichCustomSkillPublishInfo(ctx *gin.Context, userId, orgId string, customSkillList []*response.CustomSkillListItem) {
+	if len(customSkillList) == 0 {
+		return
+	}
+	skillIds := make([]string, 0, len(customSkillList))
+	for _, skill := range customSkillList {
+		if skill != nil && skill.SkillId != "" {
+			skillIds = append(skillIds, skill.SkillId)
+		}
+	}
+	appResp, err := app.GetAppListByIds(ctx.Request.Context(), &app_service.GetAppListByIdsReq{
+		AppIdsList: skillIds,
+		AppType:    constant.AppTypeSkill,
+	})
+	if err != nil {
+		log.Errorf("enrichCustomSkillPublishInfo app list failed, userId=%s orgId=%s err=%v", userId, orgId, err)
+	}
+	publishTypeBySkill := make(map[string]string)
+	if appResp != nil {
+		for _, appInfo := range appResp.Infos {
+			publishTypeBySkill[appInfo.AppId] = appInfo.PublishType
+		}
+	}
+
+	versionBySkill, err := getLatestPublishCustomSkillMap(ctx, skillIds)
+	if err != nil {
+		log.Errorf("enrichCustomSkillPublishInfo version list failed, userId=%s orgId=%s err=%v", userId, orgId, err)
+	}
+
+	for _, skill := range customSkillList {
+		if skill == nil {
+			continue
+		}
+		publishType := publishTypeBySkill[skill.SkillId]
+		version := ""
+		if publish := versionBySkill[skill.SkillId]; publish != nil {
+			version = publish.GetVersion()
+		}
+		skill.IsPublished = publishType != "" || version != ""
+		if publishType == "" {
+			publishType = constant.AppPublishPrivate
+		}
+		skill.PublishType = publishType
+		skill.Version = version
+	}
+}
+
+func DownloadCustomSkillVersion(ctx *gin.Context, userId, orgId, skillId, version string) ([]byte, error) {
+	objectPath, err := getCustomSkillVersionObjectPath(ctx, skillId, version)
+	if err != nil {
+		return nil, err
+	}
+	return downloadCustomSkillZip(ctx, objectPath)
+}
+
 func CheckCustomSkill(ctx *gin.Context, userId, orgId, zipUrl string) (*response.CustomSkillCheckResp, error) {
 	// 下载文件
 	data, err := minio_util.DownloadFileDirect(ctx.Request.Context(), zipUrl)
@@ -479,7 +680,7 @@ func GetSkillSelect(ctx *gin.Context, userId, orgId, name, skillType string) (*r
 		}
 	}
 
-	// 自定义 skills
+	// 自定义 skills（只返回已发布的）
 	if skillType == "" || skillType == constant.SkillTypeCustom {
 		customResp, err := mcp.CustomSkillGetList(ctx.Request.Context(), &mcp_service.CustomSkillGetListReq{
 			Name:     name,
@@ -490,16 +691,47 @@ func GetSkillSelect(ctx *gin.Context, userId, orgId, name, skillType string) (*r
 		}
 
 		for _, skill := range customResp.List {
-			if !validCustomSkillForSelect(skill) {
+			// 只返回已发布的 custom skill（version 非空表示已发布）
+			if strings.TrimSpace(skill.GetVersion()) == "" {
+				continue
+			}
+			customSkill := customSkillFromPublish(skill)
+			if !validCustomSkillForSelect(customSkill) {
 				continue
 			}
 			allSkills = append(allSkills, &response.SkillInfo{
-				SkillId:   skill.SkillId,
-				SkillName: skill.Name,
+				SkillId:   customSkill.SkillId,
+				SkillName: customSkill.Name,
 				SkillType: constant.SkillTypeCustom,
-				Desc:      skill.Desc,
-				Author:    skill.Author,
-				Avatar:    cacheSkillAvatar(ctx, skill.Avatar),
+				Desc:      customSkill.Desc,
+				Author:    customSkill.Author,
+				Avatar:    cacheSkillAvatar(ctx, customSkill.Avatar),
+			})
+		}
+	}
+
+	// acquired skills
+	if skillType == "" || skillType == constant.SkillTypeAcquired {
+		acquiredResp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
+			Name:     name,
+			Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, acquired := range acquiredResp.List {
+			customSkill := customSkillFromPublish(acquired.GetSkill())
+			if !validCustomSkillForSelect(customSkill) {
+				continue
+			}
+			allSkills = append(allSkills, &response.SkillInfo{
+				SkillId:   acquired.AcquiredSkillId,
+				SkillName: customSkill.Name,
+				SkillType: constant.SkillTypeAcquired,
+				Desc:      customSkill.Desc,
+				Author:    customSkill.Author,
+				Avatar:    cacheSkillAvatar(ctx, customSkill.Avatar),
 			})
 		}
 	}
@@ -515,6 +747,67 @@ func validCustomSkillForSelect(skill *mcp_service.CustomSkill) bool {
 		return false
 	}
 	return strings.TrimSpace(skill.Name) != "" && strings.TrimSpace(skill.Desc) != ""
+}
+
+func customSkillFromPublish(publish *mcp_service.PublishCustomSkill) *mcp_service.CustomSkill {
+	if publish == nil {
+		return nil
+	}
+	return publish.GetSkill()
+}
+
+func getCustomSkillVariables(ctx *gin.Context, skillId string) ([]*mcp_service.Variable, error) {
+	varResp, err := mcp.GetCustomSkillVars(ctx.Request.Context(), &mcp_service.GetCustomSkillVarsReq{
+		SkillId: skillId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if varResp == nil {
+		return nil, nil
+	}
+	return varResp.GetVariables(), nil
+}
+
+func getAcquiredSkillVariables(ctx *gin.Context, acquiredSkillId string) ([]*mcp_service.Variable, error) {
+	varResp, err := mcp.GetAcquiredSkillVars(ctx.Request.Context(), &mcp_service.GetAcquiredSkillVarsReq{
+		AcquiredSkillId: acquiredSkillId,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if varResp == nil {
+		return nil, nil
+	}
+	return varResp.GetVariables(), nil
+}
+
+func getLatestPublishCustomSkill(ctx *gin.Context, skillId string) (*mcp_service.PublishCustomSkill, error) {
+	return mcp.GetPublishCustomSkillByLatest(ctx.Request.Context(), &mcp_service.GetPublishCustomSkillByLatestReq{
+		SkillId: skillId,
+	})
+}
+
+func getLatestPublishCustomSkillMap(ctx *gin.Context, skillIds []string) (map[string]*mcp_service.PublishCustomSkill, error) {
+	ret := make(map[string]*mcp_service.PublishCustomSkill, len(skillIds))
+	if len(skillIds) == 0 {
+		return ret, nil
+	}
+	resp, err := mcp.GetPublishCustomSkillByIDList(ctx.Request.Context(), &mcp_service.GetPublishCustomSkillByIDListReq{
+		SkillIdList: skillIds,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil {
+		return ret, nil
+	}
+	for _, publish := range resp.GetList() {
+		if skill := publish.GetSkill(); skill != nil && skill.GetSkillId() != "" {
+			ret[skill.GetSkillId()] = publish
+		}
+	}
+	return ret, nil
 }
 
 func deleteWgaConversationHistory(ctx *gin.Context, userId, orgId, threadId string) error {

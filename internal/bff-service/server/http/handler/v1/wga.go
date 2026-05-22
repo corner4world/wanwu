@@ -171,7 +171,7 @@ func GetGeneralAgentWorkflowSelect(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			name	query		string	false	"skill名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.CustomSkillDetail}}
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.CustomSkillListItem}}
 //	@Router			/general/agent/skill/select [get]
 func GetGeneralAgentSkillSelect(ctx *gin.Context) {
 	resp, err := service.GetCustomSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))

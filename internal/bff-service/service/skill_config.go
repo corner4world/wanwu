@@ -14,7 +14,6 @@ func CreateCustomSkillConfig(ctx *gin.Context, userId, orgId string, req request
 	_, err := mcp.CreateCustomSkillVar(ctx.Request.Context(), &mcp_service.CreateCustomSkillVarReq{
 		SkillId:  req.SkillId,
 		Variable: toMcpSkillVariable(req.Variable),
-		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	return err
 }
@@ -23,15 +22,13 @@ func UpdateCustomSkillConfig(ctx *gin.Context, userId, orgId string, req request
 	_, err := mcp.UpdateCustomSkillVar(ctx.Request.Context(), &mcp_service.UpdateCustomSkillVarReq{
 		Id:       req.ID,
 		Variable: toMcpSkillVariable(req.Variable),
-		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	return err
 }
 
 func DeleteCustomSkillConfig(ctx *gin.Context, userId, orgId string, req request.DeleteSkillConfigReq) error {
 	_, err := mcp.DeleteCustomSkillVar(ctx.Request.Context(), &mcp_service.DeleteCustomSkillVarReq{
-		Id:       req.ID,
-		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
+		Id: req.ID,
 	})
 	return err
 }
@@ -41,9 +38,8 @@ func CreateAcquiredSkillConfig(ctx *gin.Context, userId, orgId string, req reque
 		return err
 	}
 	_, err := mcp.CreateAcquiredSkillVar(ctx.Request.Context(), &mcp_service.CreateAcquiredSkillVarReq{
-		SkillId:  req.SkillId,
-		Variable: toMcpSkillVariable(req.Variable),
-		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
+		AcquiredSkillId: req.SkillId,
+		Variable:        toMcpSkillVariable(req.Variable),
 	})
 	return err
 }
@@ -52,15 +48,13 @@ func UpdateAcquiredSkillConfig(ctx *gin.Context, userId, orgId string, req reque
 	_, err := mcp.UpdateAcquiredSkillVar(ctx.Request.Context(), &mcp_service.UpdateAcquiredSkillVarReq{
 		Id:       req.ID,
 		Variable: toMcpSkillVariable(req.Variable),
-		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	return err
 }
 
 func DeleteAcquiredSkillConfig(ctx *gin.Context, userId, orgId string, req request.DeleteSkillConfigReq) error {
 	_, err := mcp.DeleteAcquiredSkillVar(ctx.Request.Context(), &mcp_service.DeleteAcquiredSkillVarReq{
-		Id:       req.ID,
-		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
+		Id: req.ID,
 	})
 	return err
 }

@@ -493,18 +493,20 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 	if agentID == generalAgentSkillChatPreviewAgentID {
 		resp, err := mcp.GetCustomSkillByPreviewID(ctx.Request.Context(), &mcp_service.GetCustomSkillByPreviewIDReq{
 			PreviewThreadId: threadID,
-			Identity: &mcp_service.Identity{
-				UserId: userID,
-				OrgId:  orgID,
-			},
 		})
 		if err != nil {
 			return nil, err
 		}
-		if customSkill := resp.GetSkill(); customSkill != nil && len(customSkill.Variables) > 0 {
-			skillMessage = &schema.Message{
-				Role:    schema.System,
-				Content: buildWgaSkillVariablesMessage(customSkill),
+		if customSkill := resp.GetSkill(); customSkill != nil {
+			variables, err := getCustomSkillVariables(ctx, customSkill.GetSkillId())
+			if err != nil {
+				return nil, err
+			}
+			if len(variables) > 0 {
+				skillMessage = &schema.Message{
+					Role:    schema.System,
+					Content: buildWgaSkillVariablesMessage(customSkill, variables),
+				}
 			}
 		}
 	}

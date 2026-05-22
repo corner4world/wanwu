@@ -43,6 +43,16 @@ type CustomSkillDetailListResult struct {
 	SkillList []*CustomSkillDetail `json:"skillList"`
 }
 
+type AcquiredSkillDetailListResp struct {
+	Code int64                          `json:"code"`
+	Msg  string                         `json:"msg"`
+	Data *AcquiredSkillDetailListResult `json:"data"`
+}
+
+type AcquiredSkillDetailListResult struct {
+	SkillList []*AcquiredSkillDetail `json:"skillList"`
+}
+
 type SkillDetail struct {
 	SkillId       string         `json:"skillId"`             // 模板ID
 	Name          string         `json:"name"`                // 模板名称
@@ -63,6 +73,15 @@ type CustomSkillDetail struct {
 	ObjectPath    string         `json:"objectPath,omitempty"`
 }
 
+type AcquiredSkillDetail struct {
+	SkillId    string         `json:"skillId"`
+	Name       string         `json:"name"`
+	Avatar     request.Avatar `json:"avatar"`
+	Author     string         `json:"author"`
+	Desc       string         `json:"desc"`
+	ObjectPath string         `json:"objectPath"`
+}
+
 func init() {
 	AddServiceContainer(&SkillProcess{})
 }
@@ -79,6 +98,7 @@ func (k *SkillProcess) Prepare(agent *AgentInfo, prepareParams *AgentPreparePara
 
 	var builtinSkillIds []string
 	var customSkillIds []string
+	var acquiredSkillIds []string
 	for _, skill := range skills {
 		if !skill.Enable {
 			continue
@@ -88,6 +108,8 @@ func (k *SkillProcess) Prepare(agent *AgentInfo, prepareParams *AgentPreparePara
 			builtinSkillIds = append(builtinSkillIds, skill.SkillId)
 		case constant.SkillTypeCustom:
 			customSkillIds = append(customSkillIds, skill.SkillId)
+		case constant.SkillTypeAcquired:
+			acquiredSkillIds = append(acquiredSkillIds, skill.SkillId)
 		}
 	}
 
@@ -100,6 +122,18 @@ func (k *SkillProcess) Prepare(agent *AgentInfo, prepareParams *AgentPreparePara
 		}
 		if customSkillResp.Data != nil {
 			prepareParams.CustomSkillList = customSkillResp.Data.SkillList
+		}
+	}
+
+	//获取acquired skill详情
+	if len(acquiredSkillIds) > 0 {
+		acquiredSkillResp, err := SearchAcquiredSkillList(context.Background(), &BuiltinSkillIdListParams{SkillIdList: acquiredSkillIds})
+		if err != nil {
+			log.Errorf("Assistant服务获取Acquired Skill详情失败，assistantId: %d, error: %v", agent.Assistant.ID, err)
+			return err
+		}
+		if acquiredSkillResp.Data != nil {
+			prepareParams.AcquiredSkillList = acquiredSkillResp.Data.SkillList
 		}
 	}
 
@@ -122,6 +156,18 @@ func (k *SkillProcess) Build(assistant *AgentInfo, prepareParams *AgentPreparePa
 			skillInfos = append(skillInfos, &assistant_service.SkillInfo{
 				SkillId:    detail.SkillId,
 				SkillType:  constant.SkillTypeCustom,
+				Name:       detail.Name,
+				Desc:       detail.Desc,
+				Avatar:     detail.Avatar.Key,
+				ObjectPath: detail.ObjectPath,
+			})
+		}
+	}
+	if len(prepareParams.AcquiredSkillList) > 0 {
+		for _, detail := range prepareParams.AcquiredSkillList {
+			skillInfos = append(skillInfos, &assistant_service.SkillInfo{
+				SkillId:    detail.SkillId,
+				SkillType:  constant.SkillTypeAcquired,
 				Name:       detail.Name,
 				Desc:       detail.Desc,
 				Avatar:     detail.Avatar.Key,
@@ -163,6 +209,37 @@ func SearchCustomSkillList(ctx context.Context, params *BuiltinSkillIdListParams
 		return nil, err
 	}
 	var detailResp CustomSkillDetailListResp
+	if err = json.Unmarshal(result, &detailResp); err != nil {
+		return nil, err
+	}
+	if detailResp.Code != 0 {
+		return nil, errors.New(detailResp.Msg)
+	}
+	return &detailResp, nil
+}
+
+// SearchAcquiredSkillList 批量搜索我添加skill详情
+func SearchAcquiredSkillList(ctx context.Context, params *BuiltinSkillIdListParams) (*AcquiredSkillDetailListResp, error) {
+	skillConfig := config.Cfg().Skill
+	if skillConfig.AcquiredSkillListUri == "" {
+		return nil, errors.New("acquired skill list uri is empty")
+	}
+	url, _ := net_url.JoinPath(skillConfig.Endpoint, skillConfig.AcquiredSkillListUri)
+	reqBody, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	result, err := http_client.Default().PostJson(ctx, &http_client.HttpRequestParams{
+		Url:        url,
+		Body:       reqBody,
+		Timeout:    time.Minute,
+		MonitorKey: "acquired_skill_detail_list",
+		LogLevel:   http_client.LogAll,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var detailResp AcquiredSkillDetailListResp
 	if err = json.Unmarshal(result, &detailResp); err != nil {
 		return nil, err
 	}

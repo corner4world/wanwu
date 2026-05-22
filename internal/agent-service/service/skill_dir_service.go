@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -58,15 +59,24 @@ func CreateSkillDir(runId string, skill *request.SkillToolInfo, uploadFile []str
 
 // 构建skill目录
 func buildSkillDir(skill *request.SkillToolInfo) (string, error) {
-	if skill.SkillType == request.SkillTypeBuiltIn {
+	switch skill.SkillType {
+	case request.SkillTypeBuiltIn:
 		return skill.ObjectPath, nil
+	case request.SkillTypeCustom, request.SkillTypeAcquired:
+		return buildPackageSkillDir(skill)
+	default:
+		return "", fmt.Errorf("unsupported skill type: %s", skill.SkillType)
 	}
-	return buildCustomSkillDir(skill)
 }
 
-// 构建自定义skill目录
-func buildCustomSkillDir(skill *request.SkillToolInfo) (string, error) {
-	var skillTempDir = baseSkillDir + "/" + skill.SkillId
+// 构建远程包类型skill目录
+func buildPackageSkillDir(skill *request.SkillToolInfo) (string, error) {
+	if skill.ObjectPath == "" {
+		return "", fmt.Errorf("skill package objectPath is empty, skillType: %s, skillId: %s", skill.SkillType, skill.SkillId)
+	}
+	// skillType 用于隔离 custom/acquired 两张表中可能相同的 skillId。
+	// objectPath 哈希用于避免 skill 重新发布后继续复用旧版本的解压目录。
+	skillTempDir := filepath.Join(baseSkillDir, string(skill.SkillType), skill.SkillId, util.MD5([]byte(skill.ObjectPath)))
 	exist, err := util.FileExist(skillTempDir)
 	if err != nil {
 		return "", err

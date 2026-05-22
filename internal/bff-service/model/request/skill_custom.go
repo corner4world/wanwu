@@ -33,3 +33,12 @@ type CheckCustomSkillReq struct {
 func (c *CheckCustomSkillReq) Check() error {
 	return nil
 }
+
+type CustomSkillVersionDownloadReq struct {
+	SkillId string `form:"skillId" json:"skillId" validate:"required"`
+	Version string `form:"version" json:"version" validate:"required"`
+}
+
+func (c *CustomSkillVersionDownloadReq) Check() error {
+	return nil
+}

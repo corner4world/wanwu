@@ -44,3 +44,22 @@ func SearchCustomSkillList(ctx *gin.Context) {
 	resp, err := service.GetCustomSkillListDetail(ctx, req.SkillIdList)
 	gin_util.Response(ctx, resp, err)
 }
+
+// SearchAcquiredSkillList
+//
+//	@Tags			skill
+//	@Summary		获取我添加skill详情列表
+//	@Description	获取我添加skill详情列表
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.SearchAcquiredSkillListReq	true	"请求参数"
+//	@Success		200		{object}	response.Response{data=response.CallbackAcquiredSkillDetailListResp}
+//	@Router			/callback/v1/skill/acquired/list [post]
+func SearchAcquiredSkillList(ctx *gin.Context) {
+	var req request.SearchAcquiredSkillListReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.GetCallbackAcquiredSkillListDetail(ctx, req.SkillIdList)
+	gin_util.Response(ctx, resp, err)
+}

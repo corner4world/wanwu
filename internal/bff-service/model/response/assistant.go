@@ -66,7 +66,7 @@ type AssistantToolInfo struct {
 
 type AssistantSkillInfo struct {
 	SkillId   string         `json:"skillId"`
-	SkillType string         `json:"skillType" validate:"required,oneof=builtin custom"`
+	SkillType string         `json:"skillType" validate:"required,oneof=builtin custom acquired"`
 	SkillName string         `json:"skillName"`
 	Author    string         `json:"author"`
 	Enable    bool           `json:"enable"`

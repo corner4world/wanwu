@@ -112,7 +112,11 @@ func buildWgaSkillOptions(ctx *gin.Context, userId, orgId, threadId, runId strin
 			skillTempDir = skillDir
 		}
 
-		opts = append(opts, wga_option.WithSkill(wga_option.Skill{Dir: skillTempDir, Variables: getWgaSkillVariablesByCustomSkill(s)}))
+		variables, err := getCustomSkillVariables(ctx, s.SkillId)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, wga_option.WithSkill(wga_option.Skill{Dir: skillTempDir, Variables: getWgaSkillVariables(variables)}))
 	}
 
 	return opts, nil
@@ -136,21 +140,24 @@ func getValidSkillIds(ctx *gin.Context, skillIds []string) (map[string]bool, err
 	return validIds, nil
 }
 
-func getWgaSkillVariablesByCustomSkill(customSkill *mcp_service.CustomSkill) []wga_option.SkillVariable {
-	var variables []wga_option.SkillVariable
-	for _, v := range customSkill.Variables {
-		variables = append(variables, wga_option.SkillVariable{
+func getWgaSkillVariables(variables []*mcp_service.Variable) []wga_option.SkillVariable {
+	var ret []wga_option.SkillVariable
+	for _, v := range variables {
+		if v == nil {
+			continue
+		}
+		ret = append(ret, wga_option.SkillVariable{
 			Name:          v.Name,
 			Description:   v.Desc,
 			VariableKey:   v.VariableKey,
 			VariableValue: v.VariableValue,
 		})
 	}
-	return variables
+	return ret
 }
 
 // buildWgaSkillVariablesMessage 构建技能变量的系统消息，用于 Skill Preview Agent 模式
-func buildWgaSkillVariablesMessage(customSkill *mcp_service.CustomSkill) string {
+func buildWgaSkillVariablesMessage(customSkill *mcp_service.CustomSkill, variables []*mcp_service.Variable) string {
 	var buf strings.Builder
 
 	// 技能基本信息
@@ -164,10 +171,13 @@ func buildWgaSkillVariablesMessage(customSkill *mcp_service.CustomSkill) string 
 	buf.WriteString("\n")
 
 	// 用户定义的变量
-	if len(customSkill.Variables) > 0 {
+	if len(variables) > 0 {
 		buf.WriteString("## 用户定义的变量\n\n")
 		buf.WriteString("以下变量已为当前技能配置：\n\n")
-		for _, v := range customSkill.Variables {
+		for _, v := range variables {
+			if v == nil {
+				continue
+			}
 			// 转义反引号
 			escapedKey := strings.ReplaceAll(v.VariableKey, "`", "\\`")
 			escapedValue := strings.ReplaceAll(v.VariableValue, "`", "\\`")

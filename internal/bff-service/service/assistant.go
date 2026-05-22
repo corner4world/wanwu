@@ -676,9 +676,16 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 	}
 
 	var customSkillIds []string
+	var acquiredSkillIds []string
 	for _, skill := range assistantSkillInfos {
-		if skill.SkillType == constant.SkillTypeCustom {
+		if skill.SkillId == "" {
+			continue
+		}
+		switch skill.SkillType {
+		case constant.SkillTypeCustom:
 			customSkillIds = append(customSkillIds, skill.SkillId)
+		case constant.SkillTypeAcquired:
+			acquiredSkillIds = append(acquiredSkillIds, skill.SkillId)
 		}
 	}
 
@@ -690,6 +697,16 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 	if err == nil && customSkillResp != nil {
 		for _, item := range customSkillResp.SkillDetails {
 			customSkillMap[item.SkillId] = item
+		}
+	}
+
+	acquiredSkillMap := make(map[string]*mcp_service.AcquiredSkill)
+	if len(acquiredSkillIds) > 0 {
+		var err error
+		acquiredSkillMap, err = getAcquiredSkillByIDMap(ctx, acquiredSkillIds)
+		if err != nil {
+			log.Warnf("获取我添加的 skill 详情失败，err: %v", err)
+			acquiredSkillMap = make(map[string]*mcp_service.AcquiredSkill)
 		}
 	}
 
@@ -706,6 +723,16 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 				skillName = item.Name
 				author = item.Author
 				avatar = cacheSkillAvatar(ctx, item.Avatar)
+			}
+		case constant.SkillTypeAcquired:
+			if item, ok := acquiredSkillMap[info.SkillId]; ok {
+				customSkill := customSkillFromPublish(item.GetSkill())
+				if customSkill != nil {
+					exists = true
+					skillName = customSkill.GetName()
+					author = customSkill.GetAuthor()
+					avatar = cacheSkillAvatar(ctx, customSkill.GetAvatar())
+				}
 			}
 		case constant.SkillTypeBuiltIn:
 			skillDetail, err := GetAgentSkillDetail(ctx, info.SkillId)

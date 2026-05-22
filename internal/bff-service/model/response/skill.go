@@ -10,6 +10,10 @@ type CustomSkillDetailListResp struct {
 	SkillList []*CustomSkillListDetail `json:"skillList"`
 }
 
+type CallbackAcquiredSkillDetailListResp struct {
+	SkillList []*CallbackAcquiredSkillDetail `json:"skillList"`
+}
+
 type SkillDetail struct {
 	SkillId       string           `json:"skillId"`             // 模板ID
 	Name          string           `json:"name"`                // 模板名称
@@ -29,6 +33,15 @@ type CustomSkillListDetail struct {
 	Desc       string           `json:"desc"`
 	ObjectPath string           `json:"objectPath,omitempty"`
 	Variables  []*SkillVariable `json:"variables,omitempty"`
+}
+
+type CallbackAcquiredSkillDetail struct {
+	SkillId    string         `json:"skillId"`
+	Name       string         `json:"name"`
+	Avatar     request.Avatar `json:"avatar"`
+	Author     string         `json:"author"`
+	Desc       string         `json:"desc"`
+	ObjectPath string         `json:"objectPath"`
 }
 
 type SkillInfo struct {

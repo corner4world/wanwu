@@ -21,9 +21,14 @@ type SquareBuiltinSkillInfo struct {
 	Desc    string         `json:"desc"`
 }
 
+// SquareBuiltinSkillDetail 探索广场-内置skill详情
+type SquareBuiltinSkillDetail struct {
+	SquareBuiltinSkillInfo
+	SkillMarkdown string `json:"skillMarkdown"`
+}
+
 // SquareSkillDetail 探索广场-skill详情
 type SquareSkillDetail struct {
 	SquareSkillInfo
 	SkillMarkdown string `json:"skillMarkdown"`
-	DownloadUrl   string `json:"downloadUrl"`
 }

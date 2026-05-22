@@ -72,7 +72,6 @@ func CreateGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string,
 		Author:          skillConversationAuthor,
 		WgaThreadId:     generalConversationResp.ThreadID,
 		PreviewThreadId: previewID,
-		SourceType:      customSkillSourceTypeConversation,
 		Identity:        &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	if err != nil {
@@ -94,11 +93,15 @@ func CreateGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string,
 }
 
 func RefreshGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string, req request.RefreshGeneralAgentSkillConversationReq) (*response.RefreshGeneralAgentSkillConversationResp, error) {
-	skill, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
+	publish, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
 		SkillId: req.SkillID,
 	})
 	if err != nil {
 		return nil, err
+	}
+	skill := customSkillFromPublish(publish)
+	if skill == nil {
+		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "skill_not_found", "custom skill not found")
 	}
 
 	log.Infof("[wga-skill-legacy] refresh skill %v start, objectPathExists=%v, currentThreadID=%s, currentPreviewID=%s", req.SkillID, strings.TrimSpace(skill.ObjectPath) != "", skill.WgaThreadId, skill.PreviewThreadId)
@@ -189,7 +192,6 @@ func getCustomSkillThreadBinding(ctx *gin.Context, userId, orgId, threadID strin
 
 	resp, err := mcp.GetCustomSkillByThreadID(ctx.Request.Context(), &mcp_service.GetCustomSkillByThreadIDReq{
 		WgaThreadId: threadID,
-		Identity:    &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	if err != nil {
 		return nil, err
@@ -304,7 +306,8 @@ func getGeneralAgentSkillConversationMap(ctx *gin.Context, userId, orgId string,
 	if resp == nil {
 		return skillByThreadID, nil
 	}
-	for _, skill := range resp.List {
+	for _, publish := range resp.List {
+		skill := customSkillFromPublish(publish)
 		if skill == nil || strings.TrimSpace(skill.WgaThreadId) == "" || strings.TrimSpace(skill.SkillId) == "" {
 			continue
 		}

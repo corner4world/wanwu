@@ -13,7 +13,6 @@ import (
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
-	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	model_service "github.com/UnicomAI/wanwu/api/proto/model-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
@@ -140,17 +139,8 @@ func GetSkillConversationDetail(ctx *gin.Context, userId, orgId string, req requ
 
 	// 是否已发送
 	if len(saveIds) > 0 {
-		mcpResp, err := mcp.CustomSkillGetBySaveIds(ctx.Request.Context(), &mcp_service.CustomSkillGetBySaveIdsReq{
-			SaveIds: saveIds,
-		})
-		if err != nil {
-			return nil, err
-		}
+		validSaveIds := make(map[string]bool, len(saveIds))
 		// 有效的 saveIds 集合
-		validSaveIds := make(map[string]bool, len(mcpResp.SaveIds))
-		for _, saveId := range mcpResp.SaveIds {
-			validSaveIds[saveId] = true
-		}
 		// 标记是否已发送
 		for _, detail := range detailList {
 			for i := range detail.ResponseFiles {

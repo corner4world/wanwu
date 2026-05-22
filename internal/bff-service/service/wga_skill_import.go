@@ -71,7 +71,6 @@ func ImportGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string,
 		Author:          author,
 		WgaThreadId:     threadResp.ThreadId,
 		PreviewThreadId: previewID,
-		SourceType:      customSkillSourceTypeImport,
 		Identity:        &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	if err != nil {

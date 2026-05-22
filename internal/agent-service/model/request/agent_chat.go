@@ -10,8 +10,9 @@ import (
 
 // skill type
 const (
-	SkillTypeBuiltIn SkillType = "builtin" // 内置技能
-	SkillTypeCustom  SkillType = "custom"  // 自定义技能
+	SkillTypeBuiltIn  SkillType = "builtin"  // 内置技能
+	SkillTypeCustom   SkillType = "custom"   // 自定义技能
+	SkillTypeAcquired SkillType = "acquired" // 添加的技能
 )
 
 type SkillType string

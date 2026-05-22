@@ -421,7 +421,6 @@ func newGeneralAgentWorkspaceStoreByThreadID(ctx *gin.Context, userId, orgId, th
 
 	resp, err := mcp.GetCustomSkillByThreadID(ctx.Request.Context(), &mcp_service.GetCustomSkillByThreadIDReq{
 		WgaThreadId: threadID,
-		Identity:    &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	if err != nil {
 		return nil, err

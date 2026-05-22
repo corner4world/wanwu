@@ -18,6 +18,7 @@ func registerAgentSkill(apiV1 *gin.RouterGroup) {
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/config", http.MethodPost, v1.CreateCustomSkillConfig, "新增自定义skill配置")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/config", http.MethodPut, v1.UpdateCustomSkillConfig, "编辑自定义skill配置")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/config", http.MethodDelete, v1.DeleteCustomSkillConfig, "删除自定义skill配置")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/version/download", http.MethodGet, v1.DownloadCustomSkillVersion, "下载自定义skill指定版本")
 
 	// 内置 skill
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/builtin/list", http.MethodGet, v1.GetBuiltinSkillList, "获取内置skill列表")
@@ -31,12 +32,14 @@ func registerAgentSkill(apiV1 *gin.RouterGroup) {
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/select", http.MethodGet, v1.GetSkillSelect, "智能体skills下拉列表")
 
 	// 资源库 - 我添加的 skill（acquired skill）
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/list", http.MethodGet, v1.GetAcquiredSkillList, "获取我添加的skill列表")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill", http.MethodDelete, v1.DeleteAcquiredSkill, "删除我添加的skill")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/detail", http.MethodGet, v1.GetAcquiredSkillDetail, "获取我添加的skill详情")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/config", http.MethodPost, v1.CreateAcquiredSkillConfig, "新增我添加的skill配置")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/config", http.MethodPut, v1.UpdateAcquiredSkillConfig, "编辑我添加的skill配置")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/acquired/skill/config", http.MethodDelete, v1.DeleteAcquiredSkillConfig, "删除我添加的skill配置")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/list", http.MethodGet, v1.GetAcquiredSkillList, "获取我添加的skill列表")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired", http.MethodDelete, v1.DeleteAcquiredSkill, "删除我添加的skill")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/detail", http.MethodGet, v1.GetAcquiredSkillDetail, "获取我添加的skill详情")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/download", http.MethodGet, v1.DownloadAcquiredSkill, "下载我添加的skill")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/version/list", http.MethodGet, v1.GetAcquiredSkillVersionList, "获取我添加的skill历史版本")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodPost, v1.CreateAcquiredSkillConfig, "新增我添加的skill配置")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodPut, v1.UpdateAcquiredSkillConfig, "编辑我添加的skill配置")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodDelete, v1.DeleteAcquiredSkillConfig, "删除我添加的skill配置")
 
 	// skills conversation
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation", http.MethodPost, v1.CreateSkillConversation, "创建Skill生成会话")

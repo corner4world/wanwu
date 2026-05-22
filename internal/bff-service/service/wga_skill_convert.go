@@ -52,7 +52,6 @@ func ConvertGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string
 		Author:          req.Author,
 		WgaThreadId:     threadResp.ThreadId,
 		PreviewThreadId: previewID,
-		SourceType:      customSkillSourceTypeConvert,
 		Identity:        &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})
 	if err != nil {

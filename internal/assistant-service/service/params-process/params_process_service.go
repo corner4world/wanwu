@@ -88,6 +88,7 @@ type AgentPrepareParams struct {
 	ConversionDetailList []*model.ConversationDetails
 	builtinSkillList     []*SkillDetail
 	CustomSkillList      []*CustomSkillDetail
+	AcquiredSkillList    []*AcquiredSkillDetail
 	Err                  error
 }
 
