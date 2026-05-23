@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"time"
 
 	"github.com/UnicomAI/wanwu/pkg/log"
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -16,7 +16,7 @@ func LoggingUnaryGRPC() grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 
 		startTime := time.Now()
-		requestId := uuid.New().String()
+		requestId := trace_util.GetTraceID(ctx)
 
 		// 记录请求
 		reqBuf := new(bytes.Buffer)
@@ -44,5 +44,28 @@ func LoggingUnaryGRPC() grpc.UnaryServerInterceptor {
 		log.Infof("[Request ID: %s] Request Method %s | Request Duration: %s, Response Body: %s", requestId, info.FullMethod, duration, respBuf.String())
 
 		return resp, err
+	}
+}
+
+func LoggingStreamGRPC() grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		startTime := time.Now()
+		// 从上下文中获取 SpanContext（如果存在的话）
+		ctx := ss.Context()
+		requestId := trace_util.GetTraceID(ctx)
+
+		log.Infof("[Stream Request ID: %s] Request Method %s | Start", requestId, info.FullMethod)
+
+		// 调用下一个handler
+		err := handler(srv, ss)
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		if err != nil {
+			log.Errorf("[Stream Request ID: %s] Request Method %s | Error: %v, Duration: %s", requestId, info.FullMethod, err, duration)
+			return err
+		}
+
+		log.Infof("[Stream Request ID: %s] Request Method %s | Duration: %s", requestId, info.FullMethod, duration)
+		return nil
 	}
 }

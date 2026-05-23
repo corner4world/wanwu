@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/runner"
 	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/sandbox"
 	wga_sandbox_option "github.com/UnicomAI/wanwu/pkg/wga-sandbox/wga-sandbox-option"
-	"github.com/go-resty/resty/v2"
 )
 
 // 确保 Runner 实现 runner.Runner 接口
@@ -268,7 +268,7 @@ func (r *Runner) connectSSE(ctx context.Context) (<-chan string, error) {
 		defer close(sseCh)
 		defer close(errCh)
 
-		resp, err := resty.New().
+		resp, err := trace_util.NewResty(ctx).
 			SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}).
 			SetTimeout(0).
 			R().

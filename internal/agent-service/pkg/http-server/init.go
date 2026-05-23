@@ -2,6 +2,8 @@ package http_server
 
 import (
 	"context"
+	_ "github.com/UnicomAI/wanwu/internal/agent-service/pkg/tracer"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,6 +14,10 @@ import (
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	serviceName = "wanwu_agent_service"
 )
 
 var (
@@ -40,7 +46,7 @@ func (c GinHttpServer) Load() error {
 
 	// router
 	gin.ForceConsoleColor()
-	ginHttpClient.GinEngine = gin.Default()
+	ginHttpClient.GinEngine = trace_util.NewTracerGin(serviceName)
 	//初始化路由
 	err := InitGinGroup(ginHttpClient.GinEngine, middleware.Record)
 	if err != nil {

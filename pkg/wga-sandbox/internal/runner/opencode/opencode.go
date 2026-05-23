@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	"os"
 	"path"
@@ -25,7 +26,6 @@ import (
 	wga_sandbox_option "github.com/UnicomAI/wanwu/pkg/wga-sandbox/wga-sandbox-option"
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/schema"
-	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
 )
 
@@ -372,7 +372,7 @@ func (r *Runner) createSession(ctx context.Context) error {
 	var result struct {
 		ID string `json:"id"`
 	}
-	resp, err := resty.New().R().
+	resp, err := trace_util.NewResty(ctx).R().
 		SetContext(ctx).
 		SetQueryParam("directory", r.sb.WorkDir()).
 		SetBody(map[string]any{}).
@@ -393,7 +393,7 @@ func (r *Runner) deleteSession(ctx context.Context) {
 	if r.sessionID == "" {
 		return
 	}
-	resp, err := resty.New().R().
+	resp, err := trace_util.NewResty(ctx).R().
 		SetContext(ctx).
 		SetQueryParam("directory", r.sb.WorkDir()).
 		Delete(fmt.Sprintf("%s/session/%s", r.opt.Sandbox.OpencodeEndpoint(), r.sessionID))
@@ -421,7 +421,7 @@ func (r *Runner) connectSSE(ctx context.Context) (<-chan string, error) {
 		defer close(sseCh)
 		defer close(errCh)
 
-		resp, err := resty.New().
+		resp, err := trace_util.NewResty(ctx).
 			SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}).
 			SetTimeout(0).
 			R().
@@ -531,7 +531,7 @@ func (r *Runner) sendPromptAsync(ctx context.Context) error {
 		reqBody["system"] = system
 	}
 
-	resp, err := resty.New().R().
+	resp, err := trace_util.NewResty(ctx).R().
 		SetContext(ctx).
 		SetQueryParam("directory", r.sb.WorkDir()).
 		SetBody(reqBody).

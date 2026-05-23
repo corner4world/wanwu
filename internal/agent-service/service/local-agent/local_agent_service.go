@@ -65,6 +65,7 @@ func CreateChatModel(ctx context.Context, agentChatInfo *service_model.AgentChat
 		})
 	}
 	return openai.NewChatModel(ctx, &openai.ChatModelConfig{
+		HTTPClient:          agent_http_client.GetClient().Client,
 		APIKey:              modelConfig.ApiKey,
 		BaseURL:             modelConfig.EndpointUrl,
 		Model:               modelInfo.Model,

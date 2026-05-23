@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,6 +19,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	serviceName = "wanwu_bff_service"
+)
+
 var (
 	httpServ *http.Server
 )
@@ -26,7 +31,9 @@ func Start(ctx context.Context) {
 
 	// router
 	gin.ForceConsoleColor()
-	r := gin.Default()
+
+	// engin
+	r := trace_util.NewTracerGin(serviceName)
 
 	// middleware
 	middleware.Init(r)

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 
 	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
@@ -23,12 +24,6 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-)
-
-const (
-	maxMsgSize            = 1024 * 1024 * 4 // 4M
-	headlessServiceSchema = "dns:///"
 )
 
 var (
@@ -111,17 +106,7 @@ func Init() error {
 // --- internal ---
 
 func newConn(host string) (*grpc.ClientConn, error) {
-	conn, err := grpc.NewClient(headlessServiceSchema+host,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`),
-		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(maxMsgSize),
-			grpc.MaxCallSendMsgSize(maxMsgSize)),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return conn, err
+	return trace_util.NewGrpcTracerConn(host, nil)
 }
 
 func toIDName(idName *iam_service.IDName) response.IDName {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	"net/url"
 	"strconv"
@@ -21,13 +22,12 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 )
 
 func CreateChatflow(ctx *gin.Context, orgID, name, desc, iconUri string) (*response.CozeWorkflowIDData, error) {
 	url, _ := url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.CreateUri)
 	ret := &response.CozeWorkflowIDResp{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -76,7 +76,7 @@ func CreateChatflowConversation(ctx *gin.Context, userId, orgId, workflowId, con
 		body["app_id"] = appInfo.ApplicationId
 	}
 
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -130,7 +130,7 @@ func CreateChatflowConversation(ctx *gin.Context, userId, orgId, workflowId, con
 func GetConversationMessageList(ctx *gin.Context, userId, orgId, appId, conversationId, limit string) (*response.OpenAPIChatflowGetConversationMessageListResponse, error) {
 	url, _ := url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.GetConversationMessageListUri)
 	ret := &response.CozeListMessageApiResponse{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -178,7 +178,7 @@ func ChatflowChat(ctx *gin.Context, userId, orgId, workflowId, conversationId, m
 		hasErr = true
 		return err
 	}
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetDoNotParseResponse(true).
@@ -284,7 +284,7 @@ func ChatflowApplicationList(ctx *gin.Context, userId, orgId, workflowId string)
 	q.Set("workflow_id", workflowId)
 	u.RawQuery = q.Encode()
 	getDraftRet := &response.CozeGetDraftIntelligenceListResponse{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -324,7 +324,7 @@ func ChatflowApplicationList(ctx *gin.Context, userId, orgId, workflowId string)
 	// 3.如果没有记录，则通过workflow接口创建一条，并且替换掉返回值中的ID
 	url, _ := url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.GetProjectConversationUri)
 	ret := &response.CozeCreateProjectConversationDefResponse{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -376,7 +376,7 @@ func ChatflowApplicationInfo(ctx *gin.Context, userId, orgId string, req request
 	url, _ := url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.GetDraftIntelligenceInfoUri)
 	// 构造请求
 	getDraftInfoResp := &response.CozeGetDraftIntelligenceInfoResponse{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -402,7 +402,7 @@ func ChatflowApplicationInfo(ctx *gin.Context, userId, orgId string, req request
 func DeleteChatflowConversation(ctx *gin.Context, orgId, projectId, uniqueId string) error {
 	url, _ := url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.DeleteConversationUri)
 	ret := &response.CozeDeleteProjectConversationDefResponse{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -500,7 +500,7 @@ func GetChatflowConversationList(ctx *gin.Context, userId, orgId, workflowId str
 func getChatflowProjectConversationList(ctx *gin.Context, orgId, projectId string) ([]*response.CozeProjectConversationItem, error) {
 	url, _ := url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.GetProjectConversationListUri)
 	ret := &response.CozeListProjectConversationResponse{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").

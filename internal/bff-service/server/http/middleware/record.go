@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	"strings"
 
@@ -15,9 +16,10 @@ import (
 func Record(ctx *gin.Context) {
 	var req string
 	var err error
+	traceID := trace_util.GetTraceID(ctx)
 	if ctx.ContentType() == gin.MIMEJSON {
 		if req, err = requestBody(ctx); err != nil {
-			log.Errorf("[%v] | %v | %v", ctx.Request.Method, requestFullPath(ctx), err)
+			log.Errorf("[%v] | %s | %v | %v", ctx.Request.Method, traceID, requestFullPath(ctx), err)
 			gin_util.ResponseErrCodeKey(ctx, err_code.Code_BFFInvalidArg, "", err.Error())
 			ctx.Abort()
 			return
@@ -26,7 +28,7 @@ func Record(ctx *gin.Context) {
 	ctx.Next()
 
 	resp := ctx.GetString(gin_util.RESULT)
-	log.Debugf("[%v] %v | %v | %v", ctx.Request.Method, requestFullPath(ctx), req, resp)
+	log.Debugf("[%v] | %s | %v | %v | %v", ctx.Request.Method, traceID, requestFullPath(ctx), req, resp)
 }
 
 func requestFullPath(ctx *gin.Context) string {

@@ -171,6 +171,8 @@ func createAgent(ctx *gin.Context, req *request.AgentChatParams, chatModel model
 	if req.MultiAgent {
 		exit = &adk.ExitTool{}
 	}
+	////配置全局追踪
+	//trace_util.EnioGlobalTracing()
 	agent, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
 		Model:       chatModel,
 		Name:        baseParams.Name,

@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"io"
 	"mime/multipart"
 	"net"
@@ -58,6 +60,17 @@ type HttpClient struct {
 	Client *http.Client
 }
 
+// tracingTransport 是一个自定义的 RoundTripper，在发送请求前注入 trace header
+type tracingTransport struct {
+	base http.RoundTripper
+}
+
+func (t *tracingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// 从 request context 中提取 trace header 并注入到请求中
+	otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
+	return t.base.RoundTrip(req)
+}
+
 func Create(client *http.Client) *HttpClient {
 	return &HttpClient{client}
 }
@@ -74,13 +87,15 @@ func Default() *HttpClient {
 // 为了http连接的复用在启动时做一次初始化，但是请注意如果需要做http请求的绝对隔离可以再创建其他的httpclient
 func newHttpClient() *http.Client {
 	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			DialContext: (&net.Dialer{
-				Timeout:   connectTimeout, // 连接超时时间
-				KeepAlive: timeout,        // 连接保持活跃的时间
-			}).DialContext,
-			ResponseHeaderTimeout: timeout,
+		Transport: &tracingTransport{
+			base: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				DialContext: (&net.Dialer{
+					Timeout:   connectTimeout, // 连接超时时间
+					KeepAlive: timeout,        // 连接保持活跃的时间
+				}).DialContext,
+				ResponseHeaderTimeout: timeout,
+			},
 		},
 		Timeout: timeout,
 	}

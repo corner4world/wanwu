@@ -3,10 +3,10 @@ package wga_sandbox
 import (
 	"context"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net/url"
 
 	wga_sandbox_option "github.com/UnicomAI/wanwu/pkg/wga-sandbox/wga-sandbox-option"
-	"github.com/go-resty/resty/v2"
 )
 
 // workspaceBase 与 pkg/wga-sandbox/internal/sandbox/sandbox.go 中的定义一致
@@ -20,7 +20,7 @@ func ReplyQuestion(ctx context.Context, cfg wga_sandbox_option.SandboxConfig, ru
 	// 与 pkg/wga-sandbox/internal/sandbox/reuse.go 中 Prepare() 生成的 workDir 一致
 	directory := fmt.Sprintf("%s/%s/workspace", workspaceBase, runID)
 	urlStr := fmt.Sprintf("%s/question/%s/reply?directory=%s", cfg.OpencodeEndpoint(), questionID, url.QueryEscape(directory))
-	_, err := resty.New().R().
+	_, err := trace_util.NewResty(ctx).R().
 		SetContext(ctx).
 		SetBody(map[string]interface{}{"answers": answers}).
 		Post(urlStr)
@@ -35,7 +35,7 @@ func RejectQuestion(ctx context.Context, cfg wga_sandbox_option.SandboxConfig, r
 	// 与 pkg/wga-sandbox/internal/sandbox/reuse.go 中 Prepare() 生成的 workDir 一致
 	directory := fmt.Sprintf("%s/%s/workspace", workspaceBase, runID)
 	urlStr := fmt.Sprintf("%s/question/%s/reject?directory=%s", cfg.OpencodeEndpoint(), questionID, url.QueryEscape(directory))
-	_, err := resty.New().R().
+	_, err := trace_util.NewResty(ctx).R().
 		SetContext(ctx).
 		SetBody(map[string]interface{}{}).
 		Post(urlStr)

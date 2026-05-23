@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net"
 	"net/http"
 	net_url "net/url"
@@ -223,7 +224,7 @@ func getLocalWorkflowTemplateList(ctx context.Context, category, name string) (*
 func getRemoteWorkflowTemplateDetail(ctx *gin.Context, templateId string) (*response.WorkflowTemplateDetail, error) {
 	var res response.Response
 	var ret response.WorkflowTemplateDetail
-	resp, err := resty.New().R().
+	resp, err := trace_util.NewResty(ctx).R().
 		SetContext(ctx.Request.Context()).
 		SetQueryParams(map[string]string{
 			"templateId": templateId,
@@ -260,7 +261,7 @@ func getLocalWorkflowTemplateDetail(ctx context.Context, templateId string) (*re
 // --- 下载工作流模板 ---
 
 func getRemoteDownloadWorkflowTemplate(ctx *gin.Context, templateId string) ([]byte, error) {
-	resp, err := resty.New().R().
+	resp, err := trace_util.NewResty(ctx).R().
 		SetContext(ctx.Request.Context()).
 		SetQueryParams(map[string]string{
 			"templateId": templateId,
@@ -331,7 +332,7 @@ func createWorkflowByTemplate(ctx *gin.Context, orgId string, req request.Create
 	if err := json.Unmarshal(schema, &templateSchema); err != nil {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_import_file", err.Error())
 	}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
