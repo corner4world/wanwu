@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net/url"
 	"strings"
 
@@ -14,7 +15,6 @@ import (
 	wga_option "github.com/UnicomAI/wanwu/pkg/wga/wga-option"
 	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 )
 
 // --- internal wga ontology ---
@@ -59,7 +59,7 @@ func getOntologyKnowledgeSelect(ctx *gin.Context, userId, orgId, name string) ([
 
 	// 发送HTTP请求
 	ret := &ontologyKnowledgeNetworkListResp{}
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").

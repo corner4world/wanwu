@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	"strings"
 	"text/template"
@@ -196,7 +197,7 @@ func agentStreamProxy(ctx context.Context, url string, req map[string]interface{
 		var resp *resty.Response
 		var err error
 
-		request := resty.New().
+		request := trace_util.NewResty(ctx).
 			SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}).
 			R().
 			SetContext(ctx).

@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net/url"
 	"os"
 	"os/signal"
@@ -62,6 +63,11 @@ func main() {
 	// init log
 	if err := log.InitLog(config.Cfg().Log.Std, config.Cfg().Log.Level, config.Cfg().Log.Logs...); err != nil {
 		log.Fatalf("init log err: %v", err)
+	}
+
+	// init tracer
+	if err := trace_util.InitTracer(); err != nil {
+		log.Fatalf("init tracer err: %v", err)
 	}
 
 	// init time local

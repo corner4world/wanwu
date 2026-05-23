@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	net_url "net/url"
 	"sort"
@@ -24,7 +25,6 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 )
 
 func ListLlmModelsByWorkflow(ctx *gin.Context, userId, orgId, modelT string) (*response.ListResult, error) {
@@ -56,7 +56,7 @@ func ListWorkflow(ctx *gin.Context, orgID, name, appType string) (*response.Coze
 	}
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.ListUri)
 	ret := &response.CozeWorkflowListResp{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -85,7 +85,7 @@ func ListWorkflow(ctx *gin.Context, orgID, name, appType string) (*response.Coze
 func ListWorkflowByIDs(ctx *gin.Context, name string, workflowIDs []string) (*response.CozeWorkflowListData, error) {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.ListUri)
 	ret := &response.CozeWorkflowListResp{}
-	request := resty.New().
+	request := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -114,7 +114,7 @@ func ListWorkflowByIDs(ctx *gin.Context, name string, workflowIDs []string) (*re
 func CreateWorkflow(ctx *gin.Context, orgID, name, desc, iconUri string) (*response.CozeWorkflowIDData, error) {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.CreateUri)
 	ret := &response.CozeWorkflowIDResp{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -140,7 +140,7 @@ func CreateWorkflow(ctx *gin.Context, orgID, name, desc, iconUri string) (*respo
 func CopyWorkflow(ctx *gin.Context, orgID, workflowID string, needPublished bool) (*response.CozeWorkflowIDData, error) {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.CopyUri)
 	ret := &response.CozeWorkflowIDResp{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -165,7 +165,7 @@ func CopyWorkflow(ctx *gin.Context, orgID, workflowID string, needPublished bool
 func DeleteWorkflow(ctx *gin.Context, orgID, workflowID string) error {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.DeleteUri)
 	ret := &response.CozeWorkflowDeleteResp{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -189,7 +189,7 @@ func DeleteWorkflow(ctx *gin.Context, orgID, workflowID string) error {
 func ExportWorkFlow(ctx *gin.Context, orgID, workflowID, version string, needPublished bool) ([]byte, error) {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.ExportUri)
 	ret := &response.CozeWorkflowExportResp{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -252,7 +252,7 @@ func ImportWorkflow(ctx *gin.Context, orgID, appType string) (*response.CozeWork
 	}
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.ImportUri)
 	ret := &response.CozeWorkflowIDResp{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -286,7 +286,7 @@ func WorkflowConvert(ctx *gin.Context, orgId, workflowId, flowMode string) error
 		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_convert", "invalid flow mode")
 	}
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.ConvertUri)
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -330,7 +330,7 @@ func PublishedWorkflowRun(ctx *gin.Context, userId, orgId string, req request.Wo
 
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.WorkflowRunLatestVersionUri)
 	testRunRet := &response.CozeWorkflowTestRunResponse{}
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -381,7 +381,7 @@ func PublishedWorkflowRun(ctx *gin.Context, userId, orgId string, req request.Wo
 
 		case <-ticker.C:
 			// 执行一次状态查询
-			statusResp, err := resty.New().
+			statusResp, err := trace_util.NewResty(ctx).
 				R().
 				SetContext(pollCtx). // 使用带超时的 context
 				SetHeader("Content-Type", "application/json").
@@ -458,7 +458,7 @@ func PublishWorkflow(ctx *gin.Context, orgID, workflowID, version, versionDesc s
 	}
 	url := config.Cfg().Workflow.Endpoint + config.Cfg().Workflow.PublishUri
 	ret := &response.CozeCommonResp{}
-	resp, err := resty.New().R().
+	resp, err := trace_util.NewResty(ctx).R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "application/json").
@@ -481,7 +481,7 @@ func PublishWorkflow(ctx *gin.Context, orgID, workflowID, version, versionDesc s
 func GetWorkflowVersionList(ctx *gin.Context, workflowID string) (*response.CozeWorkflowVersionListData, error) {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.VersionListUri)
 	ret := &response.CozeWorkflowVersionListResp{}
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -510,7 +510,7 @@ func GetWorkflowVersionList(ctx *gin.Context, workflowID string) (*response.Coze
 func MultiGetWorkflowVersionList(ctx *gin.Context, workflowIDs []string) ([]*response.CozeWorkflowVersionInfo, error) {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.MultiVersionListUri)
 	ret := &response.CozeMGetWorkflowLatestVersionResponse{}
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -538,7 +538,7 @@ func MultiGetWorkflowVersionList(ctx *gin.Context, workflowIDs []string) ([]*res
 func GetWorkflowVersion(ctx *gin.Context, appID string) (string, string, error) {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.VersionListUri)
 	ret := &response.CozeWorkflowVersionListResp{}
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -574,7 +574,7 @@ func GetWorkflowVersion(ctx *gin.Context, appID string) (string, string, error) 
 func UpdateWorkflowVersionDesc(ctx *gin.Context, workflowID, description string) error {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.UpdateVersionDescUri)
 	ret := &response.CozeCommonResp{}
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -604,7 +604,7 @@ func UpdateWorkflowVersionDesc(ctx *gin.Context, workflowID, description string)
 func RollbackWorkflowVersion(ctx *gin.Context, workflowID, version string) error {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.RollbackUri)
 	ret := &response.CozeCommonResp{}
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").
@@ -633,7 +633,7 @@ func RollbackWorkflowVersion(ctx *gin.Context, workflowID, version string) error
 
 func GetWorkflowSchemas(ctx *gin.Context, workflowIDs []string) ([]*openapi3.T, error) {
 	url, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.ListSchemaUri)
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx.Request.Context()).
 		SetHeader("Content-Type", "application/json").

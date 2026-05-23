@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	net_url "net/url"
 	"path/filepath"
@@ -12,7 +13,6 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/constant"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 )
 
 func OpenAPIWorkflowRun(ctx *gin.Context, userId, orgId, workflowID string, input []byte) (result []byte, err error) {
@@ -26,7 +26,7 @@ func OpenAPIWorkflowRun(ctx *gin.Context, userId, orgId, workflowID string, inpu
 	}()
 
 	testRunUrl, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, fmt.Sprintf(config.Cfg().Workflow.WorkflowRunByOpenapiUri, workflowID))
-	resp, err := resty.New().
+	resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -67,7 +67,7 @@ func OpenAPIWorkflowFileUpload(ctx *gin.Context) (string, error) {
 	// 生成文件在tos上的storeUri
 	uploadActionUri, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.UploadActionUri)
 	uploadActionRet := &cozeApplyUploadActionResponse{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
@@ -90,7 +90,7 @@ func OpenAPIWorkflowFileUpload(ctx *gin.Context) (string, error) {
 	}
 	// 使用storeUri+fileBytes上传文件
 	uploadCommonUrl, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.UploadCommonUri, storeUri)
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/octet-stream").
@@ -107,7 +107,7 @@ func OpenAPIWorkflowFileUpload(ctx *gin.Context) (string, error) {
 	// 生成签名，并返回可访问文件的url
 	signImgUrl, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.SignImgUri)
 	ret := &cozeWorkflowSignImgUrlResp{}
-	if resp, err := resty.New().
+	if resp, err := trace_util.NewResty(ctx).
 		R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").

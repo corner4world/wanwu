@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	"mime/multipart"
 	"net/url"
@@ -14,7 +15,6 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
 	"github.com/UnicomAI/wanwu/pkg/util"
-	"github.com/go-resty/resty/v2"
 )
 
 type SyncAsr struct {
@@ -152,7 +152,7 @@ func syncAsrFormData(ctx context.Context, provider, apiKey, url string, req map[
 		return nil, fmt.Errorf("marshal config failed: %v", err)
 	}
 
-	request := resty.New().
+	request := trace_util.NewResty(ctx).
 		SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}). // 关闭证书校验
 		SetTimeout(0).                                             // 关闭请求超时
 		R().
