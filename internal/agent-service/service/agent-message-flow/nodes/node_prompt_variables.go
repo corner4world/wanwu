@@ -95,7 +95,7 @@ func buildUserInput(reqContext *request.AgentChatContext) ([]*schema.Message, er
 	var input = req.Input
 
 	var messages []*schema.Message
-	if agentChatInfo.VisionSupport && agentChatInfo.UploadUrl { // 视觉模型，传了url
+	if agentChatInfo.VisionSupport && agentChatInfo.ImageUpload { // 视觉模型，传了图片文件
 		var parts []schema.MessageInputPart
 		for _, minioFilePath := range req.UploadFile {
 			message, err := buildFileMessage(minioFilePath)

@@ -50,7 +50,7 @@ func (t *chatDocTool) InvokableRun(ctx context.Context, argumentsInJSON string, 
 func GetChatDocTool(chatInfo *service_model.AgentChatInfo) tool.BaseTool {
 	//如果用户使用的不是多模态模型，但是又上传了文件，则通过工具对文件进行解析，
 	//但是目前只支持一个文件，文件url具体处理逻在node_prompt_variables.go
-	if !chatInfo.VisionSupport && chatInfo.UploadUrl && chatInfo.FunctionCalling {
+	if chatInfo.FunctionCalling && chatInfo.UploadUrl && !chatInfo.ImageUpload {
 		toolInfo := buildChatDocToolInfo()
 		if toolInfo != nil {
 			return &chatDocTool{

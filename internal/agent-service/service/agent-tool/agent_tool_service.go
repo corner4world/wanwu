@@ -37,9 +37,7 @@ func BuildAgentToolsConfig(ctx *gin.Context, req *request.AgentChatParams, chatI
 	//chatDoc 内置工具
 	docTool := GetChatDocTool(chatInfo)
 	if docTool != nil {
-		if len(pluginToolList) > 0 {
-			toolList = append(toolList, docTool)
-		}
+		toolList = append(toolList, docTool)
 	}
 	//skill 工具
 	skillToolList, skillToolIDNameMap, _ := GetToolsFromSkills(ctx, req.ToolParams.SkillToolList, req.Input, req.AgentBaseParams.Name, req.UploadFile, chatInfo, changeToolName)

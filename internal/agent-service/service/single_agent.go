@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"github.com/UnicomAI/wanwu/internal/agent-service/service/agent-tool"
-
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/grpc-consumer/consumer/assistant"
+	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	agent_message_processor "github.com/UnicomAI/wanwu/internal/agent-service/service/agent-message-processor"
 	agent_preprocessor "github.com/UnicomAI/wanwu/internal/agent-service/service/agent-preprocessor"
+	"github.com/UnicomAI/wanwu/internal/agent-service/service/agent-tool"
 	local_agent "github.com/UnicomAI/wanwu/internal/agent-service/service/local-agent"
 	service_model "github.com/UnicomAI/wanwu/internal/agent-service/service/service-model"
 	"github.com/UnicomAI/wanwu/pkg/log"
@@ -143,8 +143,18 @@ func buildAgentChatInfo(ctx *gin.Context, req *request.AgentChatParams) (*servic
 		FunctionCalling: functionCall,
 		VisionSupport:   vision,
 		UploadUrl:       len(req.UploadFile) > 0,
+		ImageUpload:     buildImageUpload(req.UploadFile),
 		ModelInfo:       modelInfo,
 	}, nil
+}
+
+// buildImageUpload 构建图片上传
+func buildImageUpload(uploadFile []string) bool {
+	if len(uploadFile) == 0 {
+		return false
+	}
+	fileName := util.ExtractFileNameFromURL(uploadFile[0])
+	return util.ImageFile(fileName)
 }
 
 // searchSingleAgent 查询智能体详情

@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 var urlKeys = []string{
@@ -22,6 +23,11 @@ var imageExt = map[string]bool{
 	".webp": true,
 	".svg":  true,
 	".tiff": true,
+}
+
+// ImageFile 判断文件是否为图片
+func ImageFile(fileName string) bool {
+	return imageExt[strings.ToLower(filepath.Ext(fileName))]
 }
 
 // ExtractFileNameFromURL 从URL中提取文件名
