@@ -15,32 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetSquareSkillList(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
-	skillsCfgList := getSquareSkillConfigs(name)
-	sharedMap := make(map[string]bool)
-	if len(skillsCfgList) > 0 {
-		acquiredResp, err := mcp.AcquiredSkillGetList(ctx.Request.Context(), &mcp_service.AcquiredSkillGetListReq{
-			Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if acquiredResp != nil {
-			for _, skill := range acquiredResp.List {
-				if customSkill := skill.GetSkill().GetSkill(); customSkill != nil {
-					sharedMap[customSkill.GetSkillId()] = true
-				}
-			}
-		}
-	}
-
-	list := buildSquareSkillInfoList(skillsCfgList, sharedMap)
-	return &response.ListResult{
-		List:  list,
-		Total: int64(len(list)),
-	}, nil
-}
-
 func GetSquareBuiltinSkillList(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
 	skillsCfgList := getSquareSkillConfigs(name)
 	list := buildBuiltinSkillInfoList(skillsCfgList)
@@ -57,7 +31,7 @@ func GetSquareBuiltinSkillDetail(ctx *gin.Context, skillId string) (*response.Bu
 	}
 	return &response.BuiltinSkillDetail{
 		BuiltinSkillInfo: buildBuiltinSkillInfo(skillsCfg),
-		SkillMarkdown:          string(skillsCfg.SkillMarkdown),
+		SkillMarkdown:    string(skillsCfg.SkillMarkdown),
 	}, nil
 }
 
@@ -133,27 +107,6 @@ func getSquareSkillConfigs(name string) []*config.SkillsConfig {
 		skillsCfgList = append(skillsCfgList, skillsCfg)
 	}
 	return skillsCfgList
-}
-
-func buildSquareSkillInfoList(skillsCfgList []*config.SkillsConfig, sharedMap map[string]bool) []*response.SquareSkillInfo {
-	list := make([]*response.SquareSkillInfo, 0, len(skillsCfgList))
-	for _, skillsCfg := range skillsCfgList {
-		iconUrl := config.Cfg().DefaultIcon.SkillIcon
-		if skillsCfg.Avatar != "" {
-			iconUrl = skillsCfg.Avatar
-		}
-		list = append(list, &response.SquareSkillInfo{
-		SkillBasicInfo: response.SkillBasicInfo{
-			SkillId: skillsCfg.SkillId,
-			Name:    skillsCfg.Name,
-			Avatar:  request.Avatar{Path: iconUrl},
-			Author:  skillsCfg.Author,
-			Desc:    skillsCfg.Desc,
-		},
-		IsShared: sharedMap[skillsCfg.SkillId],
-		})
-	}
-	return list
 }
 
 func buildBuiltinSkillInfoList(skillsCfgList []*config.SkillsConfig) []*response.BuiltinSkillInfo {

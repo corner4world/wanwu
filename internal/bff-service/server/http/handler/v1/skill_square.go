@@ -11,22 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetSquareSkillList
-//
-//	@Tags			exploration.skill
-//	@Summary		获取广场skill列表
-//	@Description	获取探索广场中的skill列表
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Param			name	query		string	false	"skill名称"
-//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SquareSkillInfo}}
-//	@Router			/square/skill/list [get]
-func GetSquareSkillList(ctx *gin.Context) {
-	resp, err := service.GetSquareSkillList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
-	gin_util.Response(ctx, resp, err)
-}
-
 // GetSquareBuiltinSkillList
 //
 //	@Tags			exploration.skill

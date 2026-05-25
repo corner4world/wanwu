@@ -42,7 +42,6 @@ func registerExploration(apiV1 *gin.RouterGroup) {
 	mid.Sub("exploration.template").Reg(apiV1, "/prompt/template/detail", http.MethodGet, v1.GetPromptTemplateDetail, "获取提示词模板详情")
 
 	// skill 广场
-	mid.Sub("exploration.skill").Reg(apiV1, "/square/skill/list", http.MethodGet, v1.GetSquareSkillList, "获取广场skill列表")
 	mid.Sub("exploration.skill").Reg(apiV1, "/square/skill/builtin/list", http.MethodGet, v1.GetSquareBuiltinSkillList, "获取广场内置skill列表")
 	mid.Sub("exploration.skill").Reg(apiV1, "/square/skill/builtin/detail", http.MethodGet, v1.GetSquareBuiltinSkillDetail, "获取广场内置skill详情")
 
