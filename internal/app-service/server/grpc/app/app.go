@@ -127,5 +127,7 @@ func toProtoApp(record *model.App) *app_service.AppInfo {
 		AppType:     record.AppType,
 		CreatedAt:   record.CreatedAt,
 		PublishType: record.PublishType,
+		UserId:      record.UserID,
+		OrgId:       record.OrgID,
 	}
 }

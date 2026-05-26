@@ -194,6 +194,8 @@ message AppInfo{
   string appType = 2;
   int64 createdAt = 3;
   string publishType = 4;
+  string userId = 5;
+  string orgId = 6;
 }
 
 message ChangeExplorationAppFavoriteReq{

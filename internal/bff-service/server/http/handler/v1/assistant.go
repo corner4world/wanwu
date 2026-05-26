@@ -761,6 +761,12 @@ func AssistantQuestionRecommend(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
+	if !req.Trial {
+		if err := service.CheckOpenAPIAccess(ctx, req.AssistantId, constant.AppTypeAgent, userId, orgId); err != nil {
+			gin_util.Response(ctx, nil, err)
+			return
+		}
+	}
 	if err := service.AssistantQuestionRecommend(ctx, userId, orgId, &req); err != nil {
 		gin_util.Response(ctx, nil, err)
 	}

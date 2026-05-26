@@ -6,6 +6,7 @@ import (
 
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
+	"github.com/UnicomAI/wanwu/pkg/constant"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/gin-gonic/gin"
 )
@@ -27,6 +28,13 @@ func WorkflowRun(ctx *gin.Context) {
 	}
 	userID := getUserID(ctx)
 	orgID := getOrgID(ctx)
+
+	// OpenAPI 权限检查：仅允许调用自己创建的已发布应用
+	if err := service.CheckOpenAPIAccess(ctx, req.UUID, constant.AppTypeWorkflow, userID, orgID); err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+
 	jsonBytes, err := json.Marshal(req.Parameters)
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
@@ -168,6 +176,12 @@ func ChatflowChat(ctx *gin.Context) {
 	}
 	userID := getUserID(ctx)
 	orgID := getOrgID(ctx)
+
+	// OpenAPI 权限检查：仅允许调用自己创建的已发布应用
+	if err := service.CheckOpenAPIAccess(ctx, req.UUID, constant.AppTypeChatflow, userID, orgID); err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
 
 	// 流式处理 - 直接操作响应流
 	err := service.ChatflowChat(ctx, userID, orgID, req.UUID, req.ConversationId, req.Query, req.Parameters)

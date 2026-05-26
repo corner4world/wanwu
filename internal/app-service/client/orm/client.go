@@ -201,7 +201,7 @@ func canAccessApp(info *model.App, userId, orgId string) bool {
 	case constant.AppPublishOrganization:
 		return info.OrgID == orgId
 	case constant.AppPublishPrivate:
-		return info.UserID == userId
+		return info.UserID == userId && info.OrgID == orgId
 	default:
 		return false
 	}

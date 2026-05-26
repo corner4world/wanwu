@@ -191,11 +191,11 @@ func WithSearchType(userID, orgID, searchType string) SQLOption {
 		var args []interface{}
 		switch searchType {
 		case "", "all":
-			query = "(user_id = ? AND publish_type = ?) OR (publish_type = ?) OR (publish_type = ? AND org_id = ?)"
-			args = append(args, userID, constant.AppPublishPrivate, constant.AppPublishPublic, constant.AppPublishOrganization, orgID)
+			query = "(user_id = ? AND org_id = ? AND publish_type = ?) OR (publish_type = ?) OR (publish_type = ? AND org_id = ?)"
+			args = append(args, userID, orgID, constant.AppPublishPrivate, constant.AppPublishPublic, constant.AppPublishOrganization, orgID)
 		case "private":
-			query = "user_id = ? AND publish_type = ?"
-			args = append(args, userID, constant.AppPublishPrivate)
+			query = "user_id = ? AND org_id = ? AND publish_type = ?"
+			args = append(args, userID, orgID, constant.AppPublishPrivate)
 		}
 		return db.Where(query, args...)
 	})

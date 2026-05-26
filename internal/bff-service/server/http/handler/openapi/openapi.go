@@ -111,6 +111,10 @@ func ChatAgent(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
+	if err := service.CheckOpenAPIAccess(ctx, appID, constant.AppTypeAgent, userID, orgID); err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
 	// 流式
 	if req.Stream {
 		if err := service.AssistantConversionStream(ctx, userID, orgID, request.ConversionStreamRequest{
@@ -180,6 +184,12 @@ func ChatRag(ctx *gin.Context) {
 	userID := getUserID(ctx)
 	orgID := getOrgID(ctx)
 
+	// OpenAPI 权限检查：仅允许调用自己创建的应用
+	if err := service.CheckOpenAPIAccess(ctx, req.UUID, constant.AppTypeRag, userID, orgID); err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+
 	// 流式 —— openapi 固定走 legacy 格式（原 rag-service SSE JSON 透传），
 	// 不跟随 web 的 AG-UI 协议改造，避免破坏外部集成方的解析逻辑
 	if req.Stream {
@@ -240,6 +250,10 @@ func DraftChatAgent(ctx *gin.Context) {
 	orgID := getOrgID(ctx)
 	appID, err := service.GetAssistantIdByUuid(ctx, req.UUID)
 	if err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+	if err = service.CheckOpenAPIAccess(ctx, appID, constant.AppTypeAgent, userID, orgID); err != nil {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
