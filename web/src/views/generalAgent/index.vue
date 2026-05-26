@@ -738,7 +738,7 @@ export default {
     },
 
     syncConversationRoute(threadId = '', conversation = null) {
-      const query = { ...(this.$route.query || {}) };
+      const query = { ...this.$route.query };
       const isSkillConversation = conversation
         ? !!conversation.isSkillConversation
         : this.isSkillType;
@@ -1316,7 +1316,7 @@ export default {
         return;
       }
       const selectedModelConfig = this.modelList.find(m => m.modelId === value);
-      const res = updateGeneralAgentConversationConfig({
+      updateGeneralAgentConversationConfig({
         threadId: this.currentThreadId,
         modelConfig: {
           modelId: value,
@@ -1327,9 +1327,6 @@ export default {
           config: selectedModelConfig?.config || {},
         },
       });
-      if (res.code === 0) {
-        this.$message.success(this.$t('generalAgent.config.saveSuccess'));
-      }
     },
 
     async sendMessage() {

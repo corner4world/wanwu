@@ -190,11 +190,11 @@ export default {
           ],
         };
         this.sender.showTip({
-          text: this.resourceList.dip?.[0].name,
+          text: '@' + this.resourceList.dip?.[0].name,
           dialogText: '',
         });
       } else {
-        this.sender.hideTip();
+        this.sender.closeTip();
         this.fetchConfigData();
       }
     },
@@ -258,7 +258,7 @@ export default {
         placeholder: this.placeholder,
         autoFocus: false,
         tipConfig: {
-          tipTemplate: `<div>{{text}}</div>`,
+          tipTemplate: `<div class="custom-tip-template">{{text}}</div>`,
           dialogTemplate: '',
           closeNames: [],
           backspace: false,
@@ -415,7 +415,7 @@ export default {
       if (this.isDIP) {
         this.sender.closeTip();
         this.sender.showTip({
-          text: item.name,
+          text: '@' + item.name,
           dialogText: '',
         });
         return;
@@ -472,6 +472,11 @@ export default {
     border: none !important;
     box-shadow: none !important;
   }
+}
+
+// 和@样式保持一致
+.custom-tip-template {
+  color: var(--chat-primary);
 }
 
 .config-popover {
