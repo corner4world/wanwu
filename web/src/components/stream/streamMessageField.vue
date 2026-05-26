@@ -2156,7 +2156,10 @@ export default {
   .answer-content {
     width: 100%;
     img {
-      width: 80% !important;
+      max-width: 100%;
+      max-height: 400px;
+      height: auto;
+      object-fit: contain;
       cursor: zoom-in;
     }
     section li,

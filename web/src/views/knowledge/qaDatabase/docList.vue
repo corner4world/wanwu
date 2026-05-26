@@ -215,21 +215,21 @@
                     <el-button
                       size="mini"
                       round
+                      :disabled="
+                        [
+                          STATUS_PENDING,
+                          STATUS_PROCESSING,
+                          STATUS_FAILED,
+                        ].includes(Number(scope.row.status))
+                      "
                       :type="
                         [
-                          QA_STATUS_PENDING,
-                          QA_STATUS_PROCESSING,
-                          QA_STATUS_FAILED,
+                          STATUS_PENDING,
+                          STATUS_PROCESSING,
+                          STATUS_FAILED,
                         ].includes(Number(scope.row.status))
                           ? 'info'
                           : ''
-                      "
-                      :disabled="
-                        [
-                          QA_STATUS_PENDING,
-                          QA_STATUS_PROCESSING,
-                          QA_STATUS_FAILED,
-                        ].includes(Number(scope.row.status))
                       "
                       @click="handleEdit(scope.row)"
                     >
@@ -241,16 +241,16 @@
                       @click="handleDel(scope.row)"
                       :disabled="
                         [
-                          QA_STATUS_PENDING,
-                          QA_STATUS_PROCESSING,
-                          QA_STATUS_FAILED,
+                          STATUS_PENDING,
+                          STATUS_PROCESSING,
+                          STATUS_FAILED,
                         ].includes(Number(scope.row.status))
                       "
                       :type="
                         [
-                          QA_STATUS_PENDING,
-                          QA_STATUS_PROCESSING,
-                          QA_STATUS_FAILED,
+                          STATUS_PENDING,
+                          STATUS_PROCESSING,
+                          STATUS_FAILED,
                         ].includes(Number(scope.row.status))
                           ? 'info'
                           : ''
@@ -366,10 +366,10 @@ import {
   POWER_TYPE_EDIT,
   POWER_TYPE_SYSTEM_ADMIN,
   ALL,
-  QA_STATUS_FAILED,
-  QA_STATUS_FINISHED,
-  QA_STATUS_PENDING,
-  QA_STATUS_PROCESSING,
+  STATUS_FAILED,
+  STATUS_FINISHED,
+  STATUS_PENDING,
+  STATUS_PROCESSING,
 } from '@/views/knowledge/constants';
 import CopyIcon from '@/components/copyIcon.vue';
 
@@ -416,10 +416,10 @@ export default {
       selectedDocIds: [],
       qaImportStatus: COMMUNITY_IMPORT_STATUS,
       dropdownGroups: DROPDOWN_GROUPS.slice(0, 2),
-      QA_STATUS_FAILED,
-      QA_STATUS_FINISHED,
-      QA_STATUS_PENDING,
-      QA_STATUS_PROCESSING,
+      STATUS_FAILED,
+      STATUS_FINISHED,
+      STATUS_PENDING,
+      STATUS_PROCESSING,
     };
   },
   watch: {

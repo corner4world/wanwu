@@ -42,11 +42,8 @@ export const KNOWLEDGE_STATUS_ANALYSING = 3;
 export const KNOWLEDGE_STATUS_CHECK_FAIL = 4;
 export const KNOWLEDGE_STATUS_FAIL = 5;
 
-// 问答库文档解析状态常量
-export const QA_STATUS_PENDING = 0;
-export const QA_STATUS_PROCESSING = 1;
-export const QA_STATUS_FINISHED = 2;
-export const QA_STATUS_FAILED = 3;
+// 知识库图谱解析状态常量
+export const KNOWLEDGE_GRAPH_STATUS_INITIAL = 4; // 文档解析失败所以注定无法生成图谱，暂不支持筛选
 
 // 知识库类型
 export const INTERNAL = 0;

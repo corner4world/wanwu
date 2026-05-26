@@ -96,7 +96,7 @@
 <script>
 import { getAppVersionList, rollbackAppVersion } from '@/api/appspace';
 import { exportWorkflow } from '@/api/workflow';
-import { WORKFLOW, CHAT } from '@/utils/commonSet';
+import { WORKFLOW, CHAT, SKILL } from '@/utils/commonSet';
 import { resDownloadFile } from '@/utils/util';
 
 export default {
@@ -121,7 +121,7 @@ export default {
   data() {
     return {
       popoverVisible: false,
-      showExportList: [WORKFLOW, CHAT],
+      showExportList: [WORKFLOW, CHAT, SKILL],
       version: '',
       versionList: [
         {
@@ -177,13 +177,19 @@ export default {
       });
     },
     exportVersion(index) {
+      const versionItem = this.versionList[index];
+      // 如果父组件有导出监听，则 emit 出去
+      if (this.$listeners.export) {
+        this.$emit('export', versionItem);
+        return;
+      }
       exportWorkflow(
-        { workflow_id: this.appId, version: this.versionList[index].version },
+        { workflow_id: this.appId, version: versionItem.version },
         this.appType,
       ).then(response => {
         resDownloadFile(
           response,
-          `${this.$route.query.name || ''}_${this.versionList[index].version}.json`,
+          `${this.$route.query.name || ''}_${versionItem.version}.json`,
         );
       });
     },

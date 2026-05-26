@@ -6,6 +6,8 @@
     :bgColor="bgColor"
     :backText="backText"
     :visibleVariableConfig="true"
+    :visibleHistory="visibleHistory"
+    :historyList="historyList"
     @init="initData"
     @back="handleBack"
     @download="handleDownload"
@@ -19,10 +21,8 @@
 <script>
 import SkillDetail from '@/components/skills/skillDetail.vue';
 import {
-  createAcquiredSkillConfig,
   createCustomSkillConfig,
   createResourceBuiltinSkillConfig,
-  deleteAcquiredSkillConfig,
   deleteCustomSkillConfig,
   downloadBuiltinSkill,
   deleteResourceBuiltinSkillConfig,
@@ -30,13 +30,17 @@ import {
   getCustomSkillList,
   getResourceBuiltinSkillDetail,
   getResourceBuiltinSkillList,
-  updateAcquiredSkillConfig,
   updateCustomSkillConfig,
   updateResourceBuiltinSkillConfig,
 } from '@/api/templateSquare';
 import {
   getAcquiredSkillList,
   getAcquiredSkillDetail,
+  downloadAcquiredSkill,
+  getAcquiredSkillVersionList,
+  createAcquiredSkillConfig,
+  updateAcquiredSkillConfig,
+  deleteAcquiredSkillConfig,
 } from '@/api/skillResource/added';
 import { SKILL, SKILLCUSTOM, SKILLADDED, SKILLBUILTIN } from '../constants';
 import { directDownload, resDownloadFile } from '@/utils/util';
@@ -51,11 +55,17 @@ export default {
       type: SKILL,
       detail: {},
       recommendList: [],
+      historyList: [],
       isPublic: false,
       bgColor:
         'linear-gradient(1deg, rgb(247, 252, 255) 50%, rgb(233, 246, 254) 98%)',
       backText: '',
     };
+  },
+  computed: {
+    visibleHistory() {
+      return this.type === SKILLADDED;
+    },
   },
   created() {
     this.isPublic = this.$route.path.includes('/public/');
@@ -77,6 +87,7 @@ export default {
 
       this.getDetailData();
       this.getRecommendList();
+      this.getHistoryList();
 
       // 滚动到顶部
       const main = document.querySelector('.el-main > .page-container');
@@ -110,6 +121,19 @@ export default {
         item => item.skillId !== this.templateSquareId,
       );
     },
+    async getHistoryList() {
+      this.historyList = [];
+      if (!this.visibleHistory) return;
+
+      const res = await getAcquiredSkillVersionList({
+        skillId: this.templateSquareId,
+      });
+      const list = res.data?.list || [];
+      this.historyList = list.map(item => ({
+        ...item,
+        updateTime: item.updateTime || item.updatedAt || item.createdAt,
+      }));
+    },
     async handleDownload(item) {
       if (this.type === SKILLCUSTOM) {
         if (item.zipUrl) {
@@ -121,9 +145,10 @@ export default {
         });
         resDownloadFile(res, `${item.name}.zip`);
       } else if (this.type === SKILLADDED || this.type === SKILL) {
-        if (item.downloadUrl) {
-          directDownload(item.downloadUrl);
-        }
+        const res = await downloadAcquiredSkill({
+          skillId: item.skillId,
+        });
+        resDownloadFile(res, `${item.name}.zip`);
       }
     },
     getVariableConfigApi(action) {

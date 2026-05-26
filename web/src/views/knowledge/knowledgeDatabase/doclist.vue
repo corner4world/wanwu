@@ -339,14 +339,14 @@
                 <el-table-column
                   :label="$t('knowledgeManage.docProgress')"
                   prop="docProgress"
-                  width="120"
+                  width="100"
                 >
                   <template slot-scope="scope">
                     <el-progress
                       :percentage="scope.row.docProgress || 0"
                       :status="getProgressStatus(scope.row.status)"
                       :stroke-width="6"
-                      :width="60"
+                      :width="40"
                       type="circle"
                     />
                   </template>
@@ -364,7 +364,7 @@
                         style="margin-left: 5px"
                         :options="
                           KNOWLEDGE_GRAPH_STATUS_OPTIONS.filter(
-                            opt => opt.value !== INITIAL,
+                            opt => opt.value !== KNOWLEDGE_GRAPH_STATUS_INITIAL,
                           )
                         "
                         @applyFilter="filterGraphStatus"
@@ -396,14 +396,14 @@
                   key="graphProgress"
                   :label="$t('knowledgeManage.graphProgress')"
                   prop="graphProgress"
-                  width="120"
+                  width="100"
                 >
                   <template slot-scope="scope">
                     <el-progress
                       :percentage="scope.row.graphProgress || 0"
                       :status="getGraphProgressStatus(scope.row.graphStatus)"
                       :stroke-width="6"
-                      :width="60"
+                      :width="40"
                       type="circle"
                     />
                   </template>
@@ -533,6 +533,7 @@ import {
 import {
   INITIAL,
   STATUS_FAILED,
+  STATUS_FINISHED,
   POWER_TYPE_EDIT,
   POWER_TYPE_ADMIN,
   POWER_TYPE_SYSTEM_ADMIN,
@@ -544,7 +545,7 @@ import {
   KNOWLEDGE_STATUS_ANALYSING,
   KNOWLEDGE_STATUS_CHECK_FAIL,
   KNOWLEDGE_STATUS_FAIL,
-  STATUS_FINISHED,
+  KNOWLEDGE_GRAPH_STATUS_INITIAL,
 } from '@/views/knowledge/constants';
 import exportRecord from '@/views/knowledge/qaDatabase/exportRecord.vue';
 import CopyIcon from '@/components/copyIcon.vue';
@@ -616,6 +617,7 @@ export default {
       KNOWLEDGE_STATUS_ANALYSING,
       KNOWLEDGE_STATUS_CHECK_FAIL,
       KNOWLEDGE_STATUS_FAIL,
+      KNOWLEDGE_GRAPH_STATUS_INITIAL,
     };
   },
   watch: {

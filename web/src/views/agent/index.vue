@@ -196,8 +196,16 @@ export default {
     },
     initUUID() {
       const storedUUID = localStorage.getItem('chatUUID');
-      this.uuid = storedUUID || this.$guid();
-      if (!storedUUID) {
+      // UUID v4 格式验证
+      const isValidUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          storedUUID,
+        );
+      if (storedUUID && isValidUUID) {
+        this.uuid = storedUUID;
+      } else {
+        // 无效或不存在，重新生成
+        this.uuid = this.$guid();
         localStorage.setItem('chatUUID', this.uuid);
       }
     },

@@ -362,6 +362,8 @@ export default {
         '请仔细阅读以下文档，若需配置变量，请到资源库进行配置后使用',
     },
     builtin: '内置',
+    shared: '共享',
+    mine: '我发布的',
   },
   uploadDialog: {
     title: '文件上传',
@@ -812,6 +814,14 @@ export default {
           variableValue: '请输入变量值',
         },
       },
+      historyVersion: '历史版本',
+      version: '版本',
+      versionDesc: '版本描述',
+      updateTime: '更新时间',
+      publishTypeDesc: '支持配置skill发布范围',
+      publishType: '私密发布：仅自己可见',
+      publishType1: '公开发布：组织内可见',
+      publishType2: '公开发布：全平台可见',
     },
   },
 
@@ -1763,6 +1773,9 @@ export default {
       customTools: '自定义工具',
       addSkill: '创建Skill',
       addSkillSuccess: 'Skill添加成功',
+      skillAcquired: '我添加的',
+      skillCustom: '我创建的(已发布)',
+      skillBuiltin: '内置',
       firstAddSkillTips:
         '您已勾选skills，配置智能体模型时，请选择一款擅长工具选择与参数生成的模型，如GLM-5或MiniMax等，以确保使用效果',
     },
@@ -2062,7 +2075,7 @@ export default {
       deleteHint: '确定删除敏感词-',
     },
     setSafety: {
-      title: '新增敏感词',
+      title: '配置敏感词',
       table: '敏感词表',
       tableMsg: '请选择敏感词表',
       create: '创建敏感词',
@@ -2151,6 +2164,7 @@ export default {
     copyrightMsg: '请输入版权信息',
     copyrightEnable: '是否在界面中显示版权信息',
     urlEffectiveTime: 'URL生效时间',
+    expiredAtBeforeNow: '过期时间不能早于当前时间',
     appDescMsg: '请输入应用描述',
     appDesc: '应用描述',
     appNameMsg: '请输入应用名称',
@@ -2166,6 +2180,11 @@ export default {
       private: '私密发布为应用：仅自己可见',
       organization: '公开发布为应用：组织内可见',
       public: '公开发布为应用：全局可见',
+    },
+    commonPublishType: {
+      private: '私密发布：仅自己可见',
+      organization: '公开发布：组织内可见',
+      public: '公开发布：全局可见',
     },
     chiChat: {
       title: '闲聊模式',

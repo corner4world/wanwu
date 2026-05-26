@@ -29,7 +29,11 @@ Print.prototype = {
     this.sentenceArr = [];
     this.sIndexMap = {};
     this.sIndex = 0;
-    this.looper && this.looper.stop();
+    this.printStatus = 0; // 重置打印状态
+    if (this.looper) {
+      this.looper.stop();
+      this.looper = null;
+    }
   },
   loop(printingCB, endCB) {
     //如果正在打印或者打印结束
@@ -86,7 +90,6 @@ const Looper = function (sIndex, sentence, timer, printCB, endCB, sIndexMap) {
   this.endCB = endCB; //句子打印结束的回调
   this.isCodeBlock = false; // 新增：标记是否为代码块
   this.codeBlockContent = ''; // 新增：存储代码块内容
-  this.animationFrame = null;
   this.lastTimestamp = performance.now(); // 新增：每次Looper初始化时重置
   // 在初始化时检测是否为代码块
   this.detectCodeBlock();
@@ -155,46 +158,55 @@ Looper.prototype = {
     this.printNormalText();
   },
   printNormalText() {
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
+    if (this.t) {
+      workerTimer.clearInterval(this.t);
     }
 
     this.index = 0;
     const baseSpeed = 40; // 基础速度
     const maxSpeed = 120; // 最大速度
+    this.lastTimestamp = performance.now();
 
-    const printNextChunk = timestamp => {
-      if (this.index >= this.sentence.length) {
-        this.stop();
-        return;
-      }
+    const interval = 30; // Worker 心跳频率 (30ms, ~33fps)
 
-      // 动态计算应打印的字符数
-      const elapsed = timestamp - this.lastTimestamp;
-      const progress = this.index / this.sentence.length;
-      const currentSpeed =
-        baseSpeed + (maxSpeed - baseSpeed) * Math.min(progress / 0.3, 1);
-      const targetChars = Math.ceil((elapsed * currentSpeed) / 1000);
+    this.t = workerTimer.setInterval(
+      () => {
+        // 哨兵守卫：stop 已被调用则不再处理，防止 Worker 残余 tick 触发无效回调
+        if (this.sIndexMap[`${this.sIndex}`]) return;
+        const now = performance.now();
+        if (this.index >= this.sentence.length) {
+          this.stop();
+          return;
+        }
 
-      // 计算本次要打印的字符
-      const endIdx = Math.min(this.index + targetChars, this.sentence.length);
-      const currentChunk = this.sentence.slice(this.index, endIdx);
+        // 动态速度计算 + 掉帧补偿
+        const elapsed = now - this.lastTimestamp;
+        const progress = this.index / this.sentence.length;
+        const currentSpeed =
+          baseSpeed + (maxSpeed - baseSpeed) * Math.min(progress / 0.3, 1);
 
-      this.index = endIdx;
+        // 计算该 Tick 下应输出的字符量
+        const targetChars = Math.max(
+          1,
+          Math.ceil((elapsed * currentSpeed) / 1000),
+        );
 
-      // 传递当前这次要打印的文本片段
-      this.printCB(currentChunk);
-      this.lastTimestamp = timestamp;
+        const endIdx = Math.min(this.index + targetChars, this.sentence.length);
+        const currentChunk = this.sentence.slice(this.index, endIdx);
 
-      // 继续下一帧或结束
-      if (this.index < this.sentence.length) {
-        this.animationFrame = requestAnimationFrame(printNextChunk);
-      } else {
-        this.stop();
-      }
-    };
+        this.index = endIdx;
+        this.lastTimestamp = now;
 
-    this.animationFrame = requestAnimationFrame(printNextChunk);
+        // 触发渲染回调
+        this.printCB(currentChunk);
+
+        if (this.index >= this.sentence.length) {
+          this.stop();
+        }
+      },
+      interval,
+      this,
+    );
   },
   printFn() {
     let sentenceArr = this.sentence.split('');
@@ -213,9 +225,9 @@ Looper.prototype = {
     }
   },
   stop() {
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = null;
+    if (this.t) {
+      workerTimer.clearInterval(this.t);
+      this.t = null;
     }
 
     if (this.sIndexMap[`${this.sIndex}`]) {
@@ -223,8 +235,6 @@ Looper.prototype = {
     }
     this.sIndexMap[`${this.sIndex}`] = true;
     this.endCB({ msg: 'end', index: this.sIndex });
-    this.t && workerTimer.clearInterval(this.t);
-    this.t = null;
   },
 };
 

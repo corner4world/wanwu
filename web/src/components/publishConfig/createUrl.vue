@@ -84,12 +84,14 @@
             :rows="2"
           ></el-input>
         </el-form-item>
-        <el-form-item label="过期时间" prop="expiredAt">
+        <el-form-item label="过期时间" prop="expiredAt" :rules="expiredAtRules">
           <el-date-picker
             v-model="form.expiredAt"
             type="datetime"
             value-format="yyyy-MM-dd HH:mm:ss"
             :placeholder="$t('app.urlEffectiveTime')"
+            :picker-options="expiredAtPickerOptions"
+            @change="handleExpiredAtChange"
           ></el-date-picker>
         </el-form-item>
         <!--<el-form-item label="知识库出处详情">
@@ -228,6 +230,19 @@ export default {
       dialogVisible: false,
       tableData: [],
       urlId: '',
+      expiredAtPickerOptions: {
+        disabledDate(time) {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          return time.getTime() < todayStart.getTime();
+        },
+      },
+      expiredAtRules: [
+        {
+          validator: this.validateExpiredAt,
+          trigger: 'change',
+        },
+      ],
     };
   },
   created() {
@@ -247,6 +262,33 @@ export default {
       const pattern =
         /^https?:\/\/(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?$/;
       return pattern.test(string.trim());
+    },
+    getExpiredAtTime(value) {
+      if (!value) return NaN;
+      if (value instanceof Date) return value.getTime();
+      return new Date(String(value).replace(/-/g, '/')).getTime();
+    },
+    isExpiredAtBeforeNow(value) {
+      const expiredAtTime = this.getExpiredAtTime(value);
+      return !Number.isNaN(expiredAtTime) && expiredAtTime < Date.now();
+    },
+    validateExpiredAt(rule, value, callback) {
+      if (this.isExpiredAtBeforeNow(value)) {
+        callback(new Error(this.$t('app.expiredAtBeforeNow')));
+        return;
+      }
+      callback();
+    },
+    handleExpiredAtChange(value) {
+      if (!value || !this.isExpiredAtBeforeNow(value)) return;
+
+      this.form.expiredAt = '';
+      this.$message.warning(this.$t('app.expiredAtBeforeNow'));
+      this.$nextTick(() => {
+        if (this.$refs.form) {
+          this.$refs.form.clearValidate('expiredAt');
+        }
+      });
     },
     handleCopy(row) {
       let text = row.suffix;
@@ -275,7 +317,7 @@ export default {
       switchOpenurl({ status, urlId: row.urlId })
         .then(res => {
           if (res.code === 0) {
-            this.$message.success(this.$t('commom.message.success'));
+            this.$message.success(this.$t('common.message.success'));
             this.getList();
           }
         })
@@ -330,7 +372,7 @@ export default {
       createOpenurl(this.form)
         .then(res => {
           if (res.code === 0) {
-            this.$message.success(this.$t('commom.message.success'));
+            this.$message.success(this.$t('common.message.success'));
             this.dialogVisible = false;
             this.getList();
           }
@@ -345,7 +387,7 @@ export default {
       editOpenurl(data)
         .then(res => {
           if (res.code === 0) {
-            this.$message.success(this.$t('commom.message.success'));
+            this.$message.success(this.$t('common.message.success'));
             this.dialogVisible = false;
             this.getList();
           }

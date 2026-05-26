@@ -54,24 +54,40 @@
                       v-if="item.avatar && item.avatar.path"
                     />
                   </div>
-                  <div>
-                    <div>
-                      {{
-                        type === AGENT_TOOL_TYPE.SKILL
-                          ? item.skillName
-                          : item.name
-                      }}
+                  <div class="tool-info">
+                    <div class="tool-title-row">
+                      <div class="tool-title">
+                        {{
+                          type === AGENT_TOOL_TYPE.SKILL
+                            ? item.skillName
+                            : item.name
+                        }}
+                      </div>
+                      <template
+                        v-if="type === AGENT_TOOL_TYPE.SKILL && item.author"
+                      >
+                        <el-divider direction="vertical"></el-divider>
+                        <span class="tool-author">{{ item.author }}</span>
+                      </template>
                     </div>
-                    <span class="tag" v-if="tagMap[item.appType]">
+                    <span
+                      class="tag"
+                      v-if="
+                        type === AGENT_TOOL_TYPE.WORKFLOW &&
+                        tagMap[item.appType]
+                      "
+                    >
                       {{ tagMap[item.appType] }}
                     </span>
-                  </div>
-                  <div
-                    v-if="type === AGENT_TOOL_TYPE.SKILL && item.author"
-                    class="tool-author"
-                  >
-                    <el-divider direction="vertical"></el-divider>
-                    <span>{{ item.author }}</span>
+                    <div
+                      class="tag skill-type-tag"
+                      v-if="
+                        type === AGENT_TOOL_TYPE.SKILL &&
+                        skillTypeTagMap[item.skillType]
+                      "
+                    >
+                      {{ skillTypeTagMap[item.skillType] }}
+                    </div>
                   </div>
                 </div>
                 <div>
@@ -235,6 +251,13 @@ export default {
       return {
         [AGENT_TOOL_TYPE.WORKFLOW]: this.$t('appSpace.workflow'),
         chatflow: this.$t('appSpace.chat'),
+      };
+    },
+    skillTypeTagMap() {
+      return {
+        acquired: this.$t('agent.toolDialog.skillAcquired'),
+        custom: this.$t('agent.toolDialog.skillCustom'),
+        builtin: this.$t('agent.toolDialog.skillBuiltin'),
       };
     },
   },
@@ -601,6 +624,27 @@ export default {
     .tool_box {
       display: flex;
       align-items: center;
+    }
+    .tool-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tool-title-row {
+      display: flex;
+      align-items: center;
+      line-height: 1.5;
+    }
+    .tool-title {
+      color: #333;
+    }
+    .tool-author {
+      color: #666;
+      font-size: 13px;
+    }
+    .skill-type-tag {
+      width: fit-content;
+      line-height: 1.5;
     }
     .tool_img {
       width: 35px;

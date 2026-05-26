@@ -6,6 +6,9 @@
     :bgColor="bgColor"
     :backText="backText"
     :visibleVariableConfig="false"
+    :visibleHistory="visibleHistory"
+    :historyList="historyList"
+    :visibleDownload="skillType !== 'mine'"
     @init="initData"
     @back="handleBack"
     @download="handleDownload"
@@ -25,7 +28,7 @@
     </template>
     <template #extra-buttons>
       <el-button
-        v-if="skillType !== 'builtin'"
+        v-if="['shared'].includes(skillType)"
         type="primary"
         size="mini"
         plain
@@ -45,11 +48,18 @@
 <script>
 import SkillDetail from '@/components/skills/skillDetail.vue';
 import {
-  getSquareSkillList,
   getBuiltinSquareSkillList,
   sendSquareSkillToResource,
   getSquareSkillDetail,
   downloadSquareSkill,
+  getSharedSquareSkillList,
+  addSharedSkillToResource,
+  getSharedSquareSkillDetail,
+  downloadSharedSquareSkill,
+  getCreatedSquareSkillList,
+  getCreatedSquareSkillDetail,
+  getCreatedSkillVersionList,
+  getSharedSkillVersionList,
 } from '@/api/skillSquare';
 import { downloadBuiltinSkill } from '@/api/templateSquare';
 import { resDownloadFile } from '@/utils/util';
@@ -64,11 +74,17 @@ export default {
       skillType: '',
       detail: {},
       recommendList: [],
+      historyList: [],
       isPublic: false,
       bgColor:
         'linear-gradient(1deg, rgb(247, 252, 255) 50%, rgb(233, 246, 254) 98%)',
       backText: this.$t('skillSpace.detail.backText'),
     };
+  },
+  computed: {
+    visibleHistory() {
+      return ['shared', 'mine'].includes(this.skillType);
+    },
   },
   created() {
     this.isPublic = this.$route.path.includes('/public/');
@@ -89,36 +105,72 @@ export default {
 
       this.getDetailData();
       this.getRecommendList();
+      this.getHistoryList();
 
       // 滚动到顶部
       const main = document.querySelector('.el-main > .page-container');
       if (main) main.scrollTop = 0;
     },
     async getDetailData() {
-      const res = await getSquareSkillDetail({
-        skillId: this.skillId,
-      });
+      let requestApi = getSquareSkillDetail;
+      let params = { skillId: this.skillId };
+      if (this.skillType === 'shared') {
+        requestApi = getSharedSquareSkillDetail;
+      } else if (this.skillType === 'mine') {
+        requestApi = getCreatedSquareSkillDetail;
+        params = { customSkillId: this.skillId };
+      }
+      const res = await requestApi(params);
       this.detail = res.data || {};
     },
     async getRecommendList() {
-      const requestApi =
-        this.skillType === 'builtin'
-          ? getBuiltinSquareSkillList
-          : getSquareSkillList;
+      let requestApi = getBuiltinSquareSkillList;
+      if (this.skillType === 'builtin') {
+        requestApi = getBuiltinSquareSkillList;
+      } else if (this.skillType === 'shared') {
+        requestApi = getSharedSquareSkillList;
+      } else if (this.skillType === 'mine') {
+        requestApi = getCreatedSquareSkillList;
+      }
       const res = await requestApi();
       this.recommendList =
         res.data.list.filter(item => item.skillId !== this.skillId) || [];
     },
+    async getHistoryList() {
+      this.historyList = [];
+      if (!this.visibleHistory) return;
+
+      const isMine = this.skillType === 'mine';
+      const requestApi = isMine
+        ? getCreatedSkillVersionList
+        : getSharedSkillVersionList;
+      const params = isMine
+        ? { customSkillId: this.skillId }
+        : { skillId: this.skillId };
+      const res = await requestApi(params);
+      const list = res.data?.list || [];
+      this.historyList = list.map(item => ({
+        ...item,
+        updateTime: item.updateTime || item.updatedAt || item.createdAt,
+      }));
+    },
     async handleDownload(item) {
-      const downloadApi =
-        this.skillType === 'builtin'
-          ? downloadBuiltinSkill
-          : downloadSquareSkill;
+      let downloadApi = downloadSquareSkill;
+      if (this.skillType === 'builtin') {
+        downloadApi = downloadBuiltinSkill;
+      } else if (this.skillType === 'shared') {
+        downloadApi = downloadSharedSquareSkill;
+      }
       const res = await downloadApi({ skillId: item.skillId });
       resDownloadFile(res, `${item.name}.zip`);
     },
     handleSendToResource(info) {
-      sendSquareSkillToResource({ skillId: info.skillId }).then(res => {
+      const requestApi =
+        this.skillType === 'shared'
+          ? addSharedSkillToResource
+          : sendSquareSkillToResource;
+
+      requestApi({ skillId: info.skillId }).then(res => {
         if (res.code === 0) {
           this.$message.success(this.$t('common.info.send'));
           this.$set(this.detail, 'isShared', true);
@@ -134,6 +186,10 @@ export default {
       const query = { skillId: skillId };
       if (this.skillType === 'builtin') {
         query.skillType = 'builtin';
+      } else if (this.skillType === 'shared') {
+        query.skillType = 'shared';
+      } else if (this.skillType === 'mine') {
+        query.skillType = 'mine';
       }
       this.$router.push({
         path: this.$route.path,

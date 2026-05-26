@@ -36,6 +36,7 @@
       <div style="margin-left: 10px; flex-shrink: 0">
         <!-- 默认的下载按钮，点击时将当前 detail 抛出，由外部调用具体 API 或者下载逻辑 -->
         <el-button
+          v-if="visibleDownload"
           type="primary"
           size="mini"
           @click="$emit('download', detail)"
@@ -71,55 +72,82 @@
           >
             {{ $t('square.info') }}
           </div>
+          <div
+            :class="['tab', { active: tabActive === 1 }]"
+            @click="tabClick(1)"
+            v-if="visibleHistory"
+          >
+            {{ $t('tempSquare.skills.historyVersion') }}
+          </div>
         </div>
 
         <div style="padding-top: 10px">
-          <div
-            class="overview bg-border"
-            v-if="detail.summary || detail.feature || detail.scenario"
-          >
-            <div class="overview-item" v-if="detail.summary">
-              <div class="item-title">
-                <img src="@/assets/imgs/detail_title_icon.png" alt="" />
-                <span>{{ $t('square.summary') }}</span>
+          <template v-if="tabActive === 0">
+            <div
+              class="overview bg-border"
+              v-if="detail.summary || detail.feature || detail.scenario"
+            >
+              <div class="overview-item" v-if="detail.summary">
+                <div class="item-title">
+                  <img src="@/assets/imgs/detail_title_icon.png" alt="" />
+                  <span>{{ $t('square.summary') }}</span>
+                </div>
+                <div class="item-desc" v-html="parseTxt(detail.summary)"></div>
               </div>
-              <div class="item-desc" v-html="parseTxt(detail.summary)"></div>
-            </div>
-            <div class="overview-item" v-if="detail.feature">
-              <div class="item-title">
-                <img src="@/assets/imgs/detail_title_icon.png" alt="" />
-                <span>{{ $t('square.feature') }}</span>
+              <div class="overview-item" v-if="detail.feature">
+                <div class="item-title">
+                  <img src="@/assets/imgs/detail_title_icon.png" alt="" />
+                  <span>{{ $t('square.feature') }}</span>
+                </div>
+                <div class="item-desc" v-html="parseTxt(detail.feature)"></div>
               </div>
-              <div class="item-desc" v-html="parseTxt(detail.feature)"></div>
-            </div>
-            <div class="overview-item" v-if="detail.scenario">
-              <div class="item-title">
-                <img src="@/assets/imgs/detail_title_icon.png" alt="" />
-                <span>{{ $t('square.scenario') }}</span>
-              </div>
-              <div class="item-desc">
-                <div v-html="parseTxt(detail.scenario)"></div>
-              </div>
-            </div>
-          </div>
-          <div class="overview bg-border" v-if="detail.note">
-            <div class="overview-item">
-              <div class="item-title">
-                <img src="@/assets/imgs/detail_title_icon.png" alt="" />
-                <span>{{ $t('square.note') }}</span>
-              </div>
-              <div class="item-desc" v-html="parseTxt(detail.note)"></div>
-            </div>
-          </div>
-          <div class="overview" v-if="detail.skillMarkdown">
-            <div class="overview-item">
-              <div class="item-desc">
-                <div class="tempSquare-markdown">
-                  <MdRender :content="detail.skillMarkdown" />
+              <div class="overview-item" v-if="detail.scenario">
+                <div class="item-title">
+                  <img src="@/assets/imgs/detail_title_icon.png" alt="" />
+                  <span>{{ $t('square.scenario') }}</span>
+                </div>
+                <div class="item-desc">
+                  <div v-html="parseTxt(detail.scenario)"></div>
                 </div>
               </div>
             </div>
-          </div>
+            <div class="overview bg-border" v-if="detail.note">
+              <div class="overview-item">
+                <div class="item-title">
+                  <img src="@/assets/imgs/detail_title_icon.png" alt="" />
+                  <span>{{ $t('square.note') }}</span>
+                </div>
+                <div class="item-desc" v-html="parseTxt(detail.note)"></div>
+              </div>
+            </div>
+            <div class="overview" v-if="detail.skillMarkdown">
+              <div class="overview-item">
+                <div class="item-desc">
+                  <div class="tempSquare-markdown">
+                    <MdRender :content="detail.skillMarkdown" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+          <template v-if="tabActive === 1 && visibleHistory">
+            <div class="overview bg-border">
+              <el-table :data="historyList" style="width: 100%">
+                <el-table-column
+                  prop="version"
+                  :label="$t('tempSquare.skills.version')"
+                />
+                <el-table-column
+                  prop="desc"
+                  :label="$t('tempSquare.skills.versionDesc')"
+                />
+                <el-table-column
+                  prop="updateTime"
+                  :label="$t('tempSquare.skills.updateTime')"
+                />
+              </el-table>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -190,12 +218,34 @@ export default {
       type: Boolean,
       default: true,
     },
+    // 历史版本列表数据
+    historyList: {
+      type: Array,
+      default: () => [],
+    },
+    // 是否显示历史版本
+    visibleHistory: {
+      type: Boolean,
+      default: false,
+    },
+    // 是否显示下载
+    visibleDownload: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {
       foldStatus: false,
       tabActive: 0,
     };
+  },
+  watch: {
+    visibleHistory(val) {
+      if (!val && this.tabActive === 1) {
+        this.tabActive = 0;
+      }
+    },
   },
   // 可以在挂载时发起事件，通知父组件初始化数据
   mounted() {

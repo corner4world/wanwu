@@ -27,11 +27,7 @@ import {
   KNOWLEDGE_STATUS_ANALYSING,
   KNOWLEDGE_STATUS_CHECK_FAIL,
   KNOWLEDGE_STATUS_FAIL,
-  QA_STATUS_PENDING,
-  QA_STATUS_PROCESSING,
-  QA_STATUS_FINISHED,
-  QA_STATUS_FAILED,
-  INITIAL,
+  KNOWLEDGE_GRAPH_STATUS_INITIAL,
 } from '@/views/knowledge/constants';
 
 export const FAT_SON_BLOCK = [
@@ -140,7 +136,7 @@ export const COMMUNITY_REPORT_STATUS = {
 export const KNOWLEDGE_GRAPH_STATUS_OPTIONS = [
   {
     label: i18n.t('knowledgeManage.config.initial'),
-    value: INITIAL,
+    value: KNOWLEDGE_GRAPH_STATUS_INITIAL,
   },
   {
     label: i18n.t('knowledgeManage.config.finished'),
@@ -235,18 +231,18 @@ export const KNOWLEDGE_STATUS_OPTIONS = [
 export const QA_STATUS_OPTIONS = [
   {
     label: i18n.t('knowledgeManage.communityReport.taskFinished'),
-    value: QA_STATUS_FINISHED,
+    value: STATUS_FINISHED,
   },
   {
     label: i18n.t('knowledgeManage.communityReport.taskFailed'),
-    value: QA_STATUS_FAILED,
+    value: STATUS_FAILED,
   },
   {
     label: i18n.t('knowledgeManage.communityReport.taskProcessing'),
-    value: QA_STATUS_PROCESSING,
+    value: STATUS_PROCESSING,
   },
   {
     label: i18n.t('knowledgeManage.communityReport.taskPending'),
-    value: QA_STATUS_PENDING,
+    value: STATUS_PENDING,
   },
 ];

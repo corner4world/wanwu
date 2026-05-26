@@ -4,6 +4,7 @@ export const CHAT = 'chatflow';
 export const WORKFLOW = 'workflow';
 export const RAG = 'rag';
 export const AGENT = 'agent';
+export const SKILL = 'skill';
 export const AppType = {
   [WORKFLOW]: i18n.t('appSpace.workflow'),
   [CHAT]: i18n.t('appSpace.chat'),

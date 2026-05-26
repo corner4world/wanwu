@@ -36,8 +36,10 @@
                   :key="index"
                   :info="item"
                   :type="2"
+                  :visibleVersionInfo="true"
                   @delete="handleDelete"
                   @download="handleDownload"
+                  @publishConfig="handlePublishConfig"
                 />
               </div>
             </div>
@@ -122,6 +124,16 @@ export default {
     handleDownload(info) {
       const { zipUrl } = info;
       directDownload(zipUrl);
+    },
+    handlePublishConfig(info) {
+      this.$router.push({
+        path: '/skill/publishConfig',
+        query: {
+          appId: info.skillId,
+          name: info.name,
+          appType: 'skill',
+        },
+      });
     },
   },
 };

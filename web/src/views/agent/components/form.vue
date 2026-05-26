@@ -168,7 +168,7 @@
                 style="margin-left: 5px"
                 class="el-icon-s-help"
                 @click="
-                  showPromptOptimize('instructions', editForm.instructions)
+                  showPromptOptimize(editForm.instructions, 'instructions')
                 "
               ></span>
             </el-tooltip>
@@ -444,14 +444,14 @@
                 <span class="el-icon-question question-tips"></span>
               </el-tooltip>
             </span>
-            <span class="common-add" @click="showSafety">
+            <span class="common-add">
               <el-tooltip
                 class="item"
                 effect="dark"
                 :content="$t('agent.form.safetyConfigTips')"
                 placement="top-start"
               >
-                <span class="el-icon-s-operation operation">
+                <span class="el-icon-s-operation operation" @click="showSafety">
                   <span class="handleBtn">{{ $t('agent.form.config') }}</span>
                 </span>
               </el-tooltip>
@@ -526,8 +526,8 @@
                     class="el-icon-s-help recommend-prompt-icon"
                     @click="
                       showPromptOptimize(
-                        'recommendPrompt',
                         editForm.recommendConfig.prompt,
+                        'recommendPrompt',
                       )
                     "
                   ></span>
@@ -660,6 +660,7 @@ import {
   SINGLE_AGENT,
   AGENT_CONFIG_RECOMMEND_CONFIG_DEFAULT_PROMPT,
   AGENT_CONFIG_RECOMMEND_CONFIG_MODEL_CONFIG_DEFAULT_CONFIG,
+  AGENT_TOOL_TYPE,
 } from '@/views/agent/constants';
 import {
   EXTERNAL,
@@ -699,7 +700,6 @@ import commonMixin from '@/mixins/common';
 
 import { avatarSrc } from '@/utils/util';
 import modelSelect from '@/components/modelSelect.vue';
-import { AGENT_TOOL_TYPE } from '@/views/agent/constants';
 export default {
   mixins: [commonMixin],
   components: {
@@ -738,7 +738,7 @@ export default {
 
         this.debounceTimer = setTimeout(() => {
           if (!this.initialAutoSaveSnapshot) {
-            this.initialAutoSaveSnapshot = JSON.parse(JSON.stringify(newVal));
+            this.initialAutoSaveSnapshot = structuredClone(newVal);
             return;
           }
 
@@ -990,7 +990,7 @@ export default {
     };
   },
   mounted() {
-    this.initialEditForm = JSON.parse(JSON.stringify(this.editForm));
+    this.initialEditForm = structuredClone(this.editForm);
   },
   created() {
     this.getModelData(); //获取模型列表
@@ -1002,11 +1002,6 @@ export default {
         this.apiKeyRootUrl(); //获取api根地址
       }, 500);
     }
-    //判断是否有插件管理的权限
-    const accessCert = localStorage.getItem('access_cert');
-    const permission = accessCert
-      ? JSON.parse(accessCert).user.permission.orgPermission
-      : '';
   },
   beforeDestroy() {
     store.dispatch('app/initState');
@@ -1029,9 +1024,7 @@ export default {
       this.updateInfo();
     },
     syncAutoSaveBaseline() {
-      this.initialAutoSaveSnapshot = JSON.parse(
-        JSON.stringify(this.agentFormParams),
-      );
+      this.initialAutoSaveSnapshot = structuredClone(this.agentFormParams);
     },
     //获取知识库或问答库选中数据
     getSelectKnowledge(data, type) {
@@ -1045,8 +1038,6 @@ export default {
     knowledgeRecallSet(data, type) {
       if (data) {
         this.editForm[type]['config'] = data;
-      } else {
-        this.editForm[type]['config'] = this.editForm[type]['config'];
       }
     },
     //更新知识库元数据
@@ -1069,7 +1060,7 @@ export default {
         prompt: this.editForm.instructions,
       });
     },
-    showPromptOptimize(target = 'instructions', originalPrompt) {
+    showPromptOptimize(originalPrompt, target = 'instructions') {
       this.optimizeTarget = target;
       if (!originalPrompt) {
         this.$message.warning(this.$t('tempSquare.promptOptimizeHint'));
@@ -1519,25 +1510,14 @@ export default {
           instructions: data.instructions || '', //系统提示词
           rerankParams: data.rerankConfig.modelId || '',
           visionConfig: data.visionConfig, //图片配置
-          modelConfig:
-            data.modelConfig.config !== null
-              ? data.modelConfig.config
-              : this.editForm.modelConfig,
+          modelConfig: data.modelConfig.config ?? this.editForm.modelConfig,
           recommendQuestion:
-            data.recommendQuestion && data.recommendQuestion.length > 0
-              ? data.recommendQuestion.map((n, index) => {
-                  return {
-                    value: n,
-                  };
-                })
+            (data.recommendQuestion?.length ?? 0) > 0
+              ? data.recommendQuestion.map(n => ({ value: n }))
               : [],
-          safetyConfig:
-            data.safetyConfig !== null
-              ? data.safetyConfig
-              : this.editForm.safetyConfig,
-          recommendConfig: data.recommendConfig
-            ? data.recommendConfig
-            : this.editForm.recommendConfig,
+          safetyConfig: data.safetyConfig ?? this.editForm.safetyConfig,
+          recommendConfig:
+            data.recommendConfig ?? this.editForm.recommendConfig,
         };
 
         this.editForm.knowledgeBaseConfig.config.rerankModelId =
@@ -1670,8 +1650,7 @@ export default {
       const config = this.editForm.recommendConfig.modelConfig;
       const source = modelRow || {};
       keys.forEach(key => {
-        const val = source[key];
-        config[key] = val !== undefined && val !== null ? val : '';
+        config[key] = source[key] ?? '';
       });
     },
   },

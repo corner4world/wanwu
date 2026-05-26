@@ -11,10 +11,22 @@
           name="config"
         ></el-tab-pane>
       </el-tabs>
-      <div class="header-actions"></div>
+      <div class="header-actions">
+        <AppPublishActions
+          :appId="skillPreviewParams.customSkillId"
+          :appType="SKILL"
+          :appName="assistantInfo.name"
+          :publishType="publishType"
+          @reload-data="reloadData"
+          @preview-version="previewVersion"
+        />
+      </div>
     </div>
 
-    <div class="tabs-content-wrapper">
+    <div
+      class="tabs-content-wrapper"
+      :class="{ 'disable-clicks': disableClick }"
+    >
       <keep-alive>
         <component
           :is="activeTabComponent"
@@ -30,12 +42,16 @@
 <script>
 import PreviewChat from './preview.vue';
 import SkillConfig from './config.vue';
+import AppPublishActions from '@/components/appPublishActions.vue';
+import { getCustomSkillInfo } from '@/api/templateSquare';
+import { AGENT, SKILL } from '@/utils/commonSet';
 
 export default {
   name: 'SkillTabs',
   components: {
     PreviewChat,
     SkillConfig,
+    AppPublishActions,
   },
   props: {
     skillPreviewParams: {
@@ -45,12 +61,51 @@ export default {
   },
   data() {
     return {
+      AGENT,
+      SKILL,
       activeTab: 'preview',
+      publishType: '',
+      disableClick: false,
+      version: '',
+      assistantInfo: {},
     };
   },
   computed: {
     activeTabComponent() {
       return this.activeTab === 'preview' ? 'PreviewChat' : 'SkillConfig';
+    },
+  },
+  watch: {
+    'skillPreviewParams.customSkillId': {
+      handler(val) {
+        if (val) {
+          this.getAppDetail();
+        }
+      },
+      immediate: true,
+    },
+  },
+  methods: {
+    reloadData() {
+      this.disableClick = false;
+      this.getAppDetail();
+      this.$emit('refresh-workspace');
+    },
+    previewVersion(item) {
+      this.disableClick = !item.isCurrent;
+      this.version = item.version || '';
+      this.getAppDetail();
+    },
+    async getAppDetail() {
+      const params = {
+        skillId: this.skillPreviewParams.customSkillId,
+      };
+      const res = await getCustomSkillInfo(params);
+
+      if (res.code === 0 && res.data) {
+        this.assistantInfo = res.data;
+        this.publishType = res.data.publishType;
+      }
     },
   },
 };
@@ -126,5 +181,10 @@ export default {
   min-height: 0;
   overflow: hidden;
   position: relative;
+  &.disable-clicks {
+    pointer-events: none;
+    opacity: 0.7;
+    filter: grayscale(0.5);
+  }
 }
 </style>

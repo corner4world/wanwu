@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="general-agent-page">
     <!-- 左侧会话列表 - 可折叠 -->
     <div :class="['sidebar', { collapsed: sidebarCollapsed }]">
@@ -24,7 +24,7 @@
               'conversation-item',
               { active: currentThreadId === item.threadId },
             ]"
-            @click="selectConversation(item.threadId)"
+            @click="selectConversation(item.threadId, item)"
           >
             <i class="el-icon-chat-dot-round"></i>
             <span class="conversation-title">{{ item.title }}</span>
@@ -258,7 +258,10 @@
                   <i v-else :class="selectedMode.icon"></i>
                   <span>{{ selectedMode.label }}</span>
                   <i
-                    v-if="!isSkillType || (isSkillType && !currentThreadId)"
+                    v-if="
+                      mode !== 'skill' &&
+                      (!isSkillType || (isSkillType && !currentThreadId))
+                    "
                     class="el-icon-close"
                     @click="removeMode(selectedMode.value)"
                   ></i>
@@ -390,6 +393,7 @@
           :skillPreviewParams="skillPreviewParams"
           class="preview-chat-panel"
           @view-workspace="handleViewWorkspace"
+          @refresh-workspace="loadWorkspaceFiles"
         />
       </transition>
 
@@ -657,6 +661,70 @@ export default {
       }
     },
 
+    replaceRouteQuery(query) {
+      const currentQuery = this.$route.query || {};
+      const currentKeys = Object.keys(currentQuery);
+      const nextKeys = Object.keys(query);
+      const isSameQuery =
+        currentKeys.length === nextKeys.length &&
+        nextKeys.every(key => currentQuery[key] === query[key]);
+
+      if (isSameQuery) return;
+
+      this.$router
+        .replace({
+          path: this.$route.path,
+          query,
+        })
+        .catch(() => {});
+    },
+
+    syncConversationRoute(threadId = '', conversation = null) {
+      const query = { ...(this.$route.query || {}) };
+      const isSkillConversation = conversation
+        ? !!conversation.isSkillConversation
+        : this.isSkillType;
+
+      delete query.chatMode;
+
+      if (threadId) {
+        query.threadId = threadId;
+
+        if (isSkillConversation) {
+          const skillId = conversation?.skillId || this.customSkillId;
+          query.chatType = 'skill';
+          if (skillId) {
+            query.customSkillId = skillId;
+          } else {
+            delete query.customSkillId;
+          }
+        } else {
+          delete query.chatType;
+          delete query.customSkillId;
+        }
+      } else {
+        delete query.threadId;
+
+        if (isSkillConversation) {
+          query.chatType = 'skill';
+          if (this.customSkillId) {
+            query.customSkillId = this.customSkillId;
+          } else {
+            delete query.customSkillId;
+          }
+        } else {
+          delete query.chatType;
+          delete query.customSkillId;
+        }
+      }
+
+      this.replaceRouteQuery(query);
+    },
+
+    shouldPreserveSkillContext() {
+      return this.mode === 'skill';
+    },
+
     initFromRoute() {
       const { chatType, customSkillId, chatMode, threadId } =
         this.$route.query || {};
@@ -733,6 +801,13 @@ export default {
         });
       }
 
+      this.syncConversationRoute(
+        this.currentThreadId,
+        this.currentConversation || {
+          isSkillConversation: true,
+          skillId: this.customSkillId,
+        },
+      );
       this.ensureMessageList(this.currentThreadId);
       this.addUserMessage(this.currentThreadId, content);
       this.$nextTick(() => this.scrollToBottom());
@@ -760,7 +835,7 @@ export default {
           if (previewId) this.previewId = previewId;
 
           // 优先级：接口活跃记录 > 路由穿透带入
-          let targetThreadId = threadId;
+          let targetThreadId = threadId || routeThreadId;
           let isNewRefresh = false;
 
           // 若目标对话不存在（如刚转换完还没有任何会话），主动刷新获取新会话
@@ -841,16 +916,17 @@ export default {
           await this.syncModelConfigAfterRefresh(threadId);
 
           // 将新会话加入左侧会话列表
-          this.conversationList.unshift({
+          const newConversation = {
             threadId,
             title: this.$t('generalAgent.index.newConversation'),
             createdAt: new Date().toISOString(),
             isSkillConversation: true,
             skillId: this.customSkillId,
             previewId: this.previewId,
-          });
+          };
+          this.conversationList.unshift(newConversation);
+          this.syncConversationRoute(threadId, newConversation);
 
-          // 注意：此处不再静默更新路由保持极简
           return threadId;
         } else {
           this.$message.error(res.msg || '刷新 Skill 对话失败');
@@ -962,12 +1038,24 @@ export default {
     },
 
     initNewConversation() {
+      const shouldPreserveSkillContext = this.shouldPreserveSkillContext();
       this.currentThreadId = '';
+      if (shouldPreserveSkillContext) {
+        this.chatType = 'skill';
+      } else {
+        this.chatType = '';
+        this.customSkillId = '';
+        this.previewId = '';
+      }
+      this.syncConversationRoute();
       this.clearMessages('');
       // 重置滚动状态
       this.resetScrollState();
       // 重置模式选择
       this.clearModes();
+      if (shouldPreserveSkillContext) {
+        this.chatType = 'skill';
+      }
       // 关闭工作区面板
       this.hidePanel();
       this.$nextTick(() => {
@@ -1023,7 +1111,7 @@ export default {
           this.$delete(this.messagesMap, '');
 
           this.selectedModel = modelConfig.modelId;
-          this.conversationList.unshift({
+          const newConversation = {
             threadId,
             title: title || this.$t('generalAgent.index.newConversation'),
             createdAt: new Date().toISOString(),
@@ -1034,7 +1122,9 @@ export default {
                   previewId: this.previewId,
                 }
               : {}),
-          });
+          };
+          this.conversationList.unshift(newConversation);
+          this.syncConversationRoute(threadId, newConversation);
           return threadId;
         } else {
           this.$message.error(this.$t('generalAgent.error.createFailed'));
@@ -1047,8 +1137,27 @@ export default {
       return null;
     },
 
-    selectConversation(threadId) {
-      if (this.currentThreadId === threadId) return;
+    selectConversation(threadId, conversation = null) {
+      if (!threadId) return;
+
+      const targetConversation =
+        conversation ||
+        this.conversationList.find(item => item.threadId === threadId) ||
+        null;
+
+      this.syncConversationRoute(threadId, targetConversation);
+
+      if (this.currentThreadId === threadId) {
+        if (targetConversation?.isSkillConversation) {
+          this.chatType = 'skill';
+          this.setSkillParamsByConversation(targetConversation);
+        } else if (targetConversation) {
+          this.chatType = '';
+          this.customSkillId = '';
+          this.previewId = '';
+        }
+        return;
+      }
       // 切换会话时，只切换 currentThreadId，不中止 SSE 流
       // SSE 流会继续在后台运行，切换回来时能继续显示
       this.currentThreadId = threadId;
@@ -1057,9 +1166,16 @@ export default {
       // 重置模式选择
       this.clearModes();
       // 检查当前会话是否是 skill 会话
-      if (this.currentConversation?.isSkillConversation) {
+      const currentConversation =
+        targetConversation || this.currentConversation;
+      if (currentConversation?.isSkillConversation) {
+        this.chatType = 'skill';
         this.addMode(MAIN_CHAT_MODES.SKILL_MODE);
-        this.setSkillParamsByConversation(this.currentConversation);
+        this.setSkillParamsByConversation(currentConversation);
+      } else if (currentConversation) {
+        this.chatType = '';
+        this.customSkillId = '';
+        this.previewId = '';
       }
       this.hidePanel();
       this.fetchHistory();
@@ -1473,7 +1589,12 @@ export default {
       if (res.code === 0) {
         this.$message.success(this.$t('common.info.delete'));
         if (this.currentThreadId === item.threadId) {
+          this.clearMessages(this.currentThreadId);
           this.currentThreadId = '';
+          this.chatType = '';
+          this.customSkillId = '';
+          this.previewId = '';
+          this.syncConversationRoute();
           this.messageList = [];
           this.hidePanel();
         }

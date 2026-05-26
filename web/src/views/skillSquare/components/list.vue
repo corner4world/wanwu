@@ -18,7 +18,7 @@
                   @click="handleCardClick"
                 >
                   <template v-slot:operations="{ info }">
-                    <div class="skill-card-operations">
+                    <div v-if="!isMineType" class="skill-card-operations">
                       <el-tooltip
                         v-if="showShared"
                         :content="
@@ -47,9 +47,15 @@
                         ></i>
                       </el-tooltip>
                     </div>
+                    <!-- 空置占位--用于不显示任何按钮 -->
+                    <div v-else></div>
                   </template>
                 </skill-card>
-                <div class="card card-item-more" @click="handleLinkMore()">
+                <div
+                  v-if="isBuiltinType"
+                  class="card card-item-more"
+                  @click="handleLinkMore()"
+                >
                   <div class="card-content">
                     <span>{{ $t('skillSpace.list.moreText') }}</span>
                   </div>
@@ -93,6 +99,14 @@ export default {
       basePath: this.$basePath,
       templateUrl: '',
     };
+  },
+  computed: {
+    isBuiltinType() {
+      return this.type === 'builtin';
+    },
+    isMineType() {
+      return this.type === 'mine';
+    },
   },
   methods: {
     handleDownload(info) {

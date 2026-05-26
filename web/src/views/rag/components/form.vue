@@ -244,14 +244,14 @@
                 <span class="el-icon-question question-tips"></span>
               </el-tooltip>
             </span>
-            <span class="common-add" @click="showSafety">
+            <span class="common-add">
               <el-tooltip
                 class="item"
                 effect="dark"
                 :content="$t('agent.form.safetyConfigTips')"
                 placement="top-start"
               >
-                <span class="el-icon-s-operation operation">
+                <span class="el-icon-s-operation operation" @click="showSafety">
                   <span class="handleBtn">{{ $t('agent.form.config') }}</span>
                 </span>
               </el-tooltip>
@@ -702,6 +702,8 @@ export default {
               res.data.qaRerankConfig.modelId;
 
             this.$nextTick(() => {
+              // 更新基准数据，避免 watch 误判
+              this.initialEditForm = structuredClone(this.editForm);
               this.isSettingFromDetail = false;
             });
           } else {
@@ -942,11 +944,8 @@ export default {
           },
         };
         const res = await updateRagConfig(fromParams);
-
-        // 更新成功后，更新 initialEditForm 避免重复触发
         if (res.code === 0) {
-          this.initialEditForm = structuredClone(this.editForm);
-          this.getDetail(); //获取详情
+          this.getDetail();
         }
       } catch (error) {
         console.error(error);

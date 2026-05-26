@@ -127,6 +127,12 @@ const constantRoutes = [
         meta: { perm: [PERMS.SKILL] },
       },
       {
+        path: '/skill/publishConfig',
+        component: () =>
+          import('@/views/templateSquare/skills/custom/publishConfig/index.vue'),
+        meta: { perm: [PERMS.SKILL] },
+      },
+      {
         path: '/tool',
         component: resolve => require(['@/views/tool'], resolve),
         meta: { perm: [PERMS.TOOL], routeType: TOOL },
@@ -306,6 +312,12 @@ const constantRoutes = [
         path: '/generalAgent',
         component: resolve =>
           require(['@/views/generalAgent/index.vue'], resolve),
+        meta: { perm: [PERMS.WGA_WANWU_BOT] },
+      },
+      {
+        path: '/generalAgent/skills/publishConfig',
+        component: () =>
+          import('@/views/templateSquare/skills/custom/publishConfig/index.vue'),
         meta: { perm: [PERMS.WGA_WANWU_BOT] },
       },
       {

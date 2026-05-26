@@ -1,5 +1,6 @@
 <template>
   <div :class="['message-item', `message-${message.role}`]">
+    <image-preview ref="imagePreview" />
     <!-- 用户消息右侧布局 -->
     <template v-if="message.role === 'user'">
       <div class="user-message-wrapper">
@@ -16,7 +17,7 @@
             >
               <img
                 v-if="isImageFile(file)"
-                :src="file.displayUrl || file.url || file.data"
+                :src="file.displayUrl"
                 class="file-image"
                 @click="previewImage(file)"
               />
@@ -202,6 +203,7 @@ import WorkspaceActivity from './WorkspaceActivity.vue';
 import ActivityBlock from './ActivityBlock.vue';
 import QuestionBlock from './QuestionBlock.vue';
 import CopyIcon from '@/components/copyIcon.vue';
+import ImagePreview from '@/components/ImagePreview.vue';
 
 export default {
   name: 'MessageItem',
@@ -215,6 +217,7 @@ export default {
     ActivityBlock,
     QuestionBlock,
     CopyIcon,
+    ImagePreview,
   },
   props: {
     message: {
@@ -305,34 +308,9 @@ export default {
     isImageFile,
 
     previewImage(file) {
-      const url = file.url || file.data;
+      const url = file.displayUrl;
       if (url) {
-        const div = document.createElement('div');
-        div.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.9);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-          cursor: zoom-out;
-        `;
-        div.onclick = () => div.remove();
-
-        const img = document.createElement('img');
-        img.src = url;
-        img.style.cssText = `
-          max-width: 90%;
-          max-height: 90%;
-          object-fit: contain;
-        `;
-
-        div.appendChild(img);
-        document.body.appendChild(div);
+        this.$refs.imagePreview.open([url]);
       }
     },
 

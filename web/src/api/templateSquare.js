@@ -108,6 +108,16 @@ export const getCustomSkillList = data => {
   });
 };
 
+// 下载自定义skill指定版本
+export const downloadCustomSkillVersion = params => {
+  return request({
+    url: `${USER_API}/agent/skill/custom/version/download`,
+    method: 'get',
+    params,
+    responseType: 'blob',
+  });
+};
+
 // 删除自定义skills
 export const deleteCustomSkill = data => {
   return request({
@@ -153,56 +163,6 @@ export const deleteCustomSkillConfig = data => {
   });
 };
 
-// 创建自定义skills会话
-export const createCustomSkillConversation = data => {
-  return request({
-    url: `${USER_API}/agent/skill/conversation`,
-    method: 'post',
-    data,
-  });
-};
-
-// 删除自定义skill会话
-export const delCustomSkillConversation = data => {
-  return request({
-    url: `${USER_API}/agent/skill/conversation`,
-    method: 'delete',
-    data,
-  });
-};
-
-// 查询自定义skill会话列表
-export const getCustomSkillConversationList = data => {
-  return request({
-    url: `${USER_API}/agent/skill/conversation/list`,
-    method: 'get',
-    params: data,
-  });
-};
-
-// 查询自定义skill会话详情
-export const getCustomSkillConversationDetail = data => {
-  return request({
-    url: `${USER_API}/agent/skill/conversation/detail`,
-    method: 'get',
-    params: data,
-  });
-};
-
-// 自定义skill会话sse
-export const getCustomSkillSSeUrl = () => {
-  return `${USER_API}/agent/skill/conversation/chat`;
-};
-
-// 发送自定义skill到资源库
-export const sendCustomSkillToResource = data => {
-  return request({
-    url: `${USER_API}/agent/skill/conversation/save`,
-    method: 'post',
-    data,
-  });
-};
-
 // 创建自定义skills
 export const createCustomSkill = data => {
   return request({
@@ -217,15 +177,6 @@ export const checkCustomSkill = data => {
   return request({
     url: `${USER_API}/agent/skill/custom/check`,
     method: 'post',
-    data,
-  });
-};
-
-// 清空skillChat对话
-export const clearSkillConversation = data => {
-  return request({
-    url: `${USER_API}/agent/skill/conversation/clear`,
-    method: 'delete',
     data,
   });
 };
@@ -289,33 +240,6 @@ export const updateResourceBuiltinSkillConfig = data => {
 export const deleteResourceBuiltinSkillConfig = data => {
   return request({
     url: `${USER_API}/agent/skill/builtin/config`,
-    method: 'delete',
-    data,
-  });
-};
-
-// 新增添加的skill配置
-export const createAcquiredSkillConfig = data => {
-  return request({
-    url: `${USER_API}/agent/acquired/skill/config`,
-    method: 'post',
-    data,
-  });
-};
-
-// 修改添加的skill配置
-export const updateAcquiredSkillConfig = data => {
-  return request({
-    url: `${USER_API}/agent/acquired/skill/config`,
-    method: 'put',
-    data,
-  });
-};
-
-// 删除添加的skill配置
-export const deleteAcquiredSkillConfig = data => {
-  return request({
-    url: `${USER_API}/agent/acquired/skill/config`,
     method: 'delete',
     data,
   });

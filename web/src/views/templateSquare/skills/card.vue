@@ -7,15 +7,41 @@
         :src="avatarSrc(info.avatar.path)"
       />
       <div class="mcp_detailBox">
-        <span class="mcp_name">{{ info.name }}</span>
+        <span class="mcp_name" :title="info.name">
+          {{ info.name }}
+          <i
+            v-if="visibleVersionInfo && info.isPublished"
+            class="el-icon-success published-icon"
+          />
+        </span>
         <span class="mcp_from from_tag">
-          <label>{{ $t('tempSquare.author') }}：{{ info.author }}</label>
+          <label :title="`${$t('tempSquare.author')}：${info.author || ''}`">
+            {{ $t('tempSquare.author') }}：{{ info.author }}
+          </label>
+          <label
+            v-if="visibleVersionInfo && info.isPublished"
+            class="version-label"
+            :title="`${info.version}`"
+          >
+            {{ info.version }}
+          </label>
         </span>
       </div>
     </div>
     <div class="card-des">{{ info.desc }}</div>
-    <div class="card-bottom" style="justify-content: flex-end">
+    <div class="card-bottom">
+      <div class="card-bottom-left"></div>
       <div class="card-bottom-right">
+        <div v-if="visibleVersionInfo && info.isPublished" class="publishType">
+          <span v-if="info.publishType === 'private'" class="publishType-tag">
+            <span class="el-icon-lock"></span>
+            {{ $t('appSpace.private') }}
+          </span>
+          <span v-else class="publishType-tag">
+            <span class="el-icon-unlock"></span>
+            {{ $t('appSpace.public') }}
+          </span>
+        </div>
         <slot
           name="operations"
           v-bind="{
@@ -34,20 +60,26 @@
             <i class="el-icon-collection" @click.stop="sendToResource"></i>
           </el-tooltip>
 
+          <!-- 自定义类型显示更多操作 -->
           <el-tooltip
-            v-if="![2].includes(type)"
+            v-if="type === 3"
             :content="$t('tempSquare.download')"
             placement="top"
           >
             <i class="el-icon-download" @click.stop="downloadTemplate"></i>
           </el-tooltip>
 
-          <!-- 自定义类型显示更多操作 -->
           <el-dropdown v-if="[2, 3].includes(type)" placement="bottom">
             <span class="el-dropdown-link">
               <i class="el-icon-more" @click.stop />
             </span>
             <el-dropdown-menu slot="dropdown" style="margin-top: -10px">
+              <el-dropdown-item
+                v-if="type === 2 && info.isPublished"
+                @click.native="handlePublishConfig"
+              >
+                {{ $t('appSpace.publishSet') }}
+              </el-dropdown-item>
               <el-dropdown-item @click.native="handleDelete">
                 {{ $t('common.button.delete') }}
               </el-dropdown-item>
@@ -74,6 +106,10 @@ export default {
     type: {
       type: Number,
       default: 1,
+    },
+    visibleVersionInfo: {
+      type: Boolean,
+      default: false,
     },
   },
   methods: {
@@ -113,6 +149,9 @@ export default {
     },
     handleDelete() {
       this.$emit('delete', this.info);
+    },
+    handlePublishConfig() {
+      this.$emit('publishConfig', this.info);
     },
     // 发送到资源库
     sendToResource() {
@@ -202,11 +241,12 @@ export default {
     color: #5d5d5d;
     font-weight: 400;
     overflow: hidden;
+    /*! autoprefixer: ignore next */
+    -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
-    -webkit-box-orient: vertical;
     font-size: 13px;
-    height: 36px;
+    height: auto;
     word-wrap: break-word;
   }
   .card-bottom {
@@ -232,5 +272,48 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.published-icon {
+  color: #67c23a;
+  margin-left: 4px;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.author-label {
+  flex-shrink: 0;
+}
+
+.version-label {
+  margin-left: 8px;
+}
+
+.publishType {
+  &-tag {
+    display: inline-flex;
+    align-items: center;
+    background: #f0f2f5;
+    color: #909399;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+
+    .el-icon-lock,
+    .el-icon-unlock {
+      margin-right: 4px;
+    }
+  }
+}
+
+.card-title .mcp_detailBox .mcp_from {
+  display: flex !important;
+  align-items: center;
+  label {
+    width: auto !important;
+    max-width: 50%;
+    flex-shrink: 1;
+  }
 }
 </style>

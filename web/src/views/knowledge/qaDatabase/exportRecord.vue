@@ -34,7 +34,7 @@
         min-width="160"
       >
         <template slot-scope="scope">
-          {{ scope.row.fileName }}
+          {{ scope.row.status === STATUS_FINISHED ? scope.row.fileName : '--' }}
         </template>
       </el-table-column>
       <el-table-column
@@ -66,11 +66,7 @@
           <el-button
             type="text"
             size="mini"
-            :disabled="
-              [STATUS_PENDING, STATUS_PROCESSING, STATUS_FAILED].includes(
-                scope.row.status,
-              )
-            "
+            :disabled="scope.row.status !== STATUS_FINISHED"
             @click="handleDownload(scope.row)"
           >
             {{ $t('knowledgeManage.qaExport.download') }}

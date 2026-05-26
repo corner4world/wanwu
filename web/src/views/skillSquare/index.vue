@@ -26,6 +26,7 @@
       <div class="explore-tab-pane">
         <SkillList
           :list="listData"
+          :type="active"
           :loading="loading"
           :showShared="active !== 'builtin'"
           @download="handleDownload"
@@ -43,10 +44,13 @@ import SearchInput from '@/components/searchInput.vue';
 import SkillList from './components/list.vue';
 import CreateTotalDialog from '@/components/createTotalDialog.vue';
 import {
-  getSquareSkillList,
   getBuiltinSquareSkillList,
   downloadSquareSkill,
   sendSquareSkillToResource,
+  getSharedSquareSkillList,
+  addSharedSkillToResource,
+  downloadSharedSquareSkill,
+  getCreatedSquareSkillList,
 } from '@/api/skillSquare';
 import { downloadBuiltinSkill } from '@/api/templateSquare';
 import { resDownloadFile } from '@/utils/util';
@@ -72,27 +76,41 @@ export default {
           activeImg: require('@/assets/imgs/mine_active.svg'),
           unactiveImg: require('@/assets/imgs/mine_unactive.svg'),
         },
+        {
+          name: this.$t('skillSpace.shared'),
+          value: 'shared',
+          activeImg: require('@/assets/imgs/all_active.svg'),
+          unactiveImg: require('@/assets/imgs/all_unactive.svg'),
+        },
         // {
         //   name: this.$t('explore.tag.favorite'),
         //   value: 'favorite',
         //   activeImg: require('@/assets/imgs/mine_active.svg'),
         //   unactiveImg: require('@/assets/imgs/mine_unactive.svg'),
         // },
-        // {
-        //   name: this.$t('explore.tag.private'),
-        //   value: 'private',
-        //   activeImg: require('@/assets/imgs/start_active.svg'),
-        //   unactiveImg: require('@/assets/imgs/start_unactive.svg'),
-        // },
+        {
+          name: this.$t('skillSpace.mine'),
+          value: 'mine',
+          activeImg: require('@/assets/imgs/start_active.svg'),
+          unactiveImg: require('@/assets/imgs/start_unactive.svg'),
+        },
       ],
       listData: [],
     };
   },
   created() {
+    this.initActiveByRouteType();
     this.getExplorationList();
   },
   mounted() {},
   methods: {
+    initActiveByRouteType() {
+      const { type } = this.$route.query;
+      const targetTag = this.tagList.find(item => item.value === type);
+      if (targetTag) {
+        this.active = targetTag.value;
+      }
+    },
     handleSearch(value) {
       this.searchValue = value;
       this.getExplorationList();
@@ -100,15 +118,45 @@ export default {
     handleTagClick(item) {
       this.active = item.value;
       this.getExplorationList();
+      this.updateRouteType(item.value);
+    },
+    updateRouteType(type) {
+      if (this.$route.query.type === type) {
+        return;
+      }
+
+      const route = {
+        query: {
+          ...this.$route.query,
+          type,
+        },
+      };
+
+      if (this.$route.name) {
+        route.name = this.$route.name;
+        route.params = this.$route.params;
+      } else {
+        route.path = this.$route.path;
+      }
+
+      this.$router.replace(route).catch(err => {
+        if (err && err.name !== 'NavigationDuplicated') {
+          throw err;
+        }
+      });
     },
     getExplorationList() {
       const params = {
         name: this.searchValue,
       };
-      const requestApi =
-        this.active === 'builtin'
-          ? getBuiltinSquareSkillList
-          : getSquareSkillList;
+      let requestApi = getBuiltinSquareSkillList;
+      if (this.active === 'builtin') {
+        requestApi = getBuiltinSquareSkillList;
+      } else if (this.active === 'shared') {
+        requestApi = getSharedSquareSkillList;
+      } else if (this.active === 'mine') {
+        requestApi = getCreatedSquareSkillList;
+      }
 
       this.loading = true;
       requestApi(params)
@@ -122,15 +170,24 @@ export default {
         });
     },
     handleDownload(info) {
-      const downloadApi =
-        this.active === 'builtin' ? downloadBuiltinSkill : downloadSquareSkill;
+      let downloadApi = downloadSquareSkill;
+      if (this.active === 'builtin') {
+        downloadApi = downloadBuiltinSkill;
+      } else if (this.active === 'shared') {
+        downloadApi = downloadSharedSquareSkill;
+      }
 
       downloadApi({ skillId: info.skillId }).then(response => {
         resDownloadFile(response, `${info.name}.zip`);
       });
     },
     handleSendToResource(info) {
-      sendSquareSkillToResource({ skillId: info.skillId }).then(res => {
+      const requestApi =
+        this.active === 'shared'
+          ? addSharedSkillToResource
+          : sendSquareSkillToResource;
+
+      requestApi({ skillId: info.skillId }).then(res => {
         if (res.code === 0) {
           this.$message.success(this.$t('common.info.send'));
           info.isShared = true;
@@ -145,6 +202,10 @@ export default {
       const query = { skillId: info.skillId };
       if (this.active === 'builtin') {
         query.skillType = 'builtin';
+      } else if (this.active === 'shared') {
+        query.skillType = 'shared';
+      } else if (this.active === 'mine') {
+        query.skillType = 'mine';
       }
       this.$router.push({
         path,

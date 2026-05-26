@@ -457,10 +457,9 @@ export default {
 
     img {
       align-self: center;
-      width: 100% !important;
-      max-height: 50vh;
-      min-height: 50px;
-      background: #ccc;
+      max-width: 100%;
+      max-height: 400px;
+      height: auto;
       object-fit: contain;
     }
 

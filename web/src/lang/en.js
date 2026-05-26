@@ -343,6 +343,8 @@ export default {
         '请仔细阅读以下文档，若需配置变量，请到资源库进行配置后使用',
     },
     builtin: '内置',
+    shared: '共享',
+    mine: '我发布的',
   },
   uploadDialog: {
     title: '文件上传',
@@ -731,8 +733,9 @@ export default {
       name: 'skill',
       app: {
         builtin: 'Built-in',
-        myAdded: '我添加的',
-        myCreated: '我创建的',
+        shared: 'Shared',
+        myAdded: 'My Added',
+        myCreated: 'My Created',
         addText: '创建自定义Skills',
         moreText: '点击发现更多Skills',
       },
@@ -792,6 +795,14 @@ export default {
           variableValue: 'Enter Variable Value',
         },
       },
+      historyVersion: 'History Version',
+      version: 'Version',
+      versionDesc: 'Version Description',
+      updateTime: 'Update Time',
+      publishTypeDesc: 'Support configuring skill publishing scope',
+      publishType: 'Private release as Skill: Only visible to yourself',
+      publishType1: 'Public release as Skill: Visible within organization',
+      publishType2: 'Public release as Skill: Globally visible',
     },
   },
 
@@ -1607,6 +1618,9 @@ export default {
       customTools: '自定义工具',
       addSkill: '创建Skill',
       addSkillSuccess: 'Skill添加成功',
+      skillAcquired: 'Added by me',
+      skillCustom: 'Created by me (published)',
+      skillBuiltin: 'Built-in',
       firstAddSkillTips:
         '您已勾选skills，配置智能体模型时，请选择一款擅长工具选择与参数生成的模型，如GLM-5或MiniMax等，以确保使用效果',
     },
@@ -1905,6 +1919,13 @@ export default {
       organization: '公开发布为应用：组织内可见',
       public: '公开发布为应用：全局可见',
     },
+    commonPublishType: {
+      private: '私密发布：仅自己可见',
+      organization: '公开发布：组织内可见',
+      public: '公开发布：全局可见',
+    },
+    expiredAtBeforeNow:
+      'Expiration time cannot be earlier than the current time',
     chiChat: {
       title: '闲聊模式',
       tips: '开启闲聊模式，用户可进行大模型闲聊;禁用闲聊模式则只支持对知识库、问答库内涉及的内容进行问答。若只关联问答库，暂不支持开启闲聊模式',
