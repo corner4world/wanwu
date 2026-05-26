@@ -70,7 +70,7 @@ func GetGeneralAgentResourceSelect(ctx *gin.Context, userId, orgId string, name 
 		// custom、acquired
 		var allSkills []*response.SkillInfo
 		// 获取已发布的 custom skill
-		customResp, err := GetSkillSelect(ctx, userId, orgId, name, constant.SkillTypeCustom)
+		customResp, err := GetSkillSelect(ctx, userId, orgId, name, constant.SkillTypeCustom, false)
 		if err != nil {
 			skillErr = err
 			return
@@ -79,7 +79,7 @@ func GetGeneralAgentResourceSelect(ctx *gin.Context, userId, orgId string, name 
 			allSkills = append(allSkills, list...)
 		}
 		// 获取 acquired skill
-		acquiredResp, err := GetSkillSelect(ctx, userId, orgId, name, constant.SkillTypeAcquired)
+		acquiredResp, err := GetSkillSelect(ctx, userId, orgId, name, constant.SkillTypeAcquired, true)
 		if err != nil {
 			skillErr = err
 			return

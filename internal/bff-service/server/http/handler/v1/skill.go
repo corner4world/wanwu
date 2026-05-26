@@ -204,7 +204,7 @@ func CheckCustomSkill(ctx *gin.Context) {
 //	@Success		200			{object}	response.Response{data=response.ListResult{list=[]response.SkillInfo}}
 //	@Router			/agent/skill/select [get]
 func GetSkillSelect(ctx *gin.Context) {
-	resp, err := service.GetSkillSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"), ctx.Query("skillType"))
+	resp, err := service.GetSkillSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"), ctx.Query("skillType"), false)
 	gin_util.Response(ctx, resp, err)
 }
 

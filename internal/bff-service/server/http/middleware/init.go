@@ -38,6 +38,9 @@ func Init(r *gin.Engine) {
 	// --- ontology ---
 	mid.NewSub("ontology", "本体智能体", route.PermNeedCheck, true, true, JWTUser, CheckUserPerm)
 
+	// ontology.digital_employee
+	mid.Sub("ontology").NewSub("digital_employee", "数字员工", route.PermNeedCheck, true, true)
+
 	// ontology.knowledge_network
 	mid.Sub("ontology").NewSub("knowledge_network", "知识网络", route.PermNeedCheck, true, true)
 

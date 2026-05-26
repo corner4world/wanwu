@@ -14,6 +14,12 @@ func Register(apiV1 *gin.RouterGroup) {
 	// callback
 	registerV1Callback(apiV1)
 
+	// wga
+	registerWGA(apiV1)
+
+	// ontology
+	registerOntology(apiV1)
+
 	// model
 	registerModel(apiV1)
 
@@ -26,11 +32,11 @@ func Register(apiV1 *gin.RouterGroup) {
 	// tool
 	registerTool(apiV1)
 
-	// safety
-	registerSafety(apiV1)
-
 	// skill
 	registerAgentSkill(apiV1)
+
+	// safety
+	registerSafety(apiV1)
 
 	// rag
 	registerRag(apiV1)
@@ -40,9 +46,6 @@ func Register(apiV1 *gin.RouterGroup) {
 
 	// assistant
 	registerAssistant(apiV1)
-
-	// wga
-	registerWGA(apiV1)
 
 	// exploration
 	registerExploration(apiV1)

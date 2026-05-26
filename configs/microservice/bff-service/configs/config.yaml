@@ -406,6 +406,15 @@ ontology:
   enable: 0
   endpoint: http://vega-web:3010
   knowledge_network_list_uri: /vega/api/ontology-manager/v1/knowledge-networks
+  builtin_skills:
+    - "ontology/archive-protocol"
+    - "ontology/bkn-creator"
+    - "ontology/bkn-modeling-advisor"
+    - "ontology/create-bkn"
+    - "ontology/ontology-core"
+    - "ontology/smart-ask-data"
+    - "ontology/smart-data-analysis"
+    - "ontology/smart-search-tables"
   smart_data_skills:
     - name: smart-data-analysis
       desc: 数据分析总入口，负责意图识别、KN选择、SQL生成和路由

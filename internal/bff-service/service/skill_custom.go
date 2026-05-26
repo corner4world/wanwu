@@ -644,7 +644,7 @@ func CheckCustomSkill(ctx *gin.Context, userId, orgId, zipUrl string) (*response
 	}, nil
 }
 
-func GetSkillSelect(ctx *gin.Context, userId, orgId, name, skillType string) (*response.ListResult, error) {
+func GetSkillSelect(ctx *gin.Context, userId, orgId, name, skillType string, builtInOnlyOntology bool) (*response.ListResult, error) {
 	var allSkills []*response.SkillInfo
 
 	// 内建 skills
@@ -652,6 +652,19 @@ func GetSkillSelect(ctx *gin.Context, userId, orgId, name, skillType string) (*r
 		for _, skillsCfg := range config.Cfg().AgentSkills {
 			if name != "" && !strings.Contains(skillsCfg.Name, name) {
 				continue
+			}
+			if builtInOnlyOntology {
+				// 本体智能体平台配置数字员工场景
+				if !util.Exist(config.Cfg().Ontology.BuiltinSkills, skillsCfg.SkillId) {
+					// 只展示在 ontology 中配置的内建技能
+					continue
+				}
+			} else {
+				// 智能体、工作流配置Skills场景
+				if util.Exist(config.Cfg().Ontology.BuiltinSkills, skillsCfg.SkillId) {
+					// 不展示在 ontology 中配置的内建技能
+					continue
+				}
 			}
 			iconUrl := config.Cfg().DefaultIcon.SkillIcon
 			if skillsCfg.Avatar != "" {

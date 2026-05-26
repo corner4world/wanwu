@@ -151,6 +151,7 @@ type OntologyServiceConfig struct {
 	Enable                  int                            `json:"enable" mapstructure:"enable"`
 	Endpoint                string                         `json:"endpoint" mapstructure:"endpoint"`
 	KnowledgeNetworkListUri string                         `json:"knowledge_network_list_uri" mapstructure:"knowledge_network_list_uri"`
+	BuiltinSkills           []string                       `yaml:"builtin_skills" json:"builtin_skills" mapstructure:"builtin_skills"`
 	SmartDataSkills         []OntologySmartDataSkillConfig `json:"smart_data_skills" mapstructure:"smart_data_skills"`
 }
 
