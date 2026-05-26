@@ -233,11 +233,8 @@ export default {
       tableNameLimit: '不超过15个字符',
       tableName: '敏感词表须有汉字、英文、数字组成',
       tableRemarkLimit: '表备注须在50字以内',
-      modelName:
-        '支持中英文、数字、下划线(_)、中划线(-)、(.)，2-50个字符，不能以下划线为开头',
-      modelNameLimit: '2-50个字符',
-      modelId:
-        '支持英文、数字、下划线(_)、中划线(-)、(.)，2-50个字符，不能以下划线为开头',
+      text: '支持中英文、数字、下划线(_)、中划线(-)，2-50个字符，不能以下划线为开头',
+      textLimit: '2-50个字符',
       version: '支持英文、数字、(.)',
       inferUrl: 'Base Url，例如：',
       apiKey: '输入API Key, 例如：',

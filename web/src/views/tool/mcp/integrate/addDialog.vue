@@ -24,7 +24,7 @@
           <el-form-item :label="$t('tool.integrate.name')" prop="name">
             <el-input
               v-model="ruleForm.name"
-              :placeholder="$t('common.hint.modelName')"
+              :placeholder="$t('common.hint.text')"
             ></el-input>
           </el-form-item>
           <el-form-item :label="$t('tool.integrate.from')" prop="from">
@@ -162,14 +162,14 @@ export default {
       rules: {
         name: [
           {
-            pattern: /^(?!_)[a-zA-Z0-9-_.\u4e00-\u9fa5]+$/,
-            message: this.$t('common.hint.modelName'),
+            pattern: this.$config.commonTextReg,
+            message: this.$t('common.hint.text'),
             trigger: 'blur',
           },
           {
             min: 2,
             max: 50,
-            message: this.$t('common.hint.modelNameLimit'),
+            message: this.$t('common.hint.textLimit'),
             trigger: 'blur',
           },
           {

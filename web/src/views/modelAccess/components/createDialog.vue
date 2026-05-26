@@ -99,7 +99,7 @@
         >
           <el-input
             v-model="createForm.displayName"
-            :placeholder="$t('common.hint.modelName')"
+            :placeholder="$t('common.hint.text')"
             :disabled="!allowEdit"
           ></el-input>
         </el-form-item>
@@ -542,8 +542,8 @@ export default {
             message: this.$t('common.input.placeholder'),
             trigger: 'blur',
           },
-          // { min: 2, max: 50, message: this.$t('common.hint.modelNameLimit'), trigger: 'blur'},
-          // { pattern: /^(?!_)[a-zA-Z0-9-_.\u4e00-\u9fa5]+$/, message: this.$t('common.hint.modelName'), trigger: "blur"}
+          // { min: 2, max: 50, message: this.$t('common.hint.textLimit'), trigger: 'blur'},
+          // { pattern: this.$config.commonTextReg, message: this.$t('common.hint.text'), trigger: "blur"}
         ],
         appKey: [
           {
@@ -575,14 +575,14 @@ export default {
         ],
         displayName: [
           {
-            pattern: /^(?!_)[a-zA-Z0-9-_.\u4e00-\u9fa5]+$/,
-            message: this.$t('common.hint.modelName'),
+            pattern: this.$config.commonTextReg,
+            message: this.$t('common.hint.text'),
             trigger: 'blur',
           },
           {
             min: 2,
             max: 50,
-            message: this.$t('common.hint.modelNameLimit'),
+            message: this.$t('common.hint.textLimit'),
             trigger: 'blur',
           },
           {

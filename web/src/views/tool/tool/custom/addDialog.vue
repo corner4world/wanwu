@@ -33,7 +33,7 @@
                 <el-input
                   class="name-input"
                   v-model="form.name"
-                  :placeholder="$t('common.hint.modelName')"
+                  :placeholder="$t('common.hint.text')"
                 />
               </el-form-item>
             </div>
@@ -359,14 +359,14 @@ export default {
         ],
         name: [
           {
-            pattern: /^(?!_)[a-zA-Z0-9-_.\u4e00-\u9fa5]+$/,
-            message: this.$t('common.hint.modelName'),
+            pattern: this.$config.commonTextReg,
+            message: this.$t('common.hint.text'),
             trigger: 'blur',
           },
           {
             min: 2,
             max: 50,
-            message: this.$t('common.hint.modelNameLimit'),
+            message: this.$t('common.hint.textLimit'),
             trigger: 'blur',
           },
           {
