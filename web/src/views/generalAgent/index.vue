@@ -47,6 +47,16 @@
         <!-- 顶部标题栏 -->
         <div class="header">
           <div class="header-left">
+            <button
+              v-if="mode === 'skill'"
+              class="header-icon-btn"
+              :title="$t('menu.back')"
+              :aria-label="$t('menu.back')"
+              @click="$router.back()"
+            >
+              <i class="el-icon-arrow-left"></i>
+            </button>
+
             <div v-if="mode !== 'skill'" class="header-btns">
               <button class="header-icon-btn" @click="toggleSidebar">
                 <i
