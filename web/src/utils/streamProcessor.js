@@ -21,9 +21,30 @@ export default class StreamProcessor {
       inPreBlock: false,
       inLatexBlock: false,
       inToolBlock: false,
+      inTableBlock: false,
     };
 
     this.citations = new Set(); // 存储已稳定的引文索引
+  }
+
+  getTableCells(line) {
+    const trimmed = String(line || '').trim();
+    if (!trimmed || !trimmed.includes('|')) return [];
+    const normalized = trimmed.replace(/^\|/, '').replace(/\|$/, '');
+    return normalized.split('|').map(cell => cell.trim());
+  }
+
+  isMarkdownTableRow(line) {
+    const cells = this.getTableCells(line);
+    return cells.length >= 2 && cells.some(cell => cell);
+  }
+
+  isMarkdownTableDelimiter(line) {
+    const cells = this.getTableCells(line);
+    return (
+      cells.length >= 2 &&
+      cells.every(cell => /^:?-{3,}:?$/.test(cell.replace(/\s+/g, '')))
+    );
   }
 
   /**
@@ -89,10 +110,34 @@ export default class StreamProcessor {
           scanStates.inLatexBlock = false;
         }
 
+        const prevLine = i > 0 ? lines[i - 1] : '';
+        const nextCompleteLine = i + 1 < lines.length - 1 ? lines[i + 1] : '';
+        const hasNextCompleteLine = i + 1 < lines.length - 1;
+        const isTableRow = this.isMarkdownTableRow(line);
+        const isTableDelimiter = this.isMarkdownTableDelimiter(line);
+        const prevIsTableRow = this.isMarkdownTableRow(prevLine);
+        const nextIsTableDelimiter =
+          hasNextCompleteLine &&
+          this.isMarkdownTableDelimiter(nextCompleteLine);
+
+        if (isTableDelimiter && prevIsTableRow) {
+          scanStates.inTableBlock = true;
+        } else if (scanStates.inTableBlock && !isTableRow) {
+          scanStates.inTableBlock = false;
+        }
+
+        const isPendingTableHeader =
+          isTableRow &&
+          !isTableDelimiter &&
+          (nextIsTableDelimiter ||
+            (!hasNextCompleteLine && !scanStates.inTableBlock));
+
         currentScanText += lineWithNewline;
 
         // 当所有块都闭合时，视为安全截断点
-        const isSafe = !Object.values(scanStates).some(state => state);
+        const isSafe =
+          !isPendingTableHeader &&
+          !Object.values(scanStates).some(state => state);
         if (isSafe) {
           safeFlushText = currentScanText;
           this.blockStates = { ...scanStates };
@@ -162,7 +207,8 @@ export default class StreamProcessor {
       // 防止流式输出中未完成的行被 markdown-it 误判为 thematic break (<hr>)
       // 例如 "* **角色" 逐字输出到 "* **" 时，3个 * 加空格会匹配 <hr> 规则
       const lastNewline = textToRender.lastIndexOf('\n');
-      const lastLine = lastNewline === -1 ? textToRender : textToRender.slice(lastNewline + 1);
+      const lastLine =
+        lastNewline === -1 ? textToRender : textToRender.slice(lastNewline + 1);
       if (/^[\s*_-]*([*_-])[\s*_-]*\1[\s*_-]*\1[\s*_-]*$/.test(lastLine)) {
         textToRender += '\u200B';
       }

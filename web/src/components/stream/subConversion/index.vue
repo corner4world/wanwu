@@ -487,6 +487,32 @@ export default {
       transform: scale(0.8);
       top: 0;
     }
+    table {
+      border-collapse: collapse;
+      margin: 12px 0;
+      width: 100%;
+      font-size: 13px;
+
+      th,
+      td {
+        border: 1px solid #e5e7eb;
+        padding: 7px 12px;
+        text-align: left;
+      }
+
+      tr {
+        background: rgba(99, 102, 241, 0.06);
+        &:nth-child(2n) {
+          background: rgba(99, 102, 241, 0.12);
+        }
+      }
+
+      th {
+        background: rgba(99, 102, 241, 0.06);
+        color: #1f2937;
+        font-weight: 600;
+      }
+    }
   }
 
   ::v-deep .tool-result-container {
