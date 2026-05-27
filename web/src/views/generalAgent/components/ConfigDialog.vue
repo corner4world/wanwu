@@ -565,14 +565,19 @@ export default {
     handleToggleResource(item, resourceType) {
       const itemId = item.id;
 
-      // ontology 类型使用单选逻辑
+      // ontology 类型使用单选逻辑，点击已选项可取消选中
       if (resourceType === 'ontology') {
-        this.$set(this.selectedResources, resourceType, [
-          {
-            id: itemId,
-            type: item.type,
-          },
-        ]);
+        const currentId = this.selectedResources[resourceType]?.[0]?.id;
+        if (currentId === itemId) {
+          this.$set(this.selectedResources, resourceType, []);
+        } else {
+          this.$set(this.selectedResources, resourceType, [
+            {
+              id: itemId,
+              type: item.type,
+            },
+          ]);
+        }
         return;
       }
 
