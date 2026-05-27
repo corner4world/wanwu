@@ -103,6 +103,8 @@
           <el-input
             v-model="ruleForm.description"
             :placeholder="$t('common.input.inputDesc')"
+            maxlength="200"
+            show-word-limit
           ></el-input>
         </el-form-item>
         <template v-if="tabActive === INTERNAL">
@@ -364,6 +366,7 @@ import {
   DB,
 } from '@/views/knowledge/constants';
 import uploadAvatar from '@/components/uploadAvatar.vue';
+import { filterSize } from '@/utils/util';
 
 export default {
   props: {
@@ -378,14 +381,6 @@ export default {
   },
   mixins: [uploadChunk],
   data() {
-    let checkName = (rule, value, callback) => {
-      const reg = /^[\u4E00-\u9FA5a-z0-9_-]+$/;
-      if (!reg.test(value)) {
-        callback(new Error(this.$t('knowledgeManage.inputErrorTips')));
-      } else {
-        return callback();
-      }
-    };
     return {
       INTERNAL,
       EXTERNAL,
@@ -429,12 +424,27 @@ export default {
             message: this.$t('knowledgeManage.knowledgeNameRules'),
             trigger: 'blur',
           },
-          { validator: checkName, trigger: 'blur' },
+          {
+            pattern: this.$config.commonTextReg,
+            message: this.$t('common.hint.text'),
+            trigger: 'blur',
+          },
+          {
+            min: 2,
+            max: 50,
+            message: this.$t('common.hint.textLimit'),
+            trigger: 'blur',
+          },
         ],
         description: [
           {
             required: true,
             message: this.$t('knowledgeManage.inputDesc'),
+            trigger: 'blur',
+          },
+          {
+            max: 200,
+            message: this.$t('common.hint.descLimit'),
             trigger: 'blur',
           },
         ],
@@ -673,11 +683,9 @@ export default {
         //开始切片上传(如果没有文件正在上传)
         if (this.file === null) {
           this.startUpload();
-        } else {
+        } else if (this.file.progressStatus === 'success') {
           //如果上传当中有新的文件加入
-          if (this.file.progressStatus === 'success') {
-            this.startUpload(this.fileIndex);
-          }
+          this.startUpload(this.fileIndex);
         }
       }
     },
@@ -757,17 +765,7 @@ export default {
         return res;
       }, 50);
     },
-    filterSize(size) {
-      if (!size) return '';
-      let num = 1024.0; //byte
-      if (size < num) return size + 'B';
-      if (size < Math.pow(num, 2)) return (size / num).toFixed(2) + 'KB'; //kb
-      if (size < Math.pow(num, 3))
-        return (size / Math.pow(num, 2)).toFixed(2) + 'MB'; //M
-      if (size < Math.pow(num, 4))
-        return (size / Math.pow(num, 3)).toFixed(2) + 'G'; //G
-      return (size / Math.pow(num, 4)).toFixed(2) + 'T'; //T
-    },
+    filterSize,
     handleRemove(item, index) {
       if (item.percentage < 100) {
         this.fileList.splice(index, 1);

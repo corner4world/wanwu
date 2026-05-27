@@ -39,7 +39,7 @@
           <el-input
             :placeholder="$t('ragDialog.nameplaceholder')"
             v-model="form.name"
-            maxlength="30"
+            maxlength="50"
             show-word-limit
           ></el-input>
         </el-form-item>
@@ -100,22 +100,18 @@ export default {
         name: [
           {
             required: true,
-            message: this.$t('ragDialog.nameRules'),
+            message: this.$t('common.input.placeholder'),
             trigger: 'blur',
           },
           {
-            validator: (rule, value, callback) => {
-              if (/^[A-Za-z0-9.\u4e00-\u9fa5_-]+$/.test(value)) {
-                callback();
-              } else {
-                callback(new Error(this.$t('ragDialog.nameplaceholder')));
-              }
-            },
-            trigger: 'change',
+            pattern: this.$config.commonTextReg,
+            message: this.$t('common.hint.text'),
+            trigger: 'blur',
           },
           {
-            max: 30,
-            message: this.$t('ragDialog.pluginNameRules'),
+            min: 2,
+            max: 50,
+            message: this.$t('common.hint.textLimit'),
             trigger: 'blur',
           },
         ],
@@ -127,7 +123,7 @@ export default {
           },
           {
             max: 200,
-            message: this.$t('ragDialog.descRules'),
+            message: this.$t('common.hint.descLimit'),
             trigger: 'blur',
           },
         ],
@@ -165,7 +161,7 @@ export default {
     openDialog() {
       if (this.type === 'edit' && this.editForm) {
         this.defaultLogo = '';
-        const formInfo = JSON.parse(JSON.stringify(this.editForm));
+        const formInfo = structuredClone(this.editForm);
         this.form.name = formInfo.name;
         this.form.desc = formInfo.desc;
         this.form.avatar = formInfo.avatar;
@@ -201,9 +197,9 @@ export default {
       this.logoFileList = [];
     },
     doLogoUpload() {
-      var formData = new FormData();
-      var config = { headers: { 'Content-Type': 'multipart/form-data' } };
-      var file = this.logoFileList[0];
+      let formData = new FormData();
+      let config = { headers: { 'Content-Type': 'multipart/form-data' } };
+      let file = this.logoFileList[0];
       formData.append('avatar', file.raw, file.name);
       this.isLoading = true;
       uploadAvatar(formData, config)

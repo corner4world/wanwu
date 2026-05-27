@@ -205,7 +205,7 @@ export default {
       appName: '支持中文、英文、数字、斜线(\\)、中划线(-)、下划线(_)',
       appNameLimit: '30个字符以内',
       appRemarkLimit: '500字以内',
-      descLimit: '300字以内',
+      descLimit: 'Within 200 characters',
       orgName: '支持1-30位的中英文、数字或.-@_',
       orgNameLimit: '1-30个字符',
       remarkLimit: '100字以内',

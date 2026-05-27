@@ -102,7 +102,7 @@ export default {
             max: 5000,
             message:
               this.$t('knowledgeManage.qaDatabase.answer') +
-              this.$t('common.hint.descLimit'),
+              this.$t('common.hint.descLimit5000'),
             trigger: 'blur',
           },
         ],
