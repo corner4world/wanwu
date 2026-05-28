@@ -279,7 +279,7 @@
                 </div>
               </div>
               <div class="toolbar-right">
-                <StreamUploadField
+                <GAFileUpload
                   :fileTypeArr="['doc/*', 'md', 'image/*']"
                   type="wga"
                   @setFileId="handleSetFileId"
@@ -295,7 +295,7 @@
                       ></i>
                     </el-tooltip>
                   </template>
-                </StreamUploadField>
+                </GAFileUpload>
                 <el-button
                   v-show="isStreaming"
                   circle
@@ -441,7 +441,7 @@ import MentionInput from './components/MentionInput.vue';
 import SkillTabs from './components/skills/SkillTabs.vue';
 import SkillDialog from './components/skills/SkillDialog.vue';
 import ModelSelect from '@/components/modelSelect.vue';
-import StreamUploadField from '@/components/stream/streamUploadField.vue';
+import GAFileUpload from './components/GAFileUpload.vue';
 import {
   chatGeneralAgentConversation,
   chatGeneralAgentSkillConversation,
@@ -487,7 +487,7 @@ export default {
     MentionInput,
     SkillTabs,
     ModelSelect,
-    StreamUploadField,
+    GAFileUpload,
     SkillDialog, // skill导入弹框
   },
   mixins: [

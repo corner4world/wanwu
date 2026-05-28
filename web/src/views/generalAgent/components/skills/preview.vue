@@ -89,7 +89,7 @@
         <div class="input-toolbar">
           <div class="toolbar-left"></div>
           <div class="toolbar-right">
-            <StreamUploadField
+            <GAFileUpload
               :fileTypeArr="['doc/*', 'md', 'image/*']"
               type="wga"
               @setFileId="handleSetFileId"
@@ -105,7 +105,7 @@
                   ></i>
                 </el-tooltip>
               </template>
-            </StreamUploadField>
+            </GAFileUpload>
             <el-button
               v-show="isStreaming"
               class="send-btn stop-btn"
@@ -141,7 +141,7 @@
 <script>
 import MessageItem from '../MessageItem.vue';
 
-import StreamUploadField from '@/components/stream/streamUploadField.vue';
+import GAFileUpload from '../GAFileUpload.vue';
 import {
   chatGeneralAgentSkillConversation,
   getGeneralAgentSkillPreviewConversationDetail,
@@ -159,7 +159,7 @@ export default {
   name: 'PreviewChat',
   components: {
     MessageItem,
-    StreamUploadField,
+    GAFileUpload,
   },
   mixins: [
     skillManager,
