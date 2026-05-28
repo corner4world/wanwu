@@ -24,6 +24,7 @@ type AppStatisticItem struct {
 	AppId             string  `json:"appId"`
 	AppType           string  `json:"appType"`
 	AppName           string  `json:"appName"`
+	UserName          string  `json:"userName"`
 	OrgName           string  `json:"orgName"`
 	CallCount         int32   `json:"callCount"`
 	CallFailure       int32   `json:"callFailure"`

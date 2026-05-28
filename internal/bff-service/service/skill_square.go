@@ -273,8 +273,8 @@ func GetSquareCreatedSkillList(ctx *gin.Context, userId, orgId, name string) (*r
 	// 必须用 GetAppList（按 userId+orgId 精确过滤），不能用 GetExplorationAppList：
 	// 探索列表 searchType=all 会包含「本人所有组织的 private/public」及他人公开，切换组织后仍会看到其他组织的发布。
 	appResp, err := app.GetAppList(ctx.Request.Context(), &app_service.GetAppListReq{
-		UserId:  userId,
-		OrgId:   orgId,
+		OrgIds:  []string{orgId},
+		UserIds: []string{userId},
 		AppType: constant.AppTypeSkill,
 	})
 	if err != nil {

@@ -30,6 +30,7 @@ const (
 	ModelService_ListModels_FullMethodName                      = "/model_service.ModelService/ListModels"
 	ModelService_ListModelsByIds_FullMethodName                 = "/model_service.ModelService/ListModelsByIds"
 	ModelService_ListTypeModels_FullMethodName                  = "/model_service.ModelService/ListTypeModels"
+	ModelService_ListModelsInStatisticScope_FullMethodName      = "/model_service.ModelService/ListModelsInStatisticScope"
 	ModelService_SaveModelExperienceDialog_FullMethodName       = "/model_service.ModelService/SaveModelExperienceDialog"
 	ModelService_GetModelExperienceDialog_FullMethodName        = "/model_service.ModelService/GetModelExperienceDialog"
 	ModelService_GetModelExperienceDialogs_FullMethodName       = "/model_service.ModelService/GetModelExperienceDialogs"
@@ -62,6 +63,8 @@ type ModelServiceClient interface {
 	ListModelsByIds(ctx context.Context, in *ListModelsByIdsReq, opts ...grpc.CallOption) (*ModelInfos, error)
 	// llm/rerank/embedding模型列表展示
 	ListTypeModels(ctx context.Context, in *ListTypeModelsReq, opts ...grpc.CallOption) (*ModelInfos, error)
+	// 统计看板：按 orgIds/userIds 批量查询模型（org_id IN + user_id IN，单次查询）
+	ListModelsInStatisticScope(ctx context.Context, in *ListModelsInStatisticScopeReq, opts ...grpc.CallOption) (*ModelInfos, error)
 	// 保存模型体验对话（创建/更新）
 	SaveModelExperienceDialog(ctx context.Context, in *SaveModelExperienceDialogReq, opts ...grpc.CallOption) (*ModelExperienceDialog, error)
 	// 获取模型体验对话
@@ -184,6 +187,16 @@ func (c *modelServiceClient) ListTypeModels(ctx context.Context, in *ListTypeMod
 	return out, nil
 }
 
+func (c *modelServiceClient) ListModelsInStatisticScope(ctx context.Context, in *ListModelsInStatisticScopeReq, opts ...grpc.CallOption) (*ModelInfos, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ModelInfos)
+	err := c.cc.Invoke(ctx, ModelService_ListModelsInStatisticScope_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *modelServiceClient) SaveModelExperienceDialog(ctx context.Context, in *SaveModelExperienceDialogReq, opts ...grpc.CallOption) (*ModelExperienceDialog, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ModelExperienceDialog)
@@ -268,6 +281,8 @@ type ModelServiceServer interface {
 	ListModelsByIds(context.Context, *ListModelsByIdsReq) (*ModelInfos, error)
 	// llm/rerank/embedding模型列表展示
 	ListTypeModels(context.Context, *ListTypeModelsReq) (*ModelInfos, error)
+	// 统计看板：按 orgIds/userIds 批量查询模型（org_id IN + user_id IN，单次查询）
+	ListModelsInStatisticScope(context.Context, *ListModelsInStatisticScopeReq) (*ModelInfos, error)
 	// 保存模型体验对话（创建/更新）
 	SaveModelExperienceDialog(context.Context, *SaveModelExperienceDialogReq) (*ModelExperienceDialog, error)
 	// 获取模型体验对话
@@ -319,6 +334,9 @@ func (UnimplementedModelServiceServer) ListModelsByIds(context.Context, *ListMod
 }
 func (UnimplementedModelServiceServer) ListTypeModels(context.Context, *ListTypeModelsReq) (*ModelInfos, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTypeModels not implemented")
+}
+func (UnimplementedModelServiceServer) ListModelsInStatisticScope(context.Context, *ListModelsInStatisticScopeReq) (*ModelInfos, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListModelsInStatisticScope not implemented")
 }
 func (UnimplementedModelServiceServer) SaveModelExperienceDialog(context.Context, *SaveModelExperienceDialogReq) (*ModelExperienceDialog, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveModelExperienceDialog not implemented")
@@ -539,6 +557,24 @@ func _ModelService_ListTypeModels_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModelService_ListModelsInStatisticScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListModelsInStatisticScopeReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelServiceServer).ListModelsInStatisticScope(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelService_ListModelsInStatisticScope_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelServiceServer).ListModelsInStatisticScope(ctx, req.(*ListModelsInStatisticScopeReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ModelService_SaveModelExperienceDialog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SaveModelExperienceDialogReq)
 	if err := dec(in); err != nil {
@@ -693,6 +729,10 @@ var ModelService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTypeModels",
 			Handler:    _ModelService_ListTypeModels_Handler,
+		},
+		{
+			MethodName: "ListModelsInStatisticScope",
+			Handler:    _ModelService_ListModelsInStatisticScope_Handler,
 		},
 		{
 			MethodName: "SaveModelExperienceDialog",

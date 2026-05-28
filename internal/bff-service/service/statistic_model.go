@@ -5,8 +5,8 @@ import (
 	"math"
 
 	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
-	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
 	model_service "github.com/UnicomAI/wanwu/api/proto/model-service"
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
@@ -15,13 +15,17 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func GetModelStatistic(ctx *gin.Context, userId, orgId, startDate, endDate string, modelIds []string, modelType string) (*response.ModelStatistic, error) {
+func GetModelStatistic(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, modelIds []string, modelType string, userId, orgId string, isAdmin, isSystem bool) (*response.ModelStatistic, error) {
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	if modelType == "" {
 		modelType = mp.ModelTypeLLM
 	}
 	resp, err := app.GetModelStatistic(ctx.Request.Context(), &app_service.GetModelStatisticReq{
-		UserId:    userId,
-		OrgId:     orgId,
+		OrgIds:    scope.OrgIds,
+		UserIds:   scope.UserIds,
 		StartDate: startDate,
 		EndDate:   endDate,
 		ModelIds:  modelIds,
@@ -47,13 +51,17 @@ func GetModelStatistic(ctx *gin.Context, userId, orgId, startDate, endDate strin
 	}, nil
 }
 
-func GetModelStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate string, modelIds []string, modelType string, page, pageSize int32) (*response.PageResult, error) {
+func GetModelStatisticList(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, modelIds []string, modelType string, page, pageSize int32, userId, orgId string, isAdmin, isSystem bool) (*response.PageResult, error) {
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	if modelType == "" {
 		modelType = mp.ModelTypeLLM
 	}
 	resp, err := app.GetModelStatisticList(ctx.Request.Context(), &app_service.GetModelStatisticListReq{
-		UserId:    userId,
-		OrgId:     orgId,
+		OrgIds:    scope.OrgIds,
+		UserIds:   scope.UserIds,
 		StartDate: startDate,
 		EndDate:   endDate,
 		ModelIds:  modelIds,
@@ -66,20 +74,19 @@ func GetModelStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate s
 	}
 	items := make([]response.ModelStatisticItem, 0, len(resp.Items))
 	// 收集items中的orgId然后获取OrgIds对应的OrgNames
-	var orgIds []string
-	// 收集items中的modelId然后获取模型的displayName
+	var orgIDs []string
 	var modelIdsRes []string
+	var userIDs []string
 	for _, item := range resp.Items {
-		orgIds = append(orgIds, item.OrgId)
+		orgIDs = append(orgIDs, item.OrgId)
 		modelIdsRes = append(modelIdsRes, item.ModelId)
+		userIDs = append(userIDs, item.UserId)
 	}
-	// 调用IAM服务获取组织信息
-	orgResp, err := iam.GetOrgByOrgIDs(ctx, &iam_service.GetOrgByOrgIDsReq{
-		OrgIds: orgIds,
-	})
+	orgNameMap, userNameMap, err := buildStatisticOrgUserNameMaps(ctx, orgIDs, userIDs)
 	if err != nil {
 		return nil, err
 	}
+
 	// 调用模型服务获取模型信息
 	modelResp, err := model.ListModelsByIds(ctx, &model_service.ListModelsByIdsReq{
 		ModelIds: modelIdsRes,
@@ -94,13 +101,6 @@ func GetModelStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate s
 		displayNameMap[model.ModelId] = model.DisplayName
 		uuidMap[model.ModelId] = model.Uuid
 	}
-	// 创建orgId到orgName的映射
-	orgNameMap := make(map[string]string)
-	if orgResp != nil && orgResp.Orgs != nil {
-		for _, org := range orgResp.Orgs {
-			orgNameMap[org.Id] = org.Name
-		}
-	}
 	for _, item := range resp.Items {
 		roundedFailureRate := float32(math.Round(float64(item.FailureRate)*100) / 100)
 		roundedAvgCosts := float32(math.Round(float64(item.AvgCosts)*100) / 100)
@@ -111,6 +111,7 @@ func GetModelStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate s
 			Model:                getModelDisplayName(displayNameMap, item.ModelId),
 			Provider:             item.Provider,
 			OrgName:              orgNameMap[item.OrgId],
+			UserName:             userNameMap[item.UserId],
 			CallCount:            item.CallCount,
 			CallFailure:          item.CallFailure,
 			FailureRate:          roundedFailureRate,
@@ -129,8 +130,8 @@ func GetModelStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate s
 	}, nil
 }
 
-func ExportModelStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate string, modelIds []string, modelType string) (*excelize.File, error) {
-	resp, err := GetModelStatisticList(ctx, userId, orgId, startDate, endDate, modelIds, modelType, -1, -1)
+func ExportModelStatisticList(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, modelIds []string, modelType string, userId, orgId string, isAdmin, isSystem bool) (*excelize.File, error) {
+	resp, err := GetModelStatisticList(ctx, filter, startDate, endDate, modelIds, modelType, -1, -1, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +171,7 @@ func convertModelStatisticOverviewItem(item *app_service.ModelStatisticOverviewI
 
 func writeModelListExcel(items []response.ModelStatisticItem) (*excelize.File, error) {
 	sheet := "模型统计列表"
-	title := []any{"UUID", "模型", "模型供应商", "组织", "调用次数", "调用失败次数", "失败率", "Prompt Tokens", "Completion Tokens", "总Tokens", "平均耗时(非流式)", "平均首Token时延(流式)"}
+	title := []any{"UUID", "模型", "模型供应商", "组织", "用户", "模型调用次数(次)", "模型调用失败次数(次)", "模型失败率(%)", "Prompt Tokens(个)", "Completion Tokens(个)", "总Tokens(个)", "平均耗时(非流式)(ms)", "平均首Token时延(流式)(ms)"}
 	var rows [][]any
 	for _, item := range items {
 		rows = append(rows, []any{
@@ -178,6 +179,7 @@ func writeModelListExcel(items []response.ModelStatisticItem) (*excelize.File, e
 			item.Model,
 			item.Provider,
 			item.OrgName,
+			item.UserName,
 			item.CallCount,
 			item.CallFailure,
 			item.FailureRate,

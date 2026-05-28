@@ -15,10 +15,14 @@ type apiKeyInfo struct {
 	key  string
 }
 
-func GetAPIKeyStatistic(ctx *gin.Context, userId, orgId string, req *request.APIKeyStatisticReq) (*response.APIKeyStatistic, error) {
+func GetAPIKeyStatistic(ctx *gin.Context, req *request.APIKeyStatisticReq, userId, orgId string, isAdmin, isSystem bool) (*response.APIKeyStatistic, error) {
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := app.GetAPIKeyStatistic(ctx.Request.Context(), &app_service.GetAPIKeyStatisticReq{
-		UserId:      userId,
-		OrgId:       orgId,
+		OrgIds:      scope.OrgIds,
+		UserIds:     scope.UserIds,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
 		ApiKeyIds:   normalizeAPIKeyIds(req.APIKeyIds),
@@ -42,10 +46,14 @@ func GetAPIKeyStatistic(ctx *gin.Context, userId, orgId string, req *request.API
 	}, nil
 }
 
-func GetAPIKeyStatisticList(ctx *gin.Context, userId, orgId string, req *request.APIKeyStatisticListReq) (*response.PageResult, error) {
+func GetAPIKeyStatisticList(ctx *gin.Context, req *request.APIKeyStatisticListReq, userId, orgId string, isAdmin, isSystem bool) (*response.PageResult, error) {
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := app.GetAPIKeyStatisticList(ctx.Request.Context(), &app_service.GetAPIKeyStatisticListReq{
-		UserId:      userId,
-		OrgId:       orgId,
+		OrgIds:      scope.OrgIds,
+		UserIds:     scope.UserIds,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
 		ApiKeyIds:   normalizeAPIKeyIds(req.APIKeyIds),
@@ -56,22 +64,9 @@ func GetAPIKeyStatisticList(ctx *gin.Context, userId, orgId string, req *request
 	if err != nil {
 		return nil, err
 	}
-
-	infoMap := getAPIKeyInfoMap(ctx)
-	items := make([]response.APIKeyStatisticItem, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		info := getAPIKeyDisplayInfo(infoMap, item.ApiKeyId)
-		items = append(items, response.APIKeyStatisticItem{
-			Name:              info.name,
-			APIKey:            info.key,
-			MethodPath:        item.MethodPath,
-			CallCount:         item.CallCount,
-			CallFailure:       item.CallFailure,
-			AvgStreamCosts:    item.AvgStreamCosts,
-			AvgNonStreamCosts: item.AvgNonStreamCosts,
-			StreamCount:       item.StreamCount,
-			NonStreamCount:    item.NonStreamCount,
-		})
+	items, err := buildAPIKeyStatisticItems(ctx, scope, resp.Items)
+	if err != nil {
+		return nil, err
 	}
 	return &response.PageResult{
 		List:     items,
@@ -81,10 +76,14 @@ func GetAPIKeyStatisticList(ctx *gin.Context, userId, orgId string, req *request
 	}, nil
 }
 
-func GetAPIKeyStatisticRecord(ctx *gin.Context, userId, orgId string, req *request.APIKeyStatisticRecordReq) (*response.PageResult, error) {
+func GetAPIKeyStatisticRecord(ctx *gin.Context, req *request.APIKeyStatisticRecordReq, userId, orgId string, isAdmin, isSystem bool) (*response.PageResult, error) {
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := app.GetAPIKeyStatisticRecord(ctx.Request.Context(), &app_service.GetAPIKeyStatisticRecordReq{
-		UserId:      userId,
-		OrgId:       orgId,
+		OrgIds:      scope.OrgIds,
+		UserIds:     scope.UserIds,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
 		ApiKeyIds:   normalizeAPIKeyIds(req.APIKeyIds),
@@ -95,22 +94,9 @@ func GetAPIKeyStatisticRecord(ctx *gin.Context, userId, orgId string, req *reque
 	if err != nil {
 		return nil, err
 	}
-
-	infoMap := getAPIKeyInfoMap(ctx)
-	items := make([]response.APIKeyStatisticRecordItem, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		info := getAPIKeyDisplayInfo(infoMap, item.ApiKeyId)
-		items = append(items, response.APIKeyStatisticRecordItem{
-			Name:           info.name,
-			APIKey:         info.key,
-			MethodPath:     item.MethodPath,
-			CallTime:       util.Time2Str(item.CallTime),
-			ResponseStatus: item.ResponseStatus,
-			StreamCosts:    item.StreamCosts,
-			NonStreamCosts: item.NonStreamCosts,
-			RequestBody:    item.RequestBody,
-			ResponseBody:   item.ResponseBody,
-		})
+	items, err := buildAPIKeyStatisticRecordItems(ctx, scope, resp.Items)
+	if err != nil {
+		return nil, err
 	}
 	return &response.PageResult{
 		List:     items,
@@ -120,10 +106,15 @@ func GetAPIKeyStatisticRecord(ctx *gin.Context, userId, orgId string, req *reque
 	}, nil
 }
 
-func ExportAPIKeyStatisticList(ctx *gin.Context, userId, orgId string, req *request.ExportAPIKeyStatisticListReq) (*excelize.File, error) {
+func ExportAPIKeyStatisticList(ctx *gin.Context, req *request.APIKeyStatisticReq, userId, orgId string, isAdmin, isSystem bool) (*excelize.File, error) {
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
+
 	resp, err := app.GetAPIKeyStatisticList(ctx.Request.Context(), &app_service.GetAPIKeyStatisticListReq{
-		UserId:      userId,
-		OrgId:       orgId,
+		OrgIds:      scope.OrgIds,
+		UserIds:     scope.UserIds,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
 		ApiKeyIds:   normalizeAPIKeyIds(req.APIKeyIds),
@@ -134,30 +125,21 @@ func ExportAPIKeyStatisticList(ctx *gin.Context, userId, orgId string, req *requ
 	if err != nil {
 		return nil, err
 	}
-
-	infoMap := getAPIKeyInfoMap(ctx)
-	items := make([]response.APIKeyStatisticItem, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		info := getAPIKeyDisplayInfo(infoMap, item.ApiKeyId)
-		items = append(items, response.APIKeyStatisticItem{
-			Name:              info.name,
-			APIKey:            info.key,
-			MethodPath:        item.MethodPath,
-			CallCount:         item.CallCount,
-			CallFailure:       item.CallFailure,
-			AvgStreamCosts:    item.AvgStreamCosts,
-			AvgNonStreamCosts: item.AvgNonStreamCosts,
-			StreamCount:       item.StreamCount,
-			NonStreamCount:    item.NonStreamCount,
-		})
+	items, err := buildAPIKeyStatisticItems(ctx, scope, resp.Items)
+	if err != nil {
+		return nil, err
 	}
 	return writeAPIKeyStatisticListExcel(items)
 }
 
-func ExportAPIKeyStatisticRecord(ctx *gin.Context, userId, orgId string, req *request.ExportAPIKeyStatisticRecordReq) (*excelize.File, error) {
+func ExportAPIKeyStatisticRecord(ctx *gin.Context, req *request.APIKeyStatisticReq, userId, orgId string, isAdmin, isSystem bool) (*excelize.File, error) {
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := app.GetAPIKeyStatisticRecord(ctx.Request.Context(), &app_service.GetAPIKeyStatisticRecordReq{
-		UserId:      userId,
-		OrgId:       orgId,
+		OrgIds:      scope.OrgIds,
+		UserIds:     scope.UserIds,
 		StartDate:   req.StartDate,
 		EndDate:     req.EndDate,
 		ApiKeyIds:   normalizeAPIKeyIds(req.APIKeyIds),
@@ -168,30 +150,21 @@ func ExportAPIKeyStatisticRecord(ctx *gin.Context, userId, orgId string, req *re
 	if err != nil {
 		return nil, err
 	}
-
-	infoMap := getAPIKeyInfoMap(ctx)
-	items := make([]response.APIKeyStatisticRecordItem, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		info := getAPIKeyDisplayInfo(infoMap, item.ApiKeyId)
-		items = append(items, response.APIKeyStatisticRecordItem{
-			Name:           info.name,
-			APIKey:         info.key,
-			MethodPath:     item.MethodPath,
-			CallTime:       util.Time2Str(item.CallTime),
-			ResponseStatus: item.ResponseStatus,
-			StreamCosts:    item.StreamCosts,
-			NonStreamCosts: item.NonStreamCosts,
-			RequestBody:    item.RequestBody,
-			ResponseBody:   item.ResponseBody,
-		})
+	items, err := buildAPIKeyStatisticRecordItems(ctx, scope, resp.Items)
+	if err != nil {
+		return nil, err
 	}
 	return writeAPIKeyStatisticRecordExcel(items)
 }
 
-func GetAPIKeySelect(ctx *gin.Context, userId, orgId string) (*response.ListResult, error) {
+func GetStatisticAPIKeySelect(ctx *gin.Context, filter request.StatisticFilter, userId, orgId string, isAdmin, isSystem bool) (*response.ListResult, error) {
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := app.ListApiKeys(ctx.Request.Context(), &app_service.ListApiKeysReq{
-		UserId:   userId,
-		OrgId:    orgId,
+		OrgIds:   scope.OrgIds,
+		UserIds:  scope.UserIds,
 		PageNo:   1,
 		PageSize: 1000,
 	})
@@ -242,14 +215,80 @@ func convertAPIKeyStatisticOverviewItem(item *app_service.APIKeyStatisticOvervie
 	}
 }
 
+func buildAPIKeyStatisticItems(ctx *gin.Context, scope StatisticScope, protoItems []*app_service.APIKeyStatisticItem) ([]response.APIKeyStatisticItem, error) {
+	infoMap := getAPIKeyInfoMap(ctx, scope)
+	var orgIDs []string
+	var userIDs []string
+	for _, item := range protoItems {
+		orgIDs = append(orgIDs, item.OrgId)
+		userIDs = append(userIDs, item.UserId)
+	}
+	orgNameMap, userNameMap, err := buildStatisticOrgUserNameMaps(ctx, orgIDs, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]response.APIKeyStatisticItem, 0, len(protoItems))
+	for _, item := range protoItems {
+		info := getAPIKeyDisplayInfo(infoMap, item.ApiKeyId)
+		items = append(items, response.APIKeyStatisticItem{
+			Name:              info.name,
+			APIKey:            info.key,
+			MethodPath:        item.MethodPath,
+			OrgName:           orgNameMap[item.OrgId],
+			UserName:          userNameMap[item.UserId],
+			CallCount:         item.CallCount,
+			CallFailure:       item.CallFailure,
+			AvgStreamCosts:    item.AvgStreamCosts,
+			AvgNonStreamCosts: item.AvgNonStreamCosts,
+			StreamCount:       item.StreamCount,
+			NonStreamCount:    item.NonStreamCount,
+		})
+	}
+	return items, nil
+}
+
+func buildAPIKeyStatisticRecordItems(ctx *gin.Context, scope StatisticScope, protoItems []*app_service.APIKeyStatisticRecordItem) ([]response.APIKeyStatisticRecordItem, error) {
+	infoMap := getAPIKeyInfoMap(ctx, scope)
+	var orgIds []string
+	var userIDs []string
+	for _, item := range protoItems {
+		orgIds = append(orgIds, item.OrgId)
+		userIDs = append(userIDs, item.UserId)
+	}
+	orgNameMap, userNameMap, err := buildStatisticOrgUserNameMaps(ctx, orgIds, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]response.APIKeyStatisticRecordItem, 0, len(protoItems))
+	for _, item := range protoItems {
+		info := getAPIKeyDisplayInfo(infoMap, item.ApiKeyId)
+		items = append(items, response.APIKeyStatisticRecordItem{
+			Name:           info.name,
+			APIKey:         info.key,
+			MethodPath:     item.MethodPath,
+			OrgName:        orgNameMap[item.OrgId],
+			UserName:       userNameMap[item.UserId],
+			CallTime:       util.Time2Str(item.CallTime),
+			ResponseStatus: item.ResponseStatus,
+			StreamCosts:    item.StreamCosts,
+			NonStreamCosts: item.NonStreamCosts,
+			RequestBody:    item.RequestBody,
+			ResponseBody:   item.ResponseBody,
+		})
+	}
+	return items, nil
+}
+
 func writeAPIKeyStatisticListExcel(items []response.APIKeyStatisticItem) (*excelize.File, error) {
 	sheet := "API Key统计列表"
-	title := []any{"API Key名称", "API Key", "请求路径", "调用次数", "失败次数", "流式平均耗时(ms)", "非流式平均耗时(ms)", "流式调用次数", "非流式调用次数"}
+	title := []any{"API Key名称", "API Key", "组织", "用户", "请求路径", "调用次数(次)", "调用失败次数(次)", "流式平均耗时(ms)", "非流式平均耗时(ms)", "调用次数(流式)(次)", "调用次数(非流式)(次)"}
 	var rows [][]any
 	for _, item := range items {
 		rows = append(rows, []any{
 			item.Name,
 			item.APIKey,
+			item.OrgName,
+			item.UserName,
 			item.MethodPath,
 			item.CallCount,
 			item.CallFailure,
@@ -264,12 +303,14 @@ func writeAPIKeyStatisticListExcel(items []response.APIKeyStatisticItem) (*excel
 
 func writeAPIKeyStatisticRecordExcel(items []response.APIKeyStatisticRecordItem) (*excelize.File, error) {
 	sheet := "API Key调用记录"
-	title := []any{"API Key名称", "API Key", "请求路径", "调用时间", "响应状态", "流式耗时(ms)", "非流式耗时(ms)", "请求体", "响应体"}
+	title := []any{"API Key名称", "API Key", "组织", "用户", "请求路径", "调用时间", "响应状态", "流式耗时(ms)", "非流式耗时(ms)", "请求体", "响应体"}
 	var rows [][]any
 	for _, item := range items {
 		rows = append(rows, []any{
 			item.Name,
 			item.APIKey,
+			item.OrgName,
+			item.UserName,
 			item.MethodPath,
 			item.CallTime,
 			item.ResponseStatus,
@@ -282,7 +323,7 @@ func writeAPIKeyStatisticRecordExcel(items []response.APIKeyStatisticRecordItem)
 	return writeExcel(sheet, title, rows)
 }
 
-// 内部辅助函数(和前端约定好传ALL 全部返回)
+// normalizeAPIKeyIds apiKeyIds 为 ["ALL"] 时不按 key 过滤（与 StatisticFilter 的 ALL 无关）。
 func normalizeAPIKeyIds(ids []string) []string {
 	if len(ids) == 1 && ids[0] == "ALL" {
 		return nil
@@ -290,10 +331,12 @@ func normalizeAPIKeyIds(ids []string) []string {
 	return ids
 }
 
-func getAPIKeyInfoMap(ctx *gin.Context) map[string]apiKeyInfo {
+func getAPIKeyInfoMap(ctx *gin.Context, scope StatisticScope) map[string]apiKeyInfo {
 	resp, err := app.ListApiKeys(ctx.Request.Context(), &app_service.ListApiKeysReq{
-		PageNo:   1,
-		PageSize: 1000,
+		OrgIds:   scope.OrgIds,
+		UserIds:  scope.UserIds,
+		PageNo:   -1,
+		PageSize: -1,
 	})
 	if err != nil {
 		log.Warnf("get api key info map err: %v", err)

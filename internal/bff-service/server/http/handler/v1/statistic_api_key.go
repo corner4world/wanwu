@@ -28,7 +28,7 @@ func GetAPIKeyStatistic(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	resp, err := service.GetAPIKeyStatistic(ctx, getUserID(ctx), getOrgID(ctx), &req)
+	resp, err := service.GetAPIKeyStatistic(ctx, &req, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -48,7 +48,7 @@ func GetAPIKeyStatisticList(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	resp, err := service.GetAPIKeyStatisticList(ctx, getUserID(ctx), getOrgID(ctx), &req)
+	resp, err := service.GetAPIKeyStatisticList(ctx, &req, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -68,7 +68,7 @@ func GetAPIKeyStatisticRecord(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	resp, err := service.GetAPIKeyStatisticRecord(ctx, getUserID(ctx), getOrgID(ctx), &req)
+	resp, err := service.GetAPIKeyStatisticRecord(ctx, &req, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -80,15 +80,15 @@ func GetAPIKeyStatisticRecord(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		application/octet-stream
-//	@Param			data	body		request.ExportAPIKeyStatisticListReq	true	"导出API Key统计列表请求参数"
+//	@Param			data	body		request.APIKeyStatisticReq	true	"导出API Key统计列表请求参数"
 //	@Success		200		{object}	response.Response
 //	@Router			/statistic/api/list/export [post]
 func ExportAPIKeyStatisticList(ctx *gin.Context) {
-	var req request.ExportAPIKeyStatisticListReq
+	var req request.APIKeyStatisticReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	file, err := service.ExportAPIKeyStatisticList(ctx, getUserID(ctx), getOrgID(ctx), &req)
+	file, err := service.ExportAPIKeyStatisticList(ctx, &req, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 		return
@@ -111,15 +111,15 @@ func ExportAPIKeyStatisticList(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		application/octet-stream
-//	@Param			data	body		request.ExportAPIKeyStatisticRecordReq	true	"导出API Key调用记录请求参数"
+//	@Param			data	body		request.APIKeyStatisticReq	true	"导出API Key调用记录请求参数"
 //	@Success		200		{object}	response.Response
 //	@Router			/statistic/api/record/export [post]
 func ExportAPIKeyStatisticRecord(ctx *gin.Context) {
-	var req request.ExportAPIKeyStatisticRecordReq
+	var req request.APIKeyStatisticReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	file, err := service.ExportAPIKeyStatisticRecord(ctx, getUserID(ctx), getOrgID(ctx), &req)
+	file, err := service.ExportAPIKeyStatisticRecord(ctx, &req, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 		return
@@ -150,17 +150,22 @@ func GetApiKeyStatisticRoutes(ctx *gin.Context) {
 	gin_util.Response(ctx, routes, nil)
 }
 
-// GetAPIKeySelect
+// GetStatisticAPIKeySelect
 //
 //	@Tags			app_observability.statistic
-//	@Summary		获取API Key列表
-//	@Description	获取API Key列表（用于下拉列表展示apikey）
+//	@Summary		获取API Key下拉列表
+//	@Description	组织→用户→API Key名称级联
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.ListResult{list=[]response.APIKeyDetailResponse}}
-//	@Router			/statistic/api/select [get]
-func GetAPIKeySelect(ctx *gin.Context) {
-	resp, err := service.GetAPIKeySelect(ctx, getUserID(ctx), getOrgID(ctx))
+//	@Param			data	body		request.APIKeySelectReq	true	"获取API Key下拉列表请求参数"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.APIKeyDetailResponse}}
+//	@Router			/statistic/api/select [post]
+func GetStatisticAPIKeySelect(ctx *gin.Context) {
+	var req request.APIKeySelectReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.GetStatisticAPIKeySelect(ctx, req.StatisticFilter, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }

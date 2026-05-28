@@ -38,8 +38,8 @@ func ListApiKeys(ctx *gin.Context, userId, orgId string, pageNo, pageSize int32)
 	keys, err := app.ListApiKeys(ctx.Request.Context(), &app_service.ListApiKeysReq{
 		PageNo:   pageNo,
 		PageSize: pageSize,
-		UserId:   userId,
-		OrgId:    orgId,
+		UserIds:  []string{userId},
+		OrgIds:   []string{orgId},
 	})
 	if err != nil {
 		return nil, err

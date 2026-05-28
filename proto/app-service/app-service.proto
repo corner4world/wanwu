@@ -103,8 +103,8 @@ message GetApiKeyByKeyReq {
 message ListApiKeysReq {
   int32 pageNo = 1;
   int32 pageSize = 2;
-  string userId = 3;
-  string orgId = 4;
+  repeated string orgIds = 3;
+  repeated string userIds = 4;
 }
 
 // API Key信息响应
@@ -229,8 +229,8 @@ message UnPublishAppReq {
 
 message GetAppListReq {
   string appType = 1;
-  string userId = 2;
-  string orgId = 3;
+  repeated string orgIds = 2;
+  repeated string userIds = 3;
 }
 
 message GetAppListByIdsReq {
@@ -364,8 +364,8 @@ message ChatflowApplicationInfo {
 // --- statistic ---
 
 message GetModelStatisticReq {
-  string userId = 1;
-  string orgId = 2;
+  repeated string orgIds = 1;
+  repeated string userIds = 2;
   string startDate = 3;
   string endDate = 4;
   repeated string modelIds = 5;
@@ -416,8 +416,8 @@ message RecordModelStatisticReq {
 // --- model statistic list ---
 
 message GetModelStatisticListReq {
-  string userId = 1;
-  string orgId = 2;
+  repeated string orgIds = 1;
+  repeated string userIds = 2;
   string startDate = 3;
   string endDate = 4;
   repeated string modelIds = 5;
@@ -444,13 +444,14 @@ message ModelStatisticItem {
   int64 totalTokens = 10;
   float avgCosts = 11;
   float avgFirstTokenLatency = 12;
+  string userId = 13;
 }
 
 // --- app statistic ---
 
 message GetAppStatisticReq {
-  string userId = 1;
-  string orgId = 2;
+  repeated string orgIds = 1;
+  repeated string userIds = 2;
   string startDate = 3;
   string endDate = 4;
   repeated string appIds = 5;
@@ -488,8 +489,8 @@ message RecordAppStatisticReq {
 }
 
 message GetAppStatisticListReq {
-  string userId = 1;
-  string orgId = 2;
+  repeated string orgIds = 1;
+  repeated string userIds = 2;
   string startDate = 3;
   string endDate = 4;
   repeated string appIds = 5;
@@ -514,13 +515,14 @@ message AppStatisticItem {
   float avgNonStreamCosts = 8;
   int32 streamCount = 9; // 流式调用次数
   int32 nonStreamCount = 10; // 非流式调用次数
+  string userId = 11;
 }
 
 // --- api key statistic ---
 
 message GetAPIKeyStatisticReq {
-  string userId = 1;
-  string orgId = 2;
+  repeated string orgIds = 1;
+  repeated string userIds = 2;
   string startDate = 3;
   string endDate = 4;
   repeated string apiKeyIds = 5;
@@ -551,8 +553,8 @@ message APIKeyStatisticTrend {
 }
 
 message GetAPIKeyStatisticListReq {
-  string userId = 1;
-  string orgId = 2;
+  repeated string orgIds = 1;
+  repeated string userIds = 2;
   string startDate = 3;
   string endDate = 4;
   repeated string apiKeyIds = 5;
@@ -575,11 +577,13 @@ message APIKeyStatisticItem {
   float avgNonStreamCosts = 6;
   int32 streamCount = 7;
   int32 nonStreamCount = 8;
+  string orgId = 9;
+  string userId = 10;
 }
 
 message GetAPIKeyStatisticRecordReq {
-  string userId = 1;
-  string orgId = 2;
+  repeated string orgIds = 1;
+  repeated string userIds = 2;
   string startDate = 3;
   string endDate = 4;
   repeated string apiKeyIds = 5;
@@ -602,6 +606,8 @@ message APIKeyStatisticRecordItem {
   int64 nonStreamCosts = 6;
   string requestBody = 7;
   string responseBody = 8;
+  string orgId = 9;
+  string userId = 10;
 }
 
 message RecordAPIKeyStatisticReq {

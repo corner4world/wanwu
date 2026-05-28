@@ -970,6 +970,19 @@ definitions:
         description: Title is a human-readable title for the tool, useful for UI display
         type: string
     type: object
+  request.APIKeySelectReq:
+    properties:
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    type: object
   request.APIKeyStatisticListReq:
     properties:
       apiKeyIds:
@@ -985,15 +998,28 @@ definitions:
         items:
           type: string
         type: array
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
       pageNo:
-        description: 页面编号，从1开始
         type: integer
       pageSize:
-        description: 单页数量
         type: integer
       startDate:
         description: 开始时间（格式yyyy-mm-dd）
         type: string
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    required:
+    - endDate
+    - pageNo
+    - pageSize
+    - startDate
     type: object
   request.APIKeyStatisticRecordReq:
     properties:
@@ -1010,15 +1036,28 @@ definitions:
         items:
           type: string
         type: array
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
       pageNo:
-        description: 页面编号，从1开始
         type: integer
       pageSize:
-        description: 单页数量
         type: integer
       startDate:
         description: 开始时间（格式yyyy-mm-dd）
         type: string
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    required:
+    - endDate
+    - pageNo
+    - pageSize
+    - startDate
     type: object
   request.APIKeyStatisticReq:
     properties:
@@ -1035,9 +1074,22 @@ definitions:
         items:
           type: string
         type: array
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
       startDate:
         description: 开始时间（格式yyyy-mm-dd）
         type: string
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    required:
+    - endDate
+    - startDate
     type: object
   request.AnalysisUrlDocReq:
     properties:
@@ -1241,6 +1293,72 @@ definitions:
         items:
           $ref: '#/definitions/request.SensitiveTable'
         type: array
+    type: object
+  request.AppStatisticListReq:
+    properties:
+      appType:
+        description: 应用类型（默认agent）
+        type: string
+      apps:
+        description: 应用ID列表
+        items:
+          type: string
+        type: array
+      endDate:
+        description: 结束时间（格式yyyy-mm-dd）
+        type: string
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      pageNo:
+        type: integer
+      pageSize:
+        type: integer
+      startDate:
+        description: 开始时间（格式yyyy-mm-dd）
+        type: string
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    required:
+    - endDate
+    - pageNo
+    - pageSize
+    - startDate
+    type: object
+  request.AppStatisticReq:
+    properties:
+      appType:
+        description: 应用类型（默认agent）
+        type: string
+      apps:
+        description: 应用ID列表
+        items:
+          type: string
+        type: array
+      endDate:
+        description: 结束时间（格式yyyy-mm-dd）
+        type: string
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      startDate:
+        description: 开始时间（格式yyyy-mm-dd）
+        type: string
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    required:
+    - endDate
+    - startDate
     type: object
   request.AppUrlCreateRequest:
     properties:
@@ -2782,44 +2900,6 @@ definitions:
     required:
     - modelId
     type: object
-  request.ExportAPIKeyStatisticListReq:
-    properties:
-      apiKeyIds:
-        description: API Key 列表
-        items:
-          type: string
-        type: array
-      endDate:
-        description: 结束时间（格式yyyy-mm-dd）
-        type: string
-      methodPaths:
-        description: OpenAPI方法+路径（例如：POST-/agent/chat）
-        items:
-          type: string
-        type: array
-      startDate:
-        description: 开始时间（格式yyyy-mm-dd）
-        type: string
-    type: object
-  request.ExportAPIKeyStatisticRecordReq:
-    properties:
-      apiKeyIds:
-        description: API Key 列表
-        items:
-          type: string
-        type: array
-      endDate:
-        description: 结束时间（格式yyyy-mm-dd）
-        type: string
-      methodPaths:
-        description: OpenAPI方法+路径（例如：POST-/agent/chat）
-        items:
-          type: string
-        type: array
-      startDate:
-        description: 开始时间（格式yyyy-mm-dd）
-        type: string
-    type: object
   request.GenAppKeyRequest:
     properties:
       appId:
@@ -3686,6 +3766,80 @@ definitions:
     - modelId
     - sessionId
     type: object
+  request.ModelStatisticListReq:
+    properties:
+      endDate:
+        type: string
+      modelType:
+        type: string
+      models:
+        items:
+          type: string
+        type: array
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      pageNo:
+        type: integer
+      pageSize:
+        type: integer
+      startDate:
+        type: string
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    required:
+    - endDate
+    - modelType
+    - startDate
+    type: object
+  request.ModelStatisticReq:
+    properties:
+      endDate:
+        type: string
+      modelType:
+        type: string
+      models:
+        items:
+          type: string
+        type: array
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      startDate:
+        type: string
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    required:
+    - endDate
+    - modelType
+    - startDate
+    type: object
+  request.ModelStatisticSelectReq:
+    properties:
+      modelType:
+        description: 模型类型
+        type: string
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    type: object
   request.ModelStatusRequest:
     properties:
       isActive:
@@ -4174,6 +4328,22 @@ definitions:
         type: string
       variableValue:
         type: string
+    type: object
+  request.StatisticAppListSelectReq:
+    properties:
+      appType:
+        description: 应用类型
+        type: string
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
     type: object
   request.ToolSquareAPIKeyReq:
     properties:
@@ -4777,8 +4947,12 @@ definitions:
         type: string
       nonStreamCount:
         type: integer
+      orgName:
+        type: string
       streamCount:
         type: integer
+      userName:
+        type: string
     type: object
   response.APIKeyStatisticOverview:
     properties:
@@ -4807,6 +4981,8 @@ definitions:
         type: string
       nonStreamCosts:
         type: integer
+      orgName:
+        type: string
       requestBody:
         type: string
       responseBody:
@@ -4815,6 +4991,8 @@ definitions:
         type: string
       streamCosts:
         type: integer
+      userName:
+        type: string
     type: object
   response.APIKeyStatisticTrend:
     properties:
@@ -4971,6 +5149,8 @@ definitions:
         type: string
       streamCount:
         type: integer
+      userName:
+        type: string
     type: object
   response.AppStatisticOverview:
     properties:
@@ -5338,6 +5518,13 @@ definitions:
       workFlowDesc:
         type: string
       workFlowId:
+        type: string
+    type: object
+  response.BriefUserInfo:
+    properties:
+      userId:
+        type: string
+      username:
         type: string
     type: object
   response.BuiltinSkillDetail:
@@ -7854,6 +8041,8 @@ definitions:
         type: string
       totalTokens:
         type: integer
+      userName:
+        type: string
       uuid:
         type: string
     type: object
@@ -8479,21 +8668,6 @@ definitions:
       updatedAt:
         type: string
       version:
-        type: string
-    type: object
-  response.SquareSkillInfo:
-    properties:
-      author:
-        type: string
-      avatar:
-        $ref: '#/definitions/request.Avatar'
-      desc:
-        type: string
-      isShared:
-        type: boolean
-      name:
-        type: string
-      skillId:
         type: string
     type: object
   response.StatisticChart:
@@ -18643,40 +18817,6 @@ paths:
       summary: 获取我发布skill版本列表
       tags:
       - exploration.skill
-  /square/skill/list:
-    get:
-      consumes:
-      - application/json
-      description: 获取探索广场中的skill列表
-      parameters:
-      - description: skill名称
-        in: query
-        name: name
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  allOf:
-                  - $ref: '#/definitions/response.ListResult'
-                  - properties:
-                      list:
-                        items:
-                          $ref: '#/definitions/response.SquareSkillInfo'
-                        type: array
-                    type: object
-              type: object
-      security:
-      - JWT: []
-      summary: 获取广场skill列表
-      tags:
-      - exploration.skill
   /square/skill/share:
     post:
       consumes:
@@ -18897,7 +19037,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.ExportAPIKeyStatisticListReq'
+          $ref: '#/definitions/request.APIKeyStatisticReq'
       produces:
       - application/octet-stream
       responses:
@@ -18957,7 +19097,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.ExportAPIKeyStatisticRecordReq'
+          $ref: '#/definitions/request.APIKeyStatisticReq'
       produces:
       - application/octet-stream
       responses:
@@ -19005,10 +19145,17 @@ paths:
       tags:
       - app_observability.statistic
   /statistic/api/select:
-    get:
+    post:
       consumes:
       - application/json
-      description: 获取API Key列表（用于下拉列表展示apikey）
+      description: 组织→用户→API Key名称级联
+      parameters:
+      - description: 获取API Key下拉列表请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.APIKeySelectReq'
       produces:
       - application/json
       responses:
@@ -19030,33 +19177,21 @@ paths:
               type: object
       security:
       - JWT: []
-      summary: 获取API Key列表
+      summary: 获取API Key下拉列表
       tags:
       - app_observability.statistic
   /statistic/app:
-    get:
+    post:
       consumes:
       - application/json
       description: 获取应用统计数据
       parameters:
-      - description: 开始时间（格式yyyy-mm-dd）
-        in: query
-        name: startDate
+      - description: 获取应用统计数据请求参数
+        in: body
+        name: data
         required: true
-        type: string
-      - description: 结束时间（格式yyyy-mm-dd）
-        in: query
-        name: endDate
-        required: true
-        type: string
-      - description: 应用ID列表
-        in: query
-        name: apps
-        type: string
-      - description: 应用类型（默认agent）
-        in: query
-        name: appType
-        type: string
+        schema:
+          $ref: '#/definitions/request.AppStatisticReq'
       produces:
       - application/json
       responses:
@@ -19075,29 +19210,17 @@ paths:
       tags:
       - app_observability.statistic
   /statistic/app/export:
-    get:
+    post:
       consumes:
       - application/json
       description: 导出应用统计列表数据
       parameters:
-      - description: 开始时间（格式yyyy-mm-dd）
-        in: query
-        name: startDate
+      - description: 导出应用统计列表请求参数
+        in: body
+        name: data
         required: true
-        type: string
-      - description: 结束时间（格式yyyy-mm-dd）
-        in: query
-        name: endDate
-        required: true
-        type: string
-      - description: 应用ID列表
-        in: query
-        name: apps
-        type: string
-      - description: 应用类型（默认agent）
-        in: query
-        name: appType
-        type: string
+        schema:
+          $ref: '#/definitions/request.AppStatisticReq'
       produces:
       - application/octet-stream
       responses:
@@ -19111,39 +19234,17 @@ paths:
       tags:
       - app_observability.statistic
   /statistic/app/list:
-    get:
+    post:
       consumes:
       - application/json
       description: 获取应用统计列表（分页）
       parameters:
-      - description: 开始时间（格式yyyy-mm-dd）
-        in: query
-        name: startDate
+      - description: 获取应用统计列表请求参数
+        in: body
+        name: data
         required: true
-        type: string
-      - description: 结束时间（格式yyyy-mm-dd）
-        in: query
-        name: endDate
-        required: true
-        type: string
-      - description: 应用ID列表
-        in: query
-        name: apps
-        type: string
-      - description: 应用类型（默认agent）
-        in: query
-        name: appType
-        type: string
-      - description: 页面编号，从1开始
-        in: query
-        name: pageNo
-        required: true
-        type: integer
-      - description: 单页数量
-        in: query
-        name: pageSize
-        required: true
-        type: integer
+        schema:
+          $ref: '#/definitions/request.AppStatisticListReq'
       produces:
       - application/json
       responses:
@@ -19169,15 +19270,17 @@ paths:
       tags:
       - app_observability.statistic
   /statistic/app/select:
-    get:
+    post:
       consumes:
       - application/json
-      description: 获取当前用户在当前组织下发布的应用列表（包括私有发布、组织内发布、公开发布）
+      description: 组织→用户→应用级联；获取筛选范围内的已发布应用
       parameters:
-      - description: 应用类型
-        in: query
-        name: appType
-        type: string
+      - description: 获取应用统计下拉列表请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.StatisticAppListSelectReq'
       produces:
       - application/json
       responses:
@@ -19199,7 +19302,7 @@ paths:
               type: object
       security:
       - JWT: []
-      summary: 获取当前用户在当前组织下发布的应用列表
+      summary: 获取应用统计下拉列表
       tags:
       - app_observability.statistic
   /statistic/client:
@@ -19236,30 +19339,17 @@ paths:
       tags:
       - statistic_client
   /statistic/model:
-    get:
+    post:
       consumes:
       - application/json
       description: 获取模型统计数据
       parameters:
-      - description: 开始时间（格式yyyy-mm-dd）
-        in: query
-        name: startDate
+      - description: 获取模型统计数据请求参数
+        in: body
+        name: data
         required: true
-        type: string
-      - description: 结束时间（格式yyyy-mm-dd）
-        in: query
-        name: endDate
-        required: true
-        type: string
-      - description: 模型ID列表
-        in: query
-        name: models
-        type: string
-      - description: 模型类型
-        in: query
-        name: modelType
-        required: true
-        type: string
+        schema:
+          $ref: '#/definitions/request.ModelStatisticReq'
       produces:
       - application/json
       responses:
@@ -19278,30 +19368,17 @@ paths:
       tags:
       - app_observability.statistic
   /statistic/model/export:
-    get:
+    post:
       consumes:
       - application/json
       description: 导出模型统计列表数据
       parameters:
-      - description: 开始时间（格式yyyy-mm-dd）
-        in: query
-        name: startDate
+      - description: 导出模型统计列表请求参数
+        in: body
+        name: data
         required: true
-        type: string
-      - description: 结束时间（格式yyyy-mm-dd）
-        in: query
-        name: endDate
-        required: true
-        type: string
-      - description: 模型ID列表
-        in: query
-        name: models
-        type: string
-      - description: 模型类型
-        in: query
-        name: modelType
-        required: true
-        type: string
+        schema:
+          $ref: '#/definitions/request.ModelStatisticReq'
       produces:
       - application/octet-stream
       responses:
@@ -19315,40 +19392,17 @@ paths:
       tags:
       - app_observability.statistic
   /statistic/model/list:
-    get:
+    post:
       consumes:
       - application/json
       description: 获取模型统计列表（分页）
       parameters:
-      - description: 开始时间（格式yyyy-mm-dd）
-        in: query
-        name: startDate
+      - description: 获取模型统计列表请求参数
+        in: body
+        name: data
         required: true
-        type: string
-      - description: 结束时间（格式yyyy-mm-dd）
-        in: query
-        name: endDate
-        required: true
-        type: string
-      - description: 模型ID列表
-        in: query
-        name: models
-        type: string
-      - description: 模型类型
-        in: query
-        name: modelType
-        required: true
-        type: string
-      - description: 页面编号，从1开始
-        in: query
-        name: pageNo
-        required: true
-        type: integer
-      - description: 单页数量
-        in: query
-        name: pageSize
-        required: true
-        type: integer
+        schema:
+          $ref: '#/definitions/request.ModelStatisticListReq'
       produces:
       - application/json
       responses:
@@ -19371,6 +19425,100 @@ paths:
       security:
       - JWT: []
       summary: 获取模型统计列表
+      tags:
+      - app_observability.statistic
+  /statistic/model/select:
+    post:
+      consumes:
+      - application/json
+      description: 组织→用户→模型级联；用于模型 Tab 筛选，非统计 list 接口
+      parameters:
+      - description: 获取模型统计下拉列表请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.ModelStatisticSelectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.ModelInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取模型统计下拉列表
+      tags:
+      - app_observability.statistic
+  /statistic/orgs/select:
+    get:
+      consumes:
+      - application/json
+      description: 系统组织管理员返回全部组织及下级；组织管理员返回当前组织及下级；普通用户仅当前组织
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.IDName'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取统计看板组织下拉列表
+      tags:
+      - app_observability.statistic
+  /statistic/users/select:
+    get:
+      consumes:
+      - application/json
+      description: 组织/系统管理员：以 JWT orgId 为根，返回该组织及全部下级组织下的用户（忽略 body.orgIds/userIds）；普通用户仅返回本人
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.BriefUserInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取统计看板用户下拉列表
       tags:
       - app_observability.statistic
   /tool/action/detail:

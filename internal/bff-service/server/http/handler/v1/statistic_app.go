@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/gin-gonic/gin"
@@ -19,22 +19,15 @@ import (
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			startDate	query		string	true	"开始时间（格式yyyy-mm-dd）"
-//	@Param			endDate		query		string	true	"结束时间（格式yyyy-mm-dd）"
-//	@Param			apps		query		string	false	"应用ID列表"
-//	@Param			appType		query		string	false	"应用类型（默认agent）"
-//	@Success		200			{object}	response.Response{data=response.AppStatistic}
-//	@Router			/statistic/app [get]
+//	@Param			data	body		request.AppStatisticReq	true	"获取应用统计数据请求参数"
+//	@Success		200		{object}	response.Response{data=response.AppStatistic}
+//	@Router			/statistic/app [post]
 func GetAppStatistic(ctx *gin.Context) {
-	startDate := ctx.Query("startDate")
-	endDate := ctx.Query("endDate")
-	appIds := ctx.Query("apps")
-	appType := ctx.Query("appType")
-	var appIdList []string
-	if appIds != "" {
-		appIdList = strings.Split(appIds, ",")
+	var req request.AppStatisticReq
+	if !gin_util.Bind(ctx, &req) {
+		return
 	}
-	resp, err := service.GetAppStatistic(ctx, getUserID(ctx), getOrgID(ctx), startDate, endDate, appIdList, appType)
+	resp, err := service.GetAppStatistic(ctx, req.StatisticFilter, req.StartDate, req.EndDate, req.Apps, req.AppType, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -46,24 +39,15 @@ func GetAppStatistic(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			startDate	query		string	true	"开始时间（格式yyyy-mm-dd）"
-//	@Param			endDate		query		string	true	"结束时间（格式yyyy-mm-dd）"
-//	@Param			apps		query		string	false	"应用ID列表"
-//	@Param			appType		query		string	false	"应用类型（默认agent）"
-//	@Param			pageNo		query		int		true	"页面编号，从1开始"
-//	@Param			pageSize	query		int		true	"单页数量"
-//	@Success		200			{object}	response.Response{data=response.PageResult{list=[]response.AppStatisticItem}}
-//	@Router			/statistic/app/list [get]
+//	@Param			data	body		request.AppStatisticListReq	true	"获取应用统计列表请求参数"
+//	@Success		200		{object}	response.Response{data=response.PageResult{list=[]response.AppStatisticItem}}
+//	@Router			/statistic/app/list [post]
 func GetAppStatisticList(ctx *gin.Context) {
-	startDate := ctx.Query("startDate")
-	endDate := ctx.Query("endDate")
-	appIds := ctx.Query("apps")
-	appType := ctx.Query("appType")
-	var appIdList []string
-	if appIds != "" {
-		appIdList = strings.Split(appIds, ",")
+	var req request.AppStatisticListReq
+	if !gin_util.Bind(ctx, &req) {
+		return
 	}
-	resp, err := service.GetAppStatisticList(ctx, getUserID(ctx), getOrgID(ctx), startDate, endDate, appIdList, appType, getPageNo(ctx), getPageSize(ctx))
+	resp, err := service.GetAppStatisticList(ctx, req.StatisticFilter, req.StartDate, req.EndDate, req.Apps, req.AppType, int32(req.PageNo), int32(req.PageSize), getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -75,27 +59,20 @@ func GetAppStatisticList(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		application/octet-stream
-//	@Param			startDate	query		string	true	"开始时间（格式yyyy-mm-dd）"
-//	@Param			endDate		query		string	true	"结束时间（格式yyyy-mm-dd）"
-//	@Param			apps		query		string	false	"应用ID列表"
-//	@Param			appType		query		string	false	"应用类型（默认agent）"
-//	@Success		200			{object}	response.Response
-//	@Router			/statistic/app/export [get]
+//	@Param			data	body		request.AppStatisticReq	true	"导出应用统计列表请求参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/statistic/app/export [post]
 func ExportAppStatisticList(ctx *gin.Context) {
-	startDate := ctx.Query("startDate")
-	endDate := ctx.Query("endDate")
-	appIds := ctx.Query("apps")
-	appType := ctx.Query("appType")
-	var appIdList []string
-	if appIds != "" {
-		appIdList = strings.Split(appIds, ",")
+	var req request.AppStatisticReq
+	if !gin_util.Bind(ctx, &req) {
+		return
 	}
-	file, err := service.ExportAppStatisticList(ctx, getUserID(ctx), getOrgID(ctx), startDate, endDate, appIdList, appType)
+	file, err := service.ExportAppStatisticList(ctx, req.StatisticFilter, req.StartDate, req.EndDate, req.Apps, req.AppType, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
-	fileName := fmt.Sprintf("应用统计列表_%v-%v.xlsx", startDate, endDate)
+	fileName := fmt.Sprintf("应用统计列表_%v-%v.xlsx", req.StartDate, req.EndDate)
 	ctx.Writer.WriteHeader(http.StatusOK)
 	ctx.Header("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(fileName))
 	ctx.Header("Content-Type", "application/octet-stream")
@@ -108,15 +85,19 @@ func ExportAppStatisticList(ctx *gin.Context) {
 // GetAppListSelect
 //
 //	@Tags			app_observability.statistic
-//	@Summary		获取当前用户在当前组织下发布的应用列表
-//	@Description	获取当前用户在当前组织下发布的应用列表（包括私有发布、组织内发布、公开发布）
+//	@Summary		获取应用统计下拉列表
+//	@Description	组织→用户→应用级联；获取筛选范围内的已发布应用
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			appType	query		string	false	"应用类型"
+//	@Param			data	body		request.StatisticAppListSelectReq	true	"获取应用统计下拉列表请求参数"
 //	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.MyAppItem}}
-//	@Router			/statistic/app/select [get]
+//	@Router			/statistic/app/select [post]
 func GetAppListSelect(ctx *gin.Context) {
-	resp, err := service.GetAppListSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("appType"))
+	var req request.StatisticAppListSelectReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.GetAppListSelect(ctx, req.StatisticFilter, req.AppType, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }

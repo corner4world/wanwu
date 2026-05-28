@@ -19,6 +19,8 @@ type APIKeyStatisticTrend struct {
 }
 
 type APIKeyStatisticItem struct {
+	OrgName           string  `json:"orgName"`
+	UserName          string  `json:"userName"`
 	Name              string  `json:"name"`
 	APIKey            string  `json:"apiKey"`
 	MethodPath        string  `json:"methodPath"`
@@ -31,6 +33,8 @@ type APIKeyStatisticItem struct {
 }
 
 type APIKeyStatisticRecordItem struct {
+	OrgName        string `json:"orgName"`
+	UserName       string `json:"userName"`
 	Name           string `json:"name"`
 	APIKey         string `json:"apiKey"`
 	MethodPath     string `json:"methodPath"`

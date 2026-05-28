@@ -46,6 +46,24 @@ func WithUserID(userID string) SQLOption {
 	})
 }
 
+func WithOrgIDs(orgIDs []string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(orgIDs) > 0 {
+			return db.Where("org_id IN ?", orgIDs)
+		}
+		return db
+	})
+}
+
+func WithUserIDs(userIDs []string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(userIDs) > 0 {
+			return db.Where("user_id IN ?", userIDs)
+		}
+		return db
+	})
+}
+
 func WithAppIDs(Ids []string) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		return db.Where("app_id IN (?)", Ids)

@@ -261,9 +261,9 @@ func UnPublishApp(ctx *gin.Context, userId, orgId string, req request.UnPublishA
 
 func GetAppList(ctx *gin.Context, userId, orgId, appType string) (*response.ListResult, error) {
 	resp, err := app.GetAppList(ctx.Request.Context(), &app_service.GetAppListReq{
-		OrgId:   orgId,
+		OrgIds:  []string{orgId},
+		UserIds: []string{userId},
 		AppType: appType,
-		UserId:  userId,
 	})
 	if err != nil {
 		return nil, err

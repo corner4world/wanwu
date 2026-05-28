@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/gin-gonic/gin"
@@ -19,22 +19,15 @@ import (
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			startDate	query		string	true	"开始时间（格式yyyy-mm-dd）"
-//	@Param			endDate		query		string	true	"结束时间（格式yyyy-mm-dd）"
-//	@Param			models		query		string	false	"模型ID列表"
-//	@Param			modelType	query		string	true	"模型类型"
-//	@Success		200			{object}	response.Response{data=response.ModelStatistic}
-//	@Router			/statistic/model [get]
+//	@Param			data	body		request.ModelStatisticReq	true	"获取模型统计数据请求参数"
+//	@Success		200		{object}	response.Response{data=response.ModelStatistic}
+//	@Router			/statistic/model [post]
 func GetModelStatistic(ctx *gin.Context) {
-	startDate := ctx.Query("startDate")
-	endDate := ctx.Query("endDate")
-	modelIds := ctx.Query("models")
-	modelType := ctx.Query("modelType")
-	var modelIdList []string
-	if modelIds != "" {
-		modelIdList = strings.Split(modelIds, ",")
+	var req request.ModelStatisticReq
+	if !gin_util.Bind(ctx, &req) {
+		return
 	}
-	resp, err := service.GetModelStatistic(ctx, getUserID(ctx), getOrgID(ctx), startDate, endDate, modelIdList, modelType)
+	resp, err := service.GetModelStatistic(ctx, req.StatisticFilter, req.StartDate, req.EndDate, req.Models, req.ModelType, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -46,24 +39,15 @@ func GetModelStatistic(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			startDate	query		string	true	"开始时间（格式yyyy-mm-dd）"
-//	@Param			endDate		query		string	true	"结束时间（格式yyyy-mm-dd）"
-//	@Param			models		query		string	false	"模型ID列表"
-//	@Param			modelType	query		string	true	"模型类型"
-//	@Param			pageNo		query		int		true	"页面编号，从1开始"
-//	@Param			pageSize	query		int		true	"单页数量"
-//	@Success		200			{object}	response.Response{data=response.PageResult{list=[]response.ModelStatisticItem}}
-//	@Router			/statistic/model/list [get]
+//	@Param			data	body		request.ModelStatisticListReq	true	"获取模型统计列表请求参数"
+//	@Success		200		{object}	response.Response{data=response.PageResult{list=[]response.ModelStatisticItem}}
+//	@Router			/statistic/model/list [post]
 func GetModelStatisticList(ctx *gin.Context) {
-	startDate := ctx.Query("startDate")
-	endDate := ctx.Query("endDate")
-	modelIds := ctx.Query("models")
-	modelType := ctx.Query("modelType")
-	var modelIdList []string
-	if modelIds != "" {
-		modelIdList = strings.Split(modelIds, ",")
+	var req request.ModelStatisticListReq
+	if !gin_util.Bind(ctx, &req) {
+		return
 	}
-	resp, err := service.GetModelStatisticList(ctx, getUserID(ctx), getOrgID(ctx), startDate, endDate, modelIdList, modelType, getPageNo(ctx), getPageSize(ctx))
+	resp, err := service.GetModelStatisticList(ctx, req.StatisticFilter, req.StartDate, req.EndDate, req.Models, req.ModelType, int32(req.PageNo), int32(req.PageSize), getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -75,27 +59,20 @@ func GetModelStatisticList(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		application/octet-stream
-//	@Param			startDate	query		string	true	"开始时间（格式yyyy-mm-dd）"
-//	@Param			endDate		query		string	true	"结束时间（格式yyyy-mm-dd）"
-//	@Param			models		query		string	false	"模型ID列表"
-//	@Param			modelType	query		string	true	"模型类型"
-//	@Success		200			{object}	response.Response
-//	@Router			/statistic/model/export [get]
+//	@Param			data	body		request.ModelStatisticReq	true	"导出模型统计列表请求参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/statistic/model/export [post]
 func ExportModelStatisticList(ctx *gin.Context) {
-	startDate := ctx.Query("startDate")
-	endDate := ctx.Query("endDate")
-	modelIds := ctx.Query("models")
-	modelType := ctx.Query("modelType")
-	var modelIdList []string
-	if modelIds != "" {
-		modelIdList = strings.Split(modelIds, ",")
+	var req request.ModelStatisticReq
+	if !gin_util.Bind(ctx, &req) {
+		return
 	}
-	file, err := service.ExportModelStatisticList(ctx, getUserID(ctx), getOrgID(ctx), startDate, endDate, modelIdList, modelType)
+	file, err := service.ExportModelStatisticList(ctx, req.StatisticFilter, req.StartDate, req.EndDate, req.Models, req.ModelType, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
-	fileName := fmt.Sprintf("模型统计列表_%v-%v.xlsx", startDate, endDate)
+	fileName := fmt.Sprintf("模型统计列表_%v-%v.xlsx", req.StartDate, req.EndDate)
 	ctx.Writer.WriteHeader(http.StatusOK)
 	ctx.Header("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(fileName))
 	ctx.Header("Content-Type", "application/octet-stream")
@@ -103,4 +80,24 @@ func ExportModelStatisticList(ctx *gin.Context) {
 	if _, err := file.WriteTo(ctx.Writer); err != nil {
 		gin_util.Response(ctx, nil, err)
 	}
+}
+
+// GetStatisticModelSelect
+//
+//	@Tags			app_observability.statistic
+//	@Summary		获取模型统计下拉列表
+//	@Description	组织→用户→模型级联；用于模型 Tab 筛选，非统计 list 接口
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.ModelStatisticSelectReq	true	"获取模型统计下拉列表请求参数"
+//	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.ModelInfo}}
+//	@Router			/statistic/model/select [post]
+func GetStatisticModelSelect(ctx *gin.Context) {
+	var req request.ModelStatisticSelectReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.GetStatisticModelSelect(ctx, req.ModelType, getUserID(ctx), getOrgID(ctx), &req.StatisticFilter, isAdmin(ctx), isSystem(ctx) && isAdmin(ctx))
+	gin_util.Response(ctx, resp, err)
 }

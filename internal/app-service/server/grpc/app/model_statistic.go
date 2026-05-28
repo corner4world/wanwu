@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Service) GetModelStatistic(ctx context.Context, req *app_service.GetModelStatisticReq) (*app_service.ModelStatistic, error) {
-	stats, err := s.cli.GetModelStatistic(ctx, req.UserId, req.OrgId, req.StartDate, req.EndDate, req.ModelIds, req.ModelType)
+	stats, err := s.cli.GetModelStatistic(ctx, req.OrgIds, req.UserIds, req.StartDate, req.EndDate, req.ModelIds, req.ModelType)
 	if err != nil {
 		return nil, errStatus(errs.Code_AppModelRecord, err)
 	}
@@ -20,7 +20,7 @@ func (s *Service) GetModelStatistic(ctx context.Context, req *app_service.GetMod
 }
 
 func (s *Service) GetModelStatisticList(ctx context.Context, req *app_service.GetModelStatisticListReq) (*app_service.GetModelStatisticListResp, error) {
-	stats, err := s.cli.GetModelStatisticList(ctx, req.UserId, req.OrgId, req.StartDate, req.EndDate, req.ModelIds, req.ModelType, toOffset(req), req.PageSize)
+	stats, err := s.cli.GetModelStatisticList(ctx, req.OrgIds, req.UserIds, req.StartDate, req.EndDate, req.ModelIds, req.ModelType, toOffset(req), req.PageSize)
 	if err != nil {
 		return nil, errStatus(errs.Code_AppModelRecord, err)
 	}
@@ -98,6 +98,7 @@ func convertModelStatisticList(list *orm.ModelStatisticList) *app_service.GetMod
 			Model:                item.Model,
 			Provider:             item.Provider,
 			OrgId:                item.OrgId,
+			UserId:               item.UserId,
 			CallCount:            item.CallCount,
 			CallFailure:          item.CallFailure,
 			FailureRate:          item.FailureRate,

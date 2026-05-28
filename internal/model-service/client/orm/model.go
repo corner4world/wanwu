@@ -172,6 +172,19 @@ func (c *Client) ListModels(ctx context.Context, tab *model_client.ModelImported
 	return modelInfos, nil
 }
 
+// ListModelsInStatisticScope 统计看板：org_id IN + user_id IN，与 app 统计 scope 语义一致。
+func (c *Client) ListModelsInStatisticScope(ctx context.Context, orgIds, userIds []string, modelType string) ([]*model_client.ModelImported, *errs.Status) {
+	var modelInfos []*model_client.ModelImported
+	db := sqlopt.SQLOptions(
+		sqlopt.WithUserOrgOrPublicScopeInStatistic(userIds, orgIds),
+		sqlopt.WithModelType(modelType),
+	).Apply(c.db.WithContext(ctx))
+	if err := db.Order("updated_at DESC").Find(&modelInfos).Error; err != nil {
+		return nil, toErrStatus("model_list_models_in_statistic_scope_err", err.Error())
+	}
+	return modelInfos, nil
+}
+
 func (c *Client) ListTypeModels(ctx context.Context, tab *model_client.ModelImported) ([]*model_client.ModelImported, *errs.Status) {
 	var modelInfos []*model_client.ModelImported
 	modelRerankTypes := []string{"rerank", "multimodal-rerank"}

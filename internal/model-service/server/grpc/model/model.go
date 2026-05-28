@@ -169,6 +169,14 @@ func (s *Service) ListModels(ctx context.Context, req *model_service.ListModelsR
 	return toModelInfos(modelsInfoFiltered), nil
 }
 
+func (s *Service) ListModelsInStatisticScope(ctx context.Context, req *model_service.ListModelsInStatisticScopeReq) (*model_service.ModelInfos, error) {
+	modelInfos, err := s.cli.ListModelsInStatisticScope(ctx, req.OrgIds, req.UserIds, req.ModelType)
+	if err != nil {
+		return nil, errStatus(errs.Code_ModelListModels, err)
+	}
+	return toModelInfos(modelInfos), nil
+}
+
 func (s *Service) ListTypeModels(ctx context.Context, req *model_service.ListTypeModelsReq) (*model_service.ModelInfos, error) {
 	modelInfos, err := s.cli.ListTypeModels(ctx, &model.ModelImported{
 		ModelType: req.ModelType,

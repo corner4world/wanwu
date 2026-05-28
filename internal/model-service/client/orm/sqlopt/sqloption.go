@@ -87,6 +87,16 @@ func WithUserOrgOrPublicScope(userID, orgID string) SQLOption {
 	})
 }
 
+// WithUserOrgOrPublicScopeInStatistic 统计看板批量范围：限定在 orgIDs 内，按 userIDs 匹配模型
+func WithUserOrgOrPublicScopeInStatistic(userIDs, orgIDs []string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		return db.Where(
+			"(user_id IN ? AND org_id IN ? ) ",
+			userIDs, orgIDs,
+		)
+	})
+}
+
 func WithProvider(provider string) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		if provider != "" {

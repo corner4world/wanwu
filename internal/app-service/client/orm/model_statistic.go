@@ -66,7 +66,7 @@ type ModelRecordStats struct {
 }
 
 // GetModelStatistic 获取模型统计（概览+趋势）
-func (c *Client) GetModelStatistic(ctx context.Context, userId, orgId, startDate, endDate string, modelIds []string, modelType string) (*ModelStatistic, *errs.Status) {
+func (c *Client) GetModelStatistic(ctx context.Context, orgIds, userIds []string, startDate, endDate string, modelIds []string, modelType string) (*ModelStatistic, *errs.Status) {
 	if startDate > endDate {
 		return nil, toErrStatus("app_model_statistic_get", fmt.Errorf("startDate %v greater than endDate %v", startDate, endDate).Error())
 	}
@@ -76,12 +76,12 @@ func (c *Client) GetModelStatistic(ctx context.Context, userId, orgId, startDate
 		log.Errorf("sync model stats for today %v err: %v", today, err)
 	}
 
-	overview, err := statisticModelStatsOverview(ctx, c.db, userId, orgId, startDate, endDate, modelIds, modelType)
+	overview, err := statisticModelStatsOverview(ctx, c.db, orgIds, userIds, startDate, endDate, modelIds, modelType)
 	if err != nil {
 		return nil, toErrStatus("app_model_statistic_get", err.Error())
 	}
 
-	trend, err := statisticModelStatsTrend(ctx, c.db, userId, orgId, startDate, endDate, modelIds, modelType)
+	trend, err := statisticModelStatsTrend(ctx, c.db, orgIds, userIds, startDate, endDate, modelIds, modelType)
 	if err != nil {
 		return nil, toErrStatus("app_model_statistic_get", err.Error())
 	}
@@ -92,7 +92,7 @@ func (c *Client) GetModelStatistic(ctx context.Context, userId, orgId, startDate
 	}, nil
 }
 
-func (c *Client) GetModelStatisticList(ctx context.Context, userId, orgId, startDate, endDate string, modelIds []string, modelType string, offset, limit int32) (*ModelStatisticList, *errs.Status) {
+func (c *Client) GetModelStatisticList(ctx context.Context, orgIds, userIds []string, startDate, endDate string, modelIds []string, modelType string, offset, limit int32) (*ModelStatisticList, *errs.Status) {
 	if startDate > endDate {
 		return nil, toErrStatus("app_model_statistic_list_get", fmt.Errorf("startDate %v greater than endDate %v", startDate, endDate).Error())
 	}
@@ -102,7 +102,7 @@ func (c *Client) GetModelStatisticList(ctx context.Context, userId, orgId, start
 		log.Errorf("sync model stats for today %v err: %v", today, err)
 	}
 
-	items, total, err := getModelStatisticList(ctx, c.db, userId, orgId, startDate, endDate, modelIds, modelType, offset, limit)
+	items, total, err := getModelStatisticList(ctx, c.db, orgIds, userIds, startDate, endDate, modelIds, modelType, offset, limit)
 	if err != nil {
 		return nil, toErrStatus("app_model_statistic_list_get", err.Error())
 	}
@@ -278,33 +278,33 @@ func updateModelStatsByRecord(ctx context.Context, db *gorm.DB, modelId, userId,
 	}).Create(modelStat).Error
 }
 
-func getModelStatisticList(ctx context.Context, db *gorm.DB, userId, orgId, startDate, endDate string, modelIds []string, modelType string, offset, limit int32) ([]ModelStatisticItem, int32, error) {
+func getModelStatisticList(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, modelIds []string, modelType string, offset, limit int32) ([]ModelStatisticItem, int32, error) {
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithUserID(userId),
-		sqlopt.WithOrgID(orgId),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithModelType(modelType),
 		sqlopt.WithModelIds(modelIds),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	var total int64
 	countQuery := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).
 		Model(&model.ModelStatistic{}).
-		Select("COUNT(DISTINCT model_id)")
+		Select("COUNT(DISTINCT model_id, user_id, org_id)")
 	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("count model stat list err: %v", err)
 	}
 	var stats []model.ModelStatistic
 	query := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).
-		Select("model_id, ANY_VALUE(model) as model, " +
-			"ANY_VALUE(org_id) as org_id, ANY_VALUE(provider) as provider, " +
+		Select("model_id, user_id, org_id, ANY_VALUE(model) as model, " +
+			"ANY_VALUE(provider) as provider, " +
 			"SUM(call_count) as call_count, SUM(call_failure) as call_failure, " +
 			"SUM(prompt_tokens) as prompt_tokens, SUM(completion_tokens) as completion_tokens, " +
 			"SUM(total_tokens) as total_tokens, SUM(costs) as costs, " +
 			"SUM(first_token_latency) as first_token_latency, " +
 			"SUM(stream_count) as stream_count, SUM(non_stream_count) as non_stream_count," +
 			"SUM(stream_failure) as stream_failure, SUM(non_stream_failure) as non_stream_failure").
-		Group("model_id").Order("call_count DESC").Offset(int(offset)).Limit(int(limit))
+		Group("model_id, user_id, org_id").Order("call_count DESC").Offset(int(offset)).Limit(int(limit))
 
 	if err := query.Find(&stats).Error; err != nil {
 		return nil, 0, fmt.Errorf("get model stat list err: %v", err)
@@ -320,6 +320,7 @@ func getModelStatisticList(ctx context.Context, db *gorm.DB, userId, orgId, star
 			Model:                stat.Model,
 			Provider:             stat.Provider,
 			OrgId:                stat.OrgID,
+			UserId:               stat.UserID,
 			CallCount:            stat.CallCount,
 			CallFailure:          stat.CallFailure,
 			FailureRate:          failureRate,
@@ -335,18 +336,18 @@ func getModelStatisticList(ctx context.Context, db *gorm.DB, userId, orgId, star
 }
 
 // statisticModelStatsOverview 统计模型概览数据（新接口）
-func statisticModelStatsOverview(ctx context.Context, db *gorm.DB, userID, orgID, startDate, endDate string, modelIds []string, modelType string) (*ModelStatisticOverview, error) {
+func statisticModelStatsOverview(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, modelIds []string, modelType string) (*ModelStatisticOverview, error) {
 	prevPeriod, currPeriod, err := util.PreviousDateRange(startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
 
-	current, err := modelStatsByDateRange(ctx, db, userID, orgID, currPeriod, modelIds, modelType)
+	current, err := modelStatsByDateRange(ctx, db, orgIds, userIds, currPeriod, modelIds, modelType)
 	if err != nil {
 		return nil, err
 	}
 
-	previous, err := modelStatsByDateRange(ctx, db, userID, orgID, prevPeriod, modelIds, modelType)
+	previous, err := modelStatsByDateRange(ctx, db, orgIds, userIds, prevPeriod, modelIds, modelType)
 	if err != nil {
 		return nil, err
 	}
@@ -363,16 +364,16 @@ func statisticModelStatsOverview(ctx context.Context, db *gorm.DB, userID, orgID
 }
 
 // modelStatsByDateRange 按日期范围获取模型统计数据（新接口）
-func modelStatsByDateRange(ctx context.Context, db *gorm.DB, userID, orgID string, dates []string, modelIds []string, modelType string) (*ModelStatisticOverview, error) {
+func modelStatsByDateRange(ctx context.Context, db *gorm.DB, orgIds, userIds []string, dates []string, modelIds []string, modelType string) (*ModelStatisticOverview, error) {
 	startDate, endDate := dates[0], dates[len(dates)-1]
 	var stat model.ModelStatistic
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithOrgID(orgID),
-		sqlopt.WithUserID(userID),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithModelIds(modelIds),
 		sqlopt.WithModelType(modelType),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	if err := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).
 		Select("SUM(prompt_tokens) as prompt_tokens, " +
@@ -403,7 +404,7 @@ func modelStatsByDateRange(ctx context.Context, db *gorm.DB, userID, orgID strin
 }
 
 // statisticModelStatsTrend 统计模型趋势数据
-func statisticModelStatsTrend(ctx context.Context, db *gorm.DB, userID, orgID, startDate, endDate string, modelIds []string, modelType string) (*ModelStatisticTrend, error) {
+func statisticModelStatsTrend(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, modelIds []string, modelType string) (*ModelStatisticTrend, error) {
 	dates, err := buildDateRange(startDate, endDate)
 	if err != nil {
 		return nil, err
@@ -411,12 +412,12 @@ func statisticModelStatsTrend(ctx context.Context, db *gorm.DB, userID, orgID, s
 
 	var stats []model.ModelStatistic
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithUserID(userID),
-		sqlopt.WithOrgID(orgID),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithModelIds(modelIds),
 		sqlopt.WithModelType(modelType),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	if err := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).
 		Select("date, SUM(call_count) as call_count, SUM(call_failure) as call_failure, " +

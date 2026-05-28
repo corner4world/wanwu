@@ -25,6 +25,7 @@ type ModelStatisticItem struct {
 	ModelId              string  `json:"modelId"`
 	Model                string  `json:"model"`
 	Provider             string  `json:"provider"`
+	UserName             string  `json:"userName"`
 	OrgName              string  `json:"orgName"`
 	CallCount            int32   `json:"callCount"`
 	CallFailure          int32   `json:"callFailure"`

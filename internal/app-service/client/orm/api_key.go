@@ -77,13 +77,14 @@ func (c *Client) UpdateApiKey(ctx context.Context, keyId uint32, userId, orgId, 
 }
 
 // ListApiKeys 查询API Key列表
-func (c *Client) ListApiKeys(ctx context.Context, userId, orgId string, offset, limit int32) ([]*model.OpenApiKey, int64, *errs.Status) {
+func (c *Client) ListApiKeys(ctx context.Context, orgIds, userIds []string, offset, limit int32) ([]*model.OpenApiKey, int64, *errs.Status) {
 	var count int64
 	var keys []*model.OpenApiKey
-	if err := sqlopt.SQLOptions(
-		sqlopt.WithOrgID(orgId),
-		sqlopt.WithUserID(userId),
-	).Apply(c.db.WithContext(ctx)).
+	opts := []sqlopt.SQLOption{
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
+	}
+	if err := sqlopt.SQLOptions(opts...).Apply(c.db.WithContext(ctx)).
 		Offset(int(offset)).Limit(int(limit)).Order("id DESC").Find(&keys).
 		Offset(-1).Limit(-1).Count(&count).Error; err != nil {
 		return nil, 0, toErrStatus("api_key_list", err.Error())

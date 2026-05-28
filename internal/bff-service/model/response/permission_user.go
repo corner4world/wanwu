@@ -23,6 +23,11 @@ type UserInfo struct {
 	Avatar    request.Avatar `json:"avatar"`
 }
 
+type BriefUserInfo struct {
+	UserID   string `json:"userId"`
+	Username string `json:"username"`
+}
+
 type OrgRole struct {
 	Org   IDName   `json:"org"`   // 组织
 	Roles []IDName `json:"roles"` // 角色列表

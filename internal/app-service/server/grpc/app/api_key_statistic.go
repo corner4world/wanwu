@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Service) GetAPIKeyStatistic(ctx context.Context, req *app_service.GetAPIKeyStatisticReq) (*app_service.APIKeyStatistic, error) {
-	stats, err := s.cli.GetAPIKeyStatistic(ctx, req.UserId, req.OrgId, req.StartDate, req.EndDate, req.ApiKeyIds, req.MethodPaths)
+	stats, err := s.cli.GetAPIKeyStatistic(ctx, req.OrgIds, req.UserIds, req.StartDate, req.EndDate, req.ApiKeyIds, req.MethodPaths)
 	if err != nil {
 		return nil, errStatus(err_code.Code_AppAPIKeyRecord, err)
 	}
@@ -19,7 +19,7 @@ func (s *Service) GetAPIKeyStatistic(ctx context.Context, req *app_service.GetAP
 }
 
 func (s *Service) GetAPIKeyStatisticList(ctx context.Context, req *app_service.GetAPIKeyStatisticListReq) (*app_service.GetAPIKeyStatisticListResp, error) {
-	stats, err := s.cli.GetAPIKeyStatisticList(ctx, req.UserId, req.OrgId, req.StartDate, req.EndDate, req.ApiKeyIds, req.MethodPaths, toOffset(req), req.PageSize)
+	stats, err := s.cli.GetAPIKeyStatisticList(ctx, req.OrgIds, req.UserIds, req.StartDate, req.EndDate, req.ApiKeyIds, req.MethodPaths, toOffset(req), req.PageSize)
 	if err != nil {
 		return nil, errStatus(err_code.Code_AppAPIKeyRecord, err)
 	}
@@ -27,7 +27,7 @@ func (s *Service) GetAPIKeyStatisticList(ctx context.Context, req *app_service.G
 }
 
 func (s *Service) GetAPIKeyStatisticRecord(ctx context.Context, req *app_service.GetAPIKeyStatisticRecordReq) (*app_service.GetAPIKeyStatisticRecordResp, error) {
-	records, err := s.cli.GetAPIKeyStatisticRecord(ctx, req.UserId, req.OrgId, req.StartDate, req.EndDate, req.ApiKeyIds, req.MethodPaths, toOffset(req), req.PageSize)
+	records, err := s.cli.GetAPIKeyStatisticRecord(ctx, req.OrgIds, req.UserIds, req.StartDate, req.EndDate, req.ApiKeyIds, req.MethodPaths, toOffset(req), req.PageSize)
 	if err != nil {
 		return nil, errStatus(err_code.Code_AppAPIKeyRecord, err)
 	}
@@ -80,6 +80,8 @@ func convertAPIKeyStatisticList(list *orm.APIKeyStatisticList) *app_service.GetA
 		items = append(items, &app_service.APIKeyStatisticItem{
 			ApiKeyId:          item.APIKeyID,
 			MethodPath:        item.MethodPath,
+			OrgId:             item.OrgId,
+			UserId:            item.UserId,
 			CallCount:         item.CallCount,
 			CallFailure:       item.CallFailure,
 			AvgStreamCosts:    item.AvgStreamCosts,
@@ -100,6 +102,8 @@ func convertAPIKeyStatisticRecordList(list *orm.APIKeyStatisticRecordList) *app_
 		items = append(items, &app_service.APIKeyStatisticRecordItem{
 			ApiKeyId:       item.APIKeyID,
 			MethodPath:     item.MethodPath,
+			OrgId:          item.OrgId,
+			UserId:         item.UserId,
 			CallTime:       item.CallTime,
 			ResponseStatus: item.ResponseStatus,
 			StreamCosts:    item.StreamCosts,

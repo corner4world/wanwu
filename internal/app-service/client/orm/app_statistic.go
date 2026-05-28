@@ -70,7 +70,7 @@ type AppRecordStats struct {
 }
 
 // GetAppStatistic 获取应用统计（概览+趋势）
-func (c *Client) GetAppStatistic(ctx context.Context, userId, orgId, startDate, endDate string, appIds []string, appType string) (*AppStatistic, *errs.Status) {
+func (c *Client) GetAppStatistic(ctx context.Context, orgIds, userIds []string, startDate, endDate string, appIds []string, appType string) (*AppStatistic, *errs.Status) {
 	if startDate > endDate {
 		return nil, toErrStatus("app_statistic_get", fmt.Errorf("startDate %v greater than endDate %v", startDate, endDate).Error())
 	}
@@ -80,12 +80,12 @@ func (c *Client) GetAppStatistic(ctx context.Context, userId, orgId, startDate, 
 		log.Errorf("sync app stats for today %v err: %v", today, err)
 	}
 
-	overview, err := statisticAppStatsOverview(ctx, c.db, userId, orgId, startDate, endDate, appIds, appType)
+	overview, err := statisticAppStatsOverview(ctx, c.db, orgIds, userIds, startDate, endDate, appIds, appType)
 	if err != nil {
 		return nil, toErrStatus("app_statistic_get", err.Error())
 	}
 
-	trend, err := statisticAppStatsTrend(ctx, c.db, userId, orgId, startDate, endDate, appIds, appType)
+	trend, err := statisticAppStatsTrend(ctx, c.db, orgIds, userIds, startDate, endDate, appIds, appType)
 	if err != nil {
 		return nil, toErrStatus("app_statistic_get", err.Error())
 	}
@@ -97,7 +97,7 @@ func (c *Client) GetAppStatistic(ctx context.Context, userId, orgId, startDate, 
 }
 
 // GetAppStatisticList 获取应用统计列表（分页）
-func (c *Client) GetAppStatisticList(ctx context.Context, userId, orgId, startDate, endDate string, appIds []string, appType string, offset, limit int32) (*AppStatisticList, *errs.Status) {
+func (c *Client) GetAppStatisticList(ctx context.Context, orgIds, userIds []string, startDate, endDate string, appIds []string, appType string, offset, limit int32) (*AppStatisticList, *errs.Status) {
 	if startDate > endDate {
 		return nil, toErrStatus("app_statistic_list_get", fmt.Errorf("startDate %v greater than endDate %v", startDate, endDate).Error())
 	}
@@ -107,7 +107,7 @@ func (c *Client) GetAppStatisticList(ctx context.Context, userId, orgId, startDa
 		log.Errorf("sync app stats for today %v err: %v", today, err)
 	}
 
-	items, total, err := getAppStatisticList(ctx, c.db, userId, orgId, startDate, endDate, appIds, appType, offset, limit)
+	items, total, err := getAppStatisticList(ctx, c.db, orgIds, userIds, startDate, endDate, appIds, appType, offset, limit)
 	if err != nil {
 		return nil, toErrStatus("app_statistic_list_get", err.Error())
 	}
@@ -294,32 +294,31 @@ func updateAppStatsByRecord(ctx context.Context, db *gorm.DB, appId, appType, us
 	}).Create(appStat).Error
 }
 
-func getAppStatisticList(ctx context.Context, db *gorm.DB, userId, orgId, startDate, endDate string, appIds []string, appType string, offset, limit int32) ([]AppStatisticItem, int32, error) {
+func getAppStatisticList(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, appIds []string, appType string, offset, limit int32) ([]AppStatisticItem, int32, error) {
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithUserID(userId),
-		sqlopt.WithOrgID(orgId),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithAppType(appType),
 		sqlopt.WithAppIDsForStatistic(appIds),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	var total int64
 	countQuery := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).
 		Model(&model.AppStatistic{}).
-		Select("COUNT(DISTINCT app_id)")
+		Select("COUNT(DISTINCT app_id, user_id, org_id)")
 	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("count app stat list err: %v", err)
 	}
 	var stats []model.AppStatistic
 	query := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).
-		Select("app_id, ANY_VALUE(app_type) as app_type, " +
-			"ANY_VALUE(org_id) as org_id, " +
+		Select("app_id, user_id, org_id, ANY_VALUE(app_type) as app_type, " +
 			"SUM(call_count) as call_count, SUM(call_failure) as call_failure, " +
 			"SUM(stream_count) as stream_count, SUM(stream_failure) as stream_failure, " +
 			"SUM(stream_costs) as stream_costs, " +
 			"SUM(non_stream_count) as non_stream_count, SUM(non_stream_failure) as non_stream_failure, " +
 			"SUM(non_stream_costs) as non_stream_costs").
-		Group("app_id").Order("call_count DESC").Offset(int(offset)).Limit(int(limit))
+		Group("app_id, user_id, org_id").Order("call_count DESC").Offset(int(offset)).Limit(int(limit))
 
 	if err := query.Find(&stats).Error; err != nil {
 		return nil, 0, fmt.Errorf("get app stat list err: %v", err)
@@ -334,6 +333,7 @@ func getAppStatisticList(ctx context.Context, db *gorm.DB, userId, orgId, startD
 			AppId:             stat.AppID,
 			AppType:           stat.AppType,
 			OrgId:             stat.OrgID,
+			UserId:            stat.UserID,
 			CallCount:         stat.CallCount,
 			CallFailure:       stat.CallFailure,
 			FailureRate:       failureRate,
@@ -347,18 +347,18 @@ func getAppStatisticList(ctx context.Context, db *gorm.DB, userId, orgId, startD
 	return items, int32(total), nil
 }
 
-func statisticAppStatsOverview(ctx context.Context, db *gorm.DB, userID, orgID, startDate, endDate string, appIds []string, appType string) (*AppStatisticOverview, error) {
+func statisticAppStatsOverview(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, appIds []string, appType string) (*AppStatisticOverview, error) {
 	prevPeriod, currPeriod, err := util.PreviousDateRange(startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
 
-	current, err := appStatsByDateRange(ctx, db, userID, orgID, currPeriod, appIds, appType)
+	current, err := appStatsByDateRange(ctx, db, orgIds, userIds, currPeriod, appIds, appType)
 	if err != nil {
 		return nil, err
 	}
 
-	previous, err := appStatsByDateRange(ctx, db, userID, orgID, prevPeriod, appIds, appType)
+	previous, err := appStatsByDateRange(ctx, db, orgIds, userIds, prevPeriod, appIds, appType)
 	if err != nil {
 		return nil, err
 	}
@@ -373,17 +373,18 @@ func statisticAppStatsOverview(ctx context.Context, db *gorm.DB, userID, orgID, 
 	return current, nil
 }
 
-func appStatsByDateRange(ctx context.Context, db *gorm.DB, userID, orgID string, dates []string, appIds []string, appType string) (*AppStatisticOverview, error) {
+func appStatsByDateRange(ctx context.Context, db *gorm.DB, orgIds, userIds []string, dates []string, appIds []string, appType string) (*AppStatisticOverview, error) {
 	startDate, endDate := dates[0], dates[len(dates)-1]
 	var stat model.AppStatistic
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithOrgID(orgID),
-		sqlopt.WithUserID(userID),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithAppIDsForStatistic(appIds),
 		sqlopt.WithAppType(appType),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
+
 	if err := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).
 		Select("SUM(call_count) as call_count, " +
 			"SUM(call_failure) as call_failure, " +
@@ -410,7 +411,7 @@ func appStatsByDateRange(ctx context.Context, db *gorm.DB, userID, orgID string,
 	}, nil
 }
 
-func statisticAppStatsTrend(ctx context.Context, db *gorm.DB, userID, orgID, startDate, endDate string, appIds []string, appType string) (*AppStatisticTrend, error) {
+func statisticAppStatsTrend(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, appIds []string, appType string) (*AppStatisticTrend, error) {
 	dates, err := buildDateRange(startDate, endDate)
 	if err != nil {
 		return nil, err
@@ -418,12 +419,12 @@ func statisticAppStatsTrend(ctx context.Context, db *gorm.DB, userID, orgID, sta
 
 	var stats []model.AppStatistic
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithUserID(userID),
-		sqlopt.WithOrgID(orgID),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithAppIDsForStatistic(appIds),
 		sqlopt.WithAppType(appType),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	if err := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).
 		Select("date, SUM(call_count) as call_count, SUM(call_failure) as call_failure, " +

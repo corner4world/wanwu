@@ -63,6 +63,7 @@ type ModelStatisticItem struct {
 	Model                string
 	Provider             string
 	OrgId                string
+	UserId               string
 	CallCount            int32
 	CallFailure          int32
 	FailureRate          float32
@@ -102,6 +103,7 @@ type AppStatisticItem struct {
 	AppId             string
 	AppType           string
 	OrgId             string
+	UserId            string
 	CallCount         int32
 	CallFailure       int32
 	FailureRate       float32

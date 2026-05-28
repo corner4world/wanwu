@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Service) GetAppStatistic(ctx context.Context, req *app_service.GetAppStatisticReq) (*app_service.AppStatistic, error) {
-	stats, err := s.cli.GetAppStatistic(ctx, req.UserId, req.OrgId, req.StartDate, req.EndDate, req.AppIds, req.AppType)
+	stats, err := s.cli.GetAppStatistic(ctx, req.OrgIds, req.UserIds, req.StartDate, req.EndDate, req.AppIds, req.AppType)
 	if err != nil {
 		return nil, errStatus(errs.Code_AppModelRecord, err)
 	}
@@ -19,7 +19,7 @@ func (s *Service) GetAppStatistic(ctx context.Context, req *app_service.GetAppSt
 }
 
 func (s *Service) GetAppStatisticList(ctx context.Context, req *app_service.GetAppStatisticListReq) (*app_service.GetAppStatisticListResp, error) {
-	stats, err := s.cli.GetAppStatisticList(ctx, req.UserId, req.OrgId, req.StartDate, req.EndDate, req.AppIds, req.AppType, toOffset(req), req.PageSize)
+	stats, err := s.cli.GetAppStatisticList(ctx, req.OrgIds, req.UserIds, req.StartDate, req.EndDate, req.AppIds, req.AppType, toOffset(req), req.PageSize)
 	if err != nil {
 		return nil, errStatus(errs.Code_AppModelRecord, err)
 	}
@@ -73,6 +73,7 @@ func convertAppStatisticList(list *orm.AppStatisticList) *app_service.GetAppStat
 			AppId:             item.AppId,
 			AppType:           item.AppType,
 			OrgId:             item.OrgId,
+			UserId:            item.UserId,
 			CallCount:         item.CallCount,
 			CallFailure:       item.CallFailure,
 			FailureRate:       item.FailureRate,

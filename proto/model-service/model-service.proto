@@ -30,6 +30,8 @@ service ModelService {
     rpc ListModelsByIds(ListModelsByIdsReq) returns (ModelInfos) {}
     // llm/rerank/embedding模型列表展示
     rpc ListTypeModels(ListTypeModelsReq) returns (ModelInfos) {}
+    // 统计看板：按 orgIds/userIds 批量查询模型（org_id IN + user_id IN，单次查询）
+    rpc ListModelsInStatisticScope(ListModelsInStatisticScopeReq) returns (ModelInfos) {}
 
     // --- model experience ---
 
@@ -121,6 +123,14 @@ message ListTypeModelsReq {
     string userId = 1;
     string orgId = 2;
     string modelType = 3;       // 模型类型
+}
+
+// 统计看板模型下拉：orgIds/userIds 与统计 SQL 一致（IN + IN）
+message ListModelsInStatisticScopeReq {
+    repeated string orgIds = 1;
+    repeated string userIds = 2;
+    string modelType = 3;
+    string filterScope = 4;     // 同 ListModelsReq.filterScope，空表示不过滤公开/私有
 }
 
 // --- model experience ---

@@ -9,8 +9,8 @@ import (
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	"github.com/UnicomAI/wanwu/api/proto/common"
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
-	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
 	rag_service "github.com/UnicomAI/wanwu/api/proto/rag-service"
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"github.com/UnicomAI/wanwu/pkg/constant"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
@@ -20,13 +20,17 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func GetAppStatistic(ctx *gin.Context, userId, orgId, startDate, endDate string, appIds []string, appType string) (*response.AppStatistic, error) {
+func GetAppStatistic(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, appIds []string, appType string, userId, orgId string, isAdmin, isSystem bool) (*response.AppStatistic, error) {
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	if appType == "" {
 		appType = constant.AppTypeAgent
 	}
 	resp, err := app.GetAppStatistic(ctx.Request.Context(), &app_service.GetAppStatisticReq{
-		UserId:    userId,
-		OrgId:     orgId,
+		OrgIds:    scope.OrgIds,
+		UserIds:   scope.UserIds,
 		StartDate: startDate,
 		EndDate:   endDate,
 		AppIds:    appIds,
@@ -50,13 +54,17 @@ func GetAppStatistic(ctx *gin.Context, userId, orgId, startDate, endDate string,
 	}, nil
 }
 
-func GetAppStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate string, appIds []string, appType string, page, pageSize int32) (*response.PageResult, error) {
+func GetAppStatisticList(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, appIds []string, appType string, page, pageSize int32, userId, orgId string, isAdmin, isSystem bool) (*response.PageResult, error) {
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	if appType == "" {
 		appType = constant.AppTypeAgent
 	}
 	resp, err := app.GetAppStatisticList(ctx.Request.Context(), &app_service.GetAppStatisticListReq{
-		UserId:    userId,
-		OrgId:     orgId,
+		OrgIds:    scope.OrgIds,
+		UserIds:   scope.UserIds,
 		StartDate: startDate,
 		EndDate:   endDate,
 		AppIds:    appIds,
@@ -68,21 +76,17 @@ func GetAppStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate str
 		return nil, err
 	}
 
-	var orgIds []string
+	var orgIDs []string
 	var statAppIds []string
+	var userIDs []string
 	for _, item := range resp.Items {
-		orgIds = append(orgIds, item.OrgId)
+		orgIDs = append(orgIDs, item.OrgId)
 		statAppIds = append(statAppIds, item.AppId)
+		userIDs = append(userIDs, item.UserId)
 	}
-	orgResp, err := iam.GetOrgByOrgIDs(ctx, &iam_service.GetOrgByOrgIDsReq{OrgIds: orgIds})
+	orgNameMap, userNameMap, err := buildStatisticOrgUserNameMaps(ctx, orgIDs, userIDs)
 	if err != nil {
 		return nil, err
-	}
-	orgNameMap := make(map[string]string)
-	if orgResp != nil && orgResp.Orgs != nil {
-		for _, org := range orgResp.Orgs {
-			orgNameMap[org.Id] = org.Name
-		}
 	}
 	// 先根据ids获取应用名称，避免在循环中调用接口
 	ret, err := getAppNameMap(ctx, statAppIds, appType)
@@ -100,6 +104,7 @@ func GetAppStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate str
 			AppType:           item.AppType,
 			AppName:           getAppDisplayName(ret, item.AppId),
 			OrgName:           orgNameMap[item.OrgId],
+			UserName:          userNameMap[item.UserId],
 			CallCount:         item.CallCount,
 			CallFailure:       item.CallFailure,
 			FailureRate:       roundedFailureRate,
@@ -117,8 +122,8 @@ func GetAppStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate str
 	}, nil
 }
 
-func ExportAppStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate string, appIds []string, appType string) (*excelize.File, error) {
-	resp, err := GetAppStatisticList(ctx, userId, orgId, startDate, endDate, appIds, appType, -1, -1)
+func ExportAppStatisticList(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, appIds []string, appType string, userId, orgId string, isAdmin, isSystem bool) (*excelize.File, error) {
+	resp, err := GetAppStatisticList(ctx, filter, startDate, endDate, appIds, appType, -1, -1, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -127,13 +132,14 @@ func ExportAppStatisticList(ctx *gin.Context, userId, orgId, startDate, endDate 
 
 func writeAppListExcel(items []response.AppStatisticItem) (*excelize.File, error) {
 	sheet := "应用统计列表"
-	title := []any{"应用名称", "应用类型", "组织", "调用次数", "调用失败次数", "失败率", "流式调用次数", "非流式调用次数", "平均首响应耗时", "平均非流式耗时"}
+	title := []any{"应用名称", "应用类型", "组织", "用户", "调用次数(次)", "调用失败次数(次)", "失败率(%)", "流式调用次数(次)", "非流式调用次数(次)", "平均首响应耗时(流式)(ms)", "平均耗时(非流式)(ms)"}
 	var rows [][]any
 	for _, item := range items {
 		rows = append(rows, []any{
 			item.AppName,
 			item.AppType,
 			item.OrgName,
+			item.UserName,
 			item.CallCount,
 			item.CallFailure,
 			item.FailureRate,
@@ -198,9 +204,18 @@ func RecordAppStatistic(ctx context.Context, userId, orgId, appId, appType strin
 	go func() {
 		// 不使用外部ctx，避免外部ctx过期导致统计记录失败
 		defer util.PrintPanicStack()
-		_, err := app.RecordAppStatistic(context.Background(), &app_service.RecordAppStatisticReq{
-			UserId:         userId,
-			OrgId:          orgId,
+		// 修复bug,需要去app-service查询创建者的userId和orgId
+		appInfo, err := app.GetAppInfo(context.Background(), &app_service.GetAppInfoReq{
+			AppId:   appId,
+			AppType: appType,
+		})
+		if err != nil {
+			log.Errorf("get app info err: %v", err)
+			return
+		}
+		_, err = app.RecordAppStatistic(context.Background(), &app_service.RecordAppStatisticReq{
+			UserId:         appInfo.UserId,
+			OrgId:          appInfo.OrgId,
 			AppId:          appId,
 			AppType:        appType,
 			IsSuccess:      isSuccess,
@@ -215,14 +230,18 @@ func RecordAppStatistic(ctx context.Context, userId, orgId, appId, appType strin
 	}()
 }
 
-func GetAppListSelect(ctx *gin.Context, userId, orgId, appType string) (*response.ListResult, error) {
+func GetAppListSelect(ctx *gin.Context, filter request.StatisticFilter, appType string, userId, orgId string, isAdmin, isSystem bool) (*response.ListResult, error) {
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	if err != nil {
+		return nil, err
+	}
 	// 和前端约定好如果不传appType参数，默认查询agent类型的应用列表
 	if appType == "" {
 		appType = constant.AppTypeAgent
 	}
 	resp, err := app.GetAppList(ctx.Request.Context(), &app_service.GetAppListReq{
-		UserId:  userId,
-		OrgId:   orgId,
+		OrgIds:  scope.OrgIds,
+		UserIds: scope.UserIds,
 		AppType: appType,
 	})
 	if err != nil {

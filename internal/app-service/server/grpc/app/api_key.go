@@ -36,7 +36,7 @@ func (s *Service) UpdateApiKey(ctx context.Context, req *app_service.UpdateApiKe
 }
 
 func (s *Service) ListApiKeys(ctx context.Context, req *app_service.ListApiKeysReq) (*app_service.ApiKeyInfoList, error) {
-	apiKeyList, count, err := s.cli.ListApiKeys(ctx, req.UserId, req.OrgId, toOffset(req), req.PageSize)
+	apiKeyList, count, err := s.cli.ListApiKeys(ctx, req.OrgIds, req.UserIds, toOffset(req), req.PageSize)
 	if err != nil {
 		return nil, errStatus(errs.Code_ApiKey, err)
 	}

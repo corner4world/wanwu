@@ -49,7 +49,7 @@ func (s *Service) UnPublishApp(ctx context.Context, req *app_service.UnPublishAp
 }
 
 func (s *Service) GetAppList(ctx context.Context, req *app_service.GetAppListReq) (*app_service.AppList, error) {
-	publishAppList, err := s.cli.GetAppList(ctx, req.UserId, req.OrgId, req.AppType)
+	publishAppList, err := s.cli.GetAppList(ctx, req.OrgIds, req.UserIds, req.AppType)
 	if err != nil {
 		return nil, errStatus(errs.Code_AppExploration, err)
 	}
@@ -124,11 +124,11 @@ func toProtoExpApp(record *orm.ExplorationAppInfo) *app_service.ExplorationAppIn
 
 func toProtoApp(record *model.App) *app_service.AppInfo {
 	return &app_service.AppInfo{
+		UserId:      record.UserID,
+		OrgId:       record.OrgID,
 		AppId:       record.AppID,
 		AppType:     record.AppType,
 		CreatedAt:   record.CreatedAt,
 		PublishType: record.PublishType,
-		UserId:      record.UserID,
-		OrgId:       record.OrgID,
 	}
 }

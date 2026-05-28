@@ -88,6 +88,8 @@ type APIKeyStatisticTrend struct {
 type APIKeyStatisticItem struct {
 	APIKeyID          string
 	MethodPath        string
+	OrgId             string
+	UserId            string
 	CallCount         int32
 	CallFailure       int32
 	AvgStreamCosts    float32
@@ -99,6 +101,8 @@ type APIKeyStatisticItem struct {
 type APIKeyStatisticRecordItem struct {
 	APIKeyID       string
 	MethodPath     string
+	OrgId          string
+	UserId         string
 	CallTime       int64
 	ResponseStatus string
 	StreamCosts    int64
@@ -213,7 +217,7 @@ func (c *Client) RecordAPIKeyStatistic(ctx context.Context, userId, orgId, apiKe
 }
 
 // GetAPIKeyStatistic 获取 API Key 统计（概览+趋势）
-func (c *Client) GetAPIKeyStatistic(ctx context.Context, userId, orgId, startDate, endDate string, apiKeyIds []string, methodPaths []string) (*APIKeyStatistic, *errs.Status) {
+func (c *Client) GetAPIKeyStatistic(ctx context.Context, orgIds, userIds []string, startDate, endDate string, apiKeyIds []string, methodPaths []string) (*APIKeyStatistic, *errs.Status) {
 	// quick guard
 	if startDate > endDate {
 		return nil, toErrStatus("app_api_key_statistic_get", fmt.Errorf("startDate %v greater than endDate %v", startDate, endDate).Error())
@@ -224,11 +228,11 @@ func (c *Client) GetAPIKeyStatistic(ctx context.Context, userId, orgId, startDat
 	}
 
 	// overview and trend (real aggregations)
-	overview, err := statisticAPIKeyStatsOverview(ctx, c.db, userId, orgId, startDate, endDate, apiKeyIds, methodPaths)
+	overview, err := statisticAPIKeyStatsOverview(ctx, c.db, orgIds, userIds, startDate, endDate, apiKeyIds, methodPaths)
 	if err != nil {
 		return nil, toErrStatus("app_api_key_statistic_get", err.Error())
 	}
-	trend, err := statisticAPIKeyStatsTrend(ctx, c.db, userId, orgId, startDate, endDate, apiKeyIds, methodPaths)
+	trend, err := statisticAPIKeyStatsTrend(ctx, c.db, orgIds, userIds, startDate, endDate, apiKeyIds, methodPaths)
 	if err != nil {
 		return nil, toErrStatus("app_api_key_statistic_get", err.Error())
 	}
@@ -236,7 +240,7 @@ func (c *Client) GetAPIKeyStatistic(ctx context.Context, userId, orgId, startDat
 }
 
 // GetAPIKeyStatisticList 获取聚合统计列表（分页）
-func (c *Client) GetAPIKeyStatisticList(ctx context.Context, userId, orgId, startDate, endDate string, apiKeyIds []string, methodPaths []string, offset, limit int32) (*APIKeyStatisticList, *errs.Status) {
+func (c *Client) GetAPIKeyStatisticList(ctx context.Context, orgIds, userIds []string, startDate, endDate string, apiKeyIds []string, methodPaths []string, offset, limit int32) (*APIKeyStatisticList, *errs.Status) {
 	if startDate > endDate {
 		return nil, toErrStatus("app_api_key_statistic_list", fmt.Errorf("startDate %v greater than endDate %v", startDate, endDate).Error())
 	}
@@ -246,7 +250,7 @@ func (c *Client) GetAPIKeyStatisticList(ctx context.Context, userId, orgId, star
 		log.Errorf("sync api key stats for today %v err: %v", today, err)
 	}
 
-	items, total, err := getAPIKeyStatisticList(ctx, c.db, userId, orgId, startDate, endDate, apiKeyIds, methodPaths, offset, limit)
+	items, total, err := getAPIKeyStatisticList(ctx, c.db, orgIds, userIds, startDate, endDate, apiKeyIds, methodPaths, offset, limit)
 	if err != nil {
 		return nil, toErrStatus("app_api_key_statistic_list", err.Error())
 	}
@@ -254,8 +258,8 @@ func (c *Client) GetAPIKeyStatisticList(ctx context.Context, userId, orgId, star
 }
 
 // GetAPIKeyStatisticRecord 获取 API Key 调用明细（分页）
-func (c *Client) GetAPIKeyStatisticRecord(ctx context.Context, userId, orgId, startDate, endDate string, apiKeyIds, methodPaths []string, offset, limit int32) (*APIKeyStatisticRecordList, *errs.Status) {
-	items, total, err := getAPIKeyStatisticRecordList(ctx, c.db, userId, orgId, startDate, endDate, apiKeyIds, methodPaths, offset, limit)
+func (c *Client) GetAPIKeyStatisticRecord(ctx context.Context, orgIds, userIds []string, startDate, endDate string, apiKeyIds, methodPaths []string, offset, limit int32) (*APIKeyStatisticRecordList, *errs.Status) {
+	items, total, err := getAPIKeyStatisticRecordList(ctx, c.db, orgIds, userIds, startDate, endDate, apiKeyIds, methodPaths, offset, limit)
 	if err != nil {
 		return nil, toErrStatus("app_api_key_statistic_record_list", err.Error())
 	}
@@ -323,16 +327,16 @@ func updateAPIKeyStatsByRecord(ctx context.Context, db *gorm.DB, apiKeyId, userI
 }
 
 // statisticAPIKeyStatsOverview 统计API Key概览数据（占位实现，可扩展）
-func statisticAPIKeyStatsOverview(ctx context.Context, db *gorm.DB, userID, orgID, startDate, endDate string, apiKeyIds []string, methodPaths []string) (*APIKeyStatisticOverview, error) {
+func statisticAPIKeyStatsOverview(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, apiKeyIds []string, methodPaths []string) (*APIKeyStatisticOverview, error) {
 	prevPeriod, currPeriod, err := util.PreviousDateRange(startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
-	current, err := apiKeyStatsByDateRange(ctx, db, userID, orgID, currPeriod, apiKeyIds, methodPaths)
+	current, err := apiKeyStatsByDateRange(ctx, db, orgIds, userIds, currPeriod, apiKeyIds, methodPaths)
 	if err != nil {
 		return nil, err
 	}
-	previous, err := apiKeyStatsByDateRange(ctx, db, userID, orgID, prevPeriod, apiKeyIds, methodPaths)
+	previous, err := apiKeyStatsByDateRange(ctx, db, orgIds, userIds, prevPeriod, apiKeyIds, methodPaths)
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +350,7 @@ func statisticAPIKeyStatsOverview(ctx context.Context, db *gorm.DB, userID, orgI
 }
 
 // apiKeyStatsByDateRange 按日期范围获取API Key统计数据（占位实现）
-func apiKeyStatsByDateRange(ctx context.Context, db *gorm.DB, userID, orgID string, dates []string, apiKeyIds []string, methodPaths []string) (*APIKeyStatisticOverview, error) {
+func apiKeyStatsByDateRange(ctx context.Context, db *gorm.DB, orgIds, userIds []string, dates []string, apiKeyIds []string, methodPaths []string) (*APIKeyStatisticOverview, error) {
 	if len(dates) == 0 {
 		return &APIKeyStatisticOverview{}, nil
 	}
@@ -365,12 +369,12 @@ func apiKeyStatsByDateRange(ctx context.Context, db *gorm.DB, userID, orgID stri
 	}
 	var row sumRow
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithUserID(userID),
-		sqlopt.WithOrgID(orgID),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithAPIKeyIds(apiKeyIds),
 		sqlopt.WithMethodPaths(methodPaths),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	if err := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).Model(&model.APIKeyStatistic{}).
 		Select("SUM(call_count) as CallCount, SUM(call_failure) as CallFailure, SUM(stream_count) as StreamCount, SUM(non_stream_count) as NonStreamCount, SUM(stream_failure) as StreamFailure, SUM(non_stream_failure) as NonStreamFailure, SUM(stream_costs) as StreamCosts, SUM(non_stream_costs) as NonStreamCosts").First(&row).Error; err != nil {
@@ -397,7 +401,7 @@ func apiKeyStatsByDateRange(ctx context.Context, db *gorm.DB, userID, orgID stri
 }
 
 // statisticAPIKeyStatsTrend 统计API Key趋势数据
-func statisticAPIKeyStatsTrend(ctx context.Context, db *gorm.DB, userID, orgID, startDate, endDate string, apiKeyIds []string, methodPaths []string) (*APIKeyStatisticTrend, error) {
+func statisticAPIKeyStatsTrend(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, apiKeyIds []string, methodPaths []string) (*APIKeyStatisticTrend, error) {
 	dates, err := buildDateRange(startDate, endDate)
 	if err != nil {
 		return nil, err
@@ -405,12 +409,12 @@ func statisticAPIKeyStatsTrend(ctx context.Context, db *gorm.DB, userID, orgID, 
 
 	var stats []model.APIKeyStatistic
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithUserID(userID),
-		sqlopt.WithOrgID(orgID),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithAPIKeyIds(apiKeyIds),
 		sqlopt.WithMethodPaths(methodPaths),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	if err := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).Model(&model.APIKeyStatistic{}).
 		Select("date, SUM(call_count) as call_count, SUM(call_failure) as call_failure").
@@ -445,14 +449,14 @@ func statisticAPIKeyStatsTrend(ctx context.Context, db *gorm.DB, userID, orgID, 
 }
 
 // getAPIKeyStatisticList 辅助查询（占位实现）
-func getAPIKeyStatisticList(ctx context.Context, db *gorm.DB, userID, orgID, startDate, endDate string, apiKeyIds []string, methodPaths []string, offset, limit int32) ([]APIKeyStatisticItem, int32, error) {
+func getAPIKeyStatisticList(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, apiKeyIds []string, methodPaths []string, offset, limit int32) ([]APIKeyStatisticItem, int32, error) {
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithUserID(userID),
-		sqlopt.WithOrgID(orgID),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
 		sqlopt.WithAPIKeyIds(apiKeyIds),
 		sqlopt.WithMethodPaths(methodPaths),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	var total int64
 	countQuery := sqlopt.SQLOptions(opts...).Apply(db).WithContext(ctx).Model(&model.APIKeyStatistic{}).
@@ -482,6 +486,8 @@ func getAPIKeyStatisticList(ctx context.Context, db *gorm.DB, userID, orgID, sta
 		items = append(items, APIKeyStatisticItem{
 			APIKeyID:          s.APIKeyID,
 			MethodPath:        s.MethodPath,
+			OrgId:             s.OrgID,
+			UserId:            s.UserID,
 			CallCount:         int32(callCount),
 			CallFailure:       int32(callFailure),
 			AvgStreamCosts:    avgStreamCosts,
@@ -495,14 +501,14 @@ func getAPIKeyStatisticList(ctx context.Context, db *gorm.DB, userID, orgID, sta
 }
 
 // getAPIKeyStatisticRecordList 辅助查询（占位实现）
-func getAPIKeyStatisticRecordList(ctx context.Context, db *gorm.DB, userID, orgID, startDate, endDate string, apiKeyIds, methodPaths []string, offset, limit int32) ([]APIKeyStatisticRecordItem, int32, error) {
+func getAPIKeyStatisticRecordList(ctx context.Context, db *gorm.DB, orgIds, userIds []string, startDate, endDate string, apiKeyIds, methodPaths []string, offset, limit int32) ([]APIKeyStatisticRecordItem, int32, error) {
 	var total int64
 	var records []model.APIKeyRecord
 	opts := []sqlopt.SQLOption{
-		sqlopt.WithUserID(userID),
-		sqlopt.WithOrgID(orgID),
 		sqlopt.StartDate(startDate),
 		sqlopt.EndDate(endDate),
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
 	}
 	if len(apiKeyIds) > 0 {
 		opts = append(opts, sqlopt.WithAPIKeyIds(apiKeyIds))
@@ -521,6 +527,8 @@ func getAPIKeyStatisticRecordList(ctx context.Context, db *gorm.DB, userID, orgI
 		items = append(items, APIKeyStatisticRecordItem{
 			APIKeyID:       r.APIKeyID,
 			MethodPath:     r.MethodPath,
+			OrgId:          r.OrgID,
+			UserId:         r.UserID,
 			CallTime:       r.CallTime,
 			ResponseStatus: r.ResponseStatus,
 			StreamCosts:    r.StreamCosts,

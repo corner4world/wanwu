@@ -67,13 +67,14 @@ func (c *Client) UnPublishApp(ctx context.Context, appId, appType, userId string
 
 }
 
-func (c *Client) GetAppList(ctx context.Context, userId, orgId, appType string) ([]*model.App, *errs.Status) {
+func (c *Client) GetAppList(ctx context.Context, orgIds, userIds []string, appType string) ([]*model.App, *errs.Status) {
 	var publishApps []*model.App
-	query := sqlopt.SQLOptions(
-		sqlopt.WithUserID(userId),
-		sqlopt.WithOrgID(orgId),
+	opts := []sqlopt.SQLOption{
 		sqlopt.WithAppType(appType),
-	).Apply(c.db.WithContext(ctx))
+		sqlopt.WithOrgIDs(orgIds),
+		sqlopt.WithUserIDs(userIds),
+	}
+	query := sqlopt.SQLOptions(opts...).Apply(c.db.WithContext(ctx))
 	if err := query.Order("id DESC").Find(&publishApps).Error; err != nil {
 		return nil, toErrStatus("app_publish_apps_get", err.Error())
 	}
