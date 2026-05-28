@@ -68,7 +68,10 @@
 </template>
 
 <script>
-import { getGeneralAgentResourceSelect } from '@/api/generalAgent';
+import {
+  getGeneralAgentResourceSelect,
+  getGeneralAgentEmployeeSelect,
+} from '@/api/generalAgent';
 import { avatarSrc } from '@/utils/util';
 import XSender from 'x-sender';
 import 'x-sender/style';
@@ -180,19 +183,24 @@ export default {
         this.initTabs();
       }
     },
-    isDIP(newVal) {
+    async isDIP(newVal) {
       if (newVal) {
-        this.resourceList = {
-          dip: [
-            { id: '1', name: '员工A', desc: '测试员工A' },
-            { id: '2', name: '员工B', desc: '测试员工B' },
-            { id: '3', name: '员工C', desc: '测试员工C' },
-          ],
-        };
-        this.sender.showTip({
-          text: '@' + this.resourceList.dip?.[0].name,
-          dialogText: '',
-        });
+        const res = await getGeneralAgentEmployeeSelect();
+        if (res?.data && Array.isArray(res.data)) {
+          this.resourceList = {
+            dip: res.data.map(item => ({
+              ...item,
+              resourceType: 'dip',
+            })),
+          };
+          const firstEmployee = this.resourceList.dip?.[0];
+          if (firstEmployee) {
+            this.sender.showTip({
+              text: '@' + firstEmployee.name,
+              dialogText: '',
+            });
+          }
+        }
       } else {
         this.sender.closeTip();
         this.fetchConfigData();

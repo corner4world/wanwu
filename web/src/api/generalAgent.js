@@ -87,6 +87,17 @@ export const getGeneralAgentSkillSelect = () => {
 };
 
 /**
+ * 获取数字员工选择列表
+ */
+export const getGeneralAgentEmployeeSelect = params => {
+  return service({
+    url: `${BASE_URL}/ontology/employee/select`,
+    method: 'get',
+    params,
+  });
+};
+
+/**
  * 获取可选模式列表
  */
 export const getGeneralAgentSubList = () => {
@@ -227,7 +238,7 @@ export const chatGeneralAgentConversation = async ({
 }) => {
   const token = store.getters['user/token'] || '';
   const user = store.getters['user/userInfo'] || {};
-  const url = `${window.location.origin}${BASE_URL}/conversation/chat`;
+  const url = `${location.origin}${BASE_URL}/conversation/chat`;
 
   // 创建超时控制器
   const timeoutController = new AbortController();
@@ -471,7 +482,7 @@ export const chatGeneralAgentSkillConversation = async ({
 }) => {
   const token = store.getters['user/token'] || '';
   const user = store.getters['user/userInfo'] || {};
-  const url = `${window.location.origin}${BASE_URL}/skill/conversation/chat`;
+  const url = `${location.origin}${BASE_URL}/skill/conversation/chat`;
 
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => {
