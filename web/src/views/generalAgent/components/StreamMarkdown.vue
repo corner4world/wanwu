@@ -59,7 +59,12 @@ export default {
       this.$nextTick(() => this.bindCopyButtons());
     },
     isStreaming(val) {
-      if (!val) {
+      if (val) {
+        // 开始流式时，初始化 stableContent
+        if (!this.stableContent && this.content) {
+          this.stableContent = this.content;
+        }
+      } else {
         // 流式结束时，将所有 activeContent 刷新到 stableContent
         if (this.activeContent) {
           this.stableContent += this.activeContent;
@@ -70,11 +75,6 @@ export default {
           inLatexBlock: false,
         };
         this.$nextTick(() => this.bindCopyButtons());
-      } else {
-        // 开始流式时，初始化 stableContent
-        if (!this.stableContent && this.content) {
-          this.stableContent = this.content;
-        }
       }
     },
   },
@@ -124,7 +124,7 @@ export default {
 
           currentScanText += lineWithNewline;
 
-          const isSafe = !Object.values(scanStates).some(state => state);
+          const isSafe = !Object.values(scanStates).some(Boolean);
           if (isSafe) {
             safeFlushText = currentScanText;
             this.blockStates = { ...scanStates };
@@ -181,13 +181,19 @@ export default {
           }
 
           if (text) {
-            this.$copy(text).then(() => {
+            const res = this.$copy(text);
+            if (res) {
               const originalText = e.target.innerText;
-              e.target.innerText = '已复制';
+              e.target.innerText = this.$t('common.copy.copySuccess');
+              this.$message.success(this.$t('common.copy.success'));
+              btn.classList.add('copied');
               setTimeout(() => {
                 e.target.innerText = originalText;
+                btn.classList.remove('copied');
               }, 1500);
-            });
+            } else {
+              this.$message.error(this.$t('common.copy.error'));
+            }
           }
         };
         btn.addEventListener('click', handler);
@@ -217,6 +223,12 @@ export default {
   ::v-deep {
     @include markdown-content-base;
     @include complete-code-block-stream;
+
+    .code-copy-btn.copied {
+      color: #10a37f;
+      border-color: rgba(16, 163, 127, 0.4);
+      background: rgba(16, 163, 127, 0.15);
+    }
   }
 }
 </style>
