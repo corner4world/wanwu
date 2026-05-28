@@ -67,10 +67,61 @@
           >
             <el-input
               v-model="ruleForm.streamableUrl"
-              placeholder="Streamable HTTP URL为空"
+              :placeholder="$t('tool.integrate.streamableUrlMsg')"
             ></el-input>
           </el-form-item>
-          <el-form-item label=" " style="text-align: right">
+          <el-form-item
+            :label="$t('tool.custom.apiAuth')"
+            prop="apiAuth"
+            required
+          >
+            <div class="api-auth-trigger" @click="preAuthorize">
+              <div class="api-auth-display">
+                {{ authTypeMap[ruleForm.apiAuth.authType] }}
+              </div>
+              <img
+                class="auth-icon"
+                :src="require('@/assets/imgs/auth.png')"
+                alt=""
+              />
+            </div>
+          </el-form-item>
+          <el-form-item :label="$t('tool.integrate.customParams')">
+            <div class="custom-params">
+              <div class="custom-params-header">
+                <span>{{ $t('tool.integrate.paramName') }}</span>
+                <span>{{ $t('tool.integrate.paramValue') }}</span>
+                <span style="width: 30px; flex: none"></span>
+              </div>
+              <div
+                v-for="(item, index) in ruleForm.customParams"
+                :key="index"
+                class="custom-param-row"
+              >
+                <el-input
+                  v-model="item.name"
+                  :placeholder="$t('tool.integrate.example') + 'Authorization'"
+                  size="mini"
+                />
+                <el-input
+                  v-model="item.value"
+                  :placeholder="$t('tool.integrate.example') + 'Bearer token'"
+                  size="mini"
+                />
+                <i class="el-icon-delete" @click="removeCustomParam(index)"></i>
+              </div>
+              <el-button
+                v-if="ruleForm.customParams.length < 20"
+                type="text"
+                size="mini"
+                class="add-param-btn"
+                @click="addCustomParam"
+              >
+                + {{ $t('tool.integrate.addParams') }}
+              </el-button>
+            </div>
+          </el-form-item>
+          <el-form-item label="" style="text-align: right; margin-top: -10px">
             <el-button
               type="primary"
               size="mini"
@@ -82,6 +133,12 @@
             </el-button>
           </el-form-item>
         </el-form>
+        <ApiAuthDialog
+          :visible.sync="dialogAuthVisible"
+          :api-auth="ruleForm.apiAuth"
+          @close="beforeApiAuthClose"
+          @confirm="handleApiAuthConfirm"
+        />
         <el-divider v-if="mcpList.length > 0"></el-divider>
         <ul class="mcpList" v-if="mcpList.length > 0">
           <li v-for="(item, index) in mcpList" :key="index">{{ item.name }}</li>
@@ -109,9 +166,10 @@
 import { getTools, setCreate, setUpdate } from '@/api/mcp.js';
 import { isValidURL } from '@/utils/util';
 import uploadAvatar from '@/components/uploadAvatar.vue';
+import ApiAuthDialog from '@/components/apiAuthDialog.vue';
 
 export default {
-  components: { uploadAvatar },
+  components: { uploadAvatar, ApiAuthDialog },
   props: {
     title: {
       type: String,
@@ -135,6 +193,14 @@ export default {
           key: '',
           path: '',
         },
+        apiAuth: {
+          authType: 'none',
+          apiKeyValue: '',
+          apiKeyHeader: '',
+          apiKeyHeaderPrefix: 'basic',
+          apiKeyQueryParam: '',
+        },
+        customParams: [],
       }),
     },
   },
@@ -162,6 +228,14 @@ export default {
           key: '',
           path: '',
         },
+        apiAuth: {
+          authType: 'none',
+          apiKeyValue: '',
+          apiKeyHeader: '',
+          apiKeyHeaderPrefix: 'basic',
+          apiKeyQueryParam: '',
+        },
+        customParams: [],
       },
       rules: {
         name: [
@@ -202,7 +276,7 @@ export default {
         streamableUrl: [
           {
             required: true,
-            message: 'Streamable HTTP URL为空',
+            message: this.$t('tool.integrate.streamableUrlMsg'),
             trigger: 'blur',
           },
           { validator: validateUrl, trigger: 'blur' },
@@ -216,7 +290,30 @@ export default {
             trigger: 'blur',
           },
         ],
+        apiAuth: [
+          {
+            validator: (rule, value, callback) => {
+              if (
+                this.ruleForm.apiAuth.authType === 'api_key_header' &&
+                (!this.ruleForm.apiAuth.apiKeyValue ||
+                  !this.ruleForm.apiAuth.apiKeyHeader)
+              ) {
+                callback(new Error(this.$t('tool.custom.apiAuthPlaceholder')));
+              } else if (
+                this.ruleForm.apiAuth.authType === 'api_key_query' &&
+                (!this.ruleForm.apiAuth.apiKeyValue ||
+                  !this.ruleForm.apiAuth.apiKeyQueryParam)
+              ) {
+                callback(new Error(this.$t('tool.custom.apiAuthPlaceholder')));
+              } else {
+                callback();
+              }
+            },
+            trigger: 'blur',
+          },
+        ],
       },
+      dialogAuthVisible: false,
       toolsLoading: false,
       publishLoading: false,
     };
@@ -225,7 +322,31 @@ export default {
     // 监听初始数据变化，更新本地副本
     initialData: {
       handler(newVal) {
-        this.ruleForm = { ...newVal };
+        const initialValue = {
+          name: '',
+          from: '',
+          sseUrl: '',
+          streamableUrl: '',
+          transport: 'sse',
+          desc: '',
+          avatar: {
+            key: '',
+            path: '',
+          },
+          apiAuth: {
+            authType: 'none',
+            apiKeyValue: '',
+            apiKeyHeader: '',
+            apiKeyHeaderPrefix: 'basic',
+            apiKeyQueryParam: '',
+          },
+          customParams: [],
+          ...newVal,
+        };
+        if (!initialValue.apiAuth.authType) {
+          initialValue.apiAuth.authType = 'none';
+        }
+        this.ruleForm = initialValue;
         // 如果没有 transport 字段，默认为 sse
         if (!this.ruleForm.transport) {
           this.ruleForm.transport = 'sse';
@@ -251,6 +372,37 @@ export default {
     },
   },
   methods: {
+    preAuthorize() {
+      this.ruleForm.apiAuth.apiKeyHeaderPrefix =
+        this.ruleForm.apiAuth.apiKeyHeaderPrefix || 'basic';
+      this.dialogAuthVisible = true;
+    },
+    beforeApiAuthClose() {
+      this.dialogAuthVisible = false;
+    },
+    handleApiAuthConfirm(data) {
+      this.ruleForm.apiAuth = data;
+    },
+    addCustomParam() {
+      if (this.ruleForm.customParams.length >= 20) {
+        this.$message.warning(this.$t('tool.integrate.addLimitTips'));
+        return;
+      }
+      const names = this.ruleForm.customParams.map(p => p.name.trim());
+      if (names.includes('')) {
+        this.$message.warning(this.$t('tool.integrate.addEmptyTips'));
+        return;
+      }
+      const uniqueNames = new Set(names);
+      if (names.length !== uniqueNames.size) {
+        this.$message.warning(this.$t('tool.integrate.addDuplicateTips'));
+        return;
+      }
+      this.ruleForm.customParams.push({ name: '', value: '' });
+    },
+    removeCustomParam(index) {
+      this.ruleForm.customParams.splice(index, 1);
+    },
     handleTransportChange() {
       // 切换 transport 类型时清空工具列表
       this.mcpList = [];
@@ -258,15 +410,41 @@ export default {
     handleCancel() {
       this.$emit('handleClose', false);
       this.$refs['ruleForm'].resetFields();
+      this.ruleForm.customParams = [];
       this.mcpList = [];
+    },
+    checkCustomParams() {
+      const customParams = this.ruleForm.customParams || [];
+      const names = customParams.map(p => p.name.trim()).filter(n => n);
+      const uniqueNames = new Set(names);
+      if (names.length !== uniqueNames.size) {
+        this.$message.warning(this.$t('tool.integrate.addDuplicateTips'));
+        return false;
+      }
+      return true;
+    },
+    getHeaders() {
+      const customParams = this.ruleForm.customParams || [];
+      return customParams.reduce((acc, { name, value }) => {
+        acc[name] = value;
+        return acc;
+      }, {});
     },
     submitForm() {
       this.$refs['ruleForm'].validate(valid => {
         if (valid) {
+          if (!this.checkCustomParams()) {
+            return;
+          }
           this.publishLoading = true;
+          const params = {
+            ...this.ruleForm,
+            headers: this.getHeaders(),
+          };
+          delete params.customParams;
           if (this.initialData.mcpId) {
             setUpdate({
-              ...this.ruleForm,
+              ...params,
               mcpId: this.initialData.mcpId,
             })
               .then(res => {
@@ -278,7 +456,7 @@ export default {
               })
               .finally(() => (this.publishLoading = false));
           } else
-            setCreate(this.ruleForm)
+            setCreate(params)
               .then(res => {
                 if (res.code === 0) {
                   this.$message.success(this.$t('common.info.publish'));
@@ -291,23 +469,39 @@ export default {
       });
     },
     handleTools() {
-      this.toolsLoading = true;
-      // 根据 transport 类型选择 URL
-      const serverUrl =
-        this.ruleForm.transport === 'streamable'
-          ? this.ruleForm.streamableUrl
-          : this.ruleForm.sseUrl;
-      getTools({
-        serverUrl: serverUrl,
-        transport: this.ruleForm.transport,
-      })
-        .then(res => {
-          if (res.code === 0) this.mcpList = res.data.tools;
-        })
-        .finally(() => (this.toolsLoading = false));
+      if (!this.checkCustomParams()) {
+        return;
+      }
+      this.$refs['ruleForm'].validate(valid => {
+        if (valid) {
+          this.toolsLoading = true;
+          // 根据 transport 类型选择 URL
+          const serverUrl =
+            this.ruleForm.transport === 'streamable'
+              ? this.ruleForm.streamableUrl
+              : this.ruleForm.sseUrl;
+          getTools({
+            serverUrl: serverUrl,
+            transport: this.ruleForm.transport,
+            apiAuth: this.ruleForm.apiAuth,
+            headers: this.getHeaders(),
+          })
+            .then(res => {
+              if (res.code === 0) this.mcpList = res.data.tools;
+            })
+            .finally(() => (this.toolsLoading = false));
+        }
+      });
     },
   },
   computed: {
+    authTypeMap() {
+      return {
+        none: 'None',
+        api_key_header: this.$t('tool.custom.auth.headerType'),
+        api_key_query: this.$t('tool.custom.auth.queryType'),
+      };
+    },
     isGetMCP() {
       const url =
         this.ruleForm.transport === 'streamable'
@@ -334,6 +528,63 @@ export default {
       border-radius: 5px;
       margin-bottom: 10px;
       background: #fff;
+    }
+  }
+  .api-auth-trigger {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    margin-top: 5px;
+    .api-auth-display {
+      flex: 1;
+      height: 30px;
+      line-height: 30px;
+      padding: 0 15px;
+      color: #606266;
+    }
+    .auth-icon {
+      width: 30px;
+      height: 30px;
+      padding: 4px;
+      border-left: 1px solid #dcdfe6;
+      margin-left: -1px;
+    }
+  }
+  .custom-params {
+    .custom-params-header {
+      display: flex;
+      margin-bottom: 8px;
+      span {
+        flex: 1;
+        font-size: 12px;
+        color: #909399;
+        &:last-child {
+          width: 30px;
+          flex: none;
+        }
+      }
+    }
+    .custom-param-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      .el-input {
+        flex: 1;
+        margin-right: 8px;
+      }
+      .el-icon-delete {
+        color: #f56c6c;
+        cursor: pointer;
+        font-size: 16px;
+      }
+    }
+    .add-param-btn {
+      margin-top: 4px;
+      width: 100%;
+      color: $color !important;
+      border: 1px solid $color !important;
     }
   }
 }

@@ -151,8 +151,8 @@ export const setDelete = data => {
 export const getTools = data => {
   return request({
     url: `${USER_API}/mcp/tool/list`,
-    method: 'get',
-    params: data,
+    method: 'post',
+    data,
   });
 };
 

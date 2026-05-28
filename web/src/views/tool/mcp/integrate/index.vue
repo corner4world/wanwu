@@ -119,7 +119,17 @@ export default {
         name: '',
         from: '',
         sseUrl: '',
+        streamableUrl: '',
+        transport: 'sse',
         desc: '',
+        apiAuth: {
+          authType: 'none',
+          apiKeyValue: '',
+          apiKeyHeader: '',
+          apiKeyHeaderPrefix: 'basic',
+          apiKeyQueryParam: '',
+        },
+        customParams: [],
       }, // 添加自定义mcp参数
       list: [],
     };
@@ -148,11 +158,15 @@ export default {
       this.addOpen = true;
       this.addTitle = this.$t('tool.integrate.addTitle');
     },
+    formatCustomParams(headers = {}) {
+      return Object.entries(headers).map(([name, value]) => ({ name, value }));
+    },
     handleEdit(item) {
       this.addOpen = true;
       this.addTitle = this.$t('tool.integrate.editTitle');
       this.dialogParams = {
         ...item,
+        customParams: this.formatCustomParams(item.headers || {}),
       };
     },
     handleClose() {
@@ -161,7 +175,17 @@ export default {
         name: '',
         from: '',
         sseUrl: '',
+        streamableUrl: '',
+        transport: 'sse',
         desc: '',
+        apiAuth: {
+          authType: 'none',
+          apiKeyValue: '',
+          apiKeyHeader: '',
+          apiKeyHeaderPrefix: 'basic',
+          apiKeyQueryParam: '',
+        },
+        customParams: [],
       };
     },
     handleDelete(item) {
