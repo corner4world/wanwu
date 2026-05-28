@@ -98,8 +98,8 @@ func GetMCPList(ctx *gin.Context) {
 //	@Description	获取MCP Tool列表
 //	@Accept			json
 //	@Produce		json
-//	@Param			data		body		request.MCPToolListReq	true	"mcp工具列表请求参数"
-//	@Success		200			{object}	response.Response{data=response.MCPToolList}
+//	@Param			data	body		request.MCPToolListReq	true	"mcp工具列表请求参数"
+//	@Success		200		{object}	response.Response{data=response.MCPToolList}
 //	@Router			/mcp/tool/list [post]
 func GetMCPTools(ctx *gin.Context) {
 	var req request.MCPToolListReq

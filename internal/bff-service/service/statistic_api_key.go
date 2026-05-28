@@ -16,7 +16,7 @@ type apiKeyInfo struct {
 }
 
 func GetAPIKeyStatistic(ctx *gin.Context, req *request.APIKeyStatisticReq, userId, orgId string, isAdmin, isSystem bool) (*response.APIKeyStatistic, error) {
-	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func GetAPIKeyStatistic(ctx *gin.Context, req *request.APIKeyStatisticReq, userI
 }
 
 func GetAPIKeyStatisticList(ctx *gin.Context, req *request.APIKeyStatisticListReq, userId, orgId string, isAdmin, isSystem bool) (*response.PageResult, error) {
-	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func GetAPIKeyStatisticList(ctx *gin.Context, req *request.APIKeyStatisticListRe
 }
 
 func GetAPIKeyStatisticRecord(ctx *gin.Context, req *request.APIKeyStatisticRecordReq, userId, orgId string, isAdmin, isSystem bool) (*response.PageResult, error) {
-	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func GetAPIKeyStatisticRecord(ctx *gin.Context, req *request.APIKeyStatisticReco
 }
 
 func ExportAPIKeyStatisticList(ctx *gin.Context, req *request.APIKeyStatisticReq, userId, orgId string, isAdmin, isSystem bool) (*excelize.File, error) {
-	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func ExportAPIKeyStatisticList(ctx *gin.Context, req *request.APIKeyStatisticReq
 }
 
 func ExportAPIKeyStatisticRecord(ctx *gin.Context, req *request.APIKeyStatisticReq, userId, orgId string, isAdmin, isSystem bool) (*excelize.File, error) {
-	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, req.StatisticFilter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +158,7 @@ func ExportAPIKeyStatisticRecord(ctx *gin.Context, req *request.APIKeyStatisticR
 }
 
 func GetStatisticAPIKeySelect(ctx *gin.Context, filter request.StatisticFilter, userId, orgId string, isAdmin, isSystem bool) (*response.ListResult, error) {
-	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func convertAPIKeyStatisticOverviewItem(item *app_service.APIKeyStatisticOvervie
 	}
 }
 
-func buildAPIKeyStatisticItems(ctx *gin.Context, scope StatisticScope, protoItems []*app_service.APIKeyStatisticItem) ([]response.APIKeyStatisticItem, error) {
+func buildAPIKeyStatisticItems(ctx *gin.Context, scope *statisticScope, protoItems []*app_service.APIKeyStatisticItem) ([]response.APIKeyStatisticItem, error) {
 	infoMap := getAPIKeyInfoMap(ctx, scope)
 	var orgIDs []string
 	var userIDs []string
@@ -247,7 +247,7 @@ func buildAPIKeyStatisticItems(ctx *gin.Context, scope StatisticScope, protoItem
 	return items, nil
 }
 
-func buildAPIKeyStatisticRecordItems(ctx *gin.Context, scope StatisticScope, protoItems []*app_service.APIKeyStatisticRecordItem) ([]response.APIKeyStatisticRecordItem, error) {
+func buildAPIKeyStatisticRecordItems(ctx *gin.Context, scope *statisticScope, protoItems []*app_service.APIKeyStatisticRecordItem) ([]response.APIKeyStatisticRecordItem, error) {
 	infoMap := getAPIKeyInfoMap(ctx, scope)
 	var orgIds []string
 	var userIDs []string
@@ -331,7 +331,7 @@ func normalizeAPIKeyIds(ids []string) []string {
 	return ids
 }
 
-func getAPIKeyInfoMap(ctx *gin.Context, scope StatisticScope) map[string]apiKeyInfo {
+func getAPIKeyInfoMap(ctx *gin.Context, scope *statisticScope) map[string]apiKeyInfo {
 	resp, err := app.ListApiKeys(ctx.Request.Context(), &app_service.ListApiKeysReq{
 		OrgIds:   scope.OrgIds,
 		UserIds:  scope.UserIds,

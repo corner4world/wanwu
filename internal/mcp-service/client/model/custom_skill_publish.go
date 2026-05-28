@@ -12,4 +12,3 @@ type CustomSkillPublish struct {
 	Markdown           string `gorm:"column:markdown;type:longtext;comment:markdown内容"`
 	ObjectPath         string `gorm:"column:object_path;comment:skill数据minio对象路径(zip压缩包)"`
 }
-

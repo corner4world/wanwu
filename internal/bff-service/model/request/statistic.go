@@ -18,17 +18,6 @@ type StatisticFilter struct {
 
 func (f *StatisticFilter) Check() error { return nil }
 
-// HasOrgExpansion 是否扩大组织维度（含 ALL 或任一 org id；空列表为 false）。
-func (f *StatisticFilter) HasOrgExpansion() bool { return len(f.OrgIds) > 0 }
-
-// HasUserExpansion 是否扩大用户维度（含 ALL 或任一 user id；空列表为 false）。
-func (f *StatisticFilter) HasUserExpansion() bool { return len(f.UserIds) > 0 }
-
-// HasExpansion body 是否扩大了组织或用户范围（为 true 时走 ResolveStatisticScope 展开逻辑）。
-func (f *StatisticFilter) HasExpansion() bool {
-	return len(f.OrgIds) > 0 || len(f.UserIds) > 0
-}
-
 // --- 应用统计相关请求 ---
 
 type AppStatisticReq struct {
@@ -49,12 +38,12 @@ type AppStatisticListReq struct {
 
 func (r *AppStatisticListReq) Check() error { return nil }
 
-type StatisticAppListSelectReq struct {
+type StatisticAppSelectReq struct {
 	StatisticFilter
 	AppType string `json:"appType"` // 应用类型
 }
 
-func (r *StatisticAppListSelectReq) Check() error { return nil }
+func (r *StatisticAppSelectReq) Check() error { return nil }
 
 // --- 模型统计相关请求 ---
 
@@ -76,12 +65,12 @@ type ModelStatisticListReq struct {
 
 func (r *ModelStatisticListReq) Check() error { return nil }
 
-type ModelStatisticSelectReq struct {
+type StatisticModelSelectReq struct {
 	StatisticFilter
 	ModelType string `json:"modelType"` // 模型类型
 }
 
-func (r *ModelStatisticSelectReq) Check() error { return nil }
+func (r *StatisticModelSelectReq) Check() error { return nil }
 
 // --- API Key 统计相关请求 ---
 
@@ -111,8 +100,8 @@ type APIKeyStatisticRecordReq struct {
 
 func (r *APIKeyStatisticRecordReq) Check() error { return nil }
 
-type APIKeySelectReq struct {
+type StatisticAPIKeySelectReq struct {
 	StatisticFilter
 }
 
-func (r *APIKeySelectReq) Check() error { return nil }
+func (r *StatisticAPIKeySelectReq) Check() error { return nil }

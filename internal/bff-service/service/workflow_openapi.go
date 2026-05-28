@@ -2,11 +2,12 @@ package service
 
 import (
 	"fmt"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	net_url "net/url"
 	"path/filepath"
 	"time"
+
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"

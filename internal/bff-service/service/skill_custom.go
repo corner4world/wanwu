@@ -559,11 +559,11 @@ func toCustomSkillListItem(ctx *gin.Context, publish *mcp_service.PublishCustomS
 
 	return &response.PublishedSkillInfo{
 		SkillBasicInfo: response.SkillBasicInfo{
-			SkillId:   skill.SkillId,
-			Name:      skill.Name,
-			Avatar:    cacheSkillAvatar(ctx, skill.Avatar),
-			Author:    skill.Author,
-			Desc:      skill.Desc,
+			SkillId: skill.SkillId,
+			Name:    skill.Name,
+			Avatar:  cacheSkillAvatar(ctx, skill.Avatar),
+			Author:  skill.Author,
+			Desc:    skill.Desc,
 		},
 		ThreadID:  skill.WgaThreadId,
 		PreviewID: skill.PreviewThreadId,

@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"os"
 	"os/signal"
 	"runtime"
@@ -19,6 +18,7 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/minio"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	"github.com/UnicomAI/wanwu/pkg/redis"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 )
 
 var (

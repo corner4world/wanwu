@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/assistant-service/server/grpc/assistant"
 	"github.com/UnicomAI/wanwu/internal/assistant-service/server/grpc/interceptor"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"

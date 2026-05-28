@@ -158,11 +158,11 @@ func GetApiKeyStatisticRoutes(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			data	body		request.APIKeySelectReq	true	"获取API Key下拉列表请求参数"
+//	@Param			data	body		request.StatisticAPIKeySelectReq	true	"获取API Key下拉列表请求参数"
 //	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.APIKeyDetailResponse}}
 //	@Router			/statistic/api/select [post]
 func GetStatisticAPIKeySelect(ctx *gin.Context) {
-	var req request.APIKeySelectReq
+	var req request.StatisticAPIKeySelectReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}

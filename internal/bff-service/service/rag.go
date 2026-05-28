@@ -405,7 +405,7 @@ func GetRag(ctx *gin.Context, req request.RagReq, needPublished bool) (*response
 		SafetyConfig:          ragSafetyConfigProto2Model(ctx, resp.SensitiveConfig),
 		AppPublishConfig:      request.AppPublishConfig{PublishType: appInfo.GetPublishType()},
 		VisionConfig:          ragVisionConfigProto2Model(resp.VisionConfig),
-		RecommendQuestion:    resp.RecommendQuestion,
+		RecommendQuestion:     resp.RecommendQuestion,
 	}
 
 	return ragInfo, nil

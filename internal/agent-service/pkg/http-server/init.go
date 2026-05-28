@@ -2,8 +2,6 @@ package http_server
 
 import (
 	"context"
-	_ "github.com/UnicomAI/wanwu/internal/agent-service/pkg/tracer"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,8 +9,10 @@ import (
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg"
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/config"
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/http-server/middleware"
+	_ "github.com/UnicomAI/wanwu/internal/agent-service/pkg/tracer"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/gin-gonic/gin"
 )
 

@@ -3,6 +3,7 @@ package trace_util
 import (
 	"context"
 	"fmt"
+
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/cloudwego/eino/callbacks"
 	"github.com/cloudwego/eino/components/model"

@@ -21,7 +21,7 @@ import (
 )
 
 func GetAppStatistic(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, appIds []string, appType string, userId, orgId string, isAdmin, isSystem bool) (*response.AppStatistic, error) {
-	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func GetAppStatistic(ctx *gin.Context, filter request.StatisticFilter, startDate
 }
 
 func GetAppStatisticList(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, appIds []string, appType string, page, pageSize int32, userId, orgId string, isAdmin, isSystem bool) (*response.PageResult, error) {
-	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +231,7 @@ func RecordAppStatistic(ctx context.Context, userId, orgId, appId, appType strin
 }
 
 func GetAppListSelect(ctx *gin.Context, filter request.StatisticFilter, appType string, userId, orgId string, isAdmin, isSystem bool) (*response.ListResult, error) {
-	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}

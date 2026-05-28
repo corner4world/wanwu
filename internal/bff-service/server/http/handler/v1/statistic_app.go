@@ -90,11 +90,11 @@ func ExportAppStatisticList(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			data	body		request.StatisticAppListSelectReq	true	"获取应用统计下拉列表请求参数"
+//	@Param			data	body		request.StatisticAppSelectReq	true	"获取应用统计下拉列表请求参数"
 //	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.MyAppItem}}
 //	@Router			/statistic/app/select [post]
 func GetAppListSelect(ctx *gin.Context) {
-	var req request.StatisticAppListSelectReq
+	var req request.StatisticAppSelectReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetOrgsStatisticSelect
+// GetStatisticOrgsSelect
 //
 //	@Tags			app_observability.statistic
 //	@Summary		获取统计看板组织下拉列表
@@ -16,12 +16,12 @@ import (
 //	@Produce		json
 //	@Success		200	{object}	response.Response{data=response.ListResult{list=[]response.IDName}}
 //	@Router			/statistic/orgs/select [get]
-func GetOrgsStatisticSelect(ctx *gin.Context) {
-	resp, err := service.GetOrgsStatisticSelect(ctx, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isAdmin(ctx) && isSystem(ctx))
+func GetStatisticOrgsSelect(ctx *gin.Context) {
+	resp, err := service.GetStatisticOrgsSelect(ctx, getUserID(ctx), getOrgID(ctx), isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }
 
-// GetUsersStatisticSelect
+// GetStatisticUsersSelect
 //
 //	@Tags			app_observability.statistic
 //	@Summary		获取统计看板用户下拉列表
@@ -29,9 +29,9 @@ func GetOrgsStatisticSelect(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	response.Response{data=response.ListResult{list=[]response.BriefUserInfo}}
+//	@Success		200	{object}	response.Response{data=response.ListResult{list=[]response.StatisticUserName}}
 //	@Router			/statistic/users/select [get]
-func GetUsersStatisticSelect(ctx *gin.Context) {
-	resp, err := service.GetUsersStatisticSelect(ctx, getUserID(ctx), getOrgID(ctx), isAdmin(ctx))
+func GetStatisticUsersSelect(ctx *gin.Context) {
+	resp, err := service.GetStatisticUsersSelect(ctx, getUserID(ctx), getOrgID(ctx), isAdmin(ctx))
 	gin_util.Response(ctx, resp, err)
 }

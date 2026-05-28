@@ -2,6 +2,7 @@ package grpc_consumer
 
 import (
 	"fmt"
+
 	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"google.golang.org/grpc"
 )

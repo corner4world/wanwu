@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"net/url"
 	"strings"
+
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"

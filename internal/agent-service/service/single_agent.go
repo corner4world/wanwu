@@ -3,13 +3,14 @@ package service
 import (
 	"context"
 	"encoding/json"
+
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/grpc-consumer/consumer/assistant"
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	agent_message_processor "github.com/UnicomAI/wanwu/internal/agent-service/service/agent-message-processor"
 	agent_preprocessor "github.com/UnicomAI/wanwu/internal/agent-service/service/agent-preprocessor"
-	"github.com/UnicomAI/wanwu/internal/agent-service/service/agent-tool"
+	agent_tool "github.com/UnicomAI/wanwu/internal/agent-service/service/agent-tool"
 	local_agent "github.com/UnicomAI/wanwu/internal/agent-service/service/local-agent"
 	service_model "github.com/UnicomAI/wanwu/internal/agent-service/service/service-model"
 	"github.com/UnicomAI/wanwu/pkg/log"

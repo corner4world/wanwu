@@ -2,6 +2,8 @@ package trace_util
 
 import (
 	"fmt"
+	"runtime/debug"
+
 	"github.com/UnicomAI/wanwu/pkg/log"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -9,7 +11,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-	"runtime/debug"
 )
 
 const (

@@ -4511,6 +4511,9 @@ const docTemplate = `{
                 "url"
             ],
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -4826,9 +4829,6 @@ const docTemplate = `{
         },
         "response.MCPDetail": {
             "type": "object",
-            "required": [
-                "apiAuth"
-            ],
             "properties": {
                 "apiAuth": {
                     "description": "api身份认证",
@@ -4960,6 +4960,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/response.MCPServerToolInfo"
                     }
+                },
+                "transport": {
+                    "description": "sse/streamable",
+                    "type": "string"
                 }
             }
         },

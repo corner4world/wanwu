@@ -132,7 +132,7 @@ type UsersInfo struct {
 
 // CreateUserError 单条用户创建错误
 type CreateUserError struct {
-	Index  int    // 数据索引（在请求users数组中的索引）
+	Index  int // 数据索引（在请求users数组中的索引）
 	Reason string
 }
 

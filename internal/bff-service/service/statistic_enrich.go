@@ -35,11 +35,11 @@ func buildStatisticUserNameMap(ctx *gin.Context, userIDs []string) (map[string]s
 	return userNameMap, nil
 }
 
-func buildStatisticOrgNameMap(ctx *gin.Context, orgIds []string) (map[string]string, error) {
-	if len(orgIds) == 0 {
+func buildStatisticOrgNameMap(ctx *gin.Context, orgIDs []string) (map[string]string, error) {
+	if len(orgIDs) == 0 {
 		return map[string]string{}, nil
 	}
-	orgResp, err := iam.GetOrgByOrgIDs(ctx, &iam_service.GetOrgByOrgIDsReq{OrgIds: orgIds})
+	orgResp, err := iam.GetOrgByOrgIDs(ctx, &iam_service.GetOrgByOrgIDsReq{OrgIds: orgIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +52,8 @@ func buildStatisticOrgNameMap(ctx *gin.Context, orgIds []string) (map[string]str
 	return orgNameMap, nil
 }
 
-func buildStatisticOrgUserNameMaps(ctx *gin.Context, orgIds []string, userIDs []string) (map[string]string, map[string]string, error) {
-	orgNameMap, err := buildStatisticOrgNameMap(ctx, orgIds)
+func buildStatisticOrgUserNameMaps(ctx *gin.Context, orgIDs []string, userIDs []string) (map[string]string, map[string]string, error) {
+	orgNameMap, err := buildStatisticOrgNameMap(ctx, orgIDs)
 	if err != nil {
 		return nil, nil, err
 	}

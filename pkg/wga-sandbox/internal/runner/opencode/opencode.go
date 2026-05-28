@@ -10,7 +10,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"io"
 	"os"
 	"path"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/UnicomAI/wanwu/pkg/log"
 	openapi3_util "github.com/UnicomAI/wanwu/pkg/openapi3-util"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/runner"
 	"github.com/UnicomAI/wanwu/pkg/wga-sandbox/internal/sandbox"

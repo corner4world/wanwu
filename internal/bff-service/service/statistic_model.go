@@ -16,7 +16,7 @@ import (
 )
 
 func GetModelStatistic(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, modelIds []string, modelType string, userId, orgId string, isAdmin, isSystem bool) (*response.ModelStatistic, error) {
-	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func GetModelStatistic(ctx *gin.Context, filter request.StatisticFilter, startDa
 }
 
 func GetModelStatisticList(ctx *gin.Context, filter request.StatisticFilter, startDate, endDate string, modelIds []string, modelType string, page, pageSize int32, userId, orgId string, isAdmin, isSystem bool) (*response.PageResult, error) {
-	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem && isAdmin)
+	scope, err := ResolveStatisticScope(ctx, filter, userId, orgId, isAdmin, isSystem)
 	if err != nil {
 		return nil, err
 	}

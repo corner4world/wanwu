@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"os"
 	"os/signal"
 	"runtime"
@@ -15,6 +14,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/model-service/server/grpc"
 	"github.com/UnicomAI/wanwu/pkg/db"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 )
 
 var (

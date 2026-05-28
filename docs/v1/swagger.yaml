@@ -970,19 +970,6 @@ definitions:
         description: Title is a human-readable title for the tool, useful for UI display
         type: string
     type: object
-  request.APIKeySelectReq:
-    properties:
-      orgIds:
-        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
-        items:
-          type: string
-        type: array
-      userIds:
-        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
-        items:
-          type: string
-        type: array
-    type: object
   request.APIKeyStatisticListReq:
     properties:
       apiKeyIds:
@@ -1102,21 +1089,6 @@ definitions:
     required:
     - knowledgeId
     - urlList
-    type: object
-  request.AppBriefConfig:
-    properties:
-      avatar:
-        allOf:
-        - $ref: '#/definitions/request.Avatar'
-        description: 图标
-      desc:
-        description: 描述
-        type: string
-      name:
-        description: 名称
-        type: string
-    required:
-    - name
     type: object
   request.AppKnowledgeBase:
     properties:
@@ -1453,24 +1425,6 @@ definitions:
     - name
     - urlId
     type: object
-  request.AssistantBrief:
-    properties:
-      assistantId:
-        type: string
-      avatar:
-        allOf:
-        - $ref: '#/definitions/request.Avatar'
-        description: 图标
-      desc:
-        description: 描述
-        type: string
-      name:
-        description: 名称
-        type: string
-    required:
-    - assistantId
-    - name
-    type: object
   request.AssistantConfig:
     properties:
       assistantId:
@@ -1739,6 +1693,24 @@ definitions:
     - assistantId
     - toolId
     - toolType
+    type: object
+  request.AssistantUpdateReq:
+    properties:
+      assistantId:
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 图标
+      desc:
+        description: 描述
+        type: string
+      name:
+        description: 名称
+        type: string
+    required:
+    - assistantId
+    - name
     type: object
   request.AssistantWorkFlowAddRequest:
     properties:
@@ -2040,6 +2012,21 @@ definitions:
     required:
     - name
     type: object
+  request.CreateChatflowReq:
+    properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 图标
+      desc:
+        description: 描述
+        type: string
+      name:
+        description: 名称
+        type: string
+    required:
+    - name
+    type: object
   request.CreateCustomSkillReq:
     properties:
       author:
@@ -2291,6 +2278,21 @@ definitions:
     required:
     - name
     - templateId
+    type: object
+  request.CreateWorkflowReq:
+    properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 图标
+      desc:
+        description: 描述
+        type: string
+      name:
+        description: 名称
+        type: string
+    required:
+    - name
     type: object
   request.CustomHomeConfig:
     properties:
@@ -3576,7 +3578,7 @@ definitions:
         description: mcpId
         type: string
       serverUrl:
-        description: '"serverUrl,就是sseUrl/streamable(和mcpId传一个)"'
+        description: '"serverUrl,就是sseUrl/streamable(和mcpId、type 传一个)"'
         type: string
       transport:
         description: '传输协议: "sse" 或 "streamable"'
@@ -3584,8 +3586,6 @@ definitions:
       type:
         description: mcp/mcpserver
         type: string
-    required:
-    - apiAuth
     type: object
   request.MCPUpdate:
     properties:
@@ -3824,22 +3824,6 @@ definitions:
     - modelType
     - startDate
     type: object
-  request.ModelStatisticSelectReq:
-    properties:
-      modelType:
-        description: 模型类型
-        type: string
-      orgIds:
-        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
-        items:
-          type: string
-        type: array
-      userIds:
-        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
-        items:
-          type: string
-        type: array
-    type: object
   request.ModelStatusRequest:
     properties:
       isActive:
@@ -4019,24 +4003,6 @@ definitions:
     - assistantId
     - query
     type: object
-  request.RagBrief:
-    properties:
-      avatar:
-        allOf:
-        - $ref: '#/definitions/request.Avatar'
-        description: 图标
-      desc:
-        description: 描述
-        type: string
-      name:
-        description: 名称
-        type: string
-      ragId:
-        type: string
-    required:
-    - name
-    - ragId
-    type: object
   request.RagConfig:
     properties:
       knowledgeBaseConfig:
@@ -4104,6 +4070,24 @@ definitions:
       version:
         type: string
     required:
+    - ragId
+    type: object
+  request.RagUpdateReq:
+    properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 图标
+      desc:
+        description: 描述
+        type: string
+      name:
+        description: 名称
+        type: string
+      ragId:
+        type: string
+    required:
+    - name
     - ragId
     type: object
   request.RagUploadParams:
@@ -4329,10 +4313,39 @@ definitions:
       variableValue:
         type: string
     type: object
-  request.StatisticAppListSelectReq:
+  request.StatisticAPIKeySelectReq:
+    properties:
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    type: object
+  request.StatisticAppSelectReq:
     properties:
       appType:
         description: 应用类型
+        type: string
+      orgIds:
+        description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
+        items:
+          type: string
+        type: array
+      userIds:
+        description: 空=未扩大用户维度；["ALL"]=已解析组织下全部用户；["id",...]=指定用户
+        items:
+          type: string
+        type: array
+    type: object
+  request.StatisticModelSelectReq:
+    properties:
+      modelType:
+        description: 模型类型
         type: string
       orgIds:
         description: 空=未扩大；["ALL"]=可见全部组织；["id",...]=指定组织
@@ -5518,13 +5531,6 @@ definitions:
       workFlowDesc:
         type: string
       workFlowId:
-        type: string
-    type: object
-  response.BriefUserInfo:
-    properties:
-      userId:
-        type: string
-      username:
         type: string
     type: object
   response.BuiltinSkillDetail:
@@ -7642,8 +7648,6 @@ definitions:
       type:
         description: 'type: mcp'
         type: string
-    required:
-    - apiAuth
     type: object
   response.MCPInfo:
     properties:
@@ -7690,8 +7694,6 @@ definitions:
       type:
         description: 'type: mcp'
         type: string
-    required:
-    - apiAuth
     type: object
   response.MCPSelect:
     properties:
@@ -7791,6 +7793,9 @@ definitions:
         items:
           $ref: '#/definitions/response.MCPServerToolInfo'
         type: array
+      transport:
+        description: sse/streamable
+        type: string
     type: object
   response.MCPServerInfo:
     properties:
@@ -8708,6 +8713,13 @@ definitions:
         description: 数量
         type: number
     type: object
+  response.StatisticUserName:
+    properties:
+      userId:
+        type: string
+      username:
+        type: string
+    type: object
   response.SubConversation:
     properties:
       conversationType:
@@ -9328,24 +9340,51 @@ definitions:
     type: object
 info:
   contact: {}
-  description: "## HTTP Header\r\n| Header        | 说明      |\r\n| ------------- |
-    --------- |\r\n| Authorization | JWT token |\r\n| X-Language    | 语言Code  |\r\n|
-    X-Org-Id      | 组织ID    |\r\n| X-Client-Id   | 客户端标识|\r\n\r\n## HTTP Status\r\n|
-    HTTP Status             | 说明                   |\r\n| -----------------------
-    | ---------------------- |\r\n| 200, StatusOK           | 请求返回成功           |\r\n|
-    400, StatusBadRequest   | 请求返回失败，用于业务 |\r\n| 401, StatusUnauthorized | JWT认证失败
-    \           |\r\n| 403, StatusForbidden    | 没有权限               |\r\n\r\n## 权限-菜单对应表\r\n|
-    一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\r\n|-------------|-------|------|------|------|------|\r\n|
-    guest       |       |      | 【访客】 |      |      |\r\n| common      |       |      |
-    【通用】 |      |      |\r\n| permission  |       |      | 权限管理 |      |      |\r\n|
-    permission  | user  |      | 权限管理 | 用户管理 |      |\r\n| permission  | org   |      |
-    权限管理 | 组织管理 |      |\r\n| permission  | role  |      | 权限管理 | 角色管理 |      |\r\n\r\n##
-    `/v1/user/permission`返回用例\r\n```json\r\n{\r\n  \"code\": 0,\r\n  \"data\": {\r\n
-    \   \"orgPermission\": {\r\n      \"org\": {\"id\": \"test-org-id\", \"name\":
-    \"test-org-name\"},\r\n      \"permissions\": [\r\n        {\"perm\": \"permission\"},\r\n
-    \       {\"perm\": \"permission.user\"},\r\n        {\"perm\": \"permission.org\"},\r\n
-    \       {\"perm\": \"permission.role\"}\r\n      ]\r\n    }\r\n  },\r\n  \"msg\":
-    \"操作成功\"\r\n}\r\n```"
+  description: |-
+    ## HTTP Header
+    | Header        | 说明      |
+    | ------------- | --------- |
+    | Authorization | JWT token |
+    | X-Language    | 语言Code  |
+    | X-Org-Id      | 组织ID    |
+    | X-Client-Id   | 客户端标识|
+
+    ## HTTP Status
+    | HTTP Status             | 说明                   |
+    | ----------------------- | ---------------------- |
+    | 200, StatusOK           | 请求返回成功           |
+    | 400, StatusBadRequest   | 请求返回失败，用于业务 |
+    | 401, StatusUnauthorized | JWT认证失败            |
+    | 403, StatusForbidden    | 没有权限               |
+
+    ## 权限-菜单对应表
+    | 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |
+    |-------------|-------|------|------|------|------|
+    | guest       |       |      | 【访客】 |      |      |
+    | common      |       |      | 【通用】 |      |      |
+    | permission  |       |      | 权限管理 |      |      |
+    | permission  | user  |      | 权限管理 | 用户管理 |      |
+    | permission  | org   |      | 权限管理 | 组织管理 |      |
+    | permission  | role  |      | 权限管理 | 角色管理 |      |
+
+    ## `/v1/user/permission`返回用例
+    ```json
+    {
+      "code": 0,
+      "data": {
+        "orgPermission": {
+          "org": {"id": "test-org-id", "name": "test-org-name"},
+          "permissions": [
+            {"perm": "permission"},
+            {"perm": "permission.user"},
+            {"perm": "permission.org"},
+            {"perm": "permission.role"}
+          ]
+        }
+      },
+      "msg": "操作成功"
+    }
+    ```
   title: AI Agent Productivity Platform API
   version: v0.0.1
 paths:
@@ -10835,7 +10874,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.AppBriefConfig'
+          $ref: '#/definitions/request.CreateChatflowReq'
       produces:
       - application/json
       responses:
@@ -11098,7 +11137,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.RagBrief'
+          $ref: '#/definitions/request.RagUpdateReq'
       produces:
       - application/json
       responses:
@@ -11235,7 +11274,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.AppBriefConfig'
+          $ref: '#/definitions/request.CreateWorkflowReq'
       produces:
       - application/json
       responses:
@@ -11505,7 +11544,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.AssistantBrief'
+          $ref: '#/definitions/request.AssistantUpdateReq'
       produces:
       - application/json
       responses:
@@ -19155,7 +19194,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.APIKeySelectReq'
+          $ref: '#/definitions/request.StatisticAPIKeySelectReq'
       produces:
       - application/json
       responses:
@@ -19280,7 +19319,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.StatisticAppListSelectReq'
+          $ref: '#/definitions/request.StatisticAppSelectReq'
       produces:
       - application/json
       responses:
@@ -19438,7 +19477,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.ModelStatisticSelectReq'
+          $ref: '#/definitions/request.StatisticModelSelectReq'
       produces:
       - application/json
       responses:
@@ -19512,7 +19551,7 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.BriefUserInfo'
+                          $ref: '#/definitions/response.StatisticUserName'
                         type: array
                     type: object
               type: object

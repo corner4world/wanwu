@@ -90,14 +90,14 @@ func ExportModelStatisticList(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		json
-//	@Param			data	body		request.ModelStatisticSelectReq	true	"获取模型统计下拉列表请求参数"
+//	@Param			data	body		request.StatisticModelSelectReq	true	"获取模型统计下拉列表请求参数"
 //	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.ModelInfo}}
 //	@Router			/statistic/model/select [post]
 func GetStatisticModelSelect(ctx *gin.Context) {
-	var req request.ModelStatisticSelectReq
+	var req request.StatisticModelSelectReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	resp, err := service.GetStatisticModelSelect(ctx, req.ModelType, getUserID(ctx), getOrgID(ctx), &req.StatisticFilter, isAdmin(ctx), isSystem(ctx) && isAdmin(ctx))
+	resp, err := service.GetStatisticModelSelect(ctx, req.ModelType, getUserID(ctx), getOrgID(ctx), &req.StatisticFilter, isAdmin(ctx), isSystem(ctx))
 	gin_util.Response(ctx, resp, err)
 }

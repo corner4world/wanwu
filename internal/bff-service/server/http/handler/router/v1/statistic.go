@@ -10,8 +10,8 @@ import (
 
 func registerStatistic(apiV1 *gin.RouterGroup) {
 	// filter & view
-	mid.Sub("app_observability.statistic").Reg(apiV1, "/statistic/orgs/select", http.MethodGet, v1.GetOrgsStatisticSelect, "获取统计看板组织下拉列表")
-	mid.Sub("app_observability.statistic").Reg(apiV1, "/statistic/users/select", http.MethodGet, v1.GetUsersStatisticSelect, "获取统计看板用户下拉列表")
+	mid.Sub("app_observability.statistic").Reg(apiV1, "/statistic/orgs/select", http.MethodGet, v1.GetStatisticOrgsSelect, "获取统计看板组织下拉列表")
+	mid.Sub("app_observability.statistic").Reg(apiV1, "/statistic/users/select", http.MethodGet, v1.GetStatisticUsersSelect, "获取统计看板用户下拉列表")
 
 	// app
 	mid.Sub("app_observability.statistic").Reg(apiV1, "/statistic/app", http.MethodPost, v1.GetAppStatistic, "获取应用统计数据")

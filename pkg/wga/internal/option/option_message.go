@@ -12,8 +12,8 @@ import (
 type SystemMessageStrategy string
 
 const (
-	SystemMessageStrategyNone  SystemMessageStrategy = ""       // 不处理（默认）
-	SystemMessageStrategyMerge SystemMessageStrategy = "merge"  // 合并所有 system 消息到第一位
+	SystemMessageStrategyNone  SystemMessageStrategy = ""      // 不处理（默认）
+	SystemMessageStrategyMerge SystemMessageStrategy = "merge" // 合并所有 system 消息到第一位
 )
 
 // ExtractSystemMessage 提取所有 role=system 消息的内容并返回剩余消息。
