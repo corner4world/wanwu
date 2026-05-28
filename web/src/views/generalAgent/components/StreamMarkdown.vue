@@ -229,6 +229,15 @@ export default {
       border-color: rgba(16, 163, 127, 0.4);
       background: rgba(16, 163, 127, 0.15);
     }
+
+    pre.code-block {
+      max-height: 70vh;
+
+      .code-content {
+        max-height: calc(70vh - 40px);
+        overflow-y: auto;
+      }
+    }
   }
 }
 </style>
