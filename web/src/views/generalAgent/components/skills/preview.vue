@@ -430,6 +430,7 @@ $border: #e5e7eb;
   &__empty {
     .preview-message-area {
       flex: none;
+      margin-bottom: 32px;
     }
     .preview-input-area {
       padding-bottom: 29px;
@@ -443,10 +444,12 @@ $border: #e5e7eb;
   overflow-y: auto;
   overflow-x: hidden;
   background: #fff;
-  margin-bottom: 32px;
+  margin-bottom: 16px;
 
   .message-list {
-    padding: 18px 14px;
+    max-width: $message-max-width;
+    margin: 0 auto;
+    padding: 18px 14px 24px;
     min-height: 100%;
   }
 }
@@ -490,6 +493,8 @@ $border: #e5e7eb;
 }
 
 .input-container {
+  max-width: $message-max-width;
+  margin: 0 auto;
   border: 1px solid $border;
   border-radius: 16px;
   padding: 16px;
