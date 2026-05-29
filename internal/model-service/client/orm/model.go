@@ -176,7 +176,8 @@ func (c *Client) ListModels(ctx context.Context, tab *model_client.ModelImported
 func (c *Client) ListModelsInStatisticScope(ctx context.Context, orgIds, userIds []string, modelType string) ([]*model_client.ModelImported, *errs.Status) {
 	var modelInfos []*model_client.ModelImported
 	db := sqlopt.SQLOptions(
-		sqlopt.WithUserOrgOrPublicScopeInStatistic(userIds, orgIds),
+		sqlopt.WithUserIDs(userIds),
+		sqlopt.WithOrgIDs(orgIds),
 		sqlopt.WithModelType(modelType),
 	).Apply(c.db.WithContext(ctx))
 	if err := db.Order("updated_at DESC").Find(&modelInfos).Error; err != nil {

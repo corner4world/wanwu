@@ -67,6 +67,24 @@ func WithOrgID(orgID string) SQLOption {
 	})
 }
 
+func WithUserIDs(userIDs []string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(userIDs) > 0 {
+			return db.Where("user_id IN ?", userIDs)
+		}
+		return db
+	})
+}
+
+func WithOrgIDs(orgIDs []string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if len(orgIDs) > 0 {
+			return db.Where("org_id IN ?", orgIDs)
+		}
+		return db
+	})
+}
+
 func WithUserID(userID string) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		if userID != "" {
@@ -83,16 +101,6 @@ func WithUserOrgOrPublicScope(userID, orgID string) SQLOption {
 			userID, orgID, ModelScopeTypePrivate,
 			ModelScopeTypePublic,
 			orgID, ModelScopeTypeOrg,
-		)
-	})
-}
-
-// WithUserOrgOrPublicScopeInStatistic 统计看板批量范围：限定在 orgIDs 内，按 userIDs 匹配模型
-func WithUserOrgOrPublicScopeInStatistic(userIDs, orgIDs []string) SQLOption {
-	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
-		return db.Where(
-			"(user_id IN ? AND org_id IN ? ) ",
-			userIDs, orgIDs,
 		)
 	})
 }
