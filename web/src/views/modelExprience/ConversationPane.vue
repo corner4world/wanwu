@@ -87,6 +87,7 @@
       @setModelSet="setModelSet"
       ref="modelSetDialog"
       :modelform="editModel.modelSetting"
+      :limitMaxTokens="editModel.limitMaxTokens"
       :append-to-body="true"
     />
     <!-- 模型选择 -->
@@ -143,6 +144,7 @@ export default {
       editModel: {
         modelId: '',
         modelSetting: {},
+        limitMaxTokens: 4096,
       },
       isChatGenerating: false, // 是否正在创建会话
       isInit: true,
@@ -330,6 +332,11 @@ export default {
     // 打开模型配置弹窗
     openModelSetDialog(modelId, modelSetting) {
       this.editModel.modelId = modelId;
+      // 从模型详情中获取 maxTokens 限制
+      const chatModel = this.modelChatList.find(item => item.modelId === modelId);
+      const config = chatModel?.modelDetail?.config || {};
+      const maxTokens = config.maxTokens;
+      this.editModel.limitMaxTokens = maxTokens && maxTokens > 0 ? maxTokens : 4096;
       Object.keys(modelSetting).forEach(key => {
         if (key === 'thinkingSupport') {
           if (modelSetting[key] === 'support') {
