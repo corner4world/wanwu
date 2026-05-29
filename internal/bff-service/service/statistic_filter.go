@@ -140,6 +140,11 @@ type statisticScope struct {
 }
 
 // ResolveStatisticScope 将 filter 筛选解析为 orgIds、userIds。
+//
+// 系统管理员：ALL → 置空切片，下游 SQL 遇空切片跳过 WHERE 过滤，等价于查全量；
+// 指定 ID → 原样传递，不做 IAM 展开调用。
+// 组织管理员：ALL → 通过 IAM 展开为可见范围内的全部组织/用户；
+// 指定 ID → 原样传递。
 func ResolveStatisticScope(ctx *gin.Context, filter request.StatisticFilter, userID, orgID string, isAdmin, isSystem bool) (*statisticScope, error) {
 
 	// 普通用户
@@ -153,9 +158,19 @@ func ResolveStatisticScope(ctx *gin.Context, filter request.StatisticFilter, use
 		}, nil
 	}
 
-	// 管理员
-
-	// org ids
+	// 系统管理员：无需 IAM 展开可见范围，ALL 置空即全量，指定 ID 原样返回
+	if isSystem {
+		orgIds := filter.OrgIds
+		userIds := filter.UserIds
+		if slices.Contains(orgIds, request.StatisticFilterAll) {
+			orgIds = []string{}
+		}
+		if slices.Contains(userIds, request.StatisticFilterAll) {
+			userIds = []string{}
+		}
+		return &statisticScope{OrgIds: orgIds, UserIds: userIds}, nil
+	}
+	// 组织管理员：需要通过 IAM 解析可见范围
 	var orgIds []string
 	var err error
 	if !slices.Contains(filter.OrgIds, request.StatisticFilterAll) {
@@ -175,7 +190,6 @@ func ResolveStatisticScope(ctx *gin.Context, filter request.StatisticFilter, use
 		}
 	}
 
-	// user ids
 	var userIds []string
 	if !slices.Contains(filter.UserIds, request.StatisticFilterAll) {
 		userIds = filter.UserIds
