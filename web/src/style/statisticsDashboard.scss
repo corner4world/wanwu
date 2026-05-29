@@ -260,3 +260,9 @@
     }
   }
 }
+
+.hide-tag-close {
+  ::v-deep .el-tag__close {
+    display: none !important;
+  }
+}

@@ -1,12 +1,21 @@
 <template>
   <div class="statistics_common list-common statistics_client_wrapper">
     <div>
+      <GlobalFilter
+        v-if="isShowGlobal"
+        ref="globalFilter"
+        @change="handleGlobalFilterChange"
+      />
       <div style="padding: 5px 24px">
         <label>{{ $t('statisticsDashboard.apiSelect') }}:</label>
         <el-select
           v-model="apiParams.apiKeyIds"
           :placeholder="$t('statisticsDashboard.apiName')"
-          class="no-border-select scroll-select"
+          :class="[
+            'no-border-select',
+            'scroll-select',
+            { 'hide-tag-close': isApiSelectedAll },
+          ]"
           style="margin-left: 15px; width: 400px"
           multiple
           filterable
@@ -126,7 +135,10 @@
             {{ $t('statisticsDashboard.apiList') }}
           </span>
           <div style="margin-top: -20px">
-            <ApiList :params="{ ...params, ...apiParams }" ref="apiList" />
+            <ApiList
+              :params="formatParams({ ...params, ...apiParams })"
+              ref="apiList"
+            />
           </div>
         </div>
       </div>
@@ -138,6 +150,7 @@
 import Search from '@/components/searchDate.vue';
 import UserEchart from '@/components/echart/userEchart.vue';
 import ApiList from './apiList.vue';
+import GlobalFilter from '../globalFilter.vue';
 import { formatAmount } from '@/utils/util.js';
 import {
   getApiData,
@@ -151,9 +164,12 @@ export default {
     UserEchart,
     Search,
     ApiList,
+    GlobalFilter,
   },
   data() {
+    const { isSystem, isAdmin } = this.$store.state.user.permission || {};
     return {
+      isShowGlobal: isSystem || isAdmin,
       apiNameList: [DEFAULT_APP_ITEM],
       apiRoutesList: [],
       colorsObj: {
@@ -225,6 +241,10 @@ export default {
         apiKeyIds: [ALL],
         methodPaths: [],
       },
+      globalFilterParams: {
+        orgIds: [ALL],
+        userIds: [ALL],
+      },
     };
   },
   computed: {
@@ -234,6 +254,9 @@ export default {
         startDate: this.searchTime.time[0],
       };
     },
+    isApiSelectedAll() {
+      return this.apiParams.apiKeyIds.includes(ALL);
+    },
   },
   mounted() {
     this.fetchApiNameList();
@@ -241,8 +264,20 @@ export default {
   },
   methods: {
     formatAmount,
+    formatParams(params) {
+      const globalFilterParams = this.isShowGlobal
+        ? this.globalFilterParams
+        : {};
+      return {
+        ...params,
+        ...globalFilterParams,
+      };
+    },
     async fetchApiNameList() {
-      const res = await getApiSelect();
+      this.apiNameList = [DEFAULT_APP_ITEM];
+      this.apiParams.apiKeyIds = [ALL];
+
+      const res = await getApiSelect(this.formatParams());
       const list = res.data ? res.data.list || [] : [];
       this.apiNameList = [DEFAULT_APP_ITEM, ...list];
     },
@@ -251,7 +286,10 @@ export default {
       this.apiRoutesList = res.data ? res.data.list || [] : [];
     },
     handleApiNameChange(keyIds) {
-      if (!keyIds.length) return;
+      if (!keyIds.length) {
+        this.apiParams.apiKeyIds = [ALL];
+        return;
+      }
 
       const addKey = keyIds[keyIds.length - 1];
       if (addKey === ALL) {
@@ -265,15 +303,19 @@ export default {
         }
       }
     },
+    handleGlobalFilterChange(vals) {
+      this.globalFilterParams = { ...vals };
+      this.fetchApiNameList();
+    },
     handleSetTime(val) {
       this.loading = true;
       this.searchTime = val;
 
-      const params = {
+      const params = this.formatParams({
         startDate: val.time[0],
         endDate: val.time[1],
         ...this.apiParams,
-      };
+      });
       getApiData(params)
         .then(res => {
           const { overview, trend } = res.data || {};

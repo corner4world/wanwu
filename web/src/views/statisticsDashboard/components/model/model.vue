@@ -1,6 +1,11 @@
 <template>
   <div class="statistics_common list-common statistics_client_wrapper">
     <div>
+      <GlobalFilter
+        v-if="isShowGlobal"
+        ref="globalFilter"
+        @change="handleGlobalFilterChange"
+      />
       <div style="padding: 5px 24px">
         <label>{{ $t('statisticsDashboard.modelSelect') }}:</label>
         <el-select
@@ -8,7 +13,6 @@
           :placeholder="$t('modelAccess.table.modelType')"
           class="no-border-select"
           style="margin-left: 15px"
-          clearable
           @change="changeModelType()"
         >
           <el-option
@@ -164,19 +168,23 @@
 import Search from '@/components/searchDate.vue';
 import UserEchart from '@/components/echart/userEchart.vue';
 import ModelList from './modelList.vue';
+import GlobalFilter from '../globalFilter.vue';
 import { avatarSrc, formatAmount, getModelDefaultIcon } from '@/utils/util.js';
-import { getModelData } from '@/api/statisticsDashboard';
+import { getModelData, getModelSelect } from '@/api/statisticsDashboard';
 import { MODEL_TYPE, LLM } from '@/views/modelAccess/constants';
-import { fetchModelList } from '@/api/modelAccess';
+import { ALL } from '../../constants';
 
 export default {
   components: {
     UserEchart,
     Search,
     ModelList,
+    GlobalFilter,
   },
   data() {
+    const { isSystem, isAdmin } = this.$store.state.user.permission || {};
     return {
+      isShowGlobal: isSystem || isAdmin,
       modelTypeList: MODEL_TYPE,
       modelList: [],
       loading: false,
@@ -248,6 +256,10 @@ export default {
         modelType: LLM,
         models: [],
       },
+      globalFilterParams: {
+        orgIds: [ALL],
+        userIds: [ALL],
+      },
     };
   },
   computed: {
@@ -264,10 +276,17 @@ export default {
   methods: {
     formatAmount,
     formatParams(params) {
+      const globalFilterParams = this.isShowGlobal
+        ? this.globalFilterParams
+        : {};
       return {
         ...params,
-        models: params.models ? params.models.toString() : '',
+        ...globalFilterParams,
       };
+    },
+    handleGlobalFilterChange(vals) {
+      this.globalFilterParams = { ...vals };
+      this.fetchModels();
     },
     changeModelType() {
       this.fetchModels();
@@ -279,12 +298,10 @@ export default {
       this.modelList = [];
       this.modelParams.models = [];
 
-      const res = await fetchModelList({
-        filterScope: '',
-        modelType: this.modelParams.modelType,
-      });
-      const modelList = res.data ? res.data.list || [] : [];
-      this.modelList = modelList.filter(item => item.allowEdit);
+      const res = await getModelSelect(
+        this.formatParams({ modelType: this.modelParams.modelType }),
+      );
+      this.modelList = res.data ? res.data.list || [] : [];
     },
     fetchData(params) {
       getModelData(params)

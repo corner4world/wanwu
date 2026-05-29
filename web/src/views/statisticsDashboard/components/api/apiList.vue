@@ -55,6 +55,33 @@
             </template>
           </el-table-column>
           <el-table-column
+            prop="orgName"
+            :label="$t('statisticsDashboard.org')"
+            align="left"
+          >
+            <template slot-scope="scope">
+              {{ scope.row.orgName || '--' }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="userName"
+            :label="$t('statisticsDashboard.userName')"
+            align="left"
+          >
+            <template slot-scope="scope">
+              {{ scope.row.userName || '--' }}
+            </template>
+          </el-table-column>
+          <!--<el-table-column
+            prop="model"
+            :label="$t('statisticsDashboard.model')"
+            align="left"
+          >
+            <template slot-scope="scope">
+              {{ scope.row.model || '&#45;&#45;' }}
+            </template>
+          </el-table-column>-->
+          <el-table-column
             prop="callCount"
             :label="
               $t('statisticsDashboard.appCallCount') +
@@ -168,6 +195,33 @@
               {{ scope.row.methodPath || '--' }}
             </template>
           </el-table-column>
+          <el-table-column
+            prop="orgName"
+            :label="$t('statisticsDashboard.org')"
+            align="left"
+          >
+            <template slot-scope="scope">
+              {{ scope.row.orgName || '--' }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="userName"
+            :label="$t('statisticsDashboard.userName')"
+            align="left"
+          >
+            <template slot-scope="scope">
+              {{ scope.row.userName || '--' }}
+            </template>
+          </el-table-column>
+          <!--<el-table-column
+            prop="model"
+            :label="$t('statisticsDashboard.model')"
+            align="left"
+          >
+            <template slot-scope="scope">
+              {{ scope.row.model || '&#45;&#45;' }}
+            </template>
+          </el-table-column>-->
           <el-table-column
             prop="callTime"
             :label="$t('statisticsDashboard.callTime')"

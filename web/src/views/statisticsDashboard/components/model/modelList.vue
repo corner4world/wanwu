@@ -44,6 +44,15 @@
             </template>
           </el-table-column>
           <el-table-column
+            prop="userName"
+            :label="$t('statisticsDashboard.userName')"
+            align="left"
+          >
+            <template slot-scope="scope">
+              {{ scope.row.userName || '--' }}
+            </template>
+          </el-table-column>
+          <el-table-column
             prop="callCount"
             :label="
               $t('statisticsDashboard.callCount') +

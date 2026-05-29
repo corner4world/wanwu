@@ -1,6 +1,11 @@
 <template>
   <div class="statistics_common list-common statistics_client_wrapper">
     <div>
+      <GlobalFilter
+        v-if="isShowGlobal"
+        ref="globalFilter"
+        @change="handleGlobalFilterChange"
+      />
       <div style="padding: 5px 24px">
         <label>{{ $t('statisticsDashboard.appSelect') }}:</label>
         <el-select
@@ -8,7 +13,6 @@
           :placeholder="$t('statisticsDashboard.appType')"
           class="no-border-select"
           style="margin-left: 15px"
-          clearable
           @change="changeAppType()"
         >
           <el-option
@@ -138,18 +142,23 @@
 import Search from '@/components/searchDate.vue';
 import UserEchart from '@/components/echart/userEchart.vue';
 import AppList from './appList.vue';
+import GlobalFilter from '../globalFilter.vue';
 import { avatarSrc, formatAmount } from '@/utils/util.js';
 import { getAppData, getAppSelect } from '@/api/statisticsDashboard';
-import { AGENT, AppType, RAG } from '@/utils/commonSet';
+import { AGENT, AppType } from '@/utils/commonSet';
+import { ALL } from '../../constants';
 
 export default {
   components: {
     UserEchart,
     Search,
     AppList,
+    GlobalFilter,
   },
   data() {
+    const { isSystem, isAdmin } = this.$store.state.user.permission || {};
     return {
+      isShowGlobal: isSystem || isAdmin,
       appTypeObj: AppType,
       appList: [],
       loading: false,
@@ -213,6 +222,10 @@ export default {
         appType: AGENT,
         apps: [],
       },
+      globalFilterParams: {
+        orgIds: [ALL],
+        userIds: [ALL],
+      },
     };
   },
   computed: {
@@ -229,10 +242,17 @@ export default {
   methods: {
     formatAmount,
     formatParams(params) {
+      const globalFilterParams = this.isShowGlobal
+        ? this.globalFilterParams
+        : {};
       return {
         ...params,
-        apps: params.apps ? params.apps.toString() : '',
+        ...globalFilterParams,
       };
+    },
+    handleGlobalFilterChange(vals) {
+      this.globalFilterParams = { ...vals };
+      this.fetchApps();
     },
     changeAppType() {
       this.fetchApps();
@@ -242,7 +262,9 @@ export default {
       this.appList = [];
       this.appParams.apps = [];
 
-      const res = await getAppSelect({ appType: this.appParams.appType });
+      const res = await getAppSelect(
+        this.formatParams({ appType: this.appParams.appType }),
+      );
       this.appList = res.data ? res.data.list || [] : [];
     },
     fetchData(params) {

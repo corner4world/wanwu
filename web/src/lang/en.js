@@ -1753,6 +1753,7 @@ export default {
     modelName: '模型名称',
     provider: '供应商',
     org: '组织',
+    userName: '用户',
     callCount: '模型调用次数',
     frequency: '次',
     callFailure: '模型调用失败次数',
@@ -1803,6 +1804,9 @@ export default {
     resContent: '响应内容',
     finishReason: '结束原因',
     all: '全部',
+    global: '全局',
+    selectOrg: '选择组织',
+    selectUser: '选择用户',
   },
   statistics: {
     title: '统计分析',

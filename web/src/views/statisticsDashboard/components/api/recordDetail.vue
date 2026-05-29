@@ -24,6 +24,14 @@
         <span>{{ row.methodPath || '--' }}</span>
       </p>
       <p>
+        <label>{{ $t('statisticsDashboard.org') }}:</label>
+        <span>{{ row.orgName || '--' }}</span>
+      </p>
+      <p>
+        <label>{{ $t('statisticsDashboard.userName') }}:</label>
+        <span>{{ row.userName || '--' }}</span>
+      </p>
+      <p>
         <label>
           {{
             $t('statisticsDashboard.appCallCount') +
@@ -98,6 +106,14 @@
       <p>
         <label>{{ $t('statisticsDashboard.apiPath') }}:</label>
         <span>{{ row.methodPath || '--' }}</span>
+      </p>
+      <p>
+        <label>{{ $t('statisticsDashboard.org') }}:</label>
+        <span>{{ row.orgName || '--' }}</span>
+      </p>
+      <p>
+        <label>{{ $t('statisticsDashboard.userName') }}:</label>
+        <span>{{ row.userName || '--' }}</span>
       </p>
       <p>
         <label>{{ $t('statisticsDashboard.responseStatus') }}:</label>
