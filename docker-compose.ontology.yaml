@@ -325,6 +325,9 @@ services:
       - UNIQUERY_PORT=13011
       - VEGA_BACKEND_HOST=vega-backend
       - VEGA_BACKEND_PORT=13014
+      - AGENT_OPERATOR_HOST=agent
+      - AGENT_OPERATOR_PORT=5000
+      - AGENT_OPERATOR_PROTOCOL=http
     # ports:
     #   - "13018:13018"
     depends_on:
