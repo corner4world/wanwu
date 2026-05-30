@@ -1,7 +1,7 @@
 <template>
   <div class="auth">
     <div class="overview">
-      <img :src="backgroundSrc" alt="" />
+      <img v-if="backgroundSrc" :src="backgroundSrc" alt="" />
     </div>
     <div class="auth-modal">
       <div class="header__left">
@@ -37,10 +37,7 @@ export default {
     ...mapState('login', ['commonInfo']),
     ...mapState('user', ['lang']),
     backgroundSrc() {
-      return avatarSrc(
-        this.commonInfo?.login?.background?.path || '',
-        require('@/assets/imgs/auth_bg.png'),
-      );
+      return avatarSrc(this.commonInfo?.login?.background?.path || '');
     },
   },
   watch: {
@@ -76,6 +73,7 @@ export default {
   overflow: hidden;
   //background-color: #000;
   z-index: 10;
+  background: linear-gradient(to bottom, #f4faff 0%, #dceeff 50%, #c2e0ff 100%);
 
   img {
     width: 100%;
