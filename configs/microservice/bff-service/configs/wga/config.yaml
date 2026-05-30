@@ -43,7 +43,7 @@ sub_agents:
     agent_name: "创建网页"
     avatar_path: /v1/static/agent/web.png
     placeholder: "选择一款模型，告诉我想要生成的网页主题或内容"
-  - agent_id: "Ontology Agent"
+  - agent_id: "DIP Agent"
     agent_name: "数字员工"
     avatar_path: /v1/static/agent/ontology.svg
     placeholder: "选择一款模型，创建一个本体知识网络或者使用数字员工工作吧"

@@ -406,6 +406,8 @@ ontology:
   enable: 0
   endpoint: http://vega-web:3010
   knowledge_network_list_uri: /vega/api/ontology-manager/v1/knowledge-networks
+  digital_employee_list_uri: /vega/api/digital-humans
+  digital_employee_info_uri: /vega/api/digital-humans/%s
   builtin_skills:
     - "ontology/archive-protocol"
     - "ontology/bkn-creator"

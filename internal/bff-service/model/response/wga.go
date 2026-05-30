@@ -102,6 +102,7 @@ type GeneralAgentToolCategories struct {
 	Meet      bool                    `json:"meet"`      // 是否满足条件
 	Tools     []GeneralAgentCheckTool `json:"tools"`     // 工具检查结果
 }
+
 type GeneralAgentCheckTool struct {
 	ToolID string `json:"toolId"` // 工具ID
 	Meet   bool   `json:"meet"`   // 是否符合要求
@@ -146,18 +147,11 @@ type GeneralAgentUploadLimit struct {
 	ExtList  []string `json:"extList"`  // 支持的文件后缀列表
 }
 
-type GeneralAgentCopilotRuntimeInfoAgent struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	ClassName   string `json:"className"`
-}
-
-type GeneralAgentCopilotRuntimeInfoResp struct {
-	Version                       string                                         `json:"version"`
-	Agents                        map[string]GeneralAgentCopilotRuntimeInfoAgent `json:"agents"`
-	Mode                          string                                         `json:"mode"`
-	AudioFileTranscriptionEnabled bool                                           `json:"audioFileTranscriptionEnabled"`
-	A2UIEnabled                   bool                                           `json:"a2uiEnabled,omitempty"`
+type GeneralAgentOntologyEmployee struct {
+	ID     string         `json:"id"`     // 数字员工ID
+	Name   string         `json:"name"`   // 数字员工姓名
+	Desc   string         `json:"desc"`   // 数字员工描述
+	Avatar request.Avatar `json:"avatar"` // 数字员工头像
 }
 
 type GeneralAgentResourceSelectItem struct {

@@ -180,7 +180,7 @@ func GetGeneralAgentSkillSelect(ctx *gin.Context) {
 
 // GetGeneralAgentKnowledgeSelect
 //
-//	@Tags			knowledge
+//	@Tags			wga
 //	@Summary		通用智能体知识库下拉接口列表
 //	@Description	获取通用智能体知识库下拉接口列表
 //	@Security		JWT
@@ -196,6 +196,22 @@ func GetGeneralAgentKnowledgeSelect(ctx *gin.Context) {
 		return
 	}
 	resp, err := service.SelectKnowledgeList(ctx, userId, orgId, &req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GetGeneralAgentOntologyEmployeeSelect
+//
+//	@Tags			wga
+//	@Summary		通用智能体本体数字员工下拉接口列表
+//	@Description	获取通用智能体本体数字员工下拉接口列表
+//	@Security		JWT
+//	@Accept			json
+//	@Param			name	query		string	false	"数字员工名称"
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.KnowledgeListResp}
+//	@Router			/general/agent/ontology/employee/select [post]
+func GetGeneralAgentOntologyEmployeeSelect(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentOntologyEmployeeSelect(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("name"))
 	gin_util.Response(ctx, resp, err)
 }
 

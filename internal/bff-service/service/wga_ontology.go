@@ -5,18 +5,103 @@ import (
 	"net/url"
 	"strings"
 
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
-
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	wga_option "github.com/UnicomAI/wanwu/pkg/wga/wga-option"
 	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
 )
+
+type ontologyDigitalEmployeeListResp struct {
+	Code int                             `json:"code"`
+	Data ontologyDigitalEmployeeListData `json:"data"`
+	Msg  string                          `json:"msg"`
+}
+
+type ontologyDigitalEmployeeListData struct {
+	DigitalEmployees []ontologyDigitalEmployee `json:"entries"`
+	TotalCount       int                       `json:"total_count"`
+}
+
+type ontologyDigitalEmployee struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Status      int    `json:"status"`
+}
+
+func GetGeneralAgentOntologyEmployeeSelect(ctx *gin.Context, userId, orgId, name string) ([]*response.GeneralAgentOntologyEmployee, error) {
+	if config.Cfg().Ontology.Enable == 0 {
+		return nil, nil
+	}
+
+	// 构建URL
+	endpoint := config.Cfg().Ontology.Endpoint
+	listUri := config.Cfg().Ontology.DigitalEmployeeListUri
+	requestUrl, err := url.JoinPath(endpoint, listUri)
+	if err != nil {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_ontology_employee_select", fmt.Sprintf("build url failed: %v", err))
+	}
+
+	// 构建请求参数
+	queryParams := map[string]string{
+		"direction": "desc",
+		"sort":      "update_time",
+		"offset":    "0",
+		"limit":     "999", // 默认拉取前999条，满足大部分场景需求
+	}
+	if name != "" {
+		queryParams["name"] = name
+	}
+
+	// 发送HTTP请求
+	ret := &ontologyDigitalEmployeeListResp{}
+	resp, err := trace_util.NewResty(ctx).
+		R().
+		SetContext(ctx.Request.Context()).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept", "application/json").
+		SetHeader("X-Account-Id", userId).
+		SetHeaders(workflowHttpReqHeader(ctx)).
+		SetQueryParams(queryParams).
+		SetResult(ret).
+		Get(requestUrl)
+
+	if err != nil {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_ontology_employee_select", err.Error())
+	}
+	if resp.StatusCode() >= 300 {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_ontology_employee_select", fmt.Sprintf("[%d] http error", resp.StatusCode()))
+	}
+
+	var items []*response.GeneralAgentOntologyEmployee
+
+	// BKN-Creator 固定放在第一个，用于创建知识网络
+	items = append(items, &response.GeneralAgentOntologyEmployee{
+		ID:     "BKN-Creator",
+		Name:   "BKN-Creator",
+		Desc:   "bkn-creator是BKN全生命周期管理器，负责流程路由识别、阶段门禁、子流程编排与结果回执。覆盖新增、查找、更新、删除（CRUD）并采用渐进式执行。触发词：创建知识网络、新建BKN、BKN建模、本体建模、对象类、关系类、动作类、概念组、BKN文件、BKN push、BKN pull、对象类绑定、关系类映射、对象类提取、关系类提取、实体关系抽取、知识网络查询、知识网络更新、知识网络删除。",
+		Avatar: request.Avatar{Path: "/v1/static/icon/skill-kweaver-icon.png"},
+	})
+	for _, de := range ret.Data.DigitalEmployees {
+		if de.Status != 1 { // 仅返回状态为启用的数字员工
+			continue
+		}
+		items = append(items, &response.GeneralAgentOntologyEmployee{
+			ID:     de.ID,
+			Name:   de.Name,
+			Desc:   de.Description,
+			Avatar: request.Avatar{Path: "/v1/static/icon/wga-digital-employee-icon.svg"},
+		})
+	}
+
+	return items, nil
+}
 
 // --- internal wga ontology ---
 
@@ -132,15 +217,15 @@ func buildWgaOntologyKnowledgeOptions(ctx *gin.Context, userId, orgId, agentId s
 	var contentBuilder strings.Builder
 	_, _ = fmt.Fprintf(&contentBuilder, "【当前用户ID为 %s】如果技能参数需要 userId、user-id、accountId、x-account-id 等相关信息，可以使用此用户ID进行查询。", userId)
 
-	// Ontology Agent 模式：只用于创建本体知识网络，不加载问数技能，仅透传 userId 供 CLI 命令使用
-	if agentId == "Ontology Agent" {
+	// DPI Agent 模式：只用于创建本体知识网络，不加载问数技能，仅透传 userId 供 CLI 命令使用
+	if agentId == "DIP Agent" {
 		return nil, &schema.Message{
 			Role:    schema.System,
 			Content: contentBuilder.String(),
 		}, nil
 	}
 
-	// 非 Ontology Agent 模式：可用于本体知识网络问数，确定知识网络 ID：@提及 > 配置表 > 无配置则只返回 userId 提示；最多只有一个知识网络 ID
+	// 非 DIP Agent 模式：可用于本体知识网络问数，确定知识网络 ID：@提及 > 配置表 > 无配置则只返回 userId 提示；最多只有一个知识网络 ID
 	var ontologyKnowledgeId string
 	if len(ontologyKnowledgeMentions) > 0 {
 		ontologyKnowledgeId = ontologyKnowledgeMentions[0].OntologyKnowledgeId

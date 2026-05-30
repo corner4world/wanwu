@@ -204,58 +204,6 @@ type GeneralAgentWorkspaceReq struct {
 
 func (c *GeneralAgentWorkspaceReq) Check() error { return nil }
 
-type GeneralAgentCopilotRuntimeReq struct {
-	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params,omitempty"`
-	Body   map[string]interface{} `json:"body,omitempty"`
-}
-
-func (c *GeneralAgentCopilotRuntimeReq) Check() error { return nil }
-
-func (c *GeneralAgentCopilotRuntimeReq) GetThreadID() string {
-	threadID, _ := c.Body["threadId"].(string)
-	return threadID
-}
-
-func (c *GeneralAgentCopilotRuntimeReq) GetMessages() []GeneralAgentConversationMessage {
-	if c.Body == nil {
-		return nil
-	}
-
-	bodyMessages, ok := c.Body["messages"]
-	if !ok || bodyMessages == nil {
-		return nil
-	}
-
-	messagesSlice, ok := bodyMessages.([]interface{})
-	if !ok {
-		return nil
-	}
-
-	messages := make([]GeneralAgentConversationMessage, 0, len(messagesSlice))
-	for _, m := range messagesSlice {
-		msgMap, ok := m.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		role, _ := msgMap["role"].(string)
-		if role == "" {
-			continue
-		}
-
-		id, _ := msgMap["id"].(string)
-		content := msgMap["content"]
-		messages = append(messages, GeneralAgentConversationMessage{
-			ID:      id,
-			Role:    role,
-			Content: content,
-		})
-	}
-
-	return messages
-}
-
 type GeneralAgentReplyQuestionReq struct {
 	RunID      string     `json:"runId" validate:"required"`
 	QuestionID string     `json:"questionId" validate:"required"`

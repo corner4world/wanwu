@@ -28,7 +28,7 @@ func GetGeneralAgentSubList(ctx *gin.Context) (*response.GetGeneralAgentSubListR
 
 	// 获取wga所支持的子智能体
 	for _, agent := range config.WgaCfg().SubAgents {
-		if agent.AgentID == "Ontology Agent" && config.Cfg().Ontology.Enable == 0 {
+		if agent.AgentID == "DIP Agent" && config.Cfg().Ontology.Enable == 0 {
 			continue
 		}
 		result.WgaAgentList = append(result.WgaAgentList, response.GeneralAgentInfo{
