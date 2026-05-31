@@ -93,6 +93,8 @@ type Options struct {
 	Skills                     []Skill               // 技能列表（运行时传入）
 	MCPs                       []MCP                 // MCP 服务器列表
 	Messages                   []adk.Message         // 历史消息 + 当前问题（最后一条 User 消息）
+	Instruction                string                // 运行时动态指令（覆盖配置文件 prompt.md）
+	OverallTask                string                // 运行时动态整体任务（用于子智能体）
 	EnableHumanInTheLoop       bool                  // 是否启用人机交互
 	EnableHumanInTheLoopCustom bool                  // 是否允许用户自定义回答
 	SystemMessageStrategy      SystemMessageStrategy // system 消息处理策略，默认不处理
@@ -291,6 +293,22 @@ func WithRunSession(session RunSession) Option {
 func WithMessages(messages []adk.Message) Option {
 	return optionFunc(func(opts *Options) error {
 		opts.Messages = append(opts.Messages, messages...)
+		return nil
+	})
+}
+
+// WithInstruction 设置运行时动态指令，覆盖配置文件中的 prompt.md。
+func WithInstruction(instruction string) Option {
+	return optionFunc(func(opts *Options) error {
+		opts.Instruction = instruction
+		return nil
+	})
+}
+
+// WithOverallTask 设置运行时动态整体任务。
+func WithOverallTask(overallTask string) Option {
+	return optionFunc(func(opts *Options) error {
+		opts.OverallTask = overallTask
 		return nil
 	})
 }

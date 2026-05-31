@@ -75,6 +75,10 @@ func (a *sandboxAgent) buildSandboxOpts(ctx context.Context, messages []adk.Mess
 	}
 	opts = append(opts, wga_sandbox_option.WithInstruction(instruction))
 
+	if a.options.OverallTask != "" {
+		opts = append(opts, wga_sandbox_option.WithOverallTask(a.options.OverallTask))
+	}
+
 	// 传递技能（配置文件 + 运行时）
 	var allSkills []wga_sandbox_option.Skill
 	for _, skill := range a.cfg.Skills {

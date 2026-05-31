@@ -51,7 +51,8 @@
 │  │   │                                                                           │ │
 │  │   │  1. buildSandboxOpts()     构建沙箱选项                                    │ │
 │  │   │     ├─ ModelConfig (来自 WithModelConfig)                                 │ │
-│  │   │     ├─ Instruction (来自配置文件)                                          │ │
+│  │   │     ├─ Instruction (来自配置文件 或 WithInstruction)                      │ │
+│  │   │     ├─ OverallTask (来自 WithOverallTask)                                │ │
 │  │   │     ├─ Tools (来自配置 + WithToolConfig + WithExtraTool)                  │ │
 │  │   │     └─ MCPs (来自 WithMCP)                                                │ │
 │  │   │                                                                           │ │
@@ -430,6 +431,9 @@ wga.WithMessages(         ─────▶  options.Messages      ────
   {Role: "user", Content: "..."}                                .Role
 )                                                               .Content
 
+wga.WithInstruction("...") ─────▶  options.Instruction  ─────▶  Instruction (覆盖 prompt.md)
+wga.WithOverallTask("...")  ─────▶  options.OverallTask   ─────▶  OverallTask
+
 配置文件 (YAML)                     internal/config              runner 内部
 ─────────────                       ─────────────              ────────────
 
@@ -438,7 +442,7 @@ agent.yaml  ──────────────────▶   config.A
   type: sandbox                       .Type
   name: 代码助手                       .Name
   description: 代码生成和修改          .Description
-  prompt_relative_path: ./prompt.md  ─────────▶  .Prompt        ───────▶   Instruction
+  prompt_relative_path: ./prompt.md  ─────────▶  .Prompt        ───────▶   Instruction (可被 WithInstruction 覆盖)
 
   configure:
     max_iterations: 10               .Configure.MaxIterations
@@ -561,6 +565,8 @@ for {
 | `WithOutputDir` | 输出目录 |
 | `WithRunSession` | 会话标识 |
 | `WithMessages` | 消息列表（历史消息 + 当前问题，最后一条必须是 User 消息） |
+| `WithInstruction` | 运行时动态指令，覆盖配置文件中的 prompt.md |
+| `WithOverallTask` | 运行时动态整体任务（用于子智能体） |
 | `WithEnableHumanInTheLoop` | 启用人机交互（可选参数：enableCustom 设置是否允许用户自定义回答） |
 
 ## MCP 服务器
