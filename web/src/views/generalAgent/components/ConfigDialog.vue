@@ -136,8 +136,7 @@
                 v-if="currentListConfig.type === 'ontology'"
                 :label="item.id"
                 :value="selectedResources[currentListConfig.type]?.[0]?.id"
-                @change="handleToggleItem(item)"
-                @click.native.stop
+                @click.native.stop="handleToggleItem(item)"
               >
                 {{ '' }}
               </el-radio>
@@ -565,7 +564,7 @@ export default {
     handleToggleResource(item, resourceType) {
       const itemId = item.id;
 
-      // ontology 类型使用单选逻辑，点击已选项可取消选中
+      // ontology 类型可取消选中
       if (resourceType === 'ontology') {
         const currentId = this.selectedResources[resourceType]?.[0]?.id;
         if (currentId === itemId) {

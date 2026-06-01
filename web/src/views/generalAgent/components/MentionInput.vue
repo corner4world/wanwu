@@ -68,7 +68,10 @@
 </template>
 
 <script>
-import { getGeneralAgentResourceSelect } from '@/api/generalAgent';
+import {
+  getGeneralAgentResourceSelect,
+  getGeneralAgentEmployeeSelect,
+} from '@/api/generalAgent';
 import { avatarSrc } from '@/utils/util';
 import XSender from 'x-sender';
 import 'x-sender/style';
@@ -106,6 +109,7 @@ export default {
       selectedIndex: 0,
       sender: null,
       ontologyId: null, // ontology单选
+      tip: '',
     };
   },
   computed: {
@@ -180,22 +184,24 @@ export default {
         this.initTabs();
       }
     },
-    isDIP(newVal) {
+    async isDIP(newVal) {
       if (newVal) {
-        this.resourceList = {
-          dip: [
-            { id: '1', name: '员工A', desc: '测试员工A' },
-            { id: '2', name: '员工B', desc: '测试员工B' },
-            { id: '3', name: '员工C', desc: '测试员工C' },
-          ],
-        };
-        this.sender.showTip({
-          text: '@' + this.resourceList.dip?.[0].name,
-          dialogText: '',
-        });
+        const res = await getGeneralAgentEmployeeSelect();
+        if (res?.data && Array.isArray(res.data)) {
+          this.resourceList = {
+            dip: res.data.map(item => ({
+              ...item,
+              resourceType: 'dip',
+            })),
+          };
+          const firstEmployee = this.resourceList.dip?.[0];
+          if (firstEmployee) {
+            this.showTip(firstEmployee.name);
+          }
+        }
       } else {
         this.sender.closeTip();
-        this.fetchConfigData();
+        await this.fetchConfigData();
       }
     },
   },
@@ -270,7 +276,7 @@ export default {
 
       const { EVENT_COMMON_CHANGE } = XSender.EventSet;
       this.sender.bus.on('XSender', EVENT_COMMON_CHANGE, () => {
-        this.inputValue = this.sender.getText();
+        this.inputValue = this.tip + this.sender.getText();
         if (this.showConfigPopover) {
           this.updateMentionPosition();
           this.$nextTick(() => {
@@ -416,11 +422,7 @@ export default {
       this.sender.backspace(-(this.mentionSearchText.length + 1));
 
       if (this.isDIP) {
-        this.sender.closeTip();
-        this.sender.showTip({
-          text: '@' + item.name,
-          dialogText: '',
-        });
+        this.showTip(item.name);
         return;
       }
 
@@ -441,6 +443,16 @@ export default {
         }
         this.ontologyId = item.id;
       }
+    },
+
+    showTip(name) {
+      this.sender.closeTip();
+      this.tip = '@' + name;
+      this.sender.showTip({
+        text: this.tip,
+        dialogText: '',
+      });
+      this.tip += ' ';
     },
 
     clear() {

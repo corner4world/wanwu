@@ -2011,6 +2011,8 @@ export default {
       workflows: '工作流',
       skills: 'Skills',
       agents: '智能体',
+      ontology: 'Ontology Agent',
+      dip: 'Digital Employee',
       validationError: '⚠️ 不满足选择条件',
       needApiKey: '需要配置 API Key',
       apiKeyTitle: '请输入 API Key',
