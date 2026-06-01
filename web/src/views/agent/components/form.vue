@@ -1102,9 +1102,9 @@ export default {
       } else {
         this.$delete(this.editForm.modelConfig, 'thinkingEnable');
       }
-      this.setModelInfo(val);
+      this.setModelInfo(val, true);
     },
-    setModelInfo(val) {
+    setModelInfo(val, syncMaxTokens = false) {
       if (!val) return;
       const selectedModel = this.modelOptions.find(
         item => item.modelId === val,
@@ -1113,8 +1113,12 @@ export default {
         this.editForm.modelParams = val;
         this.editForm.visionsupport = selectedModel.config.visionSupport;
         this.editForm.functionCalling = selectedModel.config.functionCalling;
-        const maxTokens = selectedModel.config.maxTokens;
-        this.limitMaxTokens = maxTokens && maxTokens > 0 ? maxTokens : 4096;
+        const maxTokens = Number(selectedModel.config.maxTokens);
+        const limitMaxTokens = maxTokens > 0 ? maxTokens : 4096;
+        this.limitMaxTokens = limitMaxTokens;
+        if (syncMaxTokens) {
+          this.$set(this.editForm.modelConfig, 'maxTokens', limitMaxTokens);
+        }
       } else {
         this.editForm.modelParams = '';
         if (val) this.$message.warning(this.$t('agent.form.modelNotSupport'));
