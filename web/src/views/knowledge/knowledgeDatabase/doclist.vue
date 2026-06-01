@@ -24,11 +24,38 @@
                   ref="searchInput"
                   @handleSearch="handleSearch"
                 />
+                <el-select
+                  v-model="docQuery.metaType"
+                  class="no-border-input"
+                  size="small"
+                  style="width: 110px; margin-right: 15px"
+                  @change="handleMetaTypeChange"
+                >
+                  <el-option label="String" value="string" />
+                  <el-option label="Number" value="number" />
+                  <el-option label="Time" value="time" />
+                </el-select>
                 <search-input
+                  v-if="docQuery.metaType !== 'time'"
                   class="cover-input-icon"
                   :placeholder="$t('knowledgeManage.metaPlaceholder')"
                   ref="searchInputMeta"
                   @handleSearch="handleSearchByMeta"
+                />
+                <el-date-picker
+                  v-else
+                  v-model="metaDateRange"
+                  :end-placeholder="
+                    $t('knowledgeManage.meta.metaValueEndPlaceholder')
+                  "
+                  :start-placeholder="
+                    $t('knowledgeManage.meta.metaValueStartPlaceholder')
+                  "
+                  class="no-border-input"
+                  size="small"
+                  style="width: 330px"
+                  type="datetimerange"
+                  @change="handleMetaDateChange"
                 />
               </div>
 
@@ -579,11 +606,15 @@ export default {
       docQuery: {
         docIdList: [],
         docName: '',
+        metaType: 'string',
         metaValue: '',
+        metaStartTime: '',
+        metaEndTime: '',
         knowledgeId: this.$route.params.id,
         status: [ALL],
         graphStatus: [ALL],
       },
+      metaDateRange: null,
       fileList: [],
       listApi: getDocList,
       title_tips: '',
@@ -872,6 +903,24 @@ export default {
     },
     handleSearchByMeta(val) {
       this.docQuery.metaValue = val;
+      this.getTableData(this.docQuery);
+    },
+    handleMetaTypeChange() {
+      this.docQuery.metaValue = '';
+      this.$refs.searchInputMeta.clearValue();
+      this.docQuery.metaStartTime = '';
+      this.docQuery.metaEndTime = '';
+      this.metaDateRange = null;
+      this.getTableData(this.docQuery);
+    },
+    handleMetaDateChange(val) {
+      if (val && val.length === 2) {
+        this.docQuery.metaStartTime = new Date(val[0]).getTime().toString();
+        this.docQuery.metaEndTime = new Date(val[1]).getTime().toString();
+      } else {
+        this.docQuery.metaStartTime = '';
+        this.docQuery.metaEndTime = '';
+      }
       this.getTableData(this.docQuery);
     },
     handleRetry(data) {

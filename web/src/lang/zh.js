@@ -1303,6 +1303,8 @@ export default {
       valueRequired: '请输入value值',
       regExpRequired: '请输入正则值',
       regExpWrong: '请输入合法正则值',
+      metaValueStartPlaceholder: '元数据值开始日期',
+      metaValueEndPlaceholder: '元数据值结束日期',
     },
     hitTest: {
       name: '命中测试',

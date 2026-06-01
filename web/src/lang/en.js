@@ -1248,6 +1248,8 @@ export default {
       rowValueTips: '行的Value不能为空',
       noNeedUpdate: '没有需要更新的数据',
       metaInfoIncomplete: '存在未填信息,请补充',
+      metaValueStartPlaceholder: 'Metadata value start date',
+      metaValueEndPlaceholder: 'Metadata value end date',
     },
     hitTest: {
       name: '命中测试',
