@@ -239,7 +239,7 @@
                 class="model-select-tips"
                 v-if="
                   editForm.visionsupport === 'support' &&
-                  modelSelectedInfo.provider === 'YuanJing'
+                  modelSelectedInfo.model === 'YuanjingVL'
                 "
               >
                 {{ $t('agent.form.visionModelTips_yuanJing') }}
