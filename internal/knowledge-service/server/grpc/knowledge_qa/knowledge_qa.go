@@ -15,6 +15,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/util"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/server/grpc/knowledge"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/service"
+	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	pkgUtil "github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/samber/lo"
@@ -105,7 +106,7 @@ func (s *Service) GetQAPairList(ctx context.Context, req *knowledgebase_qa_servi
 	qaPairIdList := make([]string, 0)
 	//查找元数据值所对应的文档列表
 	if req.MetaValue != "" {
-		qaPairIdList, err = orm.SelectDocIdListByMetaValue(ctx, "", "", req.KnowledgeId, req.MetaValue)
+		qaPairIdList, err = orm.SelectDocIdListByMetaValue(ctx, "", "", req.KnowledgeId, "", req.MetaValue, "", "")
 		if err != nil {
 			log.Errorf("获取知识库元数据失败(%v)  参数(%v)", err, req)
 			return nil, util.ErrCode(errs.Code_KnowledgeMetaFetchFailed)
@@ -263,12 +264,12 @@ func (s *Service) KnowledgeQAHit(ctx context.Context, req *knowledgebase_qa_serv
 	// 2.RAG请求
 	ragHitParams, err := buildRagQAHitParams(req, list, knowledgeIDToName)
 	if err != nil {
-		return nil, util.ErrCode(errs.Code_KnowledgeBaseHitFailed)
+		return nil, grpc_util.ErrorStatus(errs.Code_KnowledgeBaseHitFailed, err.Error())
 	}
 	hitResp, err := service.RagKnowledgeQAHit(ctx, ragHitParams)
 	if err != nil {
 		log.Errorf("RagKnowledgeQAHit error %s", err)
-		return nil, util.ErrCode(errs.Code_KnowledgeBaseHitFailed)
+		return nil, grpc_util.ErrorStatus(errs.Code_KnowledgeBaseHitFailed, err.Error())
 	}
 	return buildKnowledgeBaseHitResp(hitResp), nil
 }
@@ -531,14 +532,22 @@ func buildQAPairListResp(list []*model.KnowledgeQAPair, knowledge *model.Knowled
 			})
 		}
 	}
+	embeddingModelInfo := &struct {
+		ModelId string `json:"modelId"`
+	}{}
+	_ = json.Unmarshal([]byte(knowledge.EmbeddingModel), embeddingModelInfo)
 	return &knowledgebase_qa_service.GetQAPairListResp{
 		Total:       total,
 		QaPairInfos: retList,
 		PageSize:    pageSize,
 		PageNum:     pageNum,
 		KnowledgeInfo: &knowledgebase_qa_service.KnowledgeInfo{
-			KnowledgeId:   knowledge.KnowledgeId,
-			KnowledgeName: knowledge.Name,
+			KnowledgeId:      knowledge.KnowledgeId,
+			KnowledgeName:    knowledge.Name,
+			Description:      knowledge.Description,
+			EmbeddingModelId: embeddingModelInfo.ModelId,
+			AvatarPath:       knowledge.AvatarPath,
+			Category:         int32(knowledge.Category),
 		},
 	}
 }

@@ -70,9 +70,12 @@ message GetDocListReq{
   string userId = 6;
   string orgId = 7;
   string docTag = 8; //文档标签
-  string metaValue = 9;
+  string metaValue = 9; // 元数据值过滤(string/number 类型)
   repeated int32 graphStatus = 10; //图谱状态
   repeated string docIdList = 11; // 文档id列表，只用于返回所选文档的集合，该值不为空时，其他筛选条件将被忽略
+  string metaType = 12; // 元数据类型: string/number/time，为空时按旧逻辑(metaValue 模糊匹配，排除 time 类型)
+  string metaStartTime = 13; // metaType=time 时的起始时间戳(毫秒，字符串，与 metaValue 一致)
+  string metaEndTime = 14; // metaType=time 时的结束时间戳(毫秒，字符串，与 metaValue 一致)
 }
 
 message GetDocDetailReq{

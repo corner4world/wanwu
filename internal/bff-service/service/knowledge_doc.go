@@ -36,16 +36,19 @@ var docAnalyzerMap = map[string]string{
 // GetDocList 查询知识库所属文档列表
 func GetDocList(ctx *gin.Context, userId, orgId string, r *request.DocListReq) (*response.DocPageResult, error) {
 	resp, err := knowledgeBaseDoc.GetDocList(ctx.Request.Context(), &knowledgebase_doc_service.GetDocListReq{
-		KnowledgeId: r.KnowledgeId,
-		DocName:     strings.TrimSpace(r.DocName),
-		Status:      r.Status,
-		PageSize:    int32(r.PageSize),
-		PageNum:     int32(r.PageNo),
-		UserId:      userId,
-		OrgId:       orgId,
-		MetaValue:   strings.TrimSpace(r.MetaValue),
-		GraphStatus: r.GraphStatus,
-		DocIdList:   r.DocIdList,
+		KnowledgeId:   r.KnowledgeId,
+		DocName:       strings.TrimSpace(r.DocName),
+		Status:        r.Status,
+		PageSize:      int32(r.PageSize),
+		PageNum:       int32(r.PageNo),
+		UserId:        userId,
+		OrgId:         orgId,
+		MetaValue:     strings.TrimSpace(r.MetaValue),
+		MetaType:      strings.TrimSpace(r.MetaType),
+		MetaStartTime: strings.TrimSpace(r.MetaStartTime),
+		MetaEndTime:   strings.TrimSpace(r.MetaEndTime),
+		GraphStatus:   r.GraphStatus,
+		DocIdList:     r.DocIdList,
 	})
 	if err != nil {
 		return nil, err

@@ -203,7 +203,7 @@ func (s *Service) KnowledgeHit(ctx context.Context, req *knowledgebase_service.K
 	// 2.RAG请求
 	ragHitParams, err := buildRagHitParams(req, list, knowledgeIDToName)
 	if err != nil {
-		return nil, util.ErrCode(errs.Code_KnowledgeBaseHitFailed)
+		return nil, grpc_util.ErrorStatus(errs.Code_KnowledgeBaseHitFailed, err.Error())
 	}
 	hitResp, err := knowledge_service.RagKnowledgeHit(ctx, ragHitParams)
 	if err != nil {

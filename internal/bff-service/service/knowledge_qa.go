@@ -115,14 +115,22 @@ func GetKnowledgeQAPairList(ctx *gin.Context, userId, orgId string, r *request.K
 		return nil, err
 	}
 	knowledgeInfo := resp.KnowledgeInfo
+	embModelInfo, _ := GetModel(ctx, userId, orgId, &request.GetModelRequest{
+		BaseModelRequest: request.BaseModelRequest{
+			ModelId: knowledgeInfo.EmbeddingModelId,
+		},
+	})
 	return &response.KnowledgeQAPairPageResult{
 		List:     buildQAPairRespList(ctx, resp.QaPairInfos),
 		Total:    resp.Total,
 		PageNo:   int(resp.PageNum),
 		PageSize: int(resp.PageSize),
 		QAKnowledgeInfo: &response.QAKnowledgeInfo{
-			KnowledgeId:   knowledgeInfo.KnowledgeId,
-			KnowledgeName: knowledgeInfo.KnowledgeName,
+			KnowledgeId:    knowledgeInfo.KnowledgeId,
+			KnowledgeName:  knowledgeInfo.KnowledgeName,
+			Description:    knowledgeInfo.Description,
+			EmbeddingModel: embModelInfo,
+			Avatar:         cacheKnowledgeAvatar(ctx, knowledgeInfo.AvatarPath, knowledgeInfo.Category),
 		},
 	}, nil
 }
@@ -400,14 +408,16 @@ func KnowledgeQAHit(ctx *gin.Context, userId, orgId string, r *request.Knowledge
 func buildKnowledgeQAListReq(r *request.KnowledgeQAHitReq) []*knowledgebase_qa_service.KnowledgeParams {
 	var knowledgeList []*knowledgebase_qa_service.KnowledgeParams
 	for _, k := range r.KnowledgeList {
-		knowledgeList = append(knowledgeList, &knowledgebase_qa_service.KnowledgeParams{
-			KnowledgeId: k.ID,
-			MetaDataFilterParams: &knowledgebase_qa_service.MetaDataFilterParams{
+		kp := &knowledgebase_qa_service.KnowledgeParams{KnowledgeId: k.ID}
+		// metaDataFilterParams 可选，不传时为 nil，需判空避免解引用 panic
+		if k.MetaDataFilterParams != nil {
+			kp.MetaDataFilterParams = &knowledgebase_qa_service.MetaDataFilterParams{
 				FilterEnable:     k.MetaDataFilterParams.FilterEnable,
 				FilterLogicType:  k.MetaDataFilterParams.FilterLogicType,
 				MetaFilterParams: buildQAMetaFilterParams(k.MetaDataFilterParams.MetaFilterParams),
-			},
-		})
+			}
+		}
+		knowledgeList = append(knowledgeList, kp)
 	}
 	return knowledgeList
 }

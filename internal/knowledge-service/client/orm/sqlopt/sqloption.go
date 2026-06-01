@@ -395,6 +395,31 @@ func LikeMetaValue(value string) SQLOption {
 	})
 }
 
+// WithValueType 按元数据类型(value_type)精确过滤
+func WithValueType(valueType string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if valueType != "" {
+			return db.Where("value_type = ?", valueType)
+		}
+		return db
+	})
+}
+
+// BetweenMetaValueTime 按时间区间过滤 value_main(存储为毫秒时间戳字符串)
+// 时间戳为等宽非负十进制(13位毫秒在 2286 年前均为 13 位)，字符串比较与数值比较等价，可跨数据库方言。
+// start/end 为空时对应一侧不限制；闭区间 [start, end]。
+func BetweenMetaValueTime(start, end string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if start != "" {
+			db = db.Where("value_main >= ?", start)
+		}
+		if end != "" {
+			db = db.Where("value_main <= ?", end)
+		}
+		return db
+	})
+}
+
 func LikeQuestion(question string) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		if question != "" {

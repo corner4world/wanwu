@@ -61,8 +61,8 @@ func (s *Service) GetDocList(ctx context.Context, req *knowledgebase_doc_service
 		log.Errorf("获取知识库关键词 错误(%v) 参数(%v)", err, req)
 	}
 	// 4.查找元数据值所对应的文档列表
-	if req.MetaValue != "" {
-		docIdList, err = orm.SelectDocIdListByMetaValue(ctx, "", "", req.KnowledgeId, req.MetaValue)
+	if needMetaFilter(req) {
+		docIdList, err = orm.SelectDocIdListByMetaValue(ctx, "", "", req.KnowledgeId, req.MetaType, req.MetaValue, req.MetaStartTime, req.MetaEndTime)
 		if err != nil {
 			log.Errorf("获取知识库元数据失败(%v)  参数(%v)", err, req)
 			return nil, util.ErrCode(errs.Code_KnowledgeMetaFetchFailed)
@@ -1616,8 +1616,21 @@ func buildInitDocCondition(req *knowledgebase_doc_service.GetDocListReq) []strin
 	req.DocName = ""
 	req.Status = []int32{-1}
 	req.MetaValue = ""
+	req.MetaType = ""
+	req.MetaStartTime = ""
+	req.MetaEndTime = ""
 	req.PageNum = 1
 	req.PageSize = 10000
 	req.GraphStatus = []int32{-1}
 	return docIdList
+}
+
+// needMetaFilter 是否需要按元数据过滤文档列表
+//   - metaType=time：起止时间戳任一有值即触发
+//   - 其他类型/旧逻辑：metaValue 非空即触发
+func needMetaFilter(req *knowledgebase_doc_service.GetDocListReq) bool {
+	if req.MetaType == model.MetaTypeTime {
+		return req.MetaStartTime != "" || req.MetaEndTime != ""
+	}
+	return req.MetaValue != ""
 }

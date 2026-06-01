@@ -1,5 +1,7 @@
 package response
 
+import "github.com/UnicomAI/wanwu/internal/bff-service/model/request"
+
 type KnowledgeQAPairPageResult struct {
 	List            []*ListKnowledgeQAPairResp `json:"list"`
 	QAKnowledgeInfo *QAKnowledgeInfo           `json:"qaKnowledgeInfo"`
@@ -9,8 +11,11 @@ type KnowledgeQAPairPageResult struct {
 }
 
 type QAKnowledgeInfo struct {
-	KnowledgeId   string `json:"knowledgeId"`
-	KnowledgeName string `json:"knowledgeName"`
+	KnowledgeId    string         `json:"knowledgeId"`
+	KnowledgeName  string         `json:"knowledgeName"`
+	Description    string         `json:"description"`    // 问答库描述
+	EmbeddingModel *ModelInfo     `json:"embeddingModel"` // emb模型信息
+	Avatar         request.Avatar `json:"avatar"`         // 头像
 }
 
 type KnowledgeQAPairImportTipResp struct {

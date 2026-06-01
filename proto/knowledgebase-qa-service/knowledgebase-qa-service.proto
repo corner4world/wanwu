@@ -92,6 +92,10 @@ message GetQAPairListResp{
 message KnowledgeInfo{
   string knowledgeId = 1;//问答库id
   string knowledgeName = 2;//问答库名称
+  string description = 3;//问答库描述
+  string embeddingModelId = 4;//emb模型id
+  string avatarPath = 5;//头像路径
+  int32 category = 6;//知识库分类 0:知识库 1:问答库 2:多模态知识库
 }
 
 message QAPairInfo{

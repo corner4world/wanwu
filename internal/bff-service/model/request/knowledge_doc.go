@@ -21,12 +21,15 @@ type DocConfigReq struct {
 }
 
 type DocListReq struct {
-	KnowledgeId string   `json:"knowledgeId" form:"knowledgeId" validate:"required"`
-	DocName     string   `json:"docName" form:"docName"`
-	Status      []int32  `json:"status" form:"status"` // 文档状态：-1-全部， 0-待处理， 1- 处理完成， 2-正在审核中，3-正在解析中，4-审核未通过，5-解析失败
-	MetaValue   string   `json:"metaValue" form:"metaValue"`
-	GraphStatus []int32  `json:"graphStatus" form:"graphStatus"` // 图谱状态：-1.全部 0.待处理 1.解析中 2.解析成功 3.解析失败
-	DocIdList   []string `json:"docIdList" form:"docIdList"`     // 文档id列表，只用于返回所选文档的集合，该值不为空时，其他筛选条件将被忽略
+	KnowledgeId   string   `json:"knowledgeId" form:"knowledgeId" validate:"required"`
+	DocName       string   `json:"docName" form:"docName"`
+	Status        []int32  `json:"status" form:"status"`               // 文档状态：-1-全部， 0-待处理， 1- 处理完成， 2-正在审核中，3-正在解析中，4-审核未通过，5-解析失败
+	MetaType      string   `json:"metaType" form:"metaType"`           // 元数据类型：string/number/time，为空时按旧逻辑(metaValue 模糊匹配，排除 time)
+	MetaValue     string   `json:"metaValue" form:"metaValue"`         // 元数据值，metaType 为 string/number 时使用
+	MetaStartTime string   `json:"metaStartTime" form:"metaStartTime"` // metaType=time 时的起始时间戳(毫秒，字符串)
+	MetaEndTime   string   `json:"metaEndTime" form:"metaEndTime"`     // metaType=time 时的结束时间戳(毫秒，字符串)
+	GraphStatus   []int32  `json:"graphStatus" form:"graphStatus"`     // 图谱状态：-1.全部 0.待处理 1.解析中 2.解析成功 3.解析失败
+	DocIdList     []string `json:"docIdList" form:"docIdList"`         // 文档id列表，只用于返回所选文档的集合，该值不为空时，其他筛选条件将被忽略
 	PageSearch
 	CommonCheck
 }

@@ -1100,7 +1100,17 @@ definitions:
         type: array
       knowledgeId:
         type: string
+      metaEndTime:
+        description: metaType=time 时的结束时间戳(毫秒，字符串)
+        type: string
+      metaStartTime:
+        description: metaType=time 时的起始时间戳(毫秒，字符串)
+        type: string
+      metaType:
+        description: 元数据类型：string/number/time，为空时按旧逻辑(metaValue 模糊匹配，排除 time)
+        type: string
       metaValue:
+        description: 元数据值，metaType 为 string/number 时使用
         type: string
       pageNo:
         type: integer

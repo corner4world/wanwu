@@ -34,12 +34,12 @@ type DocSegment struct {
 }
 
 type DocKnowledgeInfo struct {
-	KnowledgeId     string          `json:"knowledgeId"`
-	KnowledgeName   string          `json:"knowledgeName"`
-	GraphSwitch     int32           `json:"graphSwitch"`
-	ShowGraphReport bool            `json:"showGraphReport"`
-	Description     string          `json:"description"`
-	Keywords        []*KeywordsInfo `json:"keywords"`
+	KnowledgeId     string               `json:"knowledgeId"`
+	KnowledgeName   string               `json:"knowledgeName"`
+	GraphSwitch     int32                `json:"graphSwitch"`
+	ShowGraphReport bool                 `json:"showGraphReport"`
+	Description     string               `json:"description"`
+	Keywords        []*KeywordsInfo      `json:"keywords"`
 	EmbeddingModel  *ModelInfo      `json:"embeddingModel"`
 	LlmModelId      string          `json:"llmModelId"`
 	Category        int32           `json:"category"` // 0: 知识库 1: 问答库 2: 多模态知识库
