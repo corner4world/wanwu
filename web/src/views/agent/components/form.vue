@@ -1560,7 +1560,9 @@ export default {
           })),
         ];
 
-        this.setMaxPicNum(this.editForm.visionConfig.picNum);
+        // 暂时隐藏picNum字段依赖
+        // this.setMaxPicNum(this.editForm.visionConfig.picNum);
+        this.setMaxPicNum(1);
 
         this.$nextTick(() => {
           this.isSettingFromDetail = false;
