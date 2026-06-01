@@ -19,7 +19,7 @@ export const md = MarkdownIt({
       if (lang && hljs.getLanguage(lang)) {
         preCode = hljs.highlight(str, { language: lang }).value;
       } else {
-        preCode = hljs.highlightAuto(str).value;
+        preCode = md.utils.escapeHtml(str);
       }
     } catch (err) {
       preCode = md.utils.escapeHtml(str);
