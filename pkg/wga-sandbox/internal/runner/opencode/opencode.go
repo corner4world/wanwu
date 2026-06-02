@@ -41,6 +41,9 @@ const (
     "*": "allow"{{if .EnableHumanInTheLoop}},
     "question": "ask"{{end}}
   },
+  "agent": {
+    "title": { "disable": true }
+  },
   "provider": {
     "{{.Provider}}": {
       "npm": "@ai-sdk/openai-compatible",
