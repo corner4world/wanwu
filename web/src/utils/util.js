@@ -566,7 +566,7 @@ export function throttle(fn, interval = 100) {
  * @returns {string} 文件类型
  */
 export function getFileType(fileName) {
-  if (!fileName) return 'unsupported';
+  if (!fileName) return 'text';
   const ext = fileName.split('.').pop().toLowerCase();
 
   const typeMap = {
@@ -575,56 +575,10 @@ export function getFileType(fileName) {
     audio: ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma'],
     pdf: ['pdf'],
     ppt: ['ppt', 'pptx'],
-    excel: ['xls', 'xlsx'],
+    excel: ['csv', 'xls', 'xlsx'],
     word: ['doc', 'docx'],
     html: ['html', 'htm'],
     markdown: ['md'],
-    text: [
-      'txt',
-      'json',
-      'js',
-      'ts',
-      'jsx',
-      'tsx',
-      'vue',
-      'py',
-      'java',
-      'go',
-      'rs',
-      'c',
-      'cpp',
-      'h',
-      'hpp',
-      'cs',
-      'rb',
-      'php',
-      'swift',
-      'kt',
-      'scala',
-      'css',
-      'scss',
-      'sass',
-      'less',
-      'xml',
-      'yaml',
-      'yml',
-      'toml',
-      'ini',
-      'conf',
-      'cfg',
-      'sh',
-      'bash',
-      'zsh',
-      'bat',
-      'sql',
-      'dockerfile',
-      'makefile',
-      'r',
-      'm',
-      'lua',
-      'pl',
-      'pm',
-    ],
   };
 
   for (const [type, exts] of Object.entries(typeMap)) {
@@ -633,7 +587,7 @@ export function getFileType(fileName) {
     }
   }
 
-  return 'unsupported';
+  return 'text';
 }
 
 /**

@@ -961,7 +961,9 @@ export default {
           );
           this.metaDataList = res.data.metaDataList;
           if (res.data?.downloadUrl) {
-            this.previewFileName = this.obj.name;
+            const fileName = this.obj.name;
+            const hasExtension = fileName.includes('.');
+            this.previewFileName = hasExtension ? fileName : `${fileName}.url`;
             try {
               const response = await fetch(res.data.downloadUrl);
               if (response.ok) {

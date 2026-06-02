@@ -90,7 +90,7 @@
           <div class="toolbar-left"></div>
           <div class="toolbar-right">
             <GAFileUpload
-              :fileTypeArr="['doc/*', 'md', 'image/*']"
+              :fileTypeArr="['doc/*', 'image/*', 'audio/*']"
               type="wga"
               @setFileId="handleSetFileId"
             >
