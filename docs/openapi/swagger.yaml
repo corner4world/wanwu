@@ -1510,6 +1510,25 @@ definitions:
     - query
     - uuid
     type: object
+  request.OpenAPIUpdateAgentRequest:
+    properties:
+      assistantUuid:
+        description: 智能体UUID
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 图标
+      desc:
+        description: 描述
+        type: string
+      name:
+        description: 名称
+        type: string
+    required:
+    - assistantUuid
+    - name
+    type: object
   request.OpenAPIWorkflowRunReq:
     properties:
       parameters:
@@ -2776,6 +2795,28 @@ paths:
                   $ref: '#/definitions/response.OpenAPICreateAgentResponse'
               type: object
       summary: 创建智能体OpenAPI
+      tags:
+      - openapi
+    put:
+      consumes:
+      - application/json
+      description: 修改智能体的名称、描述、图标等基本信息（不涉及开场白、大模型等高级配置，后者请使用 /agent/config）。通过 assistantUuid
+        定位智能体。
+      parameters:
+      - description: 请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.OpenAPIUpdateAgentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 更新智能体基本信息OpenAPI
       tags:
       - openapi
   /agent/chat:

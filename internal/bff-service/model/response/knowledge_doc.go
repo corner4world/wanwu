@@ -84,6 +84,7 @@ type DocSegmentResp struct {
 	SegmentImportStatus string                 `json:"segmentImportStatus"` //分段导入状态描述
 	SegmentMethod       string                 `json:"segmentMethod"`       //分段方式 父子分段/通用分段
 	DocAnalyzerText     []*DocAnalyzerTextInfo `json:"docAnalyzerText"`     //文档解析类型 文字提取 / OCR解析  / 模型解析
+	DownloadUrl         string                 `json:"downloadUrl"`         //文档对外下载地址
 }
 
 type DocAnalyzerTextInfo struct {

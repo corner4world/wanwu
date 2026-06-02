@@ -37,6 +37,38 @@ const docTemplate = `{
             }
         },
         "/agent": {
+            "put": {
+                "description": "修改智能体的名称、描述、图标等基本信息（不涉及开场白、大模型等高级配置，后者请使用 /agent/config）。通过 assistantUuid 定位智能体。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "更新智能体基本信息OpenAPI",
+                "parameters": [
+                    {
+                        "description": "请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.OpenAPIUpdateAgentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "创建智能体OpenAPI",
                 "consumes": [
@@ -4353,6 +4385,35 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.OpenAPIUpdateAgentRequest": {
+            "type": "object",
+            "required": [
+                "assistantUuid",
+                "name"
+            ],
+            "properties": {
+                "assistantUuid": {
+                    "description": "智能体UUID",
+                    "type": "string"
+                },
+                "avatar": {
+                    "description": "图标",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "desc": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "名称",
                     "type": "string"
                 }
             }

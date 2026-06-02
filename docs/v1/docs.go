@@ -28736,6 +28736,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/response.DocAnalyzerTextInfo"
                     }
                 },
+                "downloadUrl": {
+                    "description": "文档对外下载地址",
+                    "type": "string"
+                },
                 "fileName": {
                     "description": "名称",
                     "type": "string"

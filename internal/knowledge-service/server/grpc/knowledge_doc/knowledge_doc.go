@@ -1122,8 +1122,19 @@ func buildSegmentListResp(importTask *model.KnowledgeImportTask, doc *model.Know
 		AsrModelId:          analyzer.AsrModelId,
 		MultimodalModelId:   analyzer.MultimodalModelId,
 		ParserModelId:       importTask.OcrModelId,
+		DownloadUrl:         buildDownloadUrl(segmentListResp.List),
 	}
 	return resp, nil
+}
+
+// buildDownloadUrl 取分段元数据里的文档下载地址（整篇文档同一个文件，取首个非空即可）
+func buildDownloadUrl(contentList []service.FileSplitContent) string {
+	for _, c := range contentList {
+		if c.MetaData.DownloadLink != "" {
+			return c.MetaData.DownloadLink
+		}
+	}
+	return ""
 }
 
 // replaceAnalyzerByFileType 根据不同文件类型，替换文件解析方式

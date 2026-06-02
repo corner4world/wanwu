@@ -99,13 +99,30 @@ func checkOneFile(ctx context.Context, importTask *model.KnowledgeImportTask, do
 		log.Errorf("文件 '%s' 大小超过限制(%v)", doc.DocName, err)
 		return false, util.KnowledgeImportFileSizeErr
 	}
-	//3.文档重名校验
+	//3.文件名合法性校验
+	if !isSafeFileName(doc.DocName) {
+		log.Errorf("文件 '%s' 文件名非法", doc.DocName)
+		return false, util.KnowledgeImportInvalidNameErr
+	}
+	//4.文档重名校验
 	err = orm.CheckKnowledgeDocSameName(ctx, importTask.UserId, importTask.KnowledgeId, doc.DocName, "", "")
 	if err != nil {
 		log.Errorf("文件 '%s' 判断文档重名失败(%v)", doc.DocName, err)
 		return false, util.KnowledgeImportSameNameErr
 	}
 	return true, ""
+}
+
+// isSafeFileName 校验文件名是否合法
+// 文件名中不能包含斜杠 /、反斜杠 \、或连续两个点 ..
+func isSafeFileName(name string) bool {
+	if strings.Contains(name, "/") || strings.Contains(name, "\\") {
+		return false
+	}
+	if strings.Contains(name, "..") {
+		return false
+	}
+	return true
 }
 
 // 校验单个文件大小限制

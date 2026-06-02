@@ -9,6 +9,7 @@ const (
 	KnowledgeImportFileFormatErr    = "know_doc_unsupported_file_format"
 	KnowledgeImportFileSizeErr      = "know_doc_file_size_exceed"
 	KnowledgeImportSameNameErr      = "know_same_name_validation_fail"
+	KnowledgeImportInvalidNameErr   = "know_doc_invalid_file_name"
 	KnowledgeDocLastFailureErr      = "know_doc_last_failure_info"
 	KnowledgeDocParsingServiceErr   = "know_doc_parsing_service_error"
 	KnowledgeDocVectorDuplicateErr  = "know_doc_vector_duplicate_error"

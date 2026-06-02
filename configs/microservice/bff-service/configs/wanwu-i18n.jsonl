@@ -45,13 +45,6 @@
 {"code":110000,"key":"bff_user_cannot_create_other","langs":{"en":"cannot create user","zh":"无法新增用户"}}
 {"code":110000,"key":"bff_user_cannot_change_status","langs":{"en":"cannot modify user status","zh":"无法修改用户状态"}}
 {"code":110000,"key":"bff_user_cannot_change_password","langs":{"en":"cannot modify user's password","zh":"无法修改密码"}}
-{"code":110000,"key":"bff_skill_acquired_no_permission","langs":{"en":"no permission to access this skill","zh":"当前无权限访问该技能"}}
-{"code":110000,"key":"bff_skill_acquired_source_inaccessible","langs":{"en":"source skill not found","zh":"源技能不存在"}}
-{"code":110000,"key":"bff_skill_acquired_source_id_empty","langs":{"en":"source skill id is empty","zh":"源技能ID为空"}}
-{"code":110000,"key":"bff_skill_builtin_not_found","langs":{"en":"builtin skill not found","zh":"内置技能不存在"}}
-{"code":110000,"key":"bff_skill_custom_not_found","langs":{"en":"custom skill not found","zh":"自定义技能不存在"}}
-{"code":110000,"key":"bff_skill_acquired_not_found","langs":{"en":"acquired skill not found","zh":"已添加技能不存在"}}
-{"code":110000,"key":"bff_skill_not_owned","langs":{"en":"skill not found or not owned by current user","zh":"技能不存在或不属于当前用户"}}
 {"code":110000,"key":"bff_user_batch_import_file","langs":{"zh":"批量创建用户失败: %v"}}
 {"code":0,"key":"------ file upload ------","langs":{}}
 {"code":110000,"key":"bff_file_upload_check","langs":{"en":"file verification failed, please try again later!","zh":"文件校验失败，请稍后重试！(%v)"}}
@@ -128,12 +121,48 @@
 {"code":110000,"key":"bff_model_perm","langs":{"zh":"模型(%v)权限校验失败，请更换模型重试"}}
 {"code":110011,"key":"","langs":{"zh":"模型(%v)已禁用"}}
 {"code":110012,"key":"","langs":{"zh":"Skill解析错误: %v"}}
+{"code":0,"key":"------ skill ------","langs":{}}
+{"code":110000,"key":"bff_skill_acquired_no_permission","langs":{"en":"No permission to access this skill.","zh":"当前无权限访问该技能"}}
+{"code":110000,"key":"bff_skill_acquired_source_inaccessible","langs":{"en":"source skill not found","zh":"源技能不存在"}}
+{"code":110000,"key":"bff_skill_acquired_source_id_empty","langs":{"en":"source skill id is empty","zh":"源技能ID为空"}}
+{"code":110000,"key":"bff_skill_builtin_not_found","langs":{"en":"builtin skill not found","zh":"内置技能不存在"}}
+{"code":110000,"key":"bff_skill_custom_not_found","langs":{"en":"custom skill not found","zh":"自定义技能不存在"}}
+{"code":110000,"key":"bff_skill_acquired_not_found","langs":{"en":"acquired skill not found","zh":"已添加技能不存在"}}
+{"code":110000,"key":"bff_skill_not_owned","langs":{"en":"skill not found or not owned by current user","zh":"技能不存在或不属于当前用户"}}
+{"code":110000,"key":"bff_skill_workspace_not_found","langs":{"en":"skill workspace not found","zh":"技能工作区不存在"}}
+{"code":110000,"key":"bff_skill_workspace_get_dir_failed","langs":{"en":"get skill dir failed","zh":"获取技能目录失败"}}
+{"code":110000,"key":"bff_skill_workspace_init_git_failed","langs":{"en":"init git repo failed","zh":"初始化git仓库失败"}}
+{"code":110000,"key":"bff_skill_workspace_git_not_initialized","langs":{"en":"git repository not initialized","zh":"git仓库未初始化"}}
+{"code":110000,"key":"bff_skill_workspace_build_file_tree_failed","langs":{"en":"build file tree failed","zh":"构建文件树失败"}}
+{"code":110000,"key":"bff_skill_workspace_file_not_found","langs":{"en":"file not found","zh":"文件不存在"}}
+{"code":110000,"key":"bff_skill_workspace_stat_file_failed","langs":{"en":"stat file failed","zh":"获取文件信息失败"}}
+{"code":110000,"key":"bff_skill_workspace_path_is_directory","langs":{"en":"path is a directory","zh":"路径是目录"}}
+{"code":110000,"key":"bff_skill_workspace_file_too_large","langs":{"en":"file too large","zh":"文件过大"}}
+{"code":110000,"key":"bff_skill_workspace_read_file_failed","langs":{"en":"read file failed","zh":"读取文件失败"}}
+{"code":110000,"key":"bff_skill_workspace_create_dir_failed","langs":{"en":"create dir failed","zh":"创建目录失败"}}
+{"code":110000,"key":"bff_skill_workspace_write_file_failed","langs":{"en":"write file failed","zh":"写入文件失败"}}
+{"code":110000,"key":"bff_skill_workspace_get_diff_failed","langs":{"en":"get diff failed","zh":"获取差异失败"}}
+{"code":110000,"key":"bff_skill_workspace_resolve_path_failed","langs":{"en":"resolve file path failed","zh":"解析文件路径失败"}}
+{"code":110000,"key":"bff_skill_workspace_get_head_commit_failed","langs":{"en":"get head commit failed","zh":"获取HEAD提交失败"}}
+{"code":110000,"key":"bff_skill_workspace_get_file_content_failed","langs":{"en":"get file content failed","zh":"获取文件内容失败"}}
+{"code":110000,"key":"bff_skill_workspace_get_file_diff_failed","langs":{"en":"get file diff failed","zh":"获取文件差异失败"}}
+{"code":110000,"key":"bff_skill_workspace_git_status_failed","langs":{"en":"git status failed","zh":"git状态查询失败"}}
+{"code":110000,"key":"bff_skill_workspace_git_add_failed","langs":{"en":"git add failed","zh":"git暂存失败"}}
+{"code":110000,"key":"bff_skill_workspace_git_reset_failed","langs":{"en":"git reset failed","zh":"git取消暂存失败"}}
+{"code":110000,"key":"bff_skill_workspace_git_commit_failed","langs":{"en":"git commit failed","zh":"git提交失败"}}
+{"code":110000,"key":"bff_skill_workspace_git_diff_failed","langs":{"en":"git diff failed","zh":"git差异查询失败"}}
+{"code":110000,"key":"bff_skill_workspace_git_diff_staged_failed","langs":{"en":"git diff --cached failed","zh":"git已暂存差异查询失败"}}
+{"code":110000,"key":"bff_skill_workspace_search_failed","langs":{"en":"search failed","zh":"搜索失败"}}
+{"code":110000,"key":"bff_skill_workspace_check_git_status_failed","langs":{"en":"check git status failed","zh":"检查git状态失败"}}
+{"code":110000,"key":"bff_skill_uncommitted_changes","langs":{"en":"workspace has uncommitted changes please commit before publishing","zh":"工作区有未提交的更改请先提交后再发布"}}
+{"code":110000,"key":"bff_skill_version_exists","langs":{"en":"version already exists please use another version","zh":"版本已存在请使用其他版本号"}}
 {"code":0,"key":"------ custom ------","langs":{}}
 {"code":0,"key":"bff_custom_home_title","langs":{"en":"Yuanjing Wanwu Intelligent Body Platform","zh":"元景万悟智能体平台"}}
 {"code":0,"key":"bff_custom_tab_title","langs":{"en":"Yuanjing Wanwu","zh":"元景万悟"}}
 {"code":0,"key":"bff_custom_login_welcome_text","langs":{"en":"Hi! Welcome to Yuanjing Wanwu Intelligent Body Platform","zh":"嗨！欢迎来到元景万悟智能体平台"}}
 {"code":0,"key":"bff_custom_about_copyright","langs":{"zh":"© 大模型开源平台"}}
 {"code":0,"key":"bff_custom_login_platform_desc","langs":{}}
+{"code":0,"key":"bff_custom_general_agent_welcome","langs":{"en":"Hi, I am Wanwu","zh":"你好，我是万悟"}}
 {"code":120002,"key":"iam_captcha_refresh","langs":{"en":"refresh but key or code empty","zh":"刷新验证码时 key 或 code 为空"}}
 {"code":120002,"key":"iam_captcha_create","langs":{"en":"code not created,  please refresh: %v","zh":"验证码未生成，请刷新: %v"}}
 {"code":120002,"key":"iam_captcha_check","langs":{"en":"check captcha but key or code empty","zh":"检查验证码时 key 或 code 为空"}}
@@ -230,6 +259,7 @@
 {"code":140001,"key":"know_doc_file_import_failed","langs":{"zh":"文件导入异常"}}
 {"code":140001,"key":"know_qa_pair_count_exceed","langs":{"zh":"问答对数量超过限制"}}
 {"code":140001,"key":"know_same_name_validation_fail","langs":{"zh":"已存在同名文件，请更改名字后重试"}}
+{"code":140001,"key":"know_doc_invalid_file_name","langs":{"zh":"文件名不合法：不能包含斜杠（/）、反斜杠（\\）或连续两个点（..），请修改后重试"}}
 {"code":140001,"key":"know_doc_last_failure_info","langs":{"zh":"最近一次失败信息：%v"}}
 {"code":140001,"key":"know_doc_parsing_service_error","langs":{"zh":"文件解析服务异常"}}
 {"code":140001,"key":"know_doc_file_unusable","langs":{"zh":"文件不可用，需确保文件格式正确、无加密情况、文件能正常打开"}}
@@ -269,6 +299,7 @@
 {"code":142014,"key":"","langs":{"zh":"文档更新配置失败，请稍后重试"}}
 {"code":142015,"key":"","langs":{"zh":"存在非处理完成状态文档，请重新选择文档后重试"}}
 {"code":142016,"key":"","langs":{"zh":"该文档不存在"}}
+{"code":142017,"key":"","langs":{"zh":"文档部分删除失败，请稍后重试"}}
 {"code":143001,"key":"","langs":{"zh":"新建标签失败，请稍后重试"}}
 {"code":143002,"key":"","langs":{"zh":"删除标签失败，请稍后重试"}}
 {"code":143003,"key":"","langs":{"zh":"修改标签失败，请稍后重试"}}
@@ -327,6 +358,7 @@
 {"code":148011,"key":"","langs":{"zh":"获取导出记录列表失败，请稍后重试"}}
 {"code":148012,"key":"","langs":{"zh":"删除导出记录失败，请稍后重试"}}
 {"code":148013,"key":"","langs":{"zh":"获取问答库文档任务详情失败，请稍后重试"}}
+{"code":148014,"key":"","langs":{"zh":"该导出记录不存在"}}
 {"code":149001,"key":"","langs":{"zh":"新建外部知识库API失败，请稍后重试"}}
 {"code":149002,"key":"","langs":{"zh":"删除外部知识库API失败，请稍后重试"}}
 {"code":149003,"key":"","langs":{"zh":"修改外部知识库API失败，请稍后重试"}}

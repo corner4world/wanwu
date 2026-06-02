@@ -256,6 +256,7 @@ message DocSegmentListResp{
   string asrModelId = 13;// ASR模型ID
   string multimodalModelId = 14;// 图文问答模型ID
   string parserModelId = 15;// OCR/模型解析 模型ID
+  string downloadUrl = 16;// 文档对外下载地址(RAG 返回的可用链接)
 }
 
 message SegmentContent{
