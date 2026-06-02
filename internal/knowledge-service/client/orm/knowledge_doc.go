@@ -765,33 +765,34 @@ func InitDocStatus(ctx context.Context, userId, orgId string) error {
 }
 
 // DeleteDocByIdList 删除文档
-func DeleteDocByIdList(ctx context.Context, idList []uint32, resultDocList []*model.KnowledgeDoc) error {
-	return db.GetHandle(ctx).Transaction(func(tx *gorm.DB) error {
-		//1.逻辑删除数据
-		err := logicDeleteDocByIdList(tx, idList)
+func DeleteDocByIdList(ctx context.Context, knowledge *model.KnowledgeBase, resultDocList []*model.KnowledgeDoc) error {
+	//删除 rag 文档,从性能上考虑,不应该循环里加事务，但是，底层不提供批量删除接口，为了用户更好的效果，只能这么处理
+	//考虑到删除并不是一个高频操作，先这么处理
+	var successDocIdList []uint32
+	var deleteFail = false
+	for _, doc := range resultDocList {
+		err := deleteDocAndRag(ctx, knowledge, doc)
 		if err != nil {
-			return err
+			log.Errorf("delete doc fail %v", err)
+			deleteFail = true
+			break
 		}
-		err = DeleteKnowledgeFileInfo(tx, resultDocList[0].KnowledgeId, buildDocInfoList(resultDocList))
-		//2.更新知识库条数
-		if err != nil {
-			return err
-		}
-		//3.异步执行删除数据
-		return async_task.SubmitTask(ctx, async_task.DocDeleteTaskType, &async_task.DocDeleteParams{
-			DocIdList: idList,
-		})
-	})
-}
-
-func buildDocInfoList(docList []*model.KnowledgeDoc) []*model.DocInfo {
-	var retList []*model.DocInfo
-	for _, doc := range docList {
-		retList = append(retList, &model.DocInfo{
-			DocSize: doc.FileSize,
+		successDocIdList = append(successDocIdList, doc.Id)
+	}
+	if len(successDocIdList) > 0 {
+		//异步执行删除数据
+		_ = async_task.SubmitTask(ctx, async_task.DocDeleteTaskType, &async_task.DocDeleteParams{
+			DocIdList: successDocIdList,
 		})
 	}
-	return retList
+	//删除失败，处理失败消息
+	if deleteFail {
+		if len(successDocIdList) > 0 {
+			return util.ErrCode(errs.Code_KnowledgeDocDeletePartFailed)
+		}
+		return util.ErrCode(errs.Code_KnowledgeDocDeleteFailed)
+	}
+	return nil
 }
 
 // ExecuteDeleteDocByIdList 执行删除
@@ -799,12 +800,37 @@ func ExecuteDeleteDocByIdList(tx *gorm.DB, idList []uint32) error {
 	return tx.Unscoped().Where("id IN ?", idList).Delete(&model.KnowledgeDoc{}).Error
 }
 
-// logicDeleteDocByIdList 逻辑删除
-func logicDeleteDocByIdList(tx *gorm.DB, idList []uint32) error {
-	var updateParams = map[string]interface{}{
-		"deleted": 1,
-	}
-	return tx.Model(&model.KnowledgeDoc{}).Where("id IN ?", idList).Updates(updateParams).Error
+func deleteDocAndRag(ctx context.Context, knowledge *model.KnowledgeBase, knowledgeDoc *model.KnowledgeDoc) error {
+	return db.GetHandle(ctx).Transaction(func(tx *gorm.DB) error {
+		//1.逻辑删除数据
+		var updateParams = map[string]interface{}{
+			"deleted": 1,
+		}
+		err := tx.Model(&model.KnowledgeDoc{}).Where("id = ?", knowledgeDoc.Id).Updates(updateParams).Error
+		if err != nil {
+			return err
+		}
+		err = DeleteKnowledgeFileInfo(tx, knowledge.KnowledgeId, []*model.DocInfo{{
+			DocSize: knowledgeDoc.FileSize,
+		}})
+		//2.更新知识库条数
+		if err != nil {
+			return err
+		}
+		if knowledgeDoc.ErrorMsg == util.KnowledgeImportSameNameErr {
+			log.Infof("同名错误文件删除不删除rag，id: %s， name: %s", knowledgeDoc.DocId, knowledgeDoc.Name)
+			return nil
+		}
+		//3.删除 rag 文档
+		var fileName = service.RebuildFileName(knowledgeDoc.DocId, knowledgeDoc.FileType, knowledgeDoc.Name)
+		err = service.RagDeleteDoc(context.Background(), &service.RagDeleteDocParams{
+			UserId:          knowledge.UserId,
+			KnowledgeBaseId: knowledge.KnowledgeId,
+			KnowledgeBase:   knowledge.RagName,
+			FileName:        fileName,
+		})
+		return err
+	})
 }
 
 // createKnowledgeDoc 插入数据

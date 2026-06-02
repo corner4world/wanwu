@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/UnicomAI/wanwu/internal/knowledge-service/service"
 	"sync"
 
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/client/orm"
 	async_task_pkg "github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/async-task"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/db"
-	"github.com/UnicomAI/wanwu/internal/knowledge-service/service"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	async "github.com/gromitlee/go-async"
@@ -140,6 +140,20 @@ func deleteKnowledgeByKnowledgeId(ctx context.Context, taskCtx string) Result {
 
 	//4.事务执行删除数据
 	err = db.GetClient().DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err = orm.ExecuteDeleteKnowledge(tx, knowledge.Id)
+		if err != nil {
+			return err
+		}
+
+		err := service.RagKnowledgeDelete(ctx, &service.RagDeleteParams{
+			UserId:            knowledge.UserId,
+			KnowledgeBaseName: knowledge.RagName,
+			KnowledgeId:       knowledge.KnowledgeId,
+		})
+		if err != nil {
+			return err
+		}
+
 		if len(docList) > 0 {
 			err := BatchDeleteAllDoc(ctx, tx, knowledge, docList)
 			if err != nil {
@@ -153,19 +167,8 @@ func deleteKnowledgeByKnowledgeId(ctx context.Context, taskCtx string) Result {
 				return err
 			}
 		}
-		err := service.RagKnowledgeDelete(ctx, &service.RagDeleteParams{
-			UserId:            knowledge.UserId,
-			KnowledgeBaseName: knowledge.RagName,
-			KnowledgeId:       knowledge.KnowledgeId,
-		})
-		if err != nil {
-			return err
-		}
+
 		err = orm.ExecuteDeleteKnowledgeMeta(tx, knowledge.KnowledgeId)
-		if err != nil {
-			return err
-		}
-		err = orm.ExecuteDeleteKnowledge(tx, knowledge.Id)
 		if err != nil {
 			return err
 		}

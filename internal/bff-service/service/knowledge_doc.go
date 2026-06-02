@@ -303,9 +303,10 @@ func GetDocImportTip(ctx *gin.Context, userId, orgId string, r *request.QueryKno
 
 func DeleteDoc(ctx *gin.Context, userId, orgId string, r *request.DeleteDocReq) error {
 	_, err := knowledgeBaseDoc.DeleteDoc(ctx.Request.Context(), &knowledgebase_doc_service.DeleteDocReq{
-		Ids:    r.DocIdList,
-		UserId: userId,
-		OrgId:  orgId,
+		Ids:         r.DocIdList,
+		UserId:      userId,
+		OrgId:       orgId,
+		KnowledgeId: r.KnowledgeId,
 	})
 	return err
 }

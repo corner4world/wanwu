@@ -520,23 +520,29 @@ func (s *Service) InitDocStatus(ctx context.Context, req *knowledgebase_doc_serv
 }
 
 func (s *Service) DeleteDoc(ctx context.Context, req *knowledgebase_doc_service.DeleteDocReq) (*emptypb.Empty, error) {
-	//1.查询文档详情
+	//1.查询知识库详情
+	knowledge, err := orm.SelectKnowledgeById(ctx, req.KnowledgeId, "", "")
+	if err != nil {
+		log.Errorf("没有操作该知识库的权限 参数(%v)", req)
+		return nil, err
+	}
+	//2.查询文档详情
 	docList, err := orm.SelectDocByDocIdList(ctx, req.Ids, "", "")
 	if err != nil {
 		log.Errorf("没有操作该知识库的权限 参数(%v)", req)
 		return nil, err
 	}
-	//2.校验导入状态
-	docIdList, resultDocList, err := checkDocStatus(docList)
+	//3.校验导入状态
+	resultDocList, err := checkDocStatus(docList)
 	if err != nil {
 		log.Errorf("删除知识库文件失败 error %v params %v", err, req)
 		return nil, util.ErrCode(errs.Code_KnowledgeDocDeleteDuringParse)
 	}
-	if len(docIdList) == 0 {
+	if len(resultDocList) == 0 {
 		return &emptypb.Empty{}, nil
 	}
-	//3.删除文档
-	err = orm.DeleteDocByIdList(ctx, docIdList, resultDocList)
+	//4.删除文档
+	err = orm.DeleteDocByIdList(ctx, knowledge, resultDocList)
 	if err != nil {
 		log.Errorf("删除知识库文件失败 error %v params %v", err, req)
 		return nil, util.ErrCode(errs.Code_KnowledgeDocDeleteFailed)
@@ -701,18 +707,16 @@ func buildFileTypeLimit(fileType, extStr string) *knowledgebase_doc_service.File
 	}
 }
 
-func checkDocStatus(docList []*model.KnowledgeDoc) ([]uint32, []*model.KnowledgeDoc, error) {
+func checkDocStatus(docList []*model.KnowledgeDoc) ([]*model.KnowledgeDoc, error) {
 	analyzingStatusList := util.BuildAnalyzingStatus()
-	var docIdList []uint32
 	var docResultList []*model.KnowledgeDoc
 	for _, doc := range docList {
 		if lo.Contains(analyzingStatusList, doc.Status) {
-			return nil, nil, errors.New("解析中的文档无法删除")
+			return nil, errors.New("解析中的文档无法删除")
 		}
-		docIdList = append(docIdList, doc.Id)
 		docResultList = append(docResultList, doc)
 	}
-	return docIdList, docResultList, nil
+	return docResultList, nil
 }
 
 // buildDocListResp 构造知识库文档列表

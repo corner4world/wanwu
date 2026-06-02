@@ -205,6 +205,7 @@ message DeleteDocReq{
   repeated string ids = 1;
   string userId = 2;
   string orgId = 3;
+  string knowledgeId = 4;
 }
 
 
