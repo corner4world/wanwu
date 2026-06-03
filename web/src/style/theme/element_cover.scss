@@ -461,3 +461,8 @@
     }
   }
 }
+
+.el-tooltip__popper {
+  max-width: 300px;
+  word-break: break-all;
+}

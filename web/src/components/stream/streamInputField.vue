@@ -31,7 +31,7 @@
           <el-image
             class="echo-img"
             :src="file.fileUrl"
-            :preview-src-list="[file.imgUrl]"
+            :preview-src-list="[file.imgUrl || file.fileUrl]"
           ></el-image>
           <i class="el-icon-close echo-close" @click.stop="removeFile(i)"></i>
           <span
