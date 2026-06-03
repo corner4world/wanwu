@@ -16,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	http_client "github.com/UnicomAI/wanwu/internal/rag-service/pkg/http-client"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
@@ -94,6 +93,7 @@ func newHttpClient() *http.Client {
 					Timeout:   connectTimeout, // 连接超时时间
 					KeepAlive: timeout,        // 连接保持活跃的时间
 				}).DialContext,
+				MaxIdleConnsPerHost:   100,
 				ResponseHeaderTimeout: timeout,
 			},
 		},
@@ -405,7 +405,7 @@ func LogHttpRequest(ctx context.Context, business string, method string, request
 	var paramsMap = make(map[string]interface{})
 	paramsMap["url"] = requestURL
 	paramsMap["requestBody"] = params
-	http_client.LogRpcJson(ctx, business, "HTTP-"+method, paramsMap, result, err, starTimestamp)
+	LogRpcJson(ctx, business, "HTTP-"+method, paramsMap, result, err, starTimestamp)
 }
 
 func LogRpcJson(ctx context.Context, business string, method string, params interface{}, result interface{}, err error, starTimestamp int64) {

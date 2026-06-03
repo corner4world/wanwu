@@ -17,7 +17,7 @@ import (
 	rag_service "github.com/UnicomAI/wanwu/api/proto/rag-service"
 	"github.com/UnicomAI/wanwu/internal/rag-service/client/model"
 	"github.com/UnicomAI/wanwu/internal/rag-service/config"
-	http_client "github.com/UnicomAI/wanwu/internal/rag-service/pkg/http-client"
+	http_client "github.com/UnicomAI/wanwu/pkg/http-client"
 	"github.com/UnicomAI/wanwu/pkg/log"
 )
 
@@ -117,7 +117,7 @@ func requestRagStreamChat(ctx context.Context, userId string, req *RagChatParams
 		log.Errorf("build http params fail %s", err.Error())
 		return nil, err
 	}
-	sseResp, err := http_client.GetClient().PostJsonOriResp(ctx, params)
+	sseResp, err := http_client.Default().PostJsonOriResp(ctx, params)
 	if err != nil {
 		log.Errorf("error: 调用下游服务异常: %v", err)
 		return nil, fmt.Errorf("error: 调用下游服务异常: %v", err)
