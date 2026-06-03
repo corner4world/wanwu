@@ -6,7 +6,7 @@
         <span class="card-title">{{ $t('infoSetting.tabSet') }}</span>
       </div>
       <el-form
-        label-width="120px"
+        label-width="150px"
         :model="tabForm"
         :rules="tabRules"
         ref="tabForm"
@@ -71,7 +71,7 @@
         <span class="card-title">{{ $t('infoSetting.loginBgSet') }}</span>
       </div>
       <el-form
-        label-width="120px"
+        label-width="150px"
         :model="loginForm"
         :rules="loginRules"
         ref="loginForm"
@@ -191,7 +191,7 @@
       <div slot="header">
         <span class="card-title">{{ $t('infoSetting.platformSet') }}</span>
       </div>
-      <el-form label-width="120px" :model="form" :rules="rules" ref="form">
+      <el-form ref="form" :model="form" :rules="rules" label-width="150px">
         <el-form-item
           :label="$t('infoSetting.form.platformTitle')"
           prop="homeName"
@@ -279,6 +279,89 @@
         </el-button>
       </div>
     </el-card>
+    <!--通用智能体配置-->
+    <el-card class="docPage-card" shadow="never">
+      <div slot="header">
+        <span class="card-title">{{ $t('infoSetting.generalAgentSet') }}</span>
+      </div>
+      <el-form
+        ref="generalAgentForm"
+        :model="generalAgentForm"
+        :rules="generalAgentRules"
+        label-width="150px"
+      >
+        <el-form-item
+          :label="$t('infoSetting.form.generalAgentMenuName')"
+          prop="generalAgentMenuName"
+        >
+          <el-input
+            v-model="generalAgentForm.generalAgentMenuName"
+            style="width: 300px"
+          />
+          <div style="font-size: 11px; color: #aaa; margin-top: -9px">
+            {{ $t('infoSetting.hint.generalAgentMenuName') }}
+          </div>
+        </el-form-item>
+        <el-form-item
+          :label="$t('infoSetting.form.generalAgentIcon')"
+          prop="generalAgentIcon"
+        >
+          <el-upload
+            :http-request="handleUploadGeneralAgentIcon"
+            :on-error="handleUploadError"
+            :show-file-list="false"
+            accept=".png,.jpg,.jpeg"
+            action=""
+            class="avatar-uploader"
+            name="files"
+          >
+            <img
+              v-if="generalAgentForm.generalAgentIcon.path"
+              :src="getLogoPath(generalAgentForm.generalAgentIcon.path)"
+              class="avatar"
+            />
+            <i
+              v-if="!generalAgentForm.generalAgentIcon.path"
+              class="el-icon-plus avatar-uploader-icon"
+            ></i>
+            <span style="margin-left: 12px; color: #aaa !important">
+              {{ $t('infoSetting.hint.imgUpload') }}
+            </span>
+            <div
+              style="
+                text-align: left;
+                font-size: 11px;
+                color: #aaa;
+                margin-top: -9px;
+              "
+            >
+              {{ $t('infoSetting.hint.generalAgentIcon') }}
+            </div>
+          </el-upload>
+        </el-form-item>
+        <el-form-item
+          :label="$t('infoSetting.form.generalAgentWelcome')"
+          prop="generalAgentWelcome"
+        >
+          <el-input
+            v-model="generalAgentForm.generalAgentWelcome"
+            style="width: 300px"
+          />
+          <div style="font-size: 11px; color: #aaa; margin-top: -9px">
+            {{ $t('infoSetting.hint.generalAgentWelcome') }}
+          </div>
+        </el-form-item>
+      </el-form>
+      <div class="card-footer">
+        <el-button
+          :loading="generalAgentLoading"
+          type="primary"
+          @click="handleSubmitGeneralAgent()"
+        >
+          {{ $t('infoSetting.form.save') }}
+        </el-button>
+      </div>
+    </el-card>
   </div>
 </template>
 <script>
@@ -301,6 +384,7 @@ export default {
       tabLoading: false,
       homeLoading: false,
       loginLoading: false,
+      generalAgentLoading: false,
       tabForm: {
         tabTitle: '',
         tabLogo: {},
@@ -315,6 +399,11 @@ export default {
         loginLogo: {},
         loginButtonColor: '',
         loginWelcomeText: '',
+      },
+      generalAgentForm: {
+        generalAgentIcon: {},
+        generalAgentMenuName: '',
+        generalAgentWelcome: '',
       },
       radio: '0',
       tabRules: {
@@ -390,6 +479,33 @@ export default {
           },
         ],
       },
+      generalAgentRules: {
+        generalAgentMenuName: [
+          {
+            required: true,
+            message: this.$t('common.input.placeholder'),
+            trigger: 'blur',
+          },
+        ],
+        generalAgentIcon: [
+          {
+            required: true,
+            validator: (...params) =>
+              checkImage(
+                this.generalAgentForm.generalAgentIcon.path,
+                ...params,
+              ),
+            trigger: 'change',
+          },
+        ],
+        generalAgentWelcome: [
+          {
+            required: true,
+            message: this.$t('common.input.placeholder'),
+            trigger: 'blur',
+          },
+        ],
+      },
     };
   },
   created() {
@@ -398,7 +514,12 @@ export default {
   watch: {
     commonInfo: {
       handler(val) {
-        const { home = {}, tab = {}, login = {} } = val ? val.data || {} : {};
+        const {
+          home = {},
+          tab = {},
+          login = {},
+          generalAgent = {},
+        } = val ? val.data || {} : {};
 
         this.tabForm.tabTitle = tab.title;
         this.tabForm.tabLogo = tab.logo || {};
@@ -413,6 +534,12 @@ export default {
         this.loginForm.loginLogo = login.logo || {};
         this.loginForm.loginWelcomeText = login.welcomeText || '';
         this.loginForm.loginButtonColor = login.loginButtonColor || '';
+
+        this.generalAgentForm.generalAgentIcon = generalAgent.logo || {};
+        this.generalAgentForm.generalAgentMenuName =
+          generalAgent.menuName || '';
+        this.generalAgentForm.generalAgentWelcome =
+          generalAgent.welcomeText || '';
       },
       deep: true,
     },
@@ -459,6 +586,13 @@ export default {
         });
       }
     },
+    handleUploadGeneralAgentIcon(data) {
+      if (data.file) {
+        this.uploadAvatar(data.file).then(res => {
+          this.generalAgentForm.generalAgentIcon = res.data || {};
+        });
+      }
+    },
     handleUploadError() {
       this.$message.error(this.$t('common.message.uploadError'));
     },
@@ -486,6 +620,11 @@ export default {
     handelSubmitLogin() {
       this.$refs.loginForm.validate(valid => {
         if (valid) this.submitData('login', this.loginForm);
+      });
+    },
+    handleSubmitGeneralAgent() {
+      this.$refs.generalAgentForm.validate(valid => {
+        if (valid) this.submitData('general-agent', this.generalAgentForm);
       });
     },
   },

@@ -166,7 +166,7 @@
               />
             </div>
             <div class="welcome-title">
-              {{ $t('generalAgent.header.welcomeTitle') }}
+              {{ welcomeText || $t('generalAgent.header.welcomeTitle') }}
             </div>
           </div>
 
@@ -546,7 +546,10 @@ export default {
     ...mapGetters('user', ['commonInfo']),
 
     assistantAvatar() {
-      return avatarSrc(this.commonInfo?.data?.tab?.logo?.path);
+      return avatarSrc(this.commonInfo?.data?.generalAgent?.logo?.path);
+    },
+    welcomeText() {
+      return this.commonInfo?.data?.generalAgent?.welcomeText;
     },
 
     currentWorkspaceTree() {

@@ -262,7 +262,7 @@
 // import { start } from 'qiankun'
 import { mapActions, mapGetters } from 'vuex';
 import { checkPerm, PERMS } from '@/router/permission';
-import { menuList } from './menu';
+import { menuList as rawMenuList } from './menu';
 import { changeLang } from '@/api/user';
 import {
   fetchPermFirPath,
@@ -288,7 +288,6 @@ export default {
       orgList: [],
       org: { orgId: '' },
       defaultOpeneds: [],
-      menuList: [],
       menuKey: 'menu_key',
       activeIndex: '',
       isShowMenu: true,
@@ -397,6 +396,21 @@ export default {
       'permission',
       'userAvatar',
     ]),
+    menuList() {
+      const MENU_NAME_MAP = {
+        'generalAgent-wanwuAgent':
+          this.commonInfo?.data?.generalAgent?.menuName,
+      };
+
+      if (!Object.values(MENU_NAME_MAP).some(Boolean)) return rawMenuList;
+
+      return rawMenuList.map(group => ({
+        ...group,
+        children: (group.children ?? []).map(c =>
+          MENU_NAME_MAP[c.index] ? { ...c, name: MENU_NAME_MAP[c.index] } : c,
+        ),
+      }));
+    },
   },
   async created() {
     // 判断是否展示左侧菜单
@@ -493,10 +507,8 @@ export default {
       this.getMenuList(path);
     },
     getMenuList(path) {
-      // 获取当前菜单列表
-      const menus = menuList;
+      const menus = this.menuList;
 
-      this.menuList = menus;
       this.setMenuOpeneds(menus);
 
       // 给当前 activeIndex 赋值
