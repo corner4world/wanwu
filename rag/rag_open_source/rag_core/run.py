@@ -62,7 +62,10 @@ def init_kb(request_json=None):
     try:
         user_id = request_json.get("userId")
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         embedding_model_id = request_json.get("embedding_model_id", "")
         enable_knowledge_graph = request_json.get("enable_knowledge_graph", False)
         is_multimodal = request_json.get("is_multimodal", False)
@@ -71,8 +74,7 @@ def init_kb(request_json=None):
         assert len(kb_name) > 0 or len(kb_id) > 0
         assert len(embedding_model_id) > 0
 
-        result_data = kb_utils.init_knowledge_base(user_id, kb_name,
-                                                   kb_id=kb_id,
+        result_data = kb_utils.init_knowledge_base(user_id, kb_info,
                                                    embedding_model_id=embedding_model_id,
                                                    enable_knowledge_graph=enable_knowledge_graph,
                                                    is_multimodal=is_multimodal)
@@ -88,60 +90,6 @@ def init_kb(request_json=None):
     return response
 
 
-# # ************************* 同步上传 API 接口，关闭不使用 ******************************
-
-@app.route("/rag/add-knowledge-temp", methods=["POST", "GET"])  # 添加单个文件
-def add_konwledge_temp():
-    logger.info('---------------上传文件---------------')
-    response_info = {
-        'code': 0,
-        "message": "成功"
-    }
-    try:
-        file = request.files['file']
-        user_id = request.form["userId"]
-        kb_name = request.form["knowledgeBase"]
-        sentence_size = int(request.form.get("sentenceSize", 500))
-        separators = list(request.form.get("separators", ['。']))
-        chunk_type = str(request.form.get("chunk_type", 'split_by_default'))
-        overlap_size = float(request.form.get("overlap_size", 0))
-        is_enhanced = request.form.get("is_enhanced", 'false')
-        parser_choices = request.form.getlist("parser_choices") or ['text']
-        ocr_model_id = request.form.get("ocr_model_id", "")
-        pre_process = request.form.get("pre_process") or []
-        meta_data_rules = request.form.get("meta_data") or []
-
-        if file is None:
-            response_info["code"] = 1
-            response_info["message"] = "文件上传失败"
-            json_str = json.dumps(response_info, ensure_ascii=False)
-            response = make_response(json_str)
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
-
-        # 保存上传文件
-        files = [file]
-
-        logger.info(repr(files))
-        logger.info(repr(request.form))
-
-        response_info = kb_utils.add_files(user_id, kb_name, files, sentence_size, overlap_size, chunk_type, separators,
-                                  is_enhanced, parser_choices, ocr_model_id, pre_process, meta_data_rules)
-
-        json_str = json.dumps(response_info, ensure_ascii=False)
-        response = make_response(json_str)
-    except Exception as e:
-        import traceback
-        print("====> add_konwledge error %s" % e)
-        print(traceback.format_exc())
-        logger.info(repr(e))
-        response_info = {'code': 1, "message": repr(e)}
-        headers = {'Access-Control-Allow-Origin': '*'}
-        response = make_response(json.dumps(response_info, ensure_ascii=False))
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
-
 @app.route("/rag/del-knowledge-base", methods=["POST"])  # 删除知识库 done
 @validate_request
 def del_kb(request_json=None):
@@ -149,14 +97,17 @@ def del_kb(request_json=None):
     try:
         user_id = request_json.get("userId")
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
 
         logger.info(repr(request_json))
 
         assert len(user_id) > 0
         assert len(kb_name) > 0 or len(kb_id) > 0
 
-        result_data = kb_utils.del_konwledge_base(user_id, kb_name, kb_id=kb_id)
+        result_data = kb_utils.del_konwledge_base(user_id, kb_info)
         # 在批量删除文件中补充增加删除reids逻辑 begin
         if USE_DATA_FLYWHEEL:
             try:
@@ -170,8 +121,6 @@ def del_kb(request_json=None):
         # 在批量删除文件中补充增加删除reids逻辑 end
         # ========== chunk labels 删除的逻辑 ==========
         try:
-            if not kb_id:
-                kb_id = kb_utils.get_kb_name_id(user_id, kb_name)  # 获取kb_id
             # 删除chunk_labels
             redis_utils.delete_chunk_labels(chunk_label_redis_client, kb_id)
         except Exception as err:
@@ -195,7 +144,10 @@ def updateFileTags(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         tags = request_json.get("tags", None)
         logger.info(repr(request_json))
@@ -210,7 +162,7 @@ def updateFileTags(request_json=None):
                 "metadata_list": tags
             }]
         }
-        response_info = kb_utils.manage_kb_metadata(user_id, kb_name, kb_utils.MetadataOperation.UPDATE_METAS, metas, kb_id=kb_id)
+        response_info = kb_utils.manage_kb_metadata(user_id, kb_info, kb_utils.MetadataOperation.UPDATE_METAS, metas)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -228,7 +180,10 @@ def updateFileMetas(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         metas = request_json.get("metas", [])
         logger.info(repr(request_json))
 
@@ -236,7 +191,7 @@ def updateFileMetas(request_json=None):
             raise ValueError("metas must be a list")
         if not metas:
             raise ValueError("metas must be not empty")
-        response_info = kb_utils.manage_kb_metadata(user_id, kb_name, kb_utils.MetadataOperation.UPDATE_METAS, {"metas": metas}, kb_id=kb_id)
+        response_info = kb_utils.manage_kb_metadata(user_id, kb_info, kb_utils.MetadataOperation.UPDATE_METAS, {"metas": metas})
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -253,7 +208,10 @@ def deleteMetaByKeys(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         keys = request_json.get("keys", [])
         logger.info(repr(request_json))
 
@@ -261,7 +219,7 @@ def deleteMetaByKeys(request_json=None):
             raise ValueError("keys must be a list")
         if not keys:
             raise ValueError("keys must be not empty")
-        response_info = kb_utils.manage_kb_metadata(user_id, kb_name, kb_utils.MetadataOperation.DELETE_KEYS, {"keys": keys}, kb_id=kb_id)
+        response_info = kb_utils.manage_kb_metadata(user_id, kb_info, kb_utils.MetadataOperation.DELETE_KEYS, {"keys": keys})
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -278,7 +236,10 @@ def renameMetaKeys(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         key_mappings = request_json.get("mappings", [])
         logger.info(repr(request_json))
 
@@ -286,7 +247,7 @@ def renameMetaKeys(request_json=None):
             raise ValueError("key_mappings must be a list")
         if not key_mappings:
             raise ValueError("key_mappings must be not empty")
-        response_info = kb_utils.manage_kb_metadata(user_id, kb_name, kb_utils.MetadataOperation.RENAME_KEYS, {"key_mappings": key_mappings}, kb_id=kb_id)
+        response_info = kb_utils.manage_kb_metadata(user_id, kb_info, kb_utils.MetadataOperation.RENAME_KEYS, {"key_mappings": key_mappings})
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -303,7 +264,10 @@ def updateChunkLabels(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         chunk_id = request_json.get("chunk_id")
         labels = request_json.get("labels", None)
@@ -312,10 +276,8 @@ def updateChunkLabels(request_json=None):
         if labels is None or not isinstance(labels, list):
             raise ValueError("labels must specified as an array")
 
-        response_info = chunk_utils.update_chunk_labels(user_id, kb_name, file_name, chunk_id, labels, kb_id=kb_id)
+        response_info = chunk_utils.update_chunk_labels(user_id, kb_info, file_name, chunk_id, labels)
         # ======= chunk labels 更新的逻辑 ========
-        if not kb_id:  # kb_id为空，则根据kb_name获取kb_id
-            kb_id = kb_utils.get_kb_name_id(user_id, kb_name)  # 获取kb_id
         redis_utils.update_chunk_labels(chunk_label_redis_client, kb_id, file_name, chunk_id, labels)
         # ======= chunk labels 更新的逻辑 ========
         headers = {'Access-Control-Allow-Origin': '*'}
@@ -419,7 +381,7 @@ def search_knowledge_base(request_json=None):
         if rewrite_query:
             for user_id, kb_info_list in knowledge_base_info.items():
                 kb_names = [kb_info['kb_name'] for kb_info in kb_info_list]
-                kb_ids = [kb_info['kb_id'] if kb_info.get('kb_id') else kb_utils.get_kb_name_id(user_id, kb_info['kb_name']) for kb_info in kb_info_list]
+                kb_ids = [kb_info['kb_id'] for kb_info in kb_info_list]
                 query_dict_list = get_query_dict_cache(redis_client, user_id, kb_ids)
                 if query_dict_list:
                     rewritten_queries = query_rewrite(question, query_dict_list)
@@ -480,13 +442,16 @@ def list_file(request_json=None):
     try:
         user_id = request_json["userId"]
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
 
         logger.info(repr(request_json))
         assert len(user_id) > 0
         assert len(kb_name) > 0 or len(kb_id) > 0
 
-        response_info = kb_utils.list_knowledge_file(user_id, kb_name, kb_id=kb_id)
+        response_info = kb_utils.list_knowledge_file(user_id, kb_info)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -505,13 +470,16 @@ def list_file_download_link(request_json=None):
     try:
         user_id = request_json["userId"]
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
 
         logger.info(repr(request_json))
         assert len(user_id) > 0
         assert len(kb_name) > 0 or len(kb_id) > 0
 
-        response_info = kb_utils.list_knowledge_file_download_link(user_id, kb_name, kb_id=kb_id)
+        response_info = kb_utils.list_knowledge_file_download_link(user_id, kb_info)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -531,7 +499,10 @@ def del_file(request_json=None):
             raise ValueError("fileName is not safe")
         user_id = request_json.get("userId")
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
 
         logger.info(repr(request_json))
 
@@ -539,7 +510,7 @@ def del_file(request_json=None):
         assert len(kb_name) > 0 or len(kb_id) > 0
         assert len(user_id) > 0
 
-        result_data = kb_utils.del_knowledge_base_files(user_id, kb_name, [file_name], kb_id=kb_id)
+        result_data = kb_utils.del_knowledge_base_files(user_id, kb_info, [file_name])
         # 在批量删除文件中补充增加删除reids逻辑 begin
         if USE_DATA_FLYWHEEL:
             try:
@@ -553,7 +524,6 @@ def del_file(request_json=None):
         # 在批量删除文件中补充增加删除reids逻辑 end
         # ========== chunk labels 删除的逻辑 ==========
         try:
-            kb_id = kb_utils.get_kb_name_id(user_id, kb_name)  # 获取kb_id
             # 删除chunk_labels
             redis_utils.delete_chunk_labels(chunk_label_redis_client, kb_id, file_name=file_name)
         except Exception as err:
@@ -579,7 +549,10 @@ def del_files(request_json=None):
     try:
         user_id = request_json.get("userId")
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_names = request_json.get("fileNames")
         for file_name in file_names:
             if not kb_utils.is_safe_filename(file_name):
@@ -591,7 +564,7 @@ def del_files(request_json=None):
         assert len(kb_name) > 0 or len(kb_id) > 0
         assert len(user_id) > 0
 
-        result_data = kb_utils.del_knowledge_base_files(user_id, kb_name, file_names, kb_id=kb_id)
+        result_data = kb_utils.del_knowledge_base_files(user_id, kb_info, file_names)
         # 在批量删除文件中补充增加删除reids逻辑 begin
         if USE_DATA_FLYWHEEL:
             try:
@@ -619,13 +592,16 @@ def check_kb(request_json=None):
     try:
         user_id = request_json.get("userId")
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
 
         logger.info(repr(request_json))
 
         assert len(user_id) > 0
 
-        response_info = kb_utils.check_knowledge_base(user_id, kb_name, kb_id=kb_id)
+        response_info = kb_utils.check_knowledge_base(user_id, kb_info)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -661,13 +637,18 @@ def getContentList(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         page_size = request_json.get('page_size')
         search_after = request_json.get('search_after')
         # 获取分页文件内容列表
-        response_info = kb_utils.get_file_content_list(user_id, kb_name, file_name, page_size, search_after, kb_id=kb_id)
+        response_info = kb_utils.get_file_content_list(user_id, kb_info, file_name, page_size, search_after)
         headers = {'Access-Control-Allow-Origin': '*'}
+        if response_info['code'] == 0:
+            kb_utils.replace_minio_ip(response_info['data']['content_list'], only_meta=True)
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
         logger.info(repr(e))
@@ -684,11 +665,14 @@ def getChildContentList(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('file_name')
         chunk_id = request_json.get('chunk_id')
 
-        response_info = kb_utils.get_file_child_content_list(user_id, kb_name, file_name, chunk_id, kb_id=kb_id)
+        response_info = kb_utils.get_file_child_content_list(user_id, kb_info, file_name, chunk_id)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -705,7 +689,10 @@ def batchAddChunks(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         max_sentence_size = request_json.get('max_sentence_size')
         chunks = request_json.get('chunks')
@@ -716,10 +703,9 @@ def batchAddChunks(request_json=None):
             raise ValueError("chunks must be a list and not empty")
         if split_type == "parent_child" and not child_chunk_config:
             raise ValueError("child_chunk_config should not be None when split_type is parent_child")
-        response_info = chunk_utils.batch_add_chunks(user_id, kb_name, file_name, max_sentence_size, chunks,
+        response_info = chunk_utils.batch_add_chunks(user_id, kb_info, file_name, max_sentence_size, chunks,
                                          split_type = split_type,
-                                         child_chunk_config=child_chunk_config,
-                                         kb_id=kb_id)
+                                         child_chunk_config=child_chunk_config)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -736,7 +722,10 @@ def batchAddChildChunks(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         chunk_id = request_json.get('chunk_id')
         child_contents = request_json.get("child_contents", None)
@@ -744,8 +733,8 @@ def batchAddChildChunks(request_json=None):
         if not child_contents or not isinstance(child_contents, list):
             raise ValueError("child_contents must be a list and not empty")
 
-        response_info = chunk_utils.batch_add_child_chunks(user_id, kb_name, file_name, chunk_id,
-                                                           child_contents = child_contents, kb_id=kb_id)
+        response_info = chunk_utils.batch_add_child_chunks(user_id, kb_info, file_name, chunk_id,
+                                                           child_contents = child_contents)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -763,7 +752,10 @@ def updateChunk(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         max_sentence_size = request_json.get('max_sentence_size')
         chunk = request_json.get('chunk', None)
@@ -779,10 +771,9 @@ def updateChunk(request_json=None):
         if split_type == "parent_child" and not child_chunk_config:
             raise ValueError("child_chunk_config should not be None when split_type is parent_child")
 
-        response_info = chunk_utils.update_chunk(user_id, kb_name, file_name, max_sentence_size, chunk,
+        response_info = chunk_utils.update_chunk(user_id, kb_info, file_name, max_sentence_size, chunk,
                                                  split_type=split_type,
-                                                 child_chunk_config=child_chunk_config,
-                                                 kb_id=kb_id)
+                                                 child_chunk_config=child_chunk_config)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -799,7 +790,10 @@ def updateChildChunk(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         child_chunk = request_json.get('child_chunk', None)
         chunk_id = request_json.get('chunk_id')
@@ -808,7 +802,7 @@ def updateChildChunk(request_json=None):
         if not child_chunk or not isinstance(child_chunk, dict):
             raise ValueError("child_chunk must be a dict and not empty")
 
-        response_info = chunk_utils.update_child_chunk(user_id, kb_name, file_name, chunk_id, chunk_current_num, child_chunk, kb_id=kb_id)
+        response_info = chunk_utils.update_child_chunk(user_id, kb_info, file_name, chunk_id, chunk_current_num, child_chunk)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -825,13 +819,16 @@ def batchDeleteChunks(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         chunk_ids = request_json.get('chunk_ids', [])
 
         if not chunk_ids or not isinstance(chunk_ids, list):
             raise ValueError("chunk_ids must be a list and not empty")
-        response_info = chunk_utils.batch_delete_chunks(user_id, kb_name, file_name, chunk_ids, kb_id=kb_id)
+        response_info = chunk_utils.batch_delete_chunks(user_id, kb_info, file_name, chunk_ids)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -848,7 +845,10 @@ def batchDeleteChildChunks(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         chunk_id = request_json.get('chunk_id')
         chunk_current_num = request_json.get('chunk_current_num')
@@ -856,8 +856,8 @@ def batchDeleteChildChunks(request_json=None):
 
         if not child_chunk_current_nums or not isinstance(child_chunk_current_nums, list):
             raise ValueError("child_chunk_current_nums must be a list and not empty")
-        response_info = chunk_utils.batch_delete_child_chunks(user_id, kb_name, file_name, chunk_id, chunk_current_num,
-                                                           child_chunk_current_nums, kb_id=kb_id)
+        response_info = chunk_utils.batch_delete_child_chunks(user_id, kb_info, file_name, chunk_id, chunk_current_num,
+                                                           child_chunk_current_nums)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -876,12 +876,15 @@ def updateContentStatus(request_json=None):
 
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         file_name = request_json.get('fileName')
         content_id = request_json.get('content_id')
         status = request_json.get('status')
         on_off_switch = request_json.get('on_off_switch', None)  # 没有传递则默认为 None
-        response_info = kb_utils.update_content_status(user_id, kb_name, file_name, content_id, status, on_off_switch, kb_id=kb_id)
+        response_info = kb_utils.update_content_status(user_id, kb_info, file_name, content_id, status, on_off_switch)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -1131,7 +1134,7 @@ def proper_noun(request_json=None):
         knowledge_base_info = request_json.get("knowledge_base_info", {})
         if knowledge_base_info:  # 整理格式
             for user_id, kb_info_list in knowledge_base_info.items():
-                knowledge_base_info[user_id] = [kb_info['kb_id'] if kb_info.get('kb_id') else kb_utils.get_kb_name_id(user_id, kb_info['kb_name']) for kb_info in kb_info_list]
+                knowledge_base_info[user_id] = [kb_info['kb_id'] for kb_info in kb_info_list]
         logger.info(f"edit knowledge_base_info:{knowledge_base_info}")
         if msg_id and action and knowledge_base_info:  # 注意 knowledge_base 里是 kb_ids
             for user_id, knowledge_base in knowledge_base_info.items():
@@ -1185,13 +1188,16 @@ def batchAddReports(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         reports = request_json.get("reports", None)
 
         if not reports or not isinstance(reports, list):
             raise ValueError("reports must be a list and not empty")
 
-        response_info = graph_utils.batch_add_community_reports(user_id, kb_name, reports, kb_id=kb_id)
+        response_info = graph_utils.batch_add_community_reports(user_id, kb_info, reports)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -1208,13 +1214,16 @@ def updateReport(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         report = request_json.get('reports', None)
 
         if not report or not isinstance(report, dict):
             raise ValueError("reports must be a dict and not empty")
 
-        response_info = graph_utils.update_community_reports(user_id, kb_name, report, kb_id=kb_id)
+        response_info = graph_utils.update_community_reports(user_id, kb_info, report)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -1231,12 +1240,15 @@ def batchDeleteReports(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         report_ids = request_json.get('report_ids', [])
 
         if not report_ids or not isinstance(report_ids, list):
             raise ValueError("report_ids must be a list and not empty")
-        response_info = graph_utils.batch_delete_community_reports(user_id, kb_name, report_ids, kb_id=kb_id)
+        response_info = graph_utils.batch_delete_community_reports(user_id, kb_info, report_ids)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -1254,11 +1266,14 @@ def getReportsList(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
         page_size = request_json.get('page_size')
         search_after = request_json.get('search_after')
         # 获取分页文件内容列表
-        response_info = graph_utils.get_community_report_list(user_id, kb_name, page_size, search_after, kb_id=kb_id)
+        response_info = graph_utils.get_community_report_list(user_id, kb_info, page_size, search_after)
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
     except Exception as e:
@@ -1275,9 +1290,12 @@ def knowledgeBaseGraph(request_json=None):
     try:
         user_id = request_json.get('userId')
         kb_name = request_json.get("knowledgeBase", "")
-        kb_id = request_json.get("kb_id", "")
+        kb_id = request_json.get("kb_id")
+        if not kb_id:
+            raise ValueError("kb_id is required")
+        kb_info = {"kb_name": kb_name, "kb_id": kb_id}
 
-        graph_data = graph_utils.get_kb_graph_data(user_id, kb_name, kb_id=kb_id)
+        graph_data = graph_utils.get_kb_graph_data(user_id, kb_info)
         response_info = {'code': 0, "message": "", "data": graph_data}
         headers = {'Access-Control-Allow-Origin': '*'}
         response = make_response(json.dumps(response_info, ensure_ascii=False), headers)
@@ -1300,6 +1318,8 @@ def init_qa_base(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         embedding_model_id = request_json.get("embedding_model_id")
         logger.info(f"[init_qa_base] uid={user_id}, qa_base={qa_base}, qa_id={qa_id}, embed_id={embedding_model_id}")
         response_info = qa_index.init_qa_base(user_id, qa_base, qa_id, embedding_model_id)
@@ -1323,6 +1343,8 @@ def delete_qa_base(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         logger.info(f"[delete_qa_base] uid={user_id}, base={qa_base}, qaid={qa_id}")
         response_info = qa_index.delete_qa_base(user_id, qa_base, qa_id)
         headers = {'Access-Control-Allow-Origin': '*'}
@@ -1345,6 +1367,8 @@ def batch_add_qas(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         qa_pairs = request_json.get("QAPairs")
         logger.info(f"[batch_add_qas] uid={user_id}, base={qa_base}, qaid={qa_id}, count={len(qa_pairs)}")
         response_info = qa_index.batch_add_qas(user_id, qa_base, qa_id, qa_pairs)
@@ -1368,6 +1392,8 @@ def get_qa_list(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         page_size = request_json.get("page_size")
         search_after = request_json.get("search_after")
         logger.info(
@@ -1393,6 +1419,8 @@ def update_qa(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         qa_pair = request_json.get("QAPair")
         logger.info(f"[update_qa] uid={user_id}, base={qa_base}, qaid={qa_id}, qa_pair={qa_pair}")
         response_info = qa_index.update_qa(user_id, qa_base, qa_id, qa_pair)
@@ -1416,6 +1444,8 @@ def batch_delete_qas(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         qa_pair_ids = request_json.get("QAPairIds")
         logger.info(f"[batch_delete_qas] uid={user_id}, base={qa_base}, qaid={qa_id}, ids={qa_pair_ids}")
         response_info = qa_index.batch_delete_qas(user_id, qa_base, qa_id, qa_pair_ids)
@@ -1439,6 +1469,8 @@ def update_qa_status(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         qa_pair_id = request_json.get("QAPairId")
         status = request_json.get("status")
         logger.info(
@@ -1464,6 +1496,8 @@ def update_qa_metas(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         metas = request_json.get("metas")
         logger.info(f"[update_qa_metas] uid={user_id}, base={qa_base}, qaid={qa_id}, metas={len(metas)}")
         response_info = qa_index.update_qa_metas(user_id, qa_base, qa_id, metas)
@@ -1487,6 +1521,8 @@ def delete_qa_meta_by_keys(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         keys = request_json.get("keys")
         logger.info(f"[delete_meta_by_keys] uid={user_id}, base={qa_base}, qaid={qa_id}, keys={keys}")
         response_info = qa_index.delete_meta_by_keys(user_id, qa_base, qa_id, keys)
@@ -1510,6 +1546,8 @@ def rename_qa_meta_keys(request_json=None):
         user_id = request_json.get('userId')
         qa_base = request_json.get("QABase")
         qa_id = request_json.get("QAId")
+        if not qa_id:
+            raise ValueError("QAId is required")
         mappings = request_json.get("mappings")
         logger.info(f"[rename_meta_keys] uid={user_id}, base={qa_base}, qaid={qa_id}, mappings={mappings}")
         response_info = qa_index.rename_meta_keys(user_id, qa_base, qa_id, mappings)
@@ -1550,6 +1588,10 @@ def search_qa_base(request_json=None):
         # 检查 qa_base_info 是否为空
         if not qa_base_info:
             raise ValueError("qa_base_info cannot be empty")
+        for _uid, _qa_info_list in qa_base_info.items():
+            for _qa_info in _qa_info_list:
+                if not _qa_info.get("QAId"):
+                    raise ValueError(f"QAId is required in qa_base_info for user {_uid}")
         # 检查 rerank_model_id 是否为空
         if rerank_mod == "rerank_model" and not rerank_model_id:
             raise ValueError("rerank_model_id cannot be empty when using model-based reranking.")

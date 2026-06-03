@@ -7,9 +7,14 @@ import numpy as np
 
 from openai import OpenAI
 from model.model_manager import get_model_configure
-from settings import MINIO_ADDRESS, REPLACE_MINIO_DOWNLOAD_URL
+from settings import MINIO_ADDRESS, REPLACE_MINIO_DOWNLOAD_URL, EMBEDDING_BATCH_SIZE
 
 from log.logger import logger
+
+
+def batch_list(lst: list, batch_size=32):
+    for i in range(0, len(lst), batch_size):
+        yield lst[i:i + batch_size]
 
 def _execute_embedding(request_func, log_prefix="Embedding"):
     rate_limit_backoff = [10, 20, 40, 60]
@@ -250,12 +255,19 @@ def calculate_cosine(query, contents, embedding_model_id="") -> list[float]:
     query_vector_scores = []
     emb_info = get_model_configure(embedding_model_id)
 
+    contents_vector = []
     if emb_info.is_multimodal:
         query_vector = get_multimodal_embs([{"text": query}], embedding_model_id=embedding_model_id)["result"][0]["dense_vec"]
-        contents_vector = get_multimodal_embs([{"text": item} for item in contents], embedding_model_id=embedding_model_id)["result"]
+        for batch_doc in batch_list(contents, batch_size=EMBEDDING_BATCH_SIZE):
+            contents_vector.extend(
+                get_multimodal_embs([{"text": item} for item in batch_doc], embedding_model_id=embedding_model_id)["result"]
+            )
     else:
         query_vector = get_embs([query], embedding_model_id=embedding_model_id)["result"][0]["dense_vec"]
-        contents_vector = get_embs(contents, embedding_model_id=embedding_model_id)["result"]
+        for batch_doc in batch_list(contents, batch_size=EMBEDDING_BATCH_SIZE):
+            contents_vector.extend(
+                get_embs(batch_doc, embedding_model_id=embedding_model_id)["result"]
+            )
 
     for item in contents_vector:
         vec1 = np.array(query_vector)

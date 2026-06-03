@@ -54,7 +54,10 @@ def kafkal():
 
             kb_name = message_value["doc"]["categoryId"]
             user_id = message_value["doc"]["userId"]
-            kb_id = message_value["doc"].get("kb_id", "")
+            kb_id = message_value["doc"].get("kb_id")
+            if not kb_id:
+                logger.error(f"kafka 消息缺少 kb_id, doc: {message_value.get('doc')}")
+                continue
             filename = message_value["doc"].get("originalName", "")
             file_id = message_value["doc"].get("id", "")
             graph_schema_objectname = message_value["doc"].get("graph_schema_objectname", "")
@@ -73,26 +76,26 @@ def kafkal():
                     logger.info('kafka异步消费完成 ===== 已提交 offset：' + str(message.offset) + '===== kafka消息：' + repr(message.value))
                     logger.info('consumer.commit offset：' + repr(offsets))
 
+                kb_info = {"kb_name": kb_name, "kb_id": kb_id}
                 if KAFKA_USE_GRAPH_ASYN_ADD:
                     # ============ 异步添加 =============
                     if message_type == "graph":
                         executor.submit(extrac_graph_data,
-                                        user_id, kb_name, filename, file_id, enable_knowledge_graph,
-                                        graph_schema_objectname, graph_schema_filename, graph_model_id, kb_id)
+                                        user_id, kb_info, filename, file_id, enable_knowledge_graph,
+                                        graph_schema_objectname, graph_schema_filename, graph_model_id)
                     elif message_type == "community_report":
                         executor.submit(generate_community_report,
-                                        user_id, kb_name, enable_knowledge_graph, graph_model_id, kb_id)
+                                        user_id, kb_info, enable_knowledge_graph, graph_model_id)
                     else:
                         logger.warning(f"未知的message_type: {message_type}")
                         continue
                 else:
                     # ============ 顺序添加 =============
                     if message_type == "graph":
-                        extrac_graph_data(user_id, kb_name, filename, file_id, enable_knowledge_graph,
-                                        graph_schema_objectname, graph_schema_filename, graph_model_id, kb_id=kb_id)
+                        extrac_graph_data(user_id, kb_info, filename, file_id, enable_knowledge_graph,
+                                        graph_schema_objectname, graph_schema_filename, graph_model_id)
                     elif message_type == "community_report":
-                        generate_community_report(user_id, kb_name, enable_knowledge_graph, graph_model_id,
-                                                kb_id=kb_id)
+                        generate_community_report(user_id, kb_info, enable_knowledge_graph, graph_model_id)
                     else:
                         logger.warning(f"未知的message_type: {message_type}")
                         continue
@@ -103,7 +106,9 @@ def kafkal():
                 continue
 
 
-def extrac_graph_data(user_id, kb_name, file_name, file_id, enable_knowledge_graph, graph_schema_objectname, graph_schema_filename, graph_model_id="", kb_id=""):
+def extrac_graph_data(user_id, kb_info, file_name, file_id, enable_knowledge_graph, graph_schema_objectname, graph_schema_filename, graph_model_id=""):
+    kb_name = kb_info["kb_name"]
+    kb_id = kb_info["kb_id"]
     # 图谱解析开始执行
     mq_rel_utils.update_doc_status(file_id, status=110)
 
@@ -139,7 +144,7 @@ def extrac_graph_data(user_id, kb_name, file_name, file_id, enable_knowledge_gra
 
     # -------------- 再从数据库中获取 all_extrac_graph_chunks --------------
     try:
-        all_wait_extrac_chunks = graph_utils.get_all_extrac_graph_chunks(user_id, kb_name, file_name)
+        all_wait_extrac_chunks = graph_utils.get_all_extrac_graph_chunks(user_id, kb_info, file_name)
         logger.info(repr(file_name) + 'all_wait_extrac_chunks长度：' + repr(len(all_wait_extrac_chunks)))
         logger.info('all_wait_extrac_chunks 获取完成' + "user_id=%s,kb_name=%s,file_name=%s" % (user_id, kb_name, file_name))
         # 生成图谱获取 chunk 文本成功
@@ -184,7 +189,7 @@ def extrac_graph_data(user_id, kb_name, file_name, file_id, enable_knowledge_gra
     try:
         if enable_knowledge_graph and len(all_graph_chunks) > 0:
             logger.info(f'graph_data 插入es开始,all_graph_chunks len:{len(all_graph_chunks)}')
-            insert_es_result = es_utils.add_es(user_id, kb_name, all_graph_chunks, file_name, kb_id=kb_id)
+            insert_es_result = es_utils.add_es(user_id, kb_info, all_graph_chunks, file_name)
             logger.info(repr(file_name) + '添加es结果：' + repr(insert_es_result))
             if insert_es_result['code'] != 0:
                 # 回调
@@ -193,7 +198,6 @@ def extrac_graph_data(user_id, kb_name, file_name, file_id, enable_knowledge_gra
                 return
             else:
                 # 插入成功后，更新update_graph_vocabulary_set 数据
-                kb_id = knowledge_base_utils.get_kb_name_id(user_id, kb_name)
                 redis_utils.update_graph_vocabulary_set(graph_redis_client, kb_id,
                                                         elements_to_add=all_graph_vocabulary_set)
                 # 回调
@@ -212,13 +216,15 @@ def extrac_graph_data(user_id, kb_name, file_name, file_id, enable_knowledge_gra
     mq_rel_utils.update_doc_status(file_id, status=100)
 
 
-def generate_community_report(user_id, kb_name, enable_knowledge_graph, graph_model_id="", kb_id=""):
+def generate_community_report(user_id, kb_info, enable_knowledge_graph, graph_model_id=""):
+    kb_name = kb_info["kb_name"]
+    kb_id = kb_info["kb_id"]
     # 社区报告开始生成
     mq_rel_utils.update_kb_status(kb_id, status=130)
 
     # 清理旧的社区报告
     try:
-        clear_result = milvus_utils.del_community_reports(user_id, kb_name, clear_reports=True, kb_id=kb_id)
+        clear_result = milvus_utils.del_community_reports(user_id, kb_info, clear_reports=True)
         if clear_result['code'] != 0:
             raise RuntimeError(clear_result["message"])
         logger.info(f'清理社区报告成功'
@@ -264,7 +270,7 @@ def generate_community_report(user_id, kb_name, enable_knowledge_graph, graph_mo
             })
             chunk_current_num += 1
         logger.info('社区报告插入milvus开始' + "user_id=%s,kb_name=%s" % (user_id, kb_name))
-        insert_milvus_result = milvus_utils.add_milvus(user_id, kb_name, sub_chunks, file_name, "",
+        insert_milvus_result = milvus_utils.add_milvus(user_id, kb_info, sub_chunks, file_name, "",
                                                        milvus_url=milvus_utils.ADD_COMMUNItY_REPORT_URL)
         if insert_milvus_result['code'] != 0:
             raise RuntimeError(insert_milvus_result["message"])

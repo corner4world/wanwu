@@ -77,7 +77,10 @@ def kafkal():
 
             file_id = doc.get("id")
             user_id = doc.get("userId")
-            kb_id = doc.get("kb_id", "")
+            kb_id = doc.get("kb_id")
+            if not kb_id:
+                logger.error(f"kafka 消息缺少 kb_id, doc: {doc}")
+                continue
             kb_name = doc.get("categoryId")
             filename = doc.get("originalName")
             object_name = doc.get("objectName")
@@ -126,18 +129,19 @@ def kafkal():
                     logger.info('kafka异步消费完成 ===== 已提交 offset：' + str(message.offset) + '===== kafka消息：' + repr(message.value))
                     logger.info('consumer.commit offset：' + repr(offsets))
 
+                kb_info = {"kb_name": kb_name, "kb_id": kb_id}
                 if KAFKA_USE_ASYN_ADD:
                     # ============ 异步添加 =============
                     lock = threading.Lock()
                     thread = threading.Thread(target=add_files, args=(
-                    user_id, kb_name, filename, object_name, file_id, is_enhanced, enable_knowledge_graph, pre_process, meta_data_rules, split_config))
+                    user_id, kb_info, filename, object_name, file_id, is_enhanced, enable_knowledge_graph, pre_process, meta_data_rules, split_config))
                     lock.acquire()
                     thread.start()
                     lock.release()
                     # ============ 异步添加 =============
                 else:
                     # ============ 顺序添加 =============
-                    add_files(user_id, kb_name, filename, object_name, file_id, is_enhanced, enable_knowledge_graph, pre_process, meta_data_rules, split_config, kb_id=kb_id)
+                    add_files(user_id, kb_info, filename, object_name, file_id, is_enhanced, enable_knowledge_graph, pre_process, meta_data_rules, split_config)
                     # ============ 顺序添加 =============
                 logger.info('----->kafka异步消费完成：user_id=%s,kb_name=%s,filename=%s,file_id=%s,process finished' % (user_id, kb_name,filename,file_id))
 
@@ -279,12 +283,13 @@ def parse_meta_data(docs, parse_rules):
     return retype_meta_datas(result)
 
 
-def add_files(user_id, kb_name, file_name, object_name, file_id,
-              is_enhanced, enable_knowledge_graph, pre_process_rules, meta_data_rules, split_config: SplitConfig, kb_id=""):
+def add_files(user_id, kb_info, file_name, object_name, file_id,
+              is_enhanced, enable_knowledge_graph, pre_process_rules, meta_data_rules, split_config: SplitConfig):
     response_info = {'code': 0, "message": "成功"}
     user_data_path = USER_DATA_PATH
     convert_dir = CONVERT_DIR
     res_filename = ""
+    kb_name = kb_info["kb_name"]
     # 收到 kafka 消息，开始解析
     mq_rel_utils.update_doc_status(file_id, status=20)
     if not is_safe_filename(file_name):
@@ -299,7 +304,7 @@ def add_files(user_id, kb_name, file_name, object_name, file_id,
         else:
             logger.info('filepath=%s 已存在' % filepath)
         logger.info('文档查重开始')
-        files_in_milvus = milvus_utils.list_knowledge_file(user_id, kb_name, kb_id=kb_id)
+        files_in_milvus = milvus_utils.list_knowledge_file(user_id, kb_info)
         logger.info('向量库已有文档查询结果：' + repr(files_in_milvus))
 
         if files_in_milvus['code'] != 0:
@@ -451,7 +456,7 @@ def add_files(user_id, kb_name, file_name, object_name, file_id,
             return
     try:
         logger.info('添加文档meta开始' + "user_id=%s,kb_name=%s,file_name=%s" % (user_id, kb_name, file_name))
-        add_file_result = es_utils.add_file(user_id, kb_name, file_name, file_meta, kb_id=kb_id)
+        add_file_result = es_utils.add_file(user_id, kb_info, file_name, file_meta)
         logger.info(repr(file_name) + '添加文档meta结果：' + repr(add_file_result))
         if add_file_result['code'] != 0:
             # 回调
@@ -468,7 +473,7 @@ def add_files(user_id, kb_name, file_name, object_name, file_id,
 
     try:
         logger.info('文档插入milvus开始' + "user_id=%s,kb_name=%s,file_name=%s" % (user_id, kb_name, file_name))
-        insert_milvus_result = milvus_utils.add_milvus(user_id, kb_name, sub_chunk, file_name, add_file_path, kb_id=kb_id)
+        insert_milvus_result = milvus_utils.add_milvus(user_id, kb_info, sub_chunk, file_name, add_file_path)
         logger.info(repr(file_name) + '添加milvus结果：' + repr(insert_milvus_result))
         if insert_milvus_result['code'] != 0:
             logger.error('文档插入milvus失败'+ "user_id=%s,kb_name=%s,file_name=%s" % (user_id, kb_name, file_name))
@@ -484,7 +489,7 @@ def add_files(user_id, kb_name, file_name, object_name, file_id,
 
     try:
         logger.info('文档插入es开始')
-        insert_es_result = es_utils.add_es(user_id, kb_name, chunks, file_name, kb_id=kb_id)
+        insert_es_result = es_utils.add_es(user_id, kb_info, chunks, file_name)
         logger.info(repr(file_name) + '添加es结果：' + repr(insert_es_result))
         if insert_es_result['code'] != 0:
             logger.error('文档插入es失败' + "user_id=%s,kb_name=%s,file_name=%s" % (user_id, kb_name, file_name))

@@ -680,7 +680,7 @@ async def search(request: Request):
         history = []
     for user_id, kb_info_list in knowledge_base_info.items():
         kb_names = [kb_info['kb_name'] for kb_info in kb_info_list]
-        kb_ids = [kb_info['kb_id'] if kb_info.get('kb_id') else get_kb_name_id(user_id, kb_info['kb_name']) for kb_info in kb_info_list]
+        kb_ids = [kb_info['kb_id'] for kb_info in kb_info_list]
         if rewrite_query:
             query_dict_list = get_query_dict_cache(redis_client,user_id, kb_ids)
             if query_dict_list:
