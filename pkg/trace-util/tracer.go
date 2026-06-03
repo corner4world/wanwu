@@ -3,6 +3,11 @@ package trace_util
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/UnicomAI/wanwu/api/proto/common"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/redis"
@@ -11,31 +16,52 @@ import (
 
 	go_redis "github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
 const (
 	TraceUserPrefix = "trace_user:"
+
+	envJaegerEnable       = "JAEGER_ENABLE"
+	envJaegerOTLPEndpoint = "JAEGER_OTLP_ENDPOINT"
 )
 
-var tracer = &Tracer{}
+var _tracer = &Tracer{}
 
 type Tracer struct {
-	Tracer trace.TracerProvider
+	tp *sdktrace.TracerProvider
 }
 
-func GetTracer() *Tracer {
-	return tracer
-}
+// InitTracer initializes the TracerProvider.
+// When JAEGER_ENABLE is unset or false: no exporter, spans are discarded (backward compatible).
+// When JAEGER_ENABLE=true + JAEGER_OTLP_ENDPOINT: exports spans via OTLP HTTP to Jaeger.
+func InitTracer(serviceName string) error {
+	enabled, _ := strconv.ParseBool(os.Getenv(envJaegerEnable))
 
-func InitTracer() error {
-	tp := initDefaultTracerProvider()
+	var tp *sdktrace.TracerProvider
+	if enabled {
+		endpoint := os.Getenv(envJaegerOTLPEndpoint)
+		if endpoint == "" {
+			return errors.New("JAEGER_ENABLE=1 but JAEGER_OTLP_ENDPOINT is empty")
+		}
+		var err error
+		tp, err = initOTLPTracerProvider(serviceName, endpoint)
+		if err != nil {
+			return err
+		}
+		log.Infof("[trace] tracer initialized with OTLP exporter, endpoint=%s, service=%s", endpoint, serviceName)
+	} else {
+		tp = initDefaultTracerProvider()
+		log.Infof("[trace] tracer initialized (no exporter, spans discarded)")
+	}
 
-	tracer.Tracer = tp
+	_tracer.tp = tp
 	otel.SetTracerProvider(tp)
-	// 设置文本传播器
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
 		propagation.Baggage{},
@@ -43,13 +69,21 @@ func InitTracer() error {
 	return nil
 }
 
+// ShutdownTracer flushes remaining spans before process exit.
+func ShutdownTracer(ctx context.Context) {
+	if _tracer.tp != nil {
+		if err := _tracer.tp.Shutdown(ctx); err != nil {
+			log.Errorf("[trace] tracer shutdown error: %v", err)
+		}
+	}
+}
+
 func GetTraceID(ctx context.Context) string {
-	// 从上下文中获取 SpanContext（如果存在的话）
 	spanCtx := trace.SpanContextFromContext(ctx)
 	return spanCtx.TraceID().String()
 }
 
-// GetTraceUser 获取追踪用户信息
+// GetTraceUser retrieves trace user info from Redis by traceID.
 func GetTraceUser(ctx context.Context) (traceInfo *common.TraceInfo, err error) {
 	defer utils.PrintPanicStackWithCall(func(panicOccur bool, recoverError error) {
 		if panicOccur {
@@ -81,45 +115,47 @@ func GetTraceUser(ctx context.Context) (traceInfo *common.TraceInfo, err error) 
 	return traceInfo, nil
 }
 
-// TraceUserKey 追踪得用户信息
+// TraceUserKey returns the Redis key for trace user info.
 func TraceUserKey(traceID string) string {
 	return TraceUserPrefix + traceID
 }
 
-func initDefaultTracerProvider() trace.TracerProvider {
+// initDefaultTracerProvider creates a TracerProvider without exporter (fallback mode).
+func initDefaultTracerProvider() *sdktrace.TracerProvider {
 	return sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.AlwaysSample()))
 }
 
-//func initTracerProvider() trace.TracerProvider {
-//	exporter, err := otlptrace.New(
-//		context.Background(),
-//		otlptracehttp.NewClient(
-//			otlptracehttp.WithEndpoint(endpoint),
-//			otlptracehttp.WithInsecure(),
-//		),
-//	)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	res, err := resource.Merge(
-//		resource.Default(),
-//		resource.NewWithAttributes(
-//			semconv.SchemaURL,
-//			semconv.ServiceNameKey.String(ServiceName),
-//		),
-//	)
-//	if err != nil {
-//		log.Printf("[oteltrace] resource.Merge failed: %v, using fallback resource", err)
-//		res = resource.NewWithAttributes(
-//			semconv.SchemaURL,
-//			semconv.ServiceNameKey.String(ServiceName),
-//		)
-//	}
-//
-//	return sdktrace.NewTracerProvider(
-//		sdktrace.WithBatcher(exporter),
-//		sdktrace.WithResource(res),
-//	)
-//
-//}
+// initOTLPTracerProvider creates a TracerProvider with OTLP HTTP exporter for Jaeger.
+func initOTLPTracerProvider(serviceName, endpoint string) (*sdktrace.TracerProvider, error) {
+	exporter, err := otlptracehttp.New(context.Background(),
+		otlptracehttp.WithEndpoint(endpoint),
+		otlptracehttp.WithInsecure(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create OTLP HTTP exporter failed: %w", err)
+	}
+
+	res, err := resource.Merge(
+		resource.Default(),
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(serviceName),
+		),
+	)
+	if err != nil {
+		log.Warnf("[trace] resource.Merge failed: %v, using fallback resource", err)
+		res = resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(serviceName),
+		)
+	}
+
+	return sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter,
+			sdktrace.WithBatchTimeout(5*time.Second),
+			sdktrace.WithMaxExportBatchSize(512),
+		),
+		sdktrace.WithResource(res),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	), nil
+}

@@ -16,10 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	serviceName = "wanwu_agent_service"
-)
-
 var (
 	httpServ *http.Server
 )
@@ -46,7 +42,7 @@ func (c GinHttpServer) Load() error {
 
 	// router
 	gin.ForceConsoleColor()
-	ginHttpClient.GinEngine = trace_util.NewTracerGin(serviceName)
+	ginHttpClient.GinEngine = trace_util.NewTracerGin("agent-service")
 	//初始化路由
 	err := InitGinGroup(ginHttpClient.GinEngine, middleware.Record)
 	if err != nil {

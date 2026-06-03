@@ -19,10 +19,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	serviceName = "wanwu_bff_service"
-)
-
 var (
 	httpServ *http.Server
 )
@@ -33,7 +29,7 @@ func Start(ctx context.Context) {
 	gin.ForceConsoleColor()
 
 	// engin
-	r := trace_util.NewTracerGin(serviceName)
+	r := trace_util.NewTracerGin("bff-service")
 
 	// middleware
 	middleware.Init(r)

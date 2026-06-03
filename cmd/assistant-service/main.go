@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/UnicomAI/wanwu/internal/assistant-service/client/orm"
 	"github.com/UnicomAI/wanwu/internal/assistant-service/config"
@@ -54,7 +55,7 @@ func main() {
 	}
 
 	// init tracer
-	if err := trace_util.InitTracer(); err != nil {
+	if err := trace_util.InitTracer("assistant-service"); err != nil {
 		log.Fatalf("init tracer err: %v", err)
 	}
 
@@ -106,6 +107,12 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, os.Interrupt, syscall.SIGTERM)
 	<-sc
+
+	// flush trace spans
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	trace_util.ShutdownTracer(shutdownCtx)
+
 	s.Stop()
 	redis.StopSys()
 	es.StopAssistant()

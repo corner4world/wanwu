@@ -443,6 +443,8 @@ services:
       # COZELOOP_WORKSPACE_ID: ${COZELOOP_WORKSPACE_ID}
       # COZELOOP_API_TOKEN: ${COZELOOP_API_TOKEN}
       # COZELOOP_API_BASE_URL: ${COZELOOP_API_BASE_URL}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "8080"]
       interval: 15s

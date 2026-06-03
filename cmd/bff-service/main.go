@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/pkg/ahocorasick"
@@ -66,7 +67,7 @@ func main() {
 	}
 
 	// init tracer
-	if err := trace_util.InitTracer(); err != nil {
+	if err := trace_util.InitTracer("bff-service"); err != nil {
 		log.Fatalf("init tracer err: %v", err)
 	}
 
@@ -136,6 +137,11 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
+
+	// flush trace spans
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	trace_util.ShutdownTracer(shutdownCtx)
 
 	// stop http handler
 	handler.Stop(ctx)

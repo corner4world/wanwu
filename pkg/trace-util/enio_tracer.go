@@ -24,7 +24,7 @@ func EnioGlobalTracing() {
 
 func NewEnioTracingHandler() *EnioTracingHandler {
 	return &EnioTracingHandler{
-		tracer: GetTracer().Tracer.Tracer("eino"),
+		tracer: _tracer.tp.Tracer("eino"),
 	}
 }
 

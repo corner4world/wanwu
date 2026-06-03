@@ -52,6 +52,8 @@ services:
       REDIS_HOST: ${WANWU_REDIS_HOST}
       REDIS_PORT: ${WANWU_REDIS_PORT}
       REDIS_PASSWORD: ${WANWU_REDIS_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
       JWT_SIGNING_KEY: ${WANWU_BFF_JWT_SIGNING_KEY}
       CUSTOM_INFO_REGISTER_BY_EMAIL: ${WANWU_BFF_REGISTER_BY_EMAIL}
       CUSTOM_INFO_RESET_PASSWORD_BY_EMAIL: ${WANWU_BFF_RESET_PASSWORD_BY_EMAIL}
@@ -87,6 +89,8 @@ services:
       REDIS_HOST: ${WANWU_REDIS_HOST}
       REDIS_PORT: ${WANWU_REDIS_PORT}
       REDIS_PASSWORD: ${WANWU_REDIS_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
       SMTP_HOST: ${WANWU_IAM_SMTP_HOST}
       SMTP_PORT: ${WANWU_IAM_SMTP_PORT}
       SMTP_USERNAME: ${WANWU_IAM_SMTP_USERNAME}
@@ -121,6 +125,8 @@ services:
       REDIS_HOST: ${WANWU_REDIS_HOST}
       REDIS_PORT: ${WANWU_REDIS_PORT}
       REDIS_PASSWORD: ${WANWU_REDIS_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     working_dir: /app
     command: ./bin/model-service
 
@@ -150,6 +156,8 @@ services:
       REDIS_HOST: ${WANWU_REDIS_HOST}
       REDIS_PORT: ${WANWU_REDIS_PORT}
       REDIS_PASSWORD: ${WANWU_REDIS_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     working_dir: /app
     command: ./bin/mcp-service
 
@@ -182,6 +190,8 @@ services:
       MINIO_ENDPOINT: ${WANWU_MINIO_ENDPOINT}
       MINIO_USER: ${WANWU_MINIO_USER}
       MINIO_PASSWORD: ${WANWU_MINIO_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     working_dir: /app
     command: ./bin/knowledge-service
 
@@ -210,6 +220,8 @@ services:
       REDIS_HOST: ${WANWU_REDIS_HOST}
       REDIS_PORT: ${WANWU_REDIS_PORT}
       REDIS_PASSWORD: ${WANWU_REDIS_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     working_dir: /app
     command: ./bin/rag-service
 
@@ -245,6 +257,8 @@ services:
       ES_ADDRESS: ${WANWU_ELASTIC_ADDRESS}
       ES_USERNAME: ${WANWU_ELASTIC_USER}
       ES_PASSWORD: ${WANWU_ELASTIC_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     working_dir: /app
     command: ./bin/assistant-service
 
@@ -268,6 +282,8 @@ services:
       MINIO_USER: ${WANWU_MINIO_USER}
       MINIO_PASSWORD: ${WANWU_MINIO_PASSWORD}
       MINIO_DOWNLOAD_URL: ${WANWU_WEB_BASE_URL}/minio/download/api
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     working_dir: /app
     command: ./bin/agent-service
 
@@ -293,6 +309,8 @@ services:
       DB_OCEANBASE_USER: ${WANWU_OCEAN_BASE_USER}@${WANWU_OCEAN_BASE_TENANT_NAME}
       DB_OCEANBASE_ADDRESS: ${WANWU_OCEAN_BASE_HOST}:${WANWU_OCEAN_BASE_PORT}
       DB_OCEANBASE_PASSWORD: ${WANWU_OCEAN_BASE_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     working_dir: /app
     command: ./bin/operate-service
 
@@ -324,6 +342,8 @@ services:
       MINIO_ENDPOINT: ${WANWU_MINIO_ENDPOINT}
       MINIO_USER: ${WANWU_MINIO_USER}
       MINIO_PASSWORD: ${WANWU_MINIO_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
     working_dir: /app
     command: ./bin/app-service
 
@@ -345,6 +365,8 @@ services:
       REDIS_HOST: ${WANWU_REDIS_HOST}
       REDIS_PORT: ${WANWU_REDIS_PORT}
       REDIS_PASSWORD: ${WANWU_REDIS_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
       URL_RAG_DOC_PARSER: http://rag-wanwu:8681/rag/doc_parser
       URL_MINIO_DOWNLOAD: ${WANWU_WEB_BASE_URL}/minio/download/api
       WANWU_CALLBACK_URL_TO_BASE64: http://bff-service:6668/callback/v1/file/url/base64  
@@ -384,6 +406,8 @@ services:
       MINIO_ENDPOINT: ${WANWU_MINIO_ENDPOINT}
       MINIO_USER: ${WANWU_MINIO_USER}
       MINIO_PASSWORD: ${WANWU_MINIO_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
       JWT_SIGNING_KEY: ${WANWU_BFF_JWT_SIGNING_KEY}
       # --- 以下env用于workflow-wanwu适配 ---
       WANWU_EXTERNAL_ENDPOINT: ${WANWU_EXTERNAL_ENDPOINT}
@@ -456,6 +480,8 @@ services:
       REDIS_HOST: ${WANWU_REDIS_HOST}
       REDIS_PORT: ${WANWU_REDIS_PORT}
       REDIS_PASSWD: ${WANWU_REDIS_PASSWORD}
+      JAEGER_ENABLE: ${WANWU_JAEGER_ENABLE}
+      JAEGER_OTLP_ENDPOINT: ${WANWU_JAEGER_OTLP_ENDPOINT}
       # 用于rag调用外部API的env
       GET_KB_ID_URL: http://bff-service:6668/v1/api/category/info
       KAFKA_MQ_REL_URL: http://bff-service:6668/v1/api/docstatus
@@ -466,6 +492,28 @@ services:
     command: /model_extend/start.sh
 
   # ------ middleware ------
+
+  jaeger:
+    restart: always
+    image: ${WANWU_JAEGER_IMAGE}
+    container_name: jaeger-wanwu
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    # ports:
+    #   - 16686:16686
+    #   - 4317:4317
+    #   - 4318:4318
+    command: ["--config", "/etc/jaeger/config.yaml"]
+    volumes:
+      - ./configs/middleware/jaeger/config.yaml:/etc/jaeger/config.yaml:ro
+      - wanwu_jaeger_data:/tmp/jaeger/badger
+    user: "0"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:16686/jaeger/"]
+      interval: 15s
+      timeout: 5s
+      retries: 99
+      start_period: 10s
 
   kibana:
     restart: always
@@ -506,3 +554,4 @@ volumes:
   wanwu_es_certs:
   wanwu_shared_data_wga_bff:
   wanwu_shared_data_wga_sandbox_rag:
+  wanwu_jaeger_data:
