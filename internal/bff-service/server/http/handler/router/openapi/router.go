@@ -61,6 +61,9 @@ func Register(openAPI *gin.RouterGroup) {
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/export/record", http.MethodDelete, openapi.DeleteKnowledgeExportRecord, "删除知识库库导出记录", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthKnowledge("knowledgeId", middleware.KnowledgeEdit))
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/doc", http.MethodDelete, openapi.DeleteDoc, "删除文档", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthKnowledge("knowledgeId", middleware.KnowledgeEdit))
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/hit", http.MethodPost, openapi.KnowledgeHit, "知识库命中测试", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthModelByUuid([]string{"knowledgeMatchParams.rerankModelId"}))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/doc/segment/list", http.MethodGet, openapi.GetDocSegmentList, "获取文档切分结果", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthKnowledgeDoc("docId", middleware.KnowledgeView))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/doc/segment/child/list", http.MethodGet, openapi.GetDocChildSegmentList, "获取子分段列表", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthKnowledgeDoc("docId", middleware.KnowledgeView))
+
 	// mcp server
 	mid.Sub("openapi").Reg(openAPI, "/mcp/server/sse", http.MethodGet, openapi.GetMCPServerSSE, "新建MCP服务sse连接", middleware.AuthAppKeyByQuery(constant.AppTypeMCPServer))
 	mid.Sub("openapi").Reg(openAPI, "/mcp/server/message", http.MethodPost, openapi.GetMCPServerMessage, "获取MCP服务sse消息", middleware.AuthAppKeyByQuery(constant.AppTypeMCPServer))
