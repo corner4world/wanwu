@@ -170,6 +170,8 @@ usage-limit:
 
 knowledge-doc-config:
   doc-local-file-path: static/temp
+  # 文档预览大小限制，单位：字节，超过此大小不可预览，默认20MB
+  doc-preview-size-max: 20971520
 
 splitters:
   - name: "\n\n"

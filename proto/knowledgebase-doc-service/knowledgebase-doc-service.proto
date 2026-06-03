@@ -257,6 +257,8 @@ message DocSegmentListResp{
   string multimodalModelId = 14;// 图文问答模型ID
   string parserModelId = 15;// OCR/模型解析 模型ID
   string downloadUrl = 16;// 文档对外下载地址(RAG 返回的可用链接)
+  bool canPreview = 17; // 是否可预览
+  string previewFailReason = 18; // 不可预览原因
 }
 
 message SegmentContent{

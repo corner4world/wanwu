@@ -132,7 +132,8 @@ type UsageLimitConfig struct {
 }
 
 type KnowledgeDocConfig struct {
-	DocLocalFilePath string `mapstructure:"doc-local-file-path" json:"doc-local-file-path"`
+	DocLocalFilePath  string `mapstructure:"doc-local-file-path" json:"doc-local-file-path"`
+	DocPreviewSizeMax int64  `mapstructure:"doc-preview-size-max" json:"doc-preview-size-max"` // 文档预览大小限制，单位：字节，超过此大小不可预览
 }
 
 type RagServerConfig struct {

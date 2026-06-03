@@ -454,6 +454,8 @@ func buildDocSegmentResp(docSegmentListResp *knowledgebase_doc_service.DocSegmen
 		SegmentMethod:       docSegmentListResp.SegmentMethod,
 		DocAnalyzerText:     buildDocAnalyzerText(docSegmentListResp.DocAnalyzer, analyzerModelMap),
 		DownloadUrl:         docSegmentListResp.DownloadUrl,
+		CanPreview:          docSegmentListResp.CanPreview,
+		PreviewFailReason:   docSegmentListResp.PreviewFailReason,
 	}
 }
 

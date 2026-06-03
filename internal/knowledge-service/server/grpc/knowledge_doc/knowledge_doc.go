@@ -1106,6 +1106,10 @@ func buildSegmentListResp(importTask *model.KnowledgeImportTask, doc *model.Know
 		return nil, err
 	}
 	segmentConfigMap := buildSegmentConfigMap([]*model.KnowledgeImportTask{importTask})
+
+	// 判断文档是否可预览
+	canPreview, previewFailReason := checkDocPreview(doc.FileSize)
+
 	var resp = &knowledgebase_doc_service.DocSegmentListResp{
 		FileName:            doc.Name,
 		MaxSegmentSize:      int32(config.MaxSplitter),
@@ -1123,8 +1127,25 @@ func buildSegmentListResp(importTask *model.KnowledgeImportTask, doc *model.Know
 		MultimodalModelId:   analyzer.MultimodalModelId,
 		ParserModelId:       importTask.OcrModelId,
 		DownloadUrl:         buildDownloadUrl(segmentListResp.List),
+		CanPreview:          canPreview,
+		PreviewFailReason:   previewFailReason,
 	}
 	return resp, nil
+}
+
+// checkDocPreview 检查文档是否可预览
+func checkDocPreview(fileSize int64) (bool, string) {
+	cfg := config.GetConfig().KnowledgeDocConfig
+	if cfg.DocPreviewSizeMax <= 0 {
+		// 未配置限制，默认可预览
+		return true, ""
+	}
+	if fileSize > cfg.DocPreviewSizeMax {
+		// 超过限制，不可预览
+		maxSizeMB := float64(cfg.DocPreviewSizeMax) / 1024 / 1024
+		return false, fmt.Sprintf("文档大于%.2f MB不可预览", maxSizeMB)
+	}
+	return true, ""
 }
 
 // buildDownloadUrl 取分段元数据里的文档下载地址（整篇文档同一个文件，取首个非空即可）
