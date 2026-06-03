@@ -50,6 +50,7 @@ export default {
       access_token: '',
       runResponse: '',
       fileList: [], // 文件列表
+      fileInfoList: [], // 上传后的文件信息（fileId, fileName, fileUrl等）
       instanceSessionStatus: -1,
       sessionComRef: null,
       _subConversionsMap: null, // 子会话存储 Map
@@ -1681,10 +1682,21 @@ export default {
     doExprienceSend(params) {
       this.stopBtShow = true;
       this.isStoped = false;
+      this.fileInfoList =
+        params.fileInfo?.map(item => ({
+          fileName: item.oldFileName,
+          fileSize: item.fileSize,
+          fileUrl: item.fileUrl,
+        })) || [];
       let _history = this.$refs['session-com'].getList();
-      this.sendExprienceEventStream(params.inputVal, '', _history.length);
+      this.sendExprienceEventStream(
+        params.inputVal,
+        '',
+        _history.length,
+        params.fileList,
+      );
     },
-    sendExprienceEventStream(prompt, msgStr, lastIndex) {
+    sendExprienceEventStream(prompt, msgStr, lastIndex, fileList) {
       this.sseResponse = {};
       this.setStoreSessionStatus(0);
       let params = {
@@ -1692,7 +1704,7 @@ export default {
         pending: true,
         responseLoading: true,
         requestFileUrls: [],
-        fileList: this.fileList,
+        fileList: fileList || [],
         pendingResponse: '',
       };
       this.$refs['session-com'].pushHistory(params);
@@ -1716,6 +1728,7 @@ export default {
         {
           ...this.apiParams,
           content: prompt,
+          fileInfo: this.fileInfoList,
         },
         {
           onopen: async e => {
@@ -1726,6 +1739,7 @@ export default {
                 let commonData = {
                   ...this.sseParams,
                   query: prompt,
+                  fileList: fileList || [],
                 };
                 let fillData = {
                   ...commonData,
@@ -1769,6 +1783,7 @@ export default {
                 ...this.sseResponse,
                 ...this.sseParams,
                 query: prompt,
+                fileList: fileList || [],
                 fileName: '',
                 fileSize: '',
                 response: '',

@@ -56,12 +56,10 @@ export default {
       this.failChunk = [];
       this.isChunk = true;
       this.uuid = this.$guid();
-      console.log(fileIndex, '=======================123');
       //判断是否需要切片
       if (this.file.size < this.maxSizeBytes) {
         this.isChunk = false;
         this.uploadFile();
-        console.log(fileIndex, '---------------------------123==');
         this.fileList[fileIndex].percentage = 100;
         return;
       }

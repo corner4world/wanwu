@@ -15,7 +15,7 @@
             <el-button
               size="mini"
               type="primary"
-              @click="beforOpenAddModelDialog"
+              @click="beforeOpenAddModelDialog"
             >
               {{ $t('modelExprience.addModel') }}
             </el-button>
@@ -77,6 +77,8 @@
             :fileLimit="100"
             :supportReminder="true"
             :visibleClearHistory="false"
+            :visibleUpload="visibleUpload"
+            :fileTypeArr="['image/*']"
             @preSend="preSend"
           />
         </div>
@@ -107,6 +109,7 @@ import SelectModelDialog from './components/SelectModelDialog.vue';
 import { createAndUpdateChat, getExprienceDetail } from '@/api/modelExprience';
 import { getModelDetail } from '@/api/modelAccess';
 import { md } from '@/mixins/markdown-it';
+import { mapActions } from 'vuex';
 export default {
   name: 'ConversationPane',
   props: {
@@ -162,6 +165,11 @@ export default {
     },
   },
   computed: {
+    visibleUpload() {
+      return this.modelChatList.every(
+        item => item?.modelDetail?.config?.visionSupport === 'support',
+      );
+    },
     title() {
       return this.mode === 'modelExprience'
         ? this.$t('modelExprience.title')
@@ -181,7 +189,9 @@ export default {
     this.initPage();
   },
   methods: {
+    ...mapActions('app', ['setMaxPicNum']),
     initPage() {
+      this.setMaxPicNum(1);
       const comparisonIds = this.$route.query.comparisonIds || '';
       const modelId =
         this.$route.query.modelId || this.modelOptions[0]?.modelId;
@@ -295,11 +305,7 @@ export default {
           if (item.role === 'user') {
             result = {
               query: item.originalContent,
-              fileList: (item.fileList || []).map(item => ({
-                ...item,
-                name: item.fileName,
-                size: item.size,
-              })),
+              fileList: item.requestFiles || [],
               thinkText: this.$t('modelExprience.thinking'),
               searchList: [],
               isOpen: true,
@@ -333,10 +339,13 @@ export default {
     openModelSetDialog(modelId, modelSetting) {
       this.editModel.modelId = modelId;
       // 从模型详情中获取 maxTokens 限制
-      const chatModel = this.modelChatList.find(item => item.modelId === modelId);
+      const chatModel = this.modelChatList.find(
+        item => item.modelId === modelId,
+      );
       const config = chatModel?.modelDetail?.config || {};
       const maxTokens = config.maxTokens;
-      this.editModel.limitMaxTokens = maxTokens && maxTokens > 0 ? maxTokens : 4096;
+      this.editModel.limitMaxTokens =
+        maxTokens && maxTokens > 0 ? maxTokens : 4096;
       Object.keys(modelSetting).forEach(key => {
         if (key === 'thinkingSupport') {
           if (modelSetting[key] === 'support') {
@@ -393,7 +402,7 @@ export default {
           .filter(id => id !== modelId),
       });
     },
-    beforOpenAddModelDialog() {
+    beforeOpenAddModelDialog() {
       if (this.modelChatList.length >= 4) {
         this.$message.warning(
           this.$t('modelExprience.tip.maxSelectModel').replace('@', 4),
@@ -532,7 +541,8 @@ export default {
       }
       this.isInit = false;
       const inputVal = this.$refs['editable'].getPrompt();
-      const fileList = this.$refs['editable'].getFileList();
+      const fileList = [...this.$refs['editable'].getFileList()];
+      const fileInfo = [...this.$refs['editable'].getFileIdList()];
       if (!inputVal) {
         this.$message.warning(this.$t('modelExprience.warning.rejectEmpty'));
         return;
@@ -579,10 +589,15 @@ export default {
             // 把之前占位的数据清除，开始进入真正的发送流程
             isNewChat && this.sessionRefs[item.modelId].afterCreateChat();
             this.sessionRefs[item.modelId].autoScroll = true;
-            this.sessionRefs[item.modelId].preSend(inputVal, fileList, []);
+            this.sessionRefs[item.modelId].preSend(
+              inputVal,
+              fileList,
+              fileInfo,
+            );
           }
         });
         this.$refs.editable.clearInput();
+        this.$refs.editable.clearFile();
       });
     },
     handleExitComparison() {
