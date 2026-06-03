@@ -40,9 +40,12 @@ func (a *ChatAgent) BuildAgentInput(ctx context.Context, req *request.AgentChatP
 	if err != nil {
 		return nil, err
 	}
-	//createMessages = append(createMessages, messages...)
 	//3.压缩合并历史消息
 	createMessages = message_compact.Compact(createMessages, messages, tokenizer_service.TokenLimit(agentChatInfo))
+	if len(createMessages) == 0 {
+		//压缩结果为空，则走兜底逻辑
+		createMessages = append(createMessages, messages...)
+	}
 	//4.知识库信息记录
 	if a.ChatContext != nil {
 		a.ChatContext.KnowledgeHitData = agentChatContext.KnowledgeHitData
