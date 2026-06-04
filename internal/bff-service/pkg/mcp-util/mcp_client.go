@@ -15,16 +15,9 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mcp_util "github.com/UnicomAI/wanwu/pkg/mcp-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
-
-// httpClient 创建共享的 HTTP 客户端，跳过证书验证
-var httpClient = &http.Client{
-	Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	},
-}
 
 // headerTransport 是一个 http.RoundTripper 包装器，用于注入自定义请求头
 type headerTransport struct {
@@ -36,15 +29,12 @@ func (t *headerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	for key, value := range t.headers {
 		req.Header.Set(key, value)
 	}
+	otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
 	return t.base.RoundTrip(req)
 }
 
 // newHTTPClientWithHeaders 创建带有header息的 HTTP 客户端
 func newHTTPClientWithHeaders(headers map[string]string) *http.Client {
-	if len(headers) == 0 {
-		return httpClient
-	}
-
 	return &http.Client{
 		Transport: &headerTransport{
 			base: &http.Transport{
