@@ -155,7 +155,8 @@ func UpdateGeneralAgentConfig(ctx *gin.Context, userId, orgId string, req reques
 	}
 
 	// 校验 skill 配置
-	if err := checkWgaSkillConfig(ctx, userId, orgId, skillList); err != nil {
+	validSkillList, err := checkWgaSkillConfig(ctx, userId, orgId, skillList)
+	if err != nil {
 		return err
 	}
 
@@ -174,11 +175,11 @@ func UpdateGeneralAgentConfig(ctx *gin.Context, userId, orgId string, req reques
 		return err
 	}
 
-	_, err := assistant.UpdateWgaConfig(ctx.Request.Context(), &assistant_service.UpdateWgaConfigReq{
+	_, err = assistant.UpdateWgaConfig(ctx.Request.Context(), &assistant_service.UpdateWgaConfigReq{
 		ToolList:              toolList,
 		McpList:               mcpList,
 		WorkflowList:          workflowList,
-		SkillList:             skillList,
+		SkillList:             validSkillList,
 		AssistantList:         assistantList,
 		KnowledgeList:         knowledgeList,
 		OntologyKnowledgeList: ontologyList,
