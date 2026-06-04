@@ -286,6 +286,12 @@ export default {
               type: 'image/svg+xml',
             });
             this.previewBlobUrl = URL.createObjectURL(svgBlob);
+          } else if (this.previewType === 'pdf') {
+            // PDF 需要正确的 MIME 类型才能在 <iframe> 中预览而非下载
+            const pdfBlob = new Blob([this.blob], {
+              type: 'application/pdf',
+            });
+            this.previewBlobUrl = URL.createObjectURL(pdfBlob);
           } else {
             this.previewBlobUrl = URL.createObjectURL(this.blob);
           }
