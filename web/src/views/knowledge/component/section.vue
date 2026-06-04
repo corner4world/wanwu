@@ -157,7 +157,7 @@
           type="primary"
           @click="createChunk(false)"
         >
-          新增分段
+          {{ $t('knowledgeManage.create.createChunk') }}
         </el-button>
         <el-button
           v-if="
@@ -237,14 +237,19 @@
                 <span>
                   {{ $t('knowledgeManage.split') + ':' + item.contentNum }}
                   <span class="segment-type">
-                    #{{ item.isParent ? '父子分段' : '通用分段' }}
+                    #{{
+                      item.isParent
+                        ? $t('knowledgeManage.config.parentSonSegment')
+                        : $t('knowledgeManage.config.commonSegment')
+                    }}
                   </span>
                   <span class="segment-length" v-if="!item.isParent">
                     #{{ item.content.length
                     }}{{ $t('knowledgeManage.character') }}
                   </span>
                   <span class="segment-child" v-if="item.childNum">
-                    #{{ item.childNum || 0 }}个子分段
+                    #{{ item.childNum || 0
+                    }}{{ $t('knowledgeManage.childSegmentUnit') }}
                   </span>
                 </span>
                 <div>
@@ -426,7 +431,7 @@
                   @click="handleSubmit"
                   :loading="submitLoading"
                 >
-                  保存并重新解析子分段
+                  {{ $t('knowledgeManage.create.saveAndReparseChild') }}
                 </el-button>
               </div>
               <div
@@ -458,7 +463,7 @@
                           @click.stop="editSegment(scope.row, index)"
                         >
                           <i class="el-icon-edit-outline"></i>
-                          编辑
+                          {{ $t('common.button.edit') }}
                         </span>
                         <span
                           v-if="
@@ -475,7 +480,7 @@
                           @click.stop="deleteSegment(scope.row, index)"
                         >
                           <i class="el-icon-delete"></i>
-                          删除
+                          {{ $t('common.button.delete') }}
                         </span>
                         <span
                           v-if="
@@ -485,7 +490,7 @@
                           @click.stop="confirmEdit(scope.row, index)"
                         >
                           <i class="el-icon-check"></i>
-                          保存
+                          {{ $t('common.button.save') }}
                         </span>
                         <span
                           v-if="
@@ -495,7 +500,7 @@
                           @click.stop="cancelEdit(scope.row, index)"
                         >
                           <i class="el-icon-close"></i>
-                          取消
+                          {{ $t('common.button.cancel') }}
                         </span>
                       </div>
                     </template>
@@ -552,7 +557,7 @@
           :loading="submitLoading"
           v-if="!cardObj[0]['isParent']"
         >
-          确定
+          {{ $t('common.confirm.confirm') }}
         </el-button>
         <el-button
           type="primary"
@@ -567,7 +572,7 @@
           "
           :disabled="submitLoading"
         >
-          新增子分段
+          {{ $t('knowledgeManage.create.addChildChunk') }}
         </el-button>
         <el-button
           type="primary"
@@ -641,7 +646,7 @@ export default {
     return {
       submitLoading: false,
       oldContent: '',
-      title: '创建关键词',
+      title: '',
       dialogVisible: false,
       editingSegments: {},
       editingContent: {},
@@ -696,6 +701,9 @@ export default {
     ...mapGetters('app', ['permissionType']),
     isMultiModal() {
       return Number(this.obj.category) === MULTIMODAL;
+    },
+    title() {
+      return this.$t('knowledgeManage.createKeyword');
     },
   },
   created() {
@@ -775,7 +783,7 @@ export default {
       const newContent = this.editingContent[key];
 
       if (!newContent || newContent.trim() === '') {
-        this.$message.warning('内容不能为空');
+        this.$message.warning(this.$t('knowledgeManage.contentEmpty'));
         return;
       }
       updateSegmentChild({
@@ -789,16 +797,16 @@ export default {
       })
         .then(res => {
           if (res.code === 0) {
-            this.$message.success('更新成功');
+            this.$message.success(this.$t('knowledgeManage.updateSuccess'));
             this.handleParse();
             this.$set(this.editingSegments, key, false);
             this.$delete(this.editingContent, key);
           } else {
-            this.$message.error('更新失败');
+            this.$message.error(this.$t('knowledgeManage.updateFail'));
           }
         })
         .catch(() => {
-          this.$message.error('更新失败');
+          this.$message.error(this.$t('knowledgeManage.updateFail'));
         });
     },
     handleParse() {
@@ -817,11 +825,15 @@ export default {
         .catch(() => {});
     },
     deleteSegment(row, index) {
-      this.$confirm('确定要删除这个子分段吗？', '提示', {
-        confirmButtonText: this.$t('common.confirm.confirm'),
-        cancelButtonText: this.$t('common.confirm.cancel'),
-        type: 'warning',
-      }).then(() => {
+      this.$confirm(
+        this.$t('knowledgeManage.create.deleteChildChunkTips'),
+        this.$t('common.confirm.title'),
+        {
+          confirmButtonText: this.$t('common.confirm.confirm'),
+          cancelButtonText: this.$t('common.confirm.cancel'),
+          type: 'warning',
+        },
+      ).then(() => {
         delSegmentChild({
           docId: this.obj.id,
           parentId: row['childContent'][index].parentId,
@@ -830,12 +842,14 @@ export default {
         })
           .then(res => {
             if (res.code === 0) {
-              this.$message.success('删除成功');
+              this.$message.success(
+                this.$t('knowledgeManage.create.deleteSuccess'),
+              );
               this.handleParse();
             }
           })
           .catch(() => {
-            this.$message.error('删除失败');
+            this.$message.error(this.$t('knowledgeManage.deleteFail'));
           });
       });
     },
@@ -864,7 +878,7 @@ export default {
       const hasChanges = this.oldContent !== this.cardObj[0]['content'];
 
       if (!hasChanges) {
-        this.$message.warning('无修改');
+        this.$message.warning(this.$t('knowledgeManage.noChange'));
         return false;
       }
 
@@ -876,7 +890,7 @@ export default {
       })
         .then(res => {
           if (res.code === 0) {
-            this.$message.success('操作成功');
+            this.$message.success(this.$t('knowledgeManage.operateSuccess'));
             this.dialogVisible = false;
             this.getList();
           }
@@ -897,7 +911,9 @@ export default {
       delSegment({ contentId: item.contentId, docId: this.obj.id })
         .then(res => {
           if (res.code === 0) {
-            this.$message.success('删除成功');
+            this.$message.success(
+              this.$t('knowledgeManage.create.deleteSuccess'),
+            );
             this.getList();
           }
         })
@@ -1009,7 +1025,7 @@ export default {
           }
         })
         .catch(() => {
-          this.$message.error('获取列表失败');
+          this.$message.error(this.$t('knowledgeManage.getListFail'));
         })
         .finally(() => {
           this.previewLoading = false;
