@@ -7,22 +7,30 @@ import (
 	"slices"
 )
 
-func Compact(messages []*schema.Message, userMessages []*schema.Message, tokenLimit int) (retMessages []*schema.Message) {
+func Compact(messages []*schema.Message, userOtherMessages []*schema.Message, tokenLimit int) (retMessages []*schema.Message) {
 	defer func() {
 		if r := recover(); r != nil {
 			var dataMessages []*schema.Message
 			dataMessages = append(dataMessages, messages...)
-			dataMessages = append(dataMessages, userMessages...)
+			dataMessages = append(dataMessages, userOtherMessages...)
 			retMessages = dataMessages
 			return
 		}
 	}()
+	// 消息数量小于等于2，标识系统提示词+用户消息，则不进行压缩
+	if len(messages) <= 2 {
+		return messages
+	}
+	//提取用户问题消息
+	var userMessages = messages[len(messages)-1:]
+	//提取其他消息
+	dataMessages := messages[:len(messages)-1]
 	tokenizer := tokenizer_service.NewTokenizer(tokenizer_service.DefaultTokenizer)
 	var costTokens = userMessagesTokenCost(tokenizer, userMessages)
 
 	var compactMessages []*schema.Message
 	//系统提示词，判断消耗token大小决定添加消息
-	for _, message := range messages {
+	for _, message := range dataMessages {
 		tokens, err := tokenizer.CountTokens(buildTokenMessage(message))
 		if err != nil {
 			log.Errorf("CountTokens err: %v", err)
@@ -42,6 +50,8 @@ func Compact(messages []*schema.Message, userMessages []*schema.Message, tokenLi
 	}
 	//添加 用户消息
 	retMessages = append(retMessages, userMessages...)
+	//添加 用户其他消息
+	retMessages = append(retMessages, userOtherMessages...)
 	return retMessages
 }
 
@@ -62,6 +72,9 @@ func userMessagesTokenCost(tokenizer tokenizer_service.Tokenizer, userMessages [
 func latestHistoryMessages(tokenizer tokenizer_service.Tokenizer, compactMessages []*schema.Message, costTokens, tokenLimit int) []*schema.Message {
 	if tokenLimit <= 0 {
 		return compactMessages
+	}
+	if costTokens >= tokenLimit {
+		return make([]*schema.Message, 0)
 	}
 	hisLen := len(compactMessages)
 	var reverseMessages []*schema.Message
