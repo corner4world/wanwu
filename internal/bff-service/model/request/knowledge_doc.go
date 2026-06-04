@@ -115,8 +115,8 @@ type DocSegmentListReq struct {
 type UpdateDocSegmentStatusReq struct {
 	DocId         string `json:"docId" validate:"required"`
 	ContentId     string `json:"contentId"`
-	ContentStatus string `json:"contentStatus" validate:"required"`
-	ALL           bool   `json:"all" ` // all 代表全部启用，此时将忽略contentId
+	ContentStatus string `json:"contentStatus" validate:"required"` //"true"代表打开，"false"代表关闭
+	ALL           bool   `json:"all" `                              // all 代表全部启用，此时将忽略contentId
 	CommonCheck
 }
 

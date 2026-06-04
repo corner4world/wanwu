@@ -359,3 +359,24 @@ func GetDocChildSegmentList(ctx *gin.Context) {
 	resp, err := service.GetDocChildSegmentList(ctx, userId, orgId, &req)
 	gin_util.Response(ctx, resp, err)
 }
+
+// UpdateDocSegmentStatus
+//
+//	@Tags			openapi
+//	@Summary		更新文档切片启用状态
+//	@Description	更新文档切片启用状态
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.UpdateDocSegmentStatusReq	true	"更新文档切片启用状态请求参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/knowledge/doc/segment/status/update [post]
+func UpdateDocSegmentStatus(ctx *gin.Context) {
+	userId, orgId := getUserID(ctx), getOrgID(ctx)
+	var req request.UpdateDocSegmentStatusReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.UpdateDocSegmentStatus(ctx, userId, orgId, &req)
+	gin_util.Response(ctx, nil, err)
+}

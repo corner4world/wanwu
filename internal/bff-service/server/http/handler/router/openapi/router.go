@@ -63,6 +63,7 @@ func Register(openAPI *gin.RouterGroup) {
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/hit", http.MethodPost, openapi.KnowledgeHit, "知识库命中测试", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthModelByUuid([]string{"knowledgeMatchParams.rerankModelId"}))
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/doc/segment/list", http.MethodGet, openapi.GetDocSegmentList, "获取文档切分结果", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthKnowledgeDoc("docId", middleware.KnowledgeView))
 	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/doc/segment/child/list", http.MethodGet, openapi.GetDocChildSegmentList, "获取子分段列表", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthKnowledgeDoc("docId", middleware.KnowledgeView))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/knowledge/doc/segment/status/update", http.MethodGet, openapi.UpdateDocSegmentStatus, "更新分段状态", constant.OpenAPITypeKnowledge, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType), middleware.AuthKnowledgeDoc("docId", middleware.KnowledgeEdit))
 
 	// mcp server
 	mid.Sub("openapi").Reg(openAPI, "/mcp/server/sse", http.MethodGet, openapi.GetMCPServerSSE, "新建MCP服务sse连接", middleware.AuthAppKeyByQuery(constant.AppTypeMCPServer))
