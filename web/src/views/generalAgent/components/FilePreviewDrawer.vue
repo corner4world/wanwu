@@ -181,7 +181,7 @@ import PptPreview from './PptPreview.vue';
 import StreamMarkdown from './StreamMarkdown.vue';
 import VueOfficeDocx from '@vue-office/docx';
 import '@vue-office/docx/lib/index.css';
-import { resDownloadFile, getFileType } from '@/utils/util';
+import { resDownloadFile, getFileType, getMimeType } from '@/utils/util';
 import * as XLSX from 'xlsx';
 
 export default {
@@ -279,22 +279,13 @@ export default {
         if (
           ['image', 'video', 'audio', 'pdf', 'html'].includes(this.previewType)
         ) {
-          // SVG 需要正确的 MIME 类型才能在 <img> 中渲染，
-          // API 返回的 Blob 通常是 application/octet-stream，浏览器无法据此识别 SVG
-          if (this.previewType === 'image' && this.fileExt === 'svg') {
-            const svgBlob = new Blob([this.blob], {
-              type: 'image/svg+xml',
-            });
-            this.previewBlobUrl = URL.createObjectURL(svgBlob);
-          } else if (this.previewType === 'pdf') {
-            // PDF 需要正确的 MIME 类型才能在 <iframe> 中预览而非下载
-            const pdfBlob = new Blob([this.blob], {
-              type: 'application/pdf',
-            });
-            this.previewBlobUrl = URL.createObjectURL(pdfBlob);
-          } else {
-            this.previewBlobUrl = URL.createObjectURL(this.blob);
-          }
+          // 根据文件扩展名自动设置正确的 MIME 类型，确保浏览器能正确预览而非下载
+          const mimeType = getMimeType(this.fileExt);
+          const blobToUse = mimeType
+            ? new Blob([this.blob], { type: mimeType })
+            : this.blob;
+
+          this.previewBlobUrl = URL.createObjectURL(blobToUse);
           this.previewUrl = this.previewBlobUrl;
         } else if (['markdown', 'text'].includes(this.previewType)) {
           this.previewContent = await this.blob.text();
