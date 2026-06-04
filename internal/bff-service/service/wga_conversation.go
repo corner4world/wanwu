@@ -103,7 +103,7 @@ func RefreshGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string
 	}
 	skill := publish.GetSkill()
 	if skill == nil {
-		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found", "custom skill not found")
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found")
 	}
 
 	log.Infof("[wga-skill-legacy] refresh skill %v start, objectPathExists=%v, currentThreadID=%s, currentPreviewID=%s", req.SkillID, strings.TrimSpace(skill.ObjectPath) != "", skill.WgaThreadId, skill.PreviewThreadId)
@@ -653,6 +653,12 @@ func GeneralAgentSkillConversationChat(ctx *gin.Context, userId, orgId string, r
 		WorkspaceReadOnly: isGeneralAgentSkillChatWorkspaceReadOnlyMode(mode),
 	}); err != nil {
 		return err
+	}
+	if mode != generalAgentSkillChatModePreview && workspaceStore != nil {
+		if err := normalizeCustomSkillWorkspaceNestedSkill(req.CustomSkillID); err != nil {
+			log.Errorf("[wga-skill] customSkillID %v normalize nested skill workspace err: %v", req.CustomSkillID, err)
+			return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("normalize nested skill workspace failed: %v", err))
+		}
 	}
 	if mode != generalAgentSkillChatModePreview {
 		scheduleCustomSkillMetaUpdateFromWorkspace(req.CustomSkillID)

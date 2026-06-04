@@ -40,4 +40,25 @@ func registerAgentSkill(apiV1 *gin.RouterGroup) {
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodPost, v1.CreateAcquiredSkillConfig, "新增我添加的skill配置")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodPut, v1.UpdateAcquiredSkillConfig, "编辑我添加的skill配置")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodDelete, v1.DeleteAcquiredSkillConfig, "删除我添加的skill配置")
+
+	// workspace 文件管理
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/files", http.MethodGet, v1.GetSkillWorkspaceFiles, "获取Skill工作区文件列表")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/file", http.MethodGet, v1.GetSkillWorkspaceFile, "读取Skill工作区文件")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/download", http.MethodGet, v1.DownloadSkillWorkspace, "下载Skill工作区文件")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/file", http.MethodPut, v1.UpdateSkillWorkspaceFile, "更新Skill工作区文件")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/file", http.MethodDelete, v1.DeleteSkillWorkspaceFile, "删除Skill工作区文件")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/search", http.MethodPost, v1.SearchSkillWorkspace, "搜索Skill工作区内容")
+
+	// git 版本管理
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/log", http.MethodGet, v1.GetSkillWorkspaceGitLog, "获取Skill工作区Git提交历史")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/diff", http.MethodGet, v1.GetSkillWorkspaceGitDiff, "获取Skill工作区Git diff")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/file", http.MethodGet, v1.GetSkillWorkspaceGitFile, "获取Skill工作区Git历史文件内容")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/file-diff", http.MethodGet, v1.GetSkillWorkspaceGitFileDiff, "获取Skill工作区Git单文件diff")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/status", http.MethodGet, v1.GetGitStatus, "获取Skill工作区Git状态")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/add", http.MethodPost, v1.GitAdd, "暂存Skill工作区文件")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/reset", http.MethodPost, v1.GitReset, "取消暂存Skill工作区文件")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/discard", http.MethodPost, v1.GitDiscardWorkingTree, "放弃Skill工作区未暂存更改")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/commit", http.MethodPost, v1.GitCommit, "提交Skill工作区变更")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/diff-working", http.MethodGet, v1.GetGitDiffWorkingTree, "获取Skill工作区未暂存diff")
+	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/workspace/git/diff-staged", http.MethodGet, v1.GetGitDiffStaged, "获取Skill工作区已暂存diff")
 }

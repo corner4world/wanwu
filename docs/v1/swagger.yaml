@@ -3027,6 +3027,40 @@ definitions:
     required:
     - modelId
     type: object
+  request.GitAddReq:
+    properties:
+      customSkillId:
+        description: Skill ID（request body）
+        type: string
+      paths:
+        items:
+          type: string
+        type: array
+    required:
+    - customSkillId
+    type: object
+  request.GitCommitReq:
+    properties:
+      customSkillId:
+        description: Skill ID（request body）
+        type: string
+      message:
+        type: string
+    required:
+    - customSkillId
+    type: object
+  request.GitResetReq:
+    properties:
+      customSkillId:
+        description: Skill ID（request body）
+        type: string
+      paths:
+        items:
+          type: string
+        type: array
+    required:
+    - customSkillId
+    type: object
   request.History:
     properties:
       needHistory:
@@ -3793,7 +3827,6 @@ definitions:
         type: array
     required:
     - endDate
-    - modelType
     - startDate
     type: object
   request.ModelStatisticReq:
@@ -3820,7 +3853,6 @@ definitions:
         type: array
     required:
     - endDate
-    - modelType
     - startDate
     type: object
   request.ModelStatusRequest:
@@ -4239,6 +4271,32 @@ definitions:
     - appId
     - appType
     - version
+    type: object
+  request.SearchSkillWorkspaceReq:
+    properties:
+      caseSensitive:
+        description: 区分大小写
+        type: boolean
+      customSkillId:
+        description: Skill ID（request body）
+        type: string
+      excludePattern:
+        description: 排除文件模式 (glob)
+        type: string
+      includePattern:
+        description: 包含文件模式 (glob)
+        type: string
+      keyword:
+        description: 搜索关键词
+        type: string
+      useRegex:
+        description: 将 keyword 作为正则
+        type: boolean
+      wholeWord:
+        description: 全字匹配
+        type: boolean
+    required:
+    - customSkillId
     type: object
   request.SensitiveTable:
     properties:
@@ -4707,6 +4765,20 @@ definitions:
     required:
     - id
     - variable
+    type: object
+  request.UpdateSkillWorkspaceFileReq:
+    properties:
+      content:
+        description: 文件内容（全量覆盖）
+        type: string
+      customSkillId:
+        description: Skill ID（request body）
+        type: string
+      path:
+        description: 文件路径（相对 workspace 根目录）
+        type: string
+    required:
+    - customSkillId
     type: object
   request.UploadSensitiveVocabularyReq:
     properties:
@@ -6409,6 +6481,9 @@ definitions:
     type: object
   response.DocSegmentResp:
     properties:
+      canPreview:
+        description: 是否可预览
+        type: boolean
       contentList:
         description: 内容
         items:
@@ -6436,6 +6511,9 @@ definitions:
       pageTotal:
         description: 总页数
         type: integer
+      previewFailReason:
+        description: 不可预览原因
+        type: string
       segmentImportStatus:
         description: 分段导入状态描述
         type: string
@@ -6533,6 +6611,29 @@ definitions:
       version:
         description: 已发布应用的版本号(未发布时为空)
         type: string
+    type: object
+  response.FileNode:
+    properties:
+      children:
+        description: 子节点（仅目录有）
+        items:
+          $ref: '#/definitions/response.FileNode'
+        type: array
+      isDir:
+        description: 是否是目录
+        type: boolean
+      modTime:
+        description: 修改时间（毫秒时间戳）
+        type: integer
+      name:
+        description: 文件/文件夹名称
+        type: string
+      path:
+        description: 相对路径
+        type: string
+      size:
+        description: 文件大小（字节）
+        type: integer
     type: object
   response.GeneralAgentCheckTool:
     properties:
@@ -6838,6 +6939,46 @@ definitions:
         type: array
       total:
         type: integer
+    type: object
+  response.GitCommitInfo:
+    properties:
+      hash:
+        type: string
+      message:
+        type: string
+      time:
+        type: integer
+    type: object
+  response.GitFileChange:
+    properties:
+      changeType:
+        description: '"added" | "modified" | "deleted" | "renamed"'
+        type: string
+      oldPath:
+        description: 旧路径（仅重命名时有值，空时省略）
+        type: string
+      path:
+        description: 文件路径（相对 workspace/）
+        type: string
+    type: object
+  response.GitStatusFile:
+    properties:
+      changeType:
+        type: string
+      oldPath:
+        description: 仅重命名时有值，空时省略
+        type: string
+      path:
+        type: string
+      staged:
+        type: boolean
+    type: object
+  response.GitStatusResp:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/response.GitStatusFile'
+        type: array
     type: object
   response.IDName:
     properties:
@@ -8461,6 +8602,18 @@ definitions:
         description: 权限
         type: string
     type: object
+  response.SearchResult:
+    properties:
+      content:
+        description: 匹配的行内容
+        type: string
+      line:
+        description: 行号
+        type: integer
+      path:
+        description: 文件路径
+        type: string
+    type: object
   response.SegmentContent:
     properties:
       available:
@@ -8592,6 +8745,75 @@ definitions:
         type: string
       version:
         type: string
+    type: object
+  response.SkillWorkspaceFileResp:
+    properties:
+      content:
+        description: 文件内容
+        type: string
+      modTime:
+        description: 修改时间
+        type: integer
+      size:
+        description: 文件大小
+        type: integer
+    type: object
+  response.SkillWorkspaceFilesResp:
+    properties:
+      files:
+        description: 文件树
+        items:
+          $ref: '#/definitions/response.FileNode'
+        type: array
+    type: object
+  response.SkillWorkspaceGitDiffResp:
+    properties:
+      changedFiles:
+        description: 变更文件列表
+        items:
+          $ref: '#/definitions/response.GitFileChange'
+        type: array
+      diff:
+        description: unified diff 文本
+        type: string
+      fromCommit:
+        type: string
+      newContent:
+        type: string
+      oldContent:
+        type: string
+      toCommit:
+        type: string
+    type: object
+  response.SkillWorkspaceGitFileResp:
+    properties:
+      commitHash:
+        type: string
+      content:
+        type: string
+      filePath:
+        type: string
+    type: object
+  response.SkillWorkspaceGitLogResp:
+    properties:
+      commits:
+        items:
+          $ref: '#/definitions/response.GitCommitInfo'
+        type: array
+    type: object
+  response.SkillWorkspaceSearchResp:
+    properties:
+      results:
+        description: 搜索结果
+        items:
+          $ref: '#/definitions/response.SearchResult'
+        type: array
+      total:
+        description: 本次返回数量
+        type: integer
+      truncated:
+        description: 结果是否因达到上限而被截断
+        type: boolean
     type: object
   response.StatisticChart:
     properties:
@@ -9927,6 +10149,434 @@ paths:
       security:
       - JWT: []
       summary: 获取skill选择列表
+      tags:
+      - resource.skill
+  /agent/skill/workspace/file:
+    get:
+      consumes:
+      - application/json
+      description: 读取指定文件的内容
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: 文件路径（相对于workspace根目录）
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceFileResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 读取Skill工作区文件内容
+      tags:
+      - resource.skill
+    put:
+      consumes:
+      - application/json
+      description: 保存文件修改
+      parameters:
+      - description: 文件内容
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateSkillWorkspaceFileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 更新Skill工作区文件内容
+      tags:
+      - resource.skill
+  /agent/skill/workspace/files:
+    get:
+      consumes:
+      - application/json
+      description: 获取Skill工作区文件树结构
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceFilesResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取Skill工作区文件列表
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/add:
+    post:
+      consumes:
+      - application/json
+      description: 将指定文件添加到暂存区（paths为空时暂存全部）
+      parameters:
+      - description: 暂存参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GitAddReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 暂存Skill工作区文件
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/commit:
+    post:
+      consumes:
+      - application/json
+      description: 提交暂存区的变更（不执行git add）
+      parameters:
+      - description: 提交参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GitCommitReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      security:
+      - JWT: []
+      summary: 提交Skill工作区已暂存的变更
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/diff:
+    get:
+      consumes:
+      - application/json
+      description: 获取两个commit之间的差异
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: 起始commit（默认HEAD~1）
+        in: query
+        name: fromCommit
+        type: string
+      - description: 结束commit（默认HEAD）
+        in: query
+        name: toCommit
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceGitDiffResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取Skill工作区Git diff
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/diff-staged:
+    get:
+      consumes:
+      - application/json
+      description: 获取暂存区与HEAD之间的差异；传 filePath 时返回该文件 HEAD 与 index 的全文
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: 文件路径（可选，限制到单个文件）
+        in: query
+        name: filePath
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceGitDiffResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取Skill工作区已暂存diff
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/diff-working:
+    get:
+      consumes:
+      - application/json
+      description: 获取工作区与暂存区之间的差异；传 filePath 时返回该文件 index 与 working tree 的全文
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: 文件路径（可选，限制到单个文件）
+        in: query
+        name: filePath
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceGitDiffResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取Skill工作区未暂存diff
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/file:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定commit中某文件的内容
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: commit hash（默认HEAD）
+        in: query
+        name: commitHash
+        type: string
+      - description: 文件路径
+        in: query
+        name: filePath
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceGitFileResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取Skill工作区Git历史文件内容
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/file-diff:
+    get:
+      consumes:
+      - application/json
+      description: 获取单个文件在两个commit之间的差异
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: 起始commit（默认HEAD~1）
+        in: query
+        name: fromCommit
+        type: string
+      - description: 结束commit（默认HEAD）
+        in: query
+        name: toCommit
+        type: string
+      - description: 文件路径
+        in: query
+        name: filePath
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceGitDiffResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取Skill工作区Git单文件diff
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/log:
+    get:
+      consumes:
+      - application/json
+      description: 获取工作区的git commit历史记录
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: 获取数量（默认50）
+        in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceGitLogResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取Skill工作区Git提交历史
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/reset:
+    post:
+      consumes:
+      - application/json
+      description: 将指定文件从暂存区移出
+      parameters:
+      - description: 取消暂存参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GitResetReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 取消暂存Skill工作区文件
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/status:
+    get:
+      consumes:
+      - application/json
+      description: 获取工作区已暂存和未暂存的文件列表
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GitStatusResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取Skill工作区Git状态
+      tags:
+      - resource.skill
+  /agent/skill/workspace/search:
+    post:
+      consumes:
+      - application/json
+      description: 在工作区文件中搜索关键词
+      parameters:
+      - description: 搜索参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.SearchSkillWorkspaceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.SkillWorkspaceSearchResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 搜索Skill工作区内容
       tags:
       - resource.skill
   /api/key:

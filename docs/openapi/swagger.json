@@ -1388,6 +1388,124 @@
                 }
             }
         },
+        "/knowledge/doc/segment/child/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取子分段列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "获取子分段列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "contentId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "docId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.DocChildSegmentResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/knowledge/doc/segment/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取文档切分结果",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "获取文档切分结果",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "docId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "pageNo",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.DocSegmentResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/knowledge/doc/update/config": {
             "post": {
                 "security": [
@@ -4884,6 +5002,27 @@
                 }
             }
         },
+        "response.ChildSegmentInfo": {
+            "type": "object",
+            "properties": {
+                "childId": {
+                    "description": "子分段id",
+                    "type": "string"
+                },
+                "childNum": {
+                    "description": "子分段序号",
+                    "type": "integer"
+                },
+                "content": {
+                    "description": "内容",
+                    "type": "string"
+                },
+                "parentId": {
+                    "description": "父分段id",
+                    "type": "string"
+                }
+            }
+        },
         "response.ChunkSearchList": {
             "type": "object",
             "properties": {
@@ -5031,6 +5170,35 @@
                 }
             }
         },
+        "response.DocAnalyzerTextInfo": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mp_common.Tag"
+                    }
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.DocChildSegmentResp": {
+            "type": "object",
+            "properties": {
+                "contentList": {
+                    "description": "内容",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.ChildSegmentInfo"
+                    }
+                }
+            }
+        },
         "response.DocConfigResult": {
             "type": "object",
             "properties": {
@@ -5118,6 +5286,31 @@
                 }
             }
         },
+        "response.DocMetaData": {
+            "type": "object",
+            "properties": {
+                "metaId": {
+                    "description": "元数据id",
+                    "type": "string"
+                },
+                "metaKey": {
+                    "description": "key",
+                    "type": "string"
+                },
+                "metaRule": {
+                    "description": "正则表达式",
+                    "type": "string"
+                },
+                "metaValue": {
+                    "description": "确定值",
+                    "type": "string"
+                },
+                "metaValueType": {
+                    "description": "number，time, string",
+                    "type": "string"
+                }
+            }
+        },
         "response.DocPageResult": {
             "type": "object",
             "properties": {
@@ -5180,6 +5373,80 @@
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "response.DocSegmentResp": {
+            "type": "object",
+            "properties": {
+                "canPreview": {
+                    "description": "是否可预览",
+                    "type": "boolean"
+                },
+                "contentList": {
+                    "description": "内容",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SegmentContent"
+                    }
+                },
+                "docAnalyzerText": {
+                    "description": "文档解析类型 文字提取 / OCR解析  / 模型解析",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.DocAnalyzerTextInfo"
+                    }
+                },
+                "downloadUrl": {
+                    "description": "文档对外下载地址",
+                    "type": "string"
+                },
+                "fileName": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "maxSegmentSize": {
+                    "description": "设置最大长度",
+                    "type": "integer"
+                },
+                "metaDataList": {
+                    "description": "文档元数据",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.DocMetaData"
+                    }
+                },
+                "pageTotal": {
+                    "description": "总页数",
+                    "type": "integer"
+                },
+                "previewFailReason": {
+                    "description": "不可预览原因",
+                    "type": "string"
+                },
+                "segmentImportStatus": {
+                    "description": "分段导入状态描述",
+                    "type": "string"
+                },
+                "segmentMethod": {
+                    "description": "分段方式 父子分段/通用分段",
+                    "type": "string"
+                },
+                "segmentTotalNum": {
+                    "description": "分段数量",
+                    "type": "integer"
+                },
+                "segmentType": {
+                    "description": "分段方式 0自动分段 1自定义分段",
+                    "type": "string"
+                },
+                "splitter": {
+                    "description": "分隔符（只有自定义分段必填）",
+                    "type": "string"
+                },
+                "uploadTime": {
+                    "description": "上传时间",
+                    "type": "string"
                 }
             }
         },
@@ -6143,6 +6410,37 @@
                 "data": {},
                 "msg": {
                     "type": "string"
+                }
+            }
+        },
+        "response.SegmentContent": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "boolean"
+                },
+                "childNum": {
+                    "description": "子分段数量",
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentId": {
+                    "type": "string"
+                },
+                "contentNum": {
+                    "type": "integer"
+                },
+                "isParent": {
+                    "description": "父子分段/通用分段 true是父分段，false是通用分段",
+                    "type": "boolean"
+                },
+                "labels": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

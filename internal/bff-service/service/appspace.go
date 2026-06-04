@@ -143,6 +143,14 @@ func GetAppSpaceAppList(ctx *gin.Context, userId, orgId, name, appType string) (
 }
 
 func PublishApp(ctx *gin.Context, userId, orgId string, req request.PublishAppRequest) error {
+	var rollbackPublishPackage func()
+	publishPackageCommitted := true
+	defer func() {
+		if !publishPackageCommitted && rollbackPublishPackage != nil {
+			rollbackPublishPackage()
+		}
+	}()
+
 	if req.AppType == constant.AppTypeWorkflow || req.AppType == constant.AppTypeChatflow {
 		if err := PublishWorkflow(ctx, orgId, req.AppId, req.Version, req.Desc); err != nil {
 			return err
@@ -207,16 +215,12 @@ func PublishApp(ctx *gin.Context, userId, orgId string, req request.PublishAppRe
 				return grpc_util.ErrorStatusWithKey(err_code.Code_BFFGeneral, "bff_app_publish_version", resp.GetVersion(), req.Version, err.Error())
 			}
 		}
-		objectPath, markdown, err := buildCustomSkillPublishPackage(ctx, req.AppId)
+		objectPath, markdown, rollback, err := buildCustomSkillPublishPackage(ctx, userId, orgId, req.AppId, req.Version)
 		if err != nil {
 			return err
 		}
-		// skill, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
-		// 	SkillId: req.AppId,
-		// })
-		if err != nil {
-			return err
-		}
+		rollbackPublishPackage = rollback
+		publishPackageCommitted = false
 		_, err = mcp.CreatePublishCustomSkill(ctx.Request.Context(), &mcp_service.PublishCustomSkillReq{
 			SkillId:     req.AppId,
 			Version:     req.Version,
@@ -236,7 +240,11 @@ func PublishApp(ctx *gin.Context, userId, orgId string, req request.PublishAppRe
 		UserId:      userId,
 		OrgId:       orgId,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	publishPackageCommitted = true
+	return nil
 }
 
 func UnPublishApp(ctx *gin.Context, userId, orgId string, req request.UnPublishAppRequest) error {

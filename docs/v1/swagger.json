@@ -1073,6 +1073,733 @@
                 }
             }
         },
+        "/agent/skill/workspace/file": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "读取指定文件的内容",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "读取Skill工作区文件内容",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件路径（相对于workspace根目录）",
+                        "name": "path",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceFileResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "保存文件修改",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "更新Skill工作区文件内容",
+                "parameters": [
+                    {
+                        "description": "文件内容",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateSkillWorkspaceFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/files": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取Skill工作区文件树结构",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取Skill工作区文件列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceFilesResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/add": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "将指定文件添加到暂存区（paths为空时暂存全部）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "暂存Skill工作区文件",
+                "parameters": [
+                    {
+                        "description": "暂存参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GitAddReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/commit": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "提交暂存区的变更（不执行git add）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "提交Skill工作区已暂存的变更",
+                "parameters": [
+                    {
+                        "description": "提交参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GitCommitReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/diff": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取两个commit之间的差异",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取Skill工作区Git diff",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "起始commit（默认HEAD~1）",
+                        "name": "fromCommit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束commit（默认HEAD）",
+                        "name": "toCommit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceGitDiffResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/diff-staged": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取暂存区与HEAD之间的差异；传 filePath 时返回该文件 HEAD 与 index 的全文",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取Skill工作区已暂存diff",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件路径（可选，限制到单个文件）",
+                        "name": "filePath",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceGitDiffResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/diff-working": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取工作区与暂存区之间的差异；传 filePath 时返回该文件 index 与 working tree 的全文",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取Skill工作区未暂存diff",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件路径（可选，限制到单个文件）",
+                        "name": "filePath",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceGitDiffResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/file": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取指定commit中某文件的内容",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取Skill工作区Git历史文件内容",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "commit hash（默认HEAD）",
+                        "name": "commitHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件路径",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceGitFileResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/file-diff": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取单个文件在两个commit之间的差异",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取Skill工作区Git单文件diff",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "起始commit（默认HEAD~1）",
+                        "name": "fromCommit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束commit（默认HEAD）",
+                        "name": "toCommit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件路径",
+                        "name": "filePath",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceGitDiffResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/log": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取工作区的git commit历史记录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取Skill工作区Git提交历史",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "获取数量（默认50）",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceGitLogResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/reset": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "将指定文件从暂存区移出",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "取消暂存Skill工作区文件",
+                "parameters": [
+                    {
+                        "description": "取消暂存参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GitResetReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/status": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取工作区已暂存和未暂存的文件列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "获取Skill工作区Git状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GitStatusResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/search": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "在工作区文件中搜索关键词",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "搜索Skill工作区内容",
+                "parameters": [
+                    {
+                        "description": "搜索参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.SearchSkillWorkspaceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.SkillWorkspaceSearchResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/api/key": {
             "put": {
                 "security": [
@@ -23307,6 +24034,57 @@
                 }
             }
         },
+        "request.GitAddReq": {
+            "type": "object",
+            "required": [
+                "customSkillId"
+            ],
+            "properties": {
+                "customSkillId": {
+                    "description": "Skill ID（request body）",
+                    "type": "string"
+                },
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "request.GitCommitReq": {
+            "type": "object",
+            "required": [
+                "customSkillId"
+            ],
+            "properties": {
+                "customSkillId": {
+                    "description": "Skill ID（request body）",
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.GitResetReq": {
+            "type": "object",
+            "required": [
+                "customSkillId"
+            ],
+            "properties": {
+                "customSkillId": {
+                    "description": "Skill ID（request body）",
+                    "type": "string"
+                },
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "request.History": {
             "type": "object",
             "properties": {
@@ -24380,7 +25158,6 @@
             "type": "object",
             "required": [
                 "endDate",
-                "modelType",
                 "startDate"
             ],
             "properties": {
@@ -24425,7 +25202,6 @@
             "type": "object",
             "required": [
                 "endDate",
-                "modelType",
                 "startDate"
             ],
             "properties": {
@@ -25078,6 +25854,42 @@
                 "version": {
                     "description": "目标回滚版本",
                     "type": "string"
+                }
+            }
+        },
+        "request.SearchSkillWorkspaceReq": {
+            "type": "object",
+            "required": [
+                "customSkillId"
+            ],
+            "properties": {
+                "caseSensitive": {
+                    "description": "区分大小写",
+                    "type": "boolean"
+                },
+                "customSkillId": {
+                    "description": "Skill ID（request body）",
+                    "type": "string"
+                },
+                "excludePattern": {
+                    "description": "排除文件模式 (glob)",
+                    "type": "string"
+                },
+                "includePattern": {
+                    "description": "包含文件模式 (glob)",
+                    "type": "string"
+                },
+                "keyword": {
+                    "description": "搜索关键词",
+                    "type": "string"
+                },
+                "useRegex": {
+                    "description": "将 keyword 作为正则",
+                    "type": "boolean"
+                },
+                "wholeWord": {
+                    "description": "全字匹配",
+                    "type": "boolean"
                 }
             }
         },
@@ -25764,6 +26576,26 @@
                 },
                 "variable": {
                     "$ref": "#/definitions/request.SkillVariable"
+                }
+            }
+        },
+        "request.UpdateSkillWorkspaceFileReq": {
+            "type": "object",
+            "required": [
+                "customSkillId"
+            ],
+            "properties": {
+                "content": {
+                    "description": "文件内容（全量覆盖）",
+                    "type": "string"
+                },
+                "customSkillId": {
+                    "description": "Skill ID（request body）",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "文件路径（相对 workspace 根目录）",
+                    "type": "string"
                 }
             }
         },
@@ -28341,6 +29173,10 @@
         "response.DocSegmentResp": {
             "type": "object",
             "properties": {
+                "canPreview": {
+                    "description": "是否可预览",
+                    "type": "boolean"
+                },
                 "contentList": {
                     "description": "内容",
                     "type": "array",
@@ -28377,6 +29213,10 @@
                 "pageTotal": {
                     "description": "总页数",
                     "type": "integer"
+                },
+                "previewFailReason": {
+                    "description": "不可预览原因",
+                    "type": "string"
                 },
                 "segmentImportStatus": {
                     "description": "分段导入状态描述",
@@ -28519,6 +29359,38 @@
                 "version": {
                     "description": "已发布应用的版本号(未发布时为空)",
                     "type": "string"
+                }
+            }
+        },
+        "response.FileNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "子节点（仅目录有）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.FileNode"
+                    }
+                },
+                "isDir": {
+                    "description": "是否是目录",
+                    "type": "boolean"
+                },
+                "modTime": {
+                    "description": "修改时间（毫秒时间戳）",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "文件/文件夹名称",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "相对路径",
+                    "type": "string"
+                },
+                "size": {
+                    "description": "文件大小（字节）",
+                    "type": "integer"
                 }
             }
         },
@@ -28970,6 +29842,66 @@
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "response.GitCommitInfo": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.GitFileChange": {
+            "type": "object",
+            "properties": {
+                "changeType": {
+                    "description": "\"added\" | \"modified\" | \"deleted\" | \"renamed\"",
+                    "type": "string"
+                },
+                "oldPath": {
+                    "description": "旧路径（仅重命名时有值，空时省略）",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "文件路径（相对 workspace/）",
+                    "type": "string"
+                }
+            }
+        },
+        "response.GitStatusFile": {
+            "type": "object",
+            "properties": {
+                "changeType": {
+                    "type": "string"
+                },
+                "oldPath": {
+                    "description": "仅重命名时有值，空时省略",
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "staged": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "response.GitStatusResp": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.GitStatusFile"
+                    }
                 }
             }
         },
@@ -31412,6 +32344,23 @@
                 }
             }
         },
+        "response.SearchResult": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "匹配的行内容",
+                    "type": "string"
+                },
+                "line": {
+                    "description": "行号",
+                    "type": "integer"
+                },
+                "path": {
+                    "description": "文件路径",
+                    "type": "string"
+                }
+            }
+        },
         "response.SegmentContent": {
             "type": "object",
             "properties": {
@@ -31606,6 +32555,108 @@
                 },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "response.SkillWorkspaceFileResp": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "文件内容",
+                    "type": "string"
+                },
+                "modTime": {
+                    "description": "修改时间",
+                    "type": "integer"
+                },
+                "size": {
+                    "description": "文件大小",
+                    "type": "integer"
+                }
+            }
+        },
+        "response.SkillWorkspaceFilesResp": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "description": "文件树",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.FileNode"
+                    }
+                }
+            }
+        },
+        "response.SkillWorkspaceGitDiffResp": {
+            "type": "object",
+            "properties": {
+                "changedFiles": {
+                    "description": "变更文件列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.GitFileChange"
+                    }
+                },
+                "diff": {
+                    "description": "unified diff 文本",
+                    "type": "string"
+                },
+                "fromCommit": {
+                    "type": "string"
+                },
+                "newContent": {
+                    "type": "string"
+                },
+                "oldContent": {
+                    "type": "string"
+                },
+                "toCommit": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SkillWorkspaceGitFileResp": {
+            "type": "object",
+            "properties": {
+                "commitHash": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "filePath": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.SkillWorkspaceGitLogResp": {
+            "type": "object",
+            "properties": {
+                "commits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.GitCommitInfo"
+                    }
+                }
+            }
+        },
+        "response.SkillWorkspaceSearchResp": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "description": "搜索结果",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SearchResult"
+                    }
+                },
+                "total": {
+                    "description": "本次返回数量",
+                    "type": "integer"
+                },
+                "truncated": {
+                    "description": "结果是否因达到上限而被截断",
+                    "type": "boolean"
                 }
             }
         },

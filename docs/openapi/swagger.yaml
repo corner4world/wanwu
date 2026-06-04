@@ -1836,6 +1836,21 @@ definitions:
       score:
         type: number
     type: object
+  response.ChildSegmentInfo:
+    properties:
+      childId:
+        description: 子分段id
+        type: string
+      childNum:
+        description: 子分段序号
+        type: integer
+      content:
+        description: 内容
+        type: string
+      parentId:
+        description: 父分段id
+        type: string
+    type: object
   response.ChunkSearchList:
     properties:
       childContentList:
@@ -1933,6 +1948,25 @@ definitions:
       knowledgeId:
         type: string
     type: object
+  response.DocAnalyzerTextInfo:
+    properties:
+      displayName:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/mp_common.Tag'
+        type: array
+      text:
+        type: string
+    type: object
+  response.DocChildSegmentResp:
+    properties:
+      contentList:
+        description: 内容
+        items:
+          $ref: '#/definitions/response.ChildSegmentInfo'
+        type: array
+    type: object
   response.DocConfigResult:
     properties:
       asrModelId:
@@ -1990,6 +2024,24 @@ definitions:
       showGraphReport:
         type: boolean
     type: object
+  response.DocMetaData:
+    properties:
+      metaId:
+        description: 元数据id
+        type: string
+      metaKey:
+        description: key
+        type: string
+      metaRule:
+        description: 正则表达式
+        type: string
+      metaValue:
+        description: 确定值
+        type: string
+      metaValueType:
+        description: number，time, string
+        type: string
+    type: object
   response.DocPageResult:
     properties:
       docKnowledgeInfo:
@@ -2034,6 +2086,60 @@ definitions:
         type: array
     required:
     - segmentMethod
+    type: object
+  response.DocSegmentResp:
+    properties:
+      canPreview:
+        description: 是否可预览
+        type: boolean
+      contentList:
+        description: 内容
+        items:
+          $ref: '#/definitions/response.SegmentContent'
+        type: array
+      docAnalyzerText:
+        description: 文档解析类型 文字提取 / OCR解析  / 模型解析
+        items:
+          $ref: '#/definitions/response.DocAnalyzerTextInfo'
+        type: array
+      downloadUrl:
+        description: 文档对外下载地址
+        type: string
+      fileName:
+        description: 名称
+        type: string
+      maxSegmentSize:
+        description: 设置最大长度
+        type: integer
+      metaDataList:
+        description: 文档元数据
+        items:
+          $ref: '#/definitions/response.DocMetaData'
+        type: array
+      pageTotal:
+        description: 总页数
+        type: integer
+      previewFailReason:
+        description: 不可预览原因
+        type: string
+      segmentImportStatus:
+        description: 分段导入状态描述
+        type: string
+      segmentMethod:
+        description: 分段方式 父子分段/通用分段
+        type: string
+      segmentTotalNum:
+        description: 分段数量
+        type: integer
+      segmentType:
+        description: 分段方式 0自动分段 1自定义分段
+        type: string
+      splitter:
+        description: 分隔符（只有自定义分段必填）
+        type: string
+      uploadTime:
+        description: 上传时间
+        type: string
     type: object
   response.EmbeddingModelInfo:
     properties:
@@ -2686,6 +2792,27 @@ definitions:
       data: {}
       msg:
         type: string
+    type: object
+  response.SegmentContent:
+    properties:
+      available:
+        type: boolean
+      childNum:
+        description: 子分段数量
+        type: integer
+      content:
+        type: string
+      contentId:
+        type: string
+      contentNum:
+        type: integer
+      isParent:
+        description: 父子分段/通用分段 true是父分段，false是通用分段
+        type: boolean
+      labels:
+        items:
+          type: string
+        type: array
     type: object
   response.SubConversation:
     properties:
@@ -3585,6 +3712,74 @@ paths:
       security:
       - JWT: []
       summary: 获取文档列表
+      tags:
+      - openapi
+  /knowledge/doc/segment/child/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取子分段列表
+      parameters:
+      - in: query
+        name: contentId
+        required: true
+        type: string
+      - in: query
+        name: docId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.DocChildSegmentResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取子分段列表
+      tags:
+      - openapi
+  /knowledge/doc/segment/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取文档切分结果
+      parameters:
+      - in: query
+        name: docId
+        required: true
+        type: string
+      - in: query
+        name: keyword
+        type: string
+      - in: query
+        name: pageNo
+        type: integer
+      - in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.DocSegmentResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取文档切分结果
       tags:
       - openapi
   /knowledge/doc/update/config:

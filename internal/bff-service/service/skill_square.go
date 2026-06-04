@@ -134,7 +134,7 @@ func GetSquareShareSkillDetail(ctx *gin.Context, userId, orgId, skillId string) 
 	}
 	skill := publish.GetSkill()
 	if skill == nil || skill.GetSkillId() == "" {
-		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found", "custom skill not found")
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found")
 	}
 
 	// 获取 acquired 状态

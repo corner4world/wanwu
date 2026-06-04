@@ -17,6 +17,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	minio_util "github.com/UnicomAI/wanwu/internal/bff-service/pkg/minio-util"
 	"github.com/UnicomAI/wanwu/pkg/constant"
+	git_util "github.com/UnicomAI/wanwu/pkg/git-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/minio"
@@ -78,7 +79,7 @@ func GetCustomSkill(ctx *gin.Context, userId, orgId, skillId string) (*response.
 	skill := publish.GetSkill()
 	version := publish.GetVersion()
 	if skill == nil {
-		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found", "custom skill not found")
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found")
 	}
 	variables, err := getCustomSkillVariables(ctx, skill.SkillId)
 	if err != nil {
@@ -229,17 +230,45 @@ func overwriteCustomSkillWorkspaceFromZip(ctx *gin.Context, skillId string, data
 	if err != nil {
 		return err
 	}
-	skillDir := filepath.Join(dirs.OutputDir, generalAgentSkillImportDirName)
-	stagingDir := filepath.Join(dirs.OutputDir, ".skill-rollback-"+util.GenUUID())
+	skillRoot := dirs.OutputDir
+	skillDir := filepath.Join(skillRoot, generalAgentSkillImportDirName)
+	stagingDir := filepath.Join(skillRoot, ".skill-rollback-"+util.GenUUID())
 	defer func() { _ = os.RemoveAll(stagingDir) }()
 
 	if _, err := importSkillDataIntoWorkspace(data, stagingDir); err != nil {
 		return err
 	}
-	return replaceCustomSkillDir(skillDir, stagingDir)
+	return replaceCustomSkillDirWithGitGuard(skillRoot, skillDir, stagingDir)
 }
 
+// replaceCustomSkillDirWithGitGuard 在持有仓库锁时替换 skill 目录并保护 Git 元数据。
+func replaceCustomSkillDirWithGitGuard(skillRoot, skillDir, stagingDir string) error {
+	repo := git_util.Open(skillRoot)
+	mu := repo.GetMutex()
+	mu.Lock()
+	defer mu.Unlock()
+
+	gitInitialized := repo.IsInitialized()
+	if err := replaceCustomSkillDir(skillDir, stagingDir); err != nil {
+		return err
+	}
+
+	if gitInitialized {
+		if err := ensureSkillWorkspaceGitMetadataPresent(skillRoot); err != nil {
+			return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("skill workspace git metadata missing after rollback: %v", err))
+		}
+	}
+	return nil
+}
+
+// replaceCustomSkillDir 使用备份目录替换当前 skill 目录。
 func replaceCustomSkillDir(skillDir, stagingDir string) error {
+	if ok, err := pathHasGitMetadata(skillDir); err != nil {
+		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("check skill workspace git metadata err: %v", err))
+	} else if ok {
+		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("refuse to replace git repository directory: %s", skillDir))
+	}
+
 	backupDir := filepath.Join(filepath.Dir(skillDir), ".skill-rollback-backup-"+util.GenUUID())
 	backupCreated := false
 	defer func() { _ = os.RemoveAll(backupDir) }()
@@ -260,6 +289,30 @@ func replaceCustomSkillDir(skillDir, stagingDir string) error {
 		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("replace skill workspace err: %v", err))
 	}
 	return nil
+}
+
+// ensureSkillWorkspaceGitMetadataPresent 确认工作区 Git 元数据未丢失。
+func ensureSkillWorkspaceGitMetadataPresent(skillRoot string) error {
+	ok, err := pathHasGitMetadata(skillRoot)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("%s not found", filepath.Join(skillRoot, ".git"))
+	}
+	return nil
+}
+
+// pathHasGitMetadata 判断目录下是否存在 Git 元数据。
+func pathHasGitMetadata(dir string) (bool, error) {
+	_, err := os.Lstat(filepath.Join(dir, ".git"))
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
 func downloadCustomSkillZip(ctx *gin.Context, zipURL string) ([]byte, error) {
@@ -295,7 +348,7 @@ func DeleteCustomSkill(ctx *gin.Context, userId, orgId, skillId string) error {
 	}
 	skill := publish.GetSkill()
 	if skill == nil {
-		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found", "custom skill not found")
+		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found")
 	}
 
 	if _, err := app.DeleteApp(ctx.Request.Context(), &app_service.DeleteAppReq{
@@ -438,35 +491,63 @@ func uniqueSkillIDs(skillIdList []string) []string {
 	return result
 }
 
-func buildCustomSkillZipBytes(skillId string) ([]byte, error) {
-	skillDir, err := findFirstCustomSkillDir(skillId)
+// buildCustomSkillPublishPackage 从 HEAD:skill 打包发布 zip。
+// 只有包校验和上传都成功后，才创建发布版本 tag。
+func buildCustomSkillPublishPackage(ctx *gin.Context, userId, orgId, skillId, version string) (string, string, func(), error) {
+	ws, err := resolveSkillWorkspace(ctx, userId, orgId, skillId)
 	if err != nil {
-		return nil, err
+		return "", "", nil, err
 	}
-	if err := ensureNoSymlink(skillDir); err != nil {
-		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("custom skill %s contains symlink: %v", skillId, err))
+	if _, err := ensureGitInitializedAt(skillId, ws.skillDir); err != nil {
+		return "", "", nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_init_git_failed")
 	}
-	zipBytes, err := util.ZipDir(skillDir + string(os.PathSeparator) + ".")
-	if err != nil {
-		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("zip custom skill %s err: %v", skillId, err))
-	}
-	return zipBytes, nil
-}
 
-func buildCustomSkillPublishPackage(ctx *gin.Context, skillId string) (string, string, error) {
-	zipBytes, err := buildCustomSkillZipBytes(skillId)
-	if err != nil {
-		return "", "", err
+	if !ws.repo.HasHead() {
+		return "", "", nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_uncommitted_changes", "工作区尚未提交，请先提交后再发布")
 	}
+
+	hasChanges, err := ws.repo.HasChangesInSubDir(generalAgentSkillWorkspaceDirName)
+	if err != nil {
+		return "", "", nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_check_git_status_failed")
+	}
+	if hasChanges {
+		return "", "", nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_uncommitted_changes", "工作区有未提交的更改，请先提交后再发布")
+	}
+
+	tagExists, err := ws.repo.TagExists(version)
+	if err != nil {
+		return "", "", nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("check git tag failed for skill %s: %v", skillId, err))
+	}
+	if tagExists {
+		return "", "", nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_version_exists", fmt.Sprintf("版本 %s 已存在，请使用其他版本号", version))
+	}
+
+	zipBytes, err := ws.repo.ArchivePath("HEAD", generalAgentSkillWorkspaceDirName)
+	if err != nil {
+		return "", "", nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("archive git HEAD:%s failed for skill %s: %v", generalAgentSkillWorkspaceDirName, skillId, err))
+	}
+
 	markdown, _, err := util.ExtractSkillMarkdownFromZip(zipBytes)
 	if err != nil {
-		return "", "", grpc_util.ErrorStatus(errs.Code_BFFSkillParse, err.Error())
+		return "", "", nil, grpc_util.ErrorStatus(errs.Code_BFFSkillParse, err.Error())
 	}
+
 	fileName, _, err := minio.UploadFileCommon(ctx.Request.Context(), bytes.NewReader(zipBytes), customSkillFileType, int64(len(zipBytes)), true)
 	if err != nil {
-		return "", "", grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("upload custom skill %s zip err: %v", skillId, err))
+		return "", "", nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("upload custom skill %s zip err: %v", skillId, err))
 	}
-	return path.Join(minio.BucketFileUpload, minio.DirFileNotExpire, fileName), markdown, nil
+
+	commitHash, err := ws.repo.CreateTag(version)
+	if err != nil {
+		return "", "", nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("create git tag %s failed for skill %s: %v", version, skillId, err))
+	}
+	log.Infof("[skill-publish] created tag %s for skill %s at commit %s", version, skillId, commitHash)
+	rollback := func() {
+		if err := ws.repo.DeleteTag(version); err != nil {
+			log.Warnf("[skill-publish] rollback tag %s for skill %s failed: %v", version, skillId, err)
+		}
+	}
+	return path.Join(minio.BucketFileUpload, minio.DirFileNotExpire, fileName), markdown, rollback, nil
 }
 
 func findFirstCustomSkillDir(skillId string) (string, error) {
