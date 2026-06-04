@@ -1918,14 +1918,6 @@ definitions:
     required:
     - chunkName
     type: object
-  request.ClearSkillConversationReq:
-    properties:
-      conversationId:
-        description: 会话ID
-        type: string
-    required:
-    - conversationId
-    type: object
   request.ConversationCreateRequest:
     properties:
       assistantId:
@@ -2252,14 +2244,6 @@ definitions:
     required:
     - tableName
     - type
-    type: object
-  request.CreateSkillConversationReq:
-    properties:
-      title:
-        description: 会话标题
-        type: string
-    required:
-    - title
     type: object
   request.CreateWorkflowByTemplateReq:
     properties:
@@ -2661,14 +2645,6 @@ definitions:
         type: string
     required:
     - id
-    type: object
-  request.DeleteSkillConversationReq:
-    properties:
-      conversationId:
-        description: 会话ID
-        type: string
-    required:
-    - conversationId
     type: object
   request.DocConfigUpdateReq:
     properties:
@@ -4292,39 +4268,6 @@ definitions:
     - skillId
     - variable
     type: object
-  request.SkillConversationChatReq:
-    properties:
-      conversationId:
-        description: 会话ID
-        type: string
-      fileInfo:
-        description: 上传的文件信息
-        items:
-          $ref: '#/definitions/request.ConversionStreamFile'
-        type: array
-      modelConfig:
-        allOf:
-        - $ref: '#/definitions/request.AppModelConfig'
-        description: 模型
-      query:
-        description: 用户提问
-        type: string
-    required:
-    - conversationId
-    - query
-    type: object
-  request.SkillConversationSaveReq:
-    properties:
-      conversationId:
-        description: 会话ID
-        type: string
-      skillSaveId:
-        description: 技能ID
-        type: string
-    required:
-    - conversationId
-    - skillSaveId
-    type: object
   request.SkillVariable:
     properties:
       desc:
@@ -5426,23 +5369,6 @@ definitions:
       size:
         type: integer
     type: object
-  response.AssistantResponseFile:
-    properties:
-      fileUrl:
-        type: string
-      metadata:
-        additionalProperties: true
-        description: |-
-          扩展信息：
-          skill => {"name":"技能名称", "desc":"技能描述", "author":"技能作者", "avatar":{"path":"技能图标"}, "inResource": bool, "expiredAt": "过期时间7天", "skillSaveId": "保存的技能ID"}
-        type: object
-      mimeType:
-        type: string
-      name:
-        type: string
-      size:
-        type: integer
-    type: object
   response.AssistantSkillInfo:
     properties:
       author:
@@ -6063,12 +5989,6 @@ definitions:
     properties:
       tableId:
         description: 敏感词表id
-        type: string
-    type: object
-  response.CreateSkillConversationResp:
-    properties:
-      conversationId:
-        description: 会话ID
         type: string
     type: object
   response.CustomAbout:
@@ -8634,62 +8554,6 @@ definitions:
       skillId:
         type: string
     type: object
-  response.SkillConversationDetailInfo:
-    properties:
-      assistantId:
-        type: string
-      conversationId:
-        type: string
-      createdAt:
-        type: integer
-      createdBy:
-        type: string
-      fileName:
-        type: string
-      fileSize:
-        type: integer
-      id:
-        type: string
-      prompt:
-        type: string
-      qa_type:
-        type: integer
-      requestFiles:
-        items:
-          $ref: '#/definitions/response.AssistantRequestFile'
-        type: array
-      response:
-        type: string
-      responseFiles:
-        items:
-          $ref: '#/definitions/response.AssistantResponseFile'
-        type: array
-      responseList:
-        items:
-          $ref: '#/definitions/response.ConversationResponse'
-        type: array
-      searchList: {}
-      subConversationList:
-        items:
-          $ref: '#/definitions/response.SubConversation'
-        type: array
-      sysPrompt:
-        type: string
-      updatedAt:
-        type: integer
-    type: object
-  response.SkillConversationItem:
-    properties:
-      conversationId:
-        description: 会话ID
-        type: string
-      createdAt:
-        description: 创建时间
-        type: string
-      title:
-        description: 会话标题
-        type: string
-    type: object
   response.SkillInfo:
     properties:
       author:
@@ -9786,203 +9650,6 @@ paths:
       security:
       - JWT: []
       summary: 获取内置skill列表
-      tags:
-      - resource.skill
-  /agent/skill/conversation:
-    delete:
-      consumes:
-      - application/json
-      description: 删除Skill生成会话
-      parameters:
-      - description: 会话ID
-        in: body
-        name: conversationId
-        required: true
-        schema:
-          $ref: '#/definitions/request.DeleteSkillConversationReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - JWT: []
-      summary: 删除Skill生成会话
-      tags:
-      - resource.skill
-    post:
-      consumes:
-      - application/json
-      description: 创建Skill生成会话
-      parameters:
-      - description: 创建会话参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.CreateSkillConversationReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.CreateSkillConversationResp'
-              type: object
-      security:
-      - JWT: []
-      summary: 创建Skill生成会话
-      tags:
-      - resource.skill
-  /agent/skill/conversation/chat:
-    post:
-      consumes:
-      - application/json
-      description: Skill生成流式对话
-      parameters:
-      - description: 对话参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.SkillConversationChatReq'
-      produces:
-      - text/event-stream
-      responses:
-        "200":
-          description: stream
-          schema:
-            type: string
-      security:
-      - JWT: []
-      summary: Skill生成流式对话
-      tags:
-      - resource.skill
-  /agent/skill/conversation/clear:
-    delete:
-      consumes:
-      - application/json
-      description: 清除Skill生成会话对话记录（保留会话ID）
-      parameters:
-      - description: 会话ID
-        in: body
-        name: conversationId
-        required: true
-        schema:
-          $ref: '#/definitions/request.ClearSkillConversationReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - JWT: []
-      summary: 清除Skill生成会话对话记录
-      tags:
-      - resource.skill
-  /agent/skill/conversation/detail:
-    get:
-      consumes:
-      - application/json
-      description: 获取Skill生成会话详情
-      parameters:
-      - description: 会话ID
-        in: query
-        name: conversationId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  allOf:
-                  - $ref: '#/definitions/response.ListResult'
-                  - properties:
-                      list:
-                        items:
-                          $ref: '#/definitions/response.SkillConversationDetailInfo'
-                        type: array
-                    type: object
-              type: object
-      security:
-      - JWT: []
-      summary: 获取Skill生成会话详情
-      tags:
-      - resource.skill
-  /agent/skill/conversation/list:
-    get:
-      consumes:
-      - application/json
-      description: 获取Skill生成会话列表
-      parameters:
-      - description: 页码
-        in: query
-        name: pageNo
-        type: integer
-      - description: 每页数量
-        in: query
-        name: pageSize
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  allOf:
-                  - $ref: '#/definitions/response.PageResult'
-                  - properties:
-                      list:
-                        items:
-                          $ref: '#/definitions/response.SkillConversationItem'
-                        type: array
-                    type: object
-              type: object
-      security:
-      - JWT: []
-      summary: 获取Skill生成会话列表
-      tags:
-      - resource.skill
-  /agent/skill/conversation/save:
-    post:
-      consumes:
-      - application/json
-      description: Skill发送到资源库
-      parameters:
-      - description: 会话ID和保存的技能ID
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.SkillConversationSaveReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - JWT: []
-      summary: Skill发送到资源库
       tags:
       - resource.skill
   /agent/skill/custom:

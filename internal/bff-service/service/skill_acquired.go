@@ -34,9 +34,6 @@ func GetAcquiredSkillList(ctx *gin.Context, userId, orgId, name string) (*respon
 
 // DeleteAcquiredSkill 资源库-删除已添加的skill
 func DeleteAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId string) error {
-	if _, err := getOwnedAcquiredSkill(ctx, userId, orgId, acquiredSkillId); err != nil {
-		return err
-	}
 	_, err := mcp.AcquiredSkillDelete(ctx.Request.Context(), &mcp_service.AcquiredSkillDeleteReq{
 		AcquiredSkillId: acquiredSkillId,
 	})
@@ -45,15 +42,19 @@ func DeleteAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId string
 
 // GetAcquiredSkill 资源库-获取已添加skill详情
 func GetAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId string) (*response.AcquiredSkillDetail, error) {
-	skill, err := getOwnedAcquiredSkill(ctx, userId, orgId, acquiredSkillId)
+	if acquiredSkillId == "" {
+		return nil, grpc_util.ErrorStatus(errs.Code_BFFInvalidArg, "acquiredSkillId is required")
+	}
+	skill, err := mcp.AcquiredSkillGet(ctx.Request.Context(), &mcp_service.AcquiredSkillGetReq{
+		AcquiredSkillId: acquiredSkillId,
+	})
 	if err != nil {
 		return nil, err
 	}
-	if err := ensureAcquiredSourceSkillScopeAccessible(ctx, skill); err != nil {
+	if err := checkAcquiredSkillAccess(ctx, skill); err != nil {
 		return nil, err
 	}
-	detail := toAcquiredSkillDetail(ctx, skill, true)
-	return detail, nil
+	return toAcquiredSkillDetail(ctx, skill, true), nil
 }
 
 func GetCallbackAcquiredSkillListDetail(ctx *gin.Context, acquiredSkillIdList []string) (*response.CallbackAcquiredSkillDetailListResp, error) {
@@ -115,11 +116,13 @@ func GetCallbackAcquiredSkillListDetail(ctx *gin.Context, acquiredSkillIdList []
 }
 
 func DownloadAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId string) ([]byte, error) {
-	skill, err := getOwnedAcquiredSkill(ctx, userId, orgId, acquiredSkillId)
+	skill, err := mcp.AcquiredSkillGet(ctx.Request.Context(), &mcp_service.AcquiredSkillGetReq{
+		AcquiredSkillId: acquiredSkillId,
+	})
 	if err != nil {
 		return nil, err
 	}
-	if err := ensureAcquiredSourceSkillScopeAccessible(ctx, skill); err != nil {
+	if err := checkAcquiredSkillAccess(ctx, skill); err != nil {
 		return nil, err
 	}
 	if skill.GetSkill().GetObjectPath() == "" {
@@ -129,22 +132,24 @@ func DownloadAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId stri
 }
 
 func GetAcquiredSkillVersionList(ctx *gin.Context, userId, orgId, acquiredSkillId string) (*response.ListResult, error) {
-	skill, err := getOwnedAcquiredSkill(ctx, userId, orgId, acquiredSkillId)
+	skill, err := mcp.AcquiredSkillGet(ctx.Request.Context(), &mcp_service.AcquiredSkillGetReq{
+		AcquiredSkillId: acquiredSkillId,
+	})
 	if err != nil {
 		return nil, err
 	}
-	if err := ensureAcquiredSourceSkillScopeAccessible(ctx, skill); err != nil {
+	if err := checkAcquiredSkillAccess(ctx, skill); err != nil {
 		return nil, err
 	}
 	sourceSkillId := skill.GetSkill().GetSkill().GetSkillId()
 	if sourceSkillId == "" {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_acquired_source_id_empty", "acquired skill source custom skill id is empty")
 	}
-	return GetSkillVersionList(ctx, sourceSkillId)
+	return GetSkillVersionList(ctx, sourceSkillId, userId, orgId)
 }
 
 // GetSkillVersionList 获取 skill 版本列表
-func GetSkillVersionList(ctx *gin.Context, skillId string) (*response.ListResult, error) {
+func GetSkillVersionList(ctx *gin.Context, skillId, userId, orgId string) (*response.ListResult, error) {
 	resp, err := mcp.GetPublishCustomSkillHistoryList(ctx.Request.Context(), &mcp_service.GetPublishCustomSkillHistoryListReq{
 		SkillId: skillId,
 	})

@@ -81,6 +81,21 @@ func DownloadBuiltinSkill(ctx *gin.Context, skillId string) ([]byte, error) {
 }
 
 // --- internal ---
+func buildBuiltinSkillInfo(skillsCfg config.SkillsConfig) response.BuiltinSkillInfo {
+	iconUrl := config.Cfg().DefaultIcon.SkillIcon
+	if skillsCfg.Avatar != "" {
+		iconUrl = skillsCfg.Avatar
+	}
+	return response.BuiltinSkillInfo{
+		SkillBasicInfo: response.SkillBasicInfo{
+			SkillId: skillsCfg.SkillId,
+			Name:    skillsCfg.Name,
+			Avatar:  request.Avatar{Path: iconUrl},
+			Author:  skillsCfg.Author,
+			Desc:    skillsCfg.Desc,
+		},
+	}
+}
 
 func buildSkillTempDetail(skillsCfg config.SkillsConfig, needMd bool) *response.SkillDetail {
 	iconUrl := config.Cfg().DefaultIcon.SkillIcon

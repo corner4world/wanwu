@@ -243,6 +243,14 @@ message AcquiredSkillHistoryListResp {
   int64 total = 2;
 }
 
+message CheckAcquiredSkillReq {
+  repeated string skillIds = 1;
+  Identity identity = 2;
+}
+
+message CheckAcquiredSkillResp {
+  map<string, bool> acquiredMap = 1;
+}
 
 message CreateAcquiredSkillVarReq {
   string acquiredSkillId = 1;

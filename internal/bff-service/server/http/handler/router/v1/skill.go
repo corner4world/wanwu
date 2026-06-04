@@ -40,13 +40,4 @@ func registerAgentSkill(apiV1 *gin.RouterGroup) {
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodPost, v1.CreateAcquiredSkillConfig, "新增我添加的skill配置")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodPut, v1.UpdateAcquiredSkillConfig, "编辑我添加的skill配置")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/acquired/config", http.MethodDelete, v1.DeleteAcquiredSkillConfig, "删除我添加的skill配置")
-
-	// skills conversation
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation", http.MethodPost, v1.CreateSkillConversation, "创建Skill生成会话")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation", http.MethodDelete, v1.DeleteSkillConversation, "删除Skill生成会话")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation/clear", http.MethodDelete, v1.ClearSkillConversation, "清除Skill生成会话对话记录")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation/detail", http.MethodGet, v1.GetSkillConversationDetail, "获取Skill生成会话详情")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation/list", http.MethodGet, v1.GetSkillConversationList, "获取Skill生成会话列表")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation/chat", http.MethodPost, v1.SkillConversationChat, "Skill生成流式对话")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/conversation/save", http.MethodPost, v1.SkillConversationSave, "将Skill发送到资源库")
 }

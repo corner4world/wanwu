@@ -30,7 +30,6 @@ func NewClient(db *gorm.DB) (*Client, error) {
 		model.CustomPrompt{},
 		model.AssistantSnapshot{},
 		model.MultiAgentRelation{},
-		model.SkillConversation{},
 		model.WgaConversationConfig{},
 		model.WgaConfig{},
 	); err != nil {

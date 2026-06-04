@@ -76,9 +76,6 @@ const (
 	AssistantService_MultiAgentDelete_FullMethodName                    = "/assistant_service.AssistantService/MultiAgentDelete"
 	AssistantService_MultiAgentEnableSwitch_FullMethodName              = "/assistant_service.AssistantService/MultiAgentEnableSwitch"
 	AssistantService_MultiAgentConfigUpdate_FullMethodName              = "/assistant_service.AssistantService/MultiAgentConfigUpdate"
-	AssistantService_CreateSkillConversation_FullMethodName             = "/assistant_service.AssistantService/CreateSkillConversation"
-	AssistantService_DeleteSkillConversation_FullMethodName             = "/assistant_service.AssistantService/DeleteSkillConversation"
-	AssistantService_GetSkillConversationList_FullMethodName            = "/assistant_service.AssistantService/GetSkillConversationList"
 	AssistantService_GetWgaConversationConfig_FullMethodName            = "/assistant_service.AssistantService/GetWgaConversationConfig"
 	AssistantService_UpdateWgaConversationConfig_FullMethodName         = "/assistant_service.AssistantService/UpdateWgaConversationConfig"
 	AssistantService_GetWgaConfig_FullMethodName                        = "/assistant_service.AssistantService/GetWgaConfig"
@@ -159,10 +156,6 @@ type AssistantServiceClient interface {
 	MultiAgentDelete(ctx context.Context, in *MultiAgentCreateReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	MultiAgentEnableSwitch(ctx context.Context, in *MultiAgentEnableSwitchReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	MultiAgentConfigUpdate(ctx context.Context, in *MultiAgentConfigUpdateReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// --- skill conversation ---
-	CreateSkillConversation(ctx context.Context, in *CreateSkillConversationReq, opts ...grpc.CallOption) (*CreateSkillConversationResp, error)
-	DeleteSkillConversation(ctx context.Context, in *DeleteSkillConversationReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetSkillConversationList(ctx context.Context, in *GetSkillConversationListReq, opts ...grpc.CallOption) (*GetSkillConversationListResp, error)
 	// --- wga config ---
 	GetWgaConversationConfig(ctx context.Context, in *GetWgaConversationConfigReq, opts ...grpc.CallOption) (*GetWgaConversationConfigResp, error)
 	UpdateWgaConversationConfig(ctx context.Context, in *UpdateWgaConversationConfigReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -761,36 +754,6 @@ func (c *assistantServiceClient) MultiAgentConfigUpdate(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *assistantServiceClient) CreateSkillConversation(ctx context.Context, in *CreateSkillConversationReq, opts ...grpc.CallOption) (*CreateSkillConversationResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateSkillConversationResp)
-	err := c.cc.Invoke(ctx, AssistantService_CreateSkillConversation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *assistantServiceClient) DeleteSkillConversation(ctx context.Context, in *DeleteSkillConversationReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AssistantService_DeleteSkillConversation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *assistantServiceClient) GetSkillConversationList(ctx context.Context, in *GetSkillConversationListReq, opts ...grpc.CallOption) (*GetSkillConversationListResp, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetSkillConversationListResp)
-	err := c.cc.Invoke(ctx, AssistantService_GetSkillConversationList_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *assistantServiceClient) GetWgaConversationConfig(ctx context.Context, in *GetWgaConversationConfigReq, opts ...grpc.CallOption) (*GetWgaConversationConfigResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetWgaConversationConfigResp)
@@ -941,10 +904,6 @@ type AssistantServiceServer interface {
 	MultiAgentDelete(context.Context, *MultiAgentCreateReq) (*emptypb.Empty, error)
 	MultiAgentEnableSwitch(context.Context, *MultiAgentEnableSwitchReq) (*emptypb.Empty, error)
 	MultiAgentConfigUpdate(context.Context, *MultiAgentConfigUpdateReq) (*emptypb.Empty, error)
-	// --- skill conversation ---
-	CreateSkillConversation(context.Context, *CreateSkillConversationReq) (*CreateSkillConversationResp, error)
-	DeleteSkillConversation(context.Context, *DeleteSkillConversationReq) (*emptypb.Empty, error)
-	GetSkillConversationList(context.Context, *GetSkillConversationListReq) (*GetSkillConversationListResp, error)
 	// --- wga config ---
 	GetWgaConversationConfig(context.Context, *GetWgaConversationConfigReq) (*GetWgaConversationConfigResp, error)
 	UpdateWgaConversationConfig(context.Context, *UpdateWgaConversationConfigReq) (*emptypb.Empty, error)
@@ -1132,15 +1091,6 @@ func (UnimplementedAssistantServiceServer) MultiAgentEnableSwitch(context.Contex
 }
 func (UnimplementedAssistantServiceServer) MultiAgentConfigUpdate(context.Context, *MultiAgentConfigUpdateReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MultiAgentConfigUpdate not implemented")
-}
-func (UnimplementedAssistantServiceServer) CreateSkillConversation(context.Context, *CreateSkillConversationReq) (*CreateSkillConversationResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateSkillConversation not implemented")
-}
-func (UnimplementedAssistantServiceServer) DeleteSkillConversation(context.Context, *DeleteSkillConversationReq) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteSkillConversation not implemented")
-}
-func (UnimplementedAssistantServiceServer) GetSkillConversationList(context.Context, *GetSkillConversationListReq) (*GetSkillConversationListResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSkillConversationList not implemented")
 }
 func (UnimplementedAssistantServiceServer) GetWgaConversationConfig(context.Context, *GetWgaConversationConfigReq) (*GetWgaConversationConfigResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWgaConversationConfig not implemented")
@@ -2181,60 +2131,6 @@ func _AssistantService_MultiAgentConfigUpdate_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AssistantService_CreateSkillConversation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateSkillConversationReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AssistantServiceServer).CreateSkillConversation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AssistantService_CreateSkillConversation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssistantServiceServer).CreateSkillConversation(ctx, req.(*CreateSkillConversationReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AssistantService_DeleteSkillConversation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteSkillConversationReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AssistantServiceServer).DeleteSkillConversation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AssistantService_DeleteSkillConversation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssistantServiceServer).DeleteSkillConversation(ctx, req.(*DeleteSkillConversationReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AssistantService_GetSkillConversationList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSkillConversationListReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AssistantServiceServer).GetSkillConversationList(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AssistantService_GetSkillConversationList_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AssistantServiceServer).GetSkillConversationList(ctx, req.(*GetSkillConversationListReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AssistantService_GetWgaConversationConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetWgaConversationConfigReq)
 	if err := dec(in); err != nil {
@@ -2601,18 +2497,6 @@ var AssistantService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MultiAgentConfigUpdate",
 			Handler:    _AssistantService_MultiAgentConfigUpdate_Handler,
-		},
-		{
-			MethodName: "CreateSkillConversation",
-			Handler:    _AssistantService_CreateSkillConversation_Handler,
-		},
-		{
-			MethodName: "DeleteSkillConversation",
-			Handler:    _AssistantService_DeleteSkillConversation_Handler,
-		},
-		{
-			MethodName: "GetSkillConversationList",
-			Handler:    _AssistantService_GetSkillConversationList_Handler,
 		},
 		{
 			MethodName: "GetWgaConversationConfig",

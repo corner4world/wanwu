@@ -14,12 +14,9 @@ func (c *Client) CreateCustomSkillVar(ctx context.Context, userId, orgId string,
 	if variable == nil || variable.SkillID == "" || variable.Name == "" {
 		return 0, toErrStatus("mcp_skill_var_invalid_arg")
 	}
-	skill, st := c.GetCustomSkill(ctx, variable.SkillID)
+	_, st := c.GetCustomSkill(ctx, variable.SkillID)
 	if st != nil {
 		return 0, st
-	}
-	if skill.UserID != userId || skill.OrgID != orgId {
-		return 0, toErrStatus("mcp_custom_skill_var_identity_mismatch")
 	}
 	cnt, err := c.countSkillVarByName(ctx, &model.CustomSkillVariable{}, variable.SkillID, userId, orgId, variable.Name, 0)
 	if err != nil {
@@ -51,12 +48,9 @@ func (c *Client) UpdateCustomSkillVar(ctx context.Context, userId, orgId string,
 		}
 		return toErrStatus("mcp_custom_skill_var_update", err.Error())
 	}
-	skill, st := c.GetCustomSkill(ctx, row.SkillID)
+	_, st := c.GetCustomSkill(ctx, row.SkillID)
 	if st != nil {
 		return st
-	}
-	if skill.UserID != userId || skill.OrgID != orgId {
-		return toErrStatus("mcp_custom_skill_var_identity_mismatch")
 	}
 	cnt, err := c.countSkillVarByName(ctx, &model.CustomSkillVariable{}, row.SkillID, userId, orgId, variable.Name, id)
 	if err != nil {
@@ -96,12 +90,9 @@ func (c *Client) DeleteCustomSkillVar(ctx context.Context, userId, orgId string,
 		}
 		return toErrStatus("mcp_custom_skill_var_delete", err.Error())
 	}
-	skill, st := c.GetCustomSkill(ctx, row.SkillID)
+	_, st := c.GetCustomSkill(ctx, row.SkillID)
 	if st != nil {
 		return st
-	}
-	if skill.UserID != userId || skill.OrgID != orgId {
-		return toErrStatus("mcp_custom_skill_var_identity_mismatch")
 	}
 	if err := sqlopt.SQLOptions(
 		sqlopt.WithID(id),

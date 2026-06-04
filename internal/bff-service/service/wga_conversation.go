@@ -34,6 +34,8 @@ const (
 	generalAgentSkillChatNormalAgentID  = "Skill Chat Agent"
 	generalAgentSkillChatImportAgentID  = "Skill Import Agent"
 	generalAgentSkillChatPreviewAgentID = "Skill Preview Agent"
+
+	skillConversationAuthor = "conversation"
 )
 
 func CreateGeneralAgentConversation(ctx *gin.Context, userId, orgId string, req request.CreateGeneralAgentConversationReq) (*response.CreateGeneralAgentConversationResp, error) {
@@ -99,7 +101,7 @@ func RefreshGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string
 	if err != nil {
 		return nil, err
 	}
-	skill := customSkillFromPublish(publish)
+	skill := publish.GetSkill()
 	if skill == nil {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_custom_not_found", "custom skill not found")
 	}
@@ -154,10 +156,6 @@ func RefreshGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string
 }
 
 func DeleteGeneralAgentConversation(ctx *gin.Context, userId, orgId string, req request.DeleteGeneralAgentConversationReq) error {
-	return deleteGeneralAgentConversation(ctx, userId, orgId, req)
-}
-
-func deleteGeneralAgentConversation(ctx *gin.Context, userId, orgId string, req request.DeleteGeneralAgentConversationReq) error {
 	threadID := strings.TrimSpace(req.ThreadID)
 	binding, err := getCustomSkillThreadBinding(ctx, userId, orgId, threadID)
 	if err != nil {
@@ -307,7 +305,7 @@ func getGeneralAgentSkillConversationMap(ctx *gin.Context, userId, orgId string,
 		return skillByThreadID, nil
 	}
 	for _, publish := range resp.List {
-		skill := customSkillFromPublish(publish)
+		skill := publish.GetSkill()
 		if skill == nil || strings.TrimSpace(skill.WgaThreadId) == "" || strings.TrimSpace(skill.SkillId) == "" {
 			continue
 		}

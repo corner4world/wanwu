@@ -23,9 +23,9 @@ import (
 // --- internal wga skill ---
 
 // checkWgaSkillConfig 校验wga Skill配置（用于更新配置）
-func checkWgaSkillConfig(ctx *gin.Context, userId, orgId string, skillList []*assistant_service.WgaConfigSkill) error {
+func checkWgaSkillConfig(ctx *gin.Context, userId, orgId string, skillList []*assistant_service.WgaConfigSkill) ([]*assistant_service.WgaConfigSkill, error) {
 	if len(skillList) == 0 {
-		return nil
+		return skillList, nil
 	}
 
 	var customSkillIds []string
@@ -37,35 +37,41 @@ func checkWgaSkillConfig(ctx *gin.Context, userId, orgId string, skillList []*as
 		case constant.SkillTypeAcquired:
 			acquiredSkillIds = append(acquiredSkillIds, s.SkillId)
 		default:
-			return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("invalid skill type: %s", s.SkillType))
+			log.Warnf("[wga] invalid skill type: %s, skillId: %s, skipping", s.SkillType, s.SkillId)
 		}
 	}
 
 	// 校验 custom 技能
 	validCustomIds, err := getValidSkillIds(ctx, customSkillIds)
 	if err != nil {
-		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "custom skill not found")
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "custom skill not found")
 	}
 
 	// 校验 acquired 技能
 	acquiredSkillMap, err := getAcquiredSkillByIDMap(ctx, acquiredSkillIds)
 	if err != nil {
-		return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "acquired skill not found")
+		return nil, grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, "acquired skill not found")
 	}
 
+	// 过滤出有效的技能列表
+	var validSkillList []*assistant_service.WgaConfigSkill
 	for _, s := range skillList {
 		switch s.SkillType {
 		case constant.SkillTypeCustom:
-			if !validCustomIds[s.SkillId] {
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("skill not found: %s", s.SkillId))
+			if validCustomIds[s.SkillId] {
+				validSkillList = append(validSkillList, s)
+			} else {
+				log.Warnf("[wga] custom skill not found: %s, userId: %s, orgId: %s, skipping", s.SkillId, userId, orgId)
 			}
 		case constant.SkillTypeAcquired:
-			if _, exists := acquiredSkillMap[s.SkillId]; !exists {
-				return grpc_util.ErrorStatus(errs.Code_WgaConfigCheckErr, fmt.Sprintf("skill not found: %s", s.SkillId))
+			if _, exists := acquiredSkillMap[s.SkillId]; exists {
+				validSkillList = append(validSkillList, s)
+			} else {
+				log.Warnf("[wga] acquired skill not found: %s, userId: %s, orgId: %s, skipping", s.SkillId, userId, orgId)
 			}
 		}
 	}
-	return nil
+	return validSkillList, nil
 }
 
 func buildWgaSkillOptions(ctx *gin.Context, userId, orgId, threadId, runId string, skillList []*assistant_service.WgaConfigSkill) ([]wga_option.Option, error) {

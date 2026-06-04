@@ -450,14 +450,18 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 				dedupedList = append(dedupedList, s)
 			}
 		}
-		if err := checkWgaSkillConfig(ctx, userID, orgID, dedupedList); err != nil {
-			return nil, err
-		}
-		skillOpts, err := buildWgaSkillOptions(ctx, userID, orgID, threadID, runID, dedupedList)
+		// 运行时过滤无效 skill
+		validSkillList, err := checkWgaSkillConfig(ctx, userID, orgID, dedupedList)
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, skillOpts...)
+		if len(validSkillList) > 0 {
+			skillOpts, err := buildWgaSkillOptions(ctx, userID, orgID, threadID, runID, validSkillList)
+			if err != nil {
+				return nil, err
+			}
+			opts = append(opts, skillOpts...)
+		}
 	}
 
 	// 校验并构建Knowledge配置选项（追加@提及的Knowledge）

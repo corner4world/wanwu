@@ -84,11 +84,6 @@ type IClient interface {
 	UpdateMultiAssistantRelation(ctx context.Context, assistant *model.MultiAgentRelation) *err_code.Status
 	BatchCreateMultiAssistantRelation(ctx context.Context, assistants []*model.MultiAgentRelation, version string) *err_code.Status
 
-	//=================SkillConversation================
-	CreateSkillConversation(ctx context.Context, conversation *model.SkillConversation) *err_code.Status
-	DeleteSkillConversation(ctx context.Context, conversationId, userId, orgId string) *err_code.Status
-	GetSkillConversationList(ctx context.Context, userId, orgId string, pageNo, pageSize int) ([]*model.SkillConversation, int64, *err_code.Status)
-
 	//=================WgaConversationConfig================
 	GetWgaConversationConfig(ctx context.Context, threadId string, userId, orgId string) (*model.WgaConversationConfig, *err_code.Status)
 	UpdateWgaConversationConfig(ctx context.Context, config *model.WgaConversationConfig) *err_code.Status

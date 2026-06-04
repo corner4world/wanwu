@@ -216,7 +216,7 @@ func GetAppLatestVersion(ctx *gin.Context, userID, orgID, appType, appID string)
 		ret.Desc = resp.Desc
 
 	case constant.AppTypeSkill:
-		resp, err := getLatestPublishCustomSkill(ctx, appID)
+		resp, err := mcp.GetPublishCustomSkillByLatest(ctx.Request.Context(), &mcp_service.GetPublishCustomSkillByLatestReq{SkillId: appID})
 		if err != nil {
 			return nil, err
 		}

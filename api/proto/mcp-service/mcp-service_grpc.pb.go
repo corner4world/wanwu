@@ -76,6 +76,7 @@ const (
 	MCPService_GetAcquiredSkillVars_FullMethodName             = "/mcp_service.MCPService/GetAcquiredSkillVars"
 	MCPService_UpdateAcquiredSkillVar_FullMethodName           = "/mcp_service.MCPService/UpdateAcquiredSkillVar"
 	MCPService_DeleteAcquiredSkillVar_FullMethodName           = "/mcp_service.MCPService/DeleteAcquiredSkillVar"
+	MCPService_CheckAcquiredSkill_FullMethodName               = "/mcp_service.MCPService/CheckAcquiredSkill"
 	MCPService_CreateBuiltinSkillVar_FullMethodName            = "/mcp_service.MCPService/CreateBuiltinSkillVar"
 	MCPService_DeleteBuiltinSkillVar_FullMethodName            = "/mcp_service.MCPService/DeleteBuiltinSkillVar"
 	MCPService_GetBuiltinSkillVars_FullMethodName              = "/mcp_service.MCPService/GetBuiltinSkillVars"
@@ -159,6 +160,7 @@ type MCPServiceClient interface {
 	GetAcquiredSkillVars(ctx context.Context, in *GetAcquiredSkillVarsReq, opts ...grpc.CallOption) (*AcquiredSkillVars, error)
 	UpdateAcquiredSkillVar(ctx context.Context, in *UpdateAcquiredSkillVarReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteAcquiredSkillVar(ctx context.Context, in *DeleteAcquiredSkillVarReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CheckAcquiredSkill(ctx context.Context, in *CheckAcquiredSkillReq, opts ...grpc.CallOption) (*CheckAcquiredSkillResp, error)
 	// --- builtin skill config ---
 	CreateBuiltinSkillVar(ctx context.Context, in *CreateBuiltinSkillVarReq, opts ...grpc.CallOption) (*SkillVariableCreateResp, error)
 	DeleteBuiltinSkillVar(ctx context.Context, in *DeleteBuiltinSkillVarReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -742,6 +744,16 @@ func (c *mCPServiceClient) DeleteAcquiredSkillVar(ctx context.Context, in *Delet
 	return out, nil
 }
 
+func (c *mCPServiceClient) CheckAcquiredSkill(ctx context.Context, in *CheckAcquiredSkillReq, opts ...grpc.CallOption) (*CheckAcquiredSkillResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckAcquiredSkillResp)
+	err := c.cc.Invoke(ctx, MCPService_CheckAcquiredSkill_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mCPServiceClient) CreateBuiltinSkillVar(ctx context.Context, in *CreateBuiltinSkillVarReq, opts ...grpc.CallOption) (*SkillVariableCreateResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SkillVariableCreateResp)
@@ -922,6 +934,7 @@ type MCPServiceServer interface {
 	GetAcquiredSkillVars(context.Context, *GetAcquiredSkillVarsReq) (*AcquiredSkillVars, error)
 	UpdateAcquiredSkillVar(context.Context, *UpdateAcquiredSkillVarReq) (*emptypb.Empty, error)
 	DeleteAcquiredSkillVar(context.Context, *DeleteAcquiredSkillVarReq) (*emptypb.Empty, error)
+	CheckAcquiredSkill(context.Context, *CheckAcquiredSkillReq) (*CheckAcquiredSkillResp, error)
 	// --- builtin skill config ---
 	CreateBuiltinSkillVar(context.Context, *CreateBuiltinSkillVarReq) (*SkillVariableCreateResp, error)
 	DeleteBuiltinSkillVar(context.Context, *DeleteBuiltinSkillVarReq) (*emptypb.Empty, error)
@@ -1112,6 +1125,9 @@ func (UnimplementedMCPServiceServer) UpdateAcquiredSkillVar(context.Context, *Up
 }
 func (UnimplementedMCPServiceServer) DeleteAcquiredSkillVar(context.Context, *DeleteAcquiredSkillVarReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAcquiredSkillVar not implemented")
+}
+func (UnimplementedMCPServiceServer) CheckAcquiredSkill(context.Context, *CheckAcquiredSkillReq) (*CheckAcquiredSkillResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckAcquiredSkill not implemented")
 }
 func (UnimplementedMCPServiceServer) CreateBuiltinSkillVar(context.Context, *CreateBuiltinSkillVarReq) (*SkillVariableCreateResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBuiltinSkillVar not implemented")
@@ -2175,6 +2191,24 @@ func _MCPService_DeleteAcquiredSkillVar_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MCPService_CheckAcquiredSkill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckAcquiredSkillReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).CheckAcquiredSkill(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_CheckAcquiredSkill_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).CheckAcquiredSkill(ctx, req.(*CheckAcquiredSkillReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MCPService_CreateBuiltinSkillVar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateBuiltinSkillVarReq)
 	if err := dec(in); err != nil {
@@ -2603,6 +2637,10 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteAcquiredSkillVar",
 			Handler:    _MCPService_DeleteAcquiredSkillVar_Handler,
+		},
+		{
+			MethodName: "CheckAcquiredSkill",
+			Handler:    _MCPService_CheckAcquiredSkill_Handler,
 		},
 		{
 			MethodName: "CreateBuiltinSkillVar",
