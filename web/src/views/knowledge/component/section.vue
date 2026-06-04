@@ -138,6 +138,7 @@
 
     <div v-if="obj.disable !== 'true'" class="btn">
       <search-input
+        style="visibility: hidden"
         ref="searchInput"
         :placeholder="$t('knowledgeManage.segmentPlaceholder')"
         @handleSearch="handleSearch"
@@ -156,7 +157,7 @@
           type="primary"
           @click="createChunk(false)"
         >
-          新增分段
+          {{ $t('knowledgeManage.create.createChunk') }}
         </el-button>
         <el-button
           v-if="
@@ -192,8 +193,11 @@
     </div>
 
     <div class="container">
-      <!-- 左侧：文件预览面板（仅在非禁用状态且存在下载链接时显示） -->
-      <div v-if="showPreviewPanel" class="section-preview-panel">
+      <!-- 左侧：文件预览面板（仅在非禁用状态且 canPreview 为 true 时显示） -->
+      <div
+        v-if="obj.disable !== 'true' && res?.canPreview === true"
+        class="section-preview-panel"
+      >
         <file-preview-drawer
           :blob="previewBlob"
           :file-name="previewFileName"
@@ -203,10 +207,23 @@
           :visible="true"
         />
       </div>
+      <!-- 不可预览时的兜底提示 -->
+      <div
+        v-else-if="obj.disable !== 'true' && res?.canPreview === false"
+        class="section-preview-panel preview-fail-panel"
+      >
+        <el-empty
+          :description="
+            res?.previewFailReason ||
+            '' ||
+            $t('knowledgeManage.previewUnavailable')
+          "
+        />
+      </div>
 
       <!-- 右侧：分段列表 -->
       <div
-        :class="{ 'full-width': !showPreviewPanel }"
+        :class="{ 'full-width': obj.disable === 'true' }"
         class="section-content-panel"
       >
         <div class="card">
@@ -220,14 +237,19 @@
                 <span>
                   {{ $t('knowledgeManage.split') + ':' + item.contentNum }}
                   <span class="segment-type">
-                    #{{ item.isParent ? '父子分段' : '通用分段' }}
+                    #{{
+                      item.isParent
+                        ? $t('knowledgeManage.config.parentSonSegment')
+                        : $t('knowledgeManage.config.commonSegment')
+                    }}
                   </span>
                   <span class="segment-length" v-if="!item.isParent">
                     #{{ item.content.length
                     }}{{ $t('knowledgeManage.character') }}
                   </span>
                   <span class="segment-child" v-if="item.childNum">
-                    #{{ item.childNum || 0 }}个子分段
+                    #{{ item.childNum || 0
+                    }}{{ $t('knowledgeManage.childSegmentUnit') }}
                   </span>
                 </span>
                 <div>
@@ -312,15 +334,18 @@
         <div
           v-if="obj.disable !== 'true'"
           class="list-common"
-          style="
-            text-align: right;
-            flex-shrink: 0;
-            padding: 10px 0;
-            color: #999;
-            font-size: 13px;
-          "
+          style="text-align: right; flex-shrink: 0; padding: 10px 0"
         >
-          共 {{ res.contentList.length }} 条分段
+          <el-pagination
+            :current-page="page.pageNo"
+            :page-size="page.pageSize"
+            :page-sizes="page.pageSizeList"
+            :total="page.total"
+            background
+            layout="total, prev, pager, next, jumper"
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
+          ></el-pagination>
         </div>
       </div>
     </div>
@@ -406,7 +431,7 @@
                   @click="handleSubmit"
                   :loading="submitLoading"
                 >
-                  保存并重新解析子分段
+                  {{ $t('knowledgeManage.create.saveAndReparseChild') }}
                 </el-button>
               </div>
               <div
@@ -438,7 +463,7 @@
                           @click.stop="editSegment(scope.row, index)"
                         >
                           <i class="el-icon-edit-outline"></i>
-                          编辑
+                          {{ $t('common.button.edit') }}
                         </span>
                         <span
                           v-if="
@@ -455,7 +480,7 @@
                           @click.stop="deleteSegment(scope.row, index)"
                         >
                           <i class="el-icon-delete"></i>
-                          删除
+                          {{ $t('common.button.delete') }}
                         </span>
                         <span
                           v-if="
@@ -465,7 +490,7 @@
                           @click.stop="confirmEdit(scope.row, index)"
                         >
                           <i class="el-icon-check"></i>
-                          保存
+                          {{ $t('common.button.save') }}
                         </span>
                         <span
                           v-if="
@@ -475,7 +500,7 @@
                           @click.stop="cancelEdit(scope.row, index)"
                         >
                           <i class="el-icon-close"></i>
-                          取消
+                          {{ $t('common.button.cancel') }}
                         </span>
                       </div>
                     </template>
@@ -532,7 +557,7 @@
           :loading="submitLoading"
           v-if="!cardObj[0]['isParent']"
         >
-          确定
+          {{ $t('common.confirm.confirm') }}
         </el-button>
         <el-button
           type="primary"
@@ -547,7 +572,7 @@
           "
           :disabled="submitLoading"
         >
-          新增子分段
+          {{ $t('knowledgeManage.create.addChildChunk') }}
         </el-button>
         <el-button
           type="primary"
@@ -621,7 +646,7 @@ export default {
     return {
       submitLoading: false,
       oldContent: '',
-      title: '创建关键词',
+      title: '',
       dialogVisible: false,
       editingSegments: {},
       editingContent: {},
@@ -653,6 +678,14 @@ export default {
       contentId: '',
       timer: null,
       refreshCount: 0,
+      // 分页相关
+      page: {
+        pageNo: 1,
+        pageSize: 10,
+        pageSizeList: [10, 15, 20, 50],
+        total: 0,
+      },
+      keyword: '',
       // 文件预览相关
       previewLoading: false,
       previewFileName: '',
@@ -669,9 +702,8 @@ export default {
     isMultiModal() {
       return Number(this.obj.category) === MULTIMODAL;
     },
-    // 判断是否显示预览面板：非禁用状态且存在下载链接
-    showPreviewPanel() {
-      return this.obj.disable !== 'true' && this.res.downloadUrl;
+    title() {
+      return this.$t('knowledgeManage.createKeyword');
     },
   },
   created() {
@@ -704,7 +736,12 @@ export default {
   methods: {
     Md2Img,
     handleSearch(val) {
-      this.getList(val);
+      // keyword 变化时重置页码
+      if (this.keyword !== val) {
+        this.keyword = val;
+        this.page.pageNo = 1;
+        this.getList();
+      }
     },
     createChunk(isChildChunk) {
       this.$refs.createChunk.showDialog(
@@ -746,7 +783,7 @@ export default {
       const newContent = this.editingContent[key];
 
       if (!newContent || newContent.trim() === '') {
-        this.$message.warning('内容不能为空');
+        this.$message.warning(this.$t('knowledgeManage.contentEmpty'));
         return;
       }
       updateSegmentChild({
@@ -760,16 +797,16 @@ export default {
       })
         .then(res => {
           if (res.code === 0) {
-            this.$message.success('更新成功');
+            this.$message.success(this.$t('knowledgeManage.updateSuccess'));
             this.handleParse();
             this.$set(this.editingSegments, key, false);
             this.$delete(this.editingContent, key);
           } else {
-            this.$message.error('更新失败');
+            this.$message.error(this.$t('knowledgeManage.updateFail'));
           }
         })
         .catch(() => {
-          this.$message.error('更新失败');
+          this.$message.error(this.$t('knowledgeManage.updateFail'));
         });
     },
     handleParse() {
@@ -788,11 +825,15 @@ export default {
         .catch(() => {});
     },
     deleteSegment(row, index) {
-      this.$confirm('确定要删除这个子分段吗？', '提示', {
-        confirmButtonText: this.$t('common.confirm.confirm'),
-        cancelButtonText: this.$t('common.confirm.cancel'),
-        type: 'warning',
-      }).then(() => {
+      this.$confirm(
+        this.$t('knowledgeManage.create.deleteChildChunkTips'),
+        this.$t('common.confirm.title'),
+        {
+          confirmButtonText: this.$t('common.confirm.confirm'),
+          cancelButtonText: this.$t('common.confirm.cancel'),
+          type: 'warning',
+        },
+      ).then(() => {
         delSegmentChild({
           docId: this.obj.id,
           parentId: row['childContent'][index].parentId,
@@ -801,12 +842,14 @@ export default {
         })
           .then(res => {
             if (res.code === 0) {
-              this.$message.success('删除成功');
+              this.$message.success(
+                this.$t('knowledgeManage.create.deleteSuccess'),
+              );
               this.handleParse();
             }
           })
           .catch(() => {
-            this.$message.error('删除失败');
+            this.$message.error(this.$t('knowledgeManage.deleteFail'));
           });
       });
     },
@@ -827,7 +870,7 @@ export default {
     },
     clearTimer() {
       if (this.timer) {
-        clearInterval(this.timer);
+        clearTimeout(this.timer);
         this.timer = null;
       }
     },
@@ -835,7 +878,7 @@ export default {
       const hasChanges = this.oldContent !== this.cardObj[0]['content'];
 
       if (!hasChanges) {
-        this.$message.warning('无修改');
+        this.$message.warning(this.$t('knowledgeManage.noChange'));
         return false;
       }
 
@@ -847,13 +890,12 @@ export default {
       })
         .then(res => {
           if (res.code === 0) {
-            this.$message.success('操作成功');
+            this.$message.success(this.$t('knowledgeManage.operateSuccess'));
             this.dialogVisible = false;
-            this.submitLoading = false;
             this.getList();
           }
         })
-        .catch(() => {
+        .finally(() => {
           this.submitLoading = false;
         });
     },
@@ -869,7 +911,9 @@ export default {
       delSegment({ contentId: item.contentId, docId: this.obj.id })
         .then(res => {
           if (res.code === 0) {
-            this.$message.success('删除成功');
+            this.$message.success(
+              this.$t('knowledgeManage.create.deleteSuccess'),
+            );
             this.getList();
           }
         })
@@ -943,24 +987,30 @@ export default {
     filterRule(rule) {
       return rule.map(item => `${item.metaKey}:${item.metaRule}`).join(', ');
     },
-    getList(keyword = '') {
+    getList() {
       this.loading.itemStatus = true;
-      this.previewLoading = true;
-      this.previewBlob = null;
+      // 预览文件只在 created 首次加载时下载一次，后续 getList 不再重复下载
+      this.previewLoading = !this.previewFileName;
+
       getSectionList({
-        keyword: keyword,
+        keyword: this.keyword,
         docId: this.obj.id,
-        pageNo: 1,
-        pageSize: 9999,
+        pageNo: this.page.pageNo,
+        pageSize: this.page.pageSize,
       })
         .then(async res => {
-          this.loading.itemStatus = false;
           this.res = res.data;
+          this.page.total = res.data.segmentTotalNum || 0;
           this.metaRuleList = res.data.metaDataList.filter(
             item => item.metaRule,
           );
           this.metaDataList = res.data.metaDataList;
-          if (res.data?.downloadUrl) {
+
+          if (
+            this.previewLoading &&
+            res.data?.canPreview === true &&
+            res.data?.downloadUrl
+          ) {
             const fileName = this.obj.name;
             const hasExtension = fileName.includes('.');
             this.previewFileName = hasExtension ? fileName : `${fileName}.url`;
@@ -973,12 +1023,23 @@ export default {
               console.error('文件预览下载失败:', e);
             }
           }
-          this.previewLoading = false;
         })
         .catch(() => {
-          this.loading.itemStatus = false;
+          this.$message.error(this.$t('knowledgeManage.getListFail'));
+        })
+        .finally(() => {
           this.previewLoading = false;
+          this.loading.itemStatus = false;
         });
+    },
+    handleCurrentChange(val) {
+      this.page.pageNo = val;
+      this.getList();
+    },
+    handleSizeChange(val) {
+      this.page.pageSize = val;
+      this.page.pageNo = 1;
+      this.getList();
     },
     handleClick(item, index) {
       this.dialogVisible = true;
@@ -1047,13 +1108,12 @@ export default {
         all: true,
       })
         .then(res => {
-          this.loading.itemStatus = false;
           if (res.code === 0) {
             this.$message.success(this.$t('knowledgeManage.operateSuccess'));
             this.getList();
           }
         })
-        .catch(() => {
+        .finally(() => {
           this.loading.itemStatus = false;
         });
     },
@@ -1381,6 +1441,14 @@ export default {
         right: -3px;
         border-radius: 0 12px 12px 0;
       }
+
+      &.preview-fail-panel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid #e4e7ed;
+        background: #fafafa;
+      }
     }
 
     .section-content-panel {
@@ -1405,6 +1473,7 @@ export default {
         flex-direction: column;
         gap: 12px;
         padding: 0 2px;
+        flex-wrap: nowrap;
 
         .text {
           font-size: 14px;
