@@ -79,7 +79,7 @@ func (s *Service) GetPublishCustomSkillByVersion(ctx context.Context, req *mcp_s
 	return toProtoPublishCustomSkill(customSkill, publish), nil
 }
 
-// GetPublishCustomSkillList 与 CustomSkillGetList 共用 buildCustomSkillGetListResp（草稿 + 可选最新发布）。
+// GetPublishCustomSkillList 返回该用户已发布的自定义 skill 列表（不包含未发布的草稿）。
 func (s *Service) GetPublishCustomSkillList(ctx context.Context, req *mcp_service.GetPublishCustomSkillListReq) (*mcp_service.GetPublishCustomSkillListResp, error) {
 	if req.GetIdentity() == nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_publish_list", "identity is empty"))
@@ -88,7 +88,14 @@ func (s *Service) GetPublishCustomSkillList(ctx context.Context, req *mcp_servic
 	if st != nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, st)
 	}
-	return &mcp_service.GetPublishCustomSkillListResp{List: resp.List}, nil
+	// 过滤出已发布的 skill：Version 非空表示存在发布记录
+	filtered := make([]*mcp_service.PublishCustomSkill, 0, len(resp.List))
+	for _, item := range resp.List {
+		if item.GetVersion() != "" {
+			filtered = append(filtered, item)
+		}
+	}
+	return &mcp_service.GetPublishCustomSkillListResp{List: filtered}, nil
 }
 
 func (s *Service) GetPublishCustomSkillByIDList(ctx context.Context, req *mcp_service.GetPublishCustomSkillByIDListReq) (*mcp_service.GetPublishCustomSkillByIDListResp, error) {

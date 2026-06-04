@@ -201,7 +201,7 @@ func PublishApp(ctx *gin.Context, userId, orgId string, req request.PublishAppRe
 		}
 	}
 	if req.AppType == constant.AppTypeSkill {
-		resp, err := getLatestPublishCustomSkill(ctx, req.AppId)
+		resp, err := mcp.GetPublishCustomSkillByLatest(ctx.Request.Context(), &mcp_service.GetPublishCustomSkillByLatestReq{SkillId: req.AppId})
 		if err == nil && resp != nil && resp.GetVersion() != "" {
 			if err := util.IsVersionGreaterThan(req.Version, resp.GetVersion()); err != nil {
 				return grpc_util.ErrorStatusWithKey(err_code.Code_BFFGeneral, "bff_app_publish_version", resp.GetVersion(), req.Version, err.Error())
@@ -356,7 +356,7 @@ func getAppVersionBatch(ctx *gin.Context, userId, orgId string, publishAppMap ma
 		}
 	}
 	if len(skillIds) > 0 {
-		publishBySkill, err := getLatestPublishCustomSkillMap(ctx, skillIds)
+		publishBySkill, err := getCustomSkillPublishMap(ctx, skillIds)
 		if err != nil {
 			log.Errorf("getAppVersionBatch skill batch query failed, userId=%s orgId=%s skillCount=%d err=%v", userId, orgId, len(skillIds), err)
 		} else {

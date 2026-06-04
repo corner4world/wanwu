@@ -715,7 +715,7 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 	customSkillMap := make(map[string]*mcp_service.PublishCustomSkill)
 	if len(customSkillIds) > 0 {
 		var err error
-		customSkillMap, err = getLatestPublishCustomSkillMap(ctx, customSkillIds)
+		customSkillMap, err = getCustomSkillPublishMap(ctx, customSkillIds)
 		if err != nil {
 			log.Warnf("获取自定义 skill 详情失败，err: %v", err)
 			customSkillMap = make(map[string]*mcp_service.PublishCustomSkill)
@@ -765,7 +765,7 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 				if strings.TrimSpace(publish.GetVersion()) == "" {
 					continue
 				}
-				customSkill := customSkillFromPublish(publish)
+				customSkill := publish.GetSkill()
 				if customSkill != nil {
 					exists = true
 					skillName = customSkill.GetName()
@@ -779,7 +779,7 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 				if !isAcquiredSkillAccessible(ctx, item, acquiredAppInfoMap) {
 					continue
 				}
-				customSkill := customSkillFromPublish(item.GetSkill())
+				customSkill := item.GetSkill().GetSkill()
 				if customSkill != nil {
 					exists = true
 					skillName = customSkill.GetName()

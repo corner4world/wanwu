@@ -84,11 +84,6 @@ service AssistantService {
   rpc MultiAgentEnableSwitch(MultiAgentEnableSwitchReq) returns (google.protobuf.Empty) {}
   rpc MultiAgentConfigUpdate(MultiAgentConfigUpdateReq) returns (google.protobuf.Empty) {}
 
-  // --- skill conversation ---
-  rpc CreateSkillConversation(CreateSkillConversationReq) returns (CreateSkillConversationResp) {}
-  rpc DeleteSkillConversation(DeleteSkillConversationReq) returns (google.protobuf.Empty) {}
-  rpc GetSkillConversationList(GetSkillConversationListReq) returns (GetSkillConversationListResp) {}
-
   // --- wga config ---
   rpc GetWgaConversationConfig(GetWgaConversationConfigReq) returns (GetWgaConversationConfigResp) {}
   rpc UpdateWgaConversationConfig(UpdateWgaConversationConfigReq) returns (google.protobuf.Empty) {}
@@ -873,39 +868,6 @@ message AssistantBrief{
   string uuid = 3; // 智能体唯一标识，供 OpenAPI 使用
 }
 
-
-// --- skill conversation messages ---
-
-message CreateSkillConversationReq {
-  string title = 1;
-  Identity identity = 2;
-}
-
-message CreateSkillConversationResp {
-  string conversationId = 1;
-}
-
-message DeleteSkillConversationReq {
-  string conversationId = 1;
-  Identity identity = 2;
-}
-
-message GetSkillConversationListReq {
-  int32 pageNo = 1;
-  int32 pageSize = 2;
-  Identity identity = 3;
-}
-
-message GetSkillConversationListResp {
-  repeated SkillConversationItem list = 1;
-  int64 total = 2;
-}
-
-message SkillConversationItem {
-  string conversationId = 1;
-  string title = 2;
-  int64 createdAt = 3;
-}
 
 // --- wga conversation messages ---
 

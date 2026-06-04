@@ -65,10 +65,6 @@ func (s *Service) UpdateCustomSkillVar(ctx context.Context, req *mcp_service.Upd
 	if st != nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, st)
 	}
-	// 校验归属
-	if customSkill.UserID != req.GetIdentity().GetUserId() || customSkill.OrgID != req.GetIdentity().GetOrgId() {
-		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_var_update", "identity mismatch"))
-	}
 	if err := s.cli.UpdateCustomSkillVar(ctx, customSkill.UserID, customSkill.OrgID, id, protoVariableToCustomModel(req.Variable)); err != nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, err)
 	}
@@ -87,10 +83,6 @@ func (s *Service) DeleteCustomSkillVar(ctx context.Context, req *mcp_service.Del
 	customSkill, st := s.cli.GetCustomSkill(ctx, variable.SkillID)
 	if st != nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, st)
-	}
-	// 校验归属
-	if customSkill.UserID != req.GetIdentity().GetUserId() || customSkill.OrgID != req.GetIdentity().GetOrgId() {
-		return nil, errStatus(errs.Code_MCPCustomSkillErr, toErrStatus("mcp_custom_skill_var_delete", "identity mismatch"))
 	}
 	if err := s.cli.DeleteCustomSkillVar(ctx, customSkill.UserID, customSkill.OrgID, id); err != nil {
 		return nil, errStatus(errs.Code_MCPCustomSkillErr, err)

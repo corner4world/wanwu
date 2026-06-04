@@ -10,48 +10,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// canAccessPublishedSkill 判断用户是否有权限访问已发布的 Skill。
-// - public: 对所有人可见
-// - organization: 对同组织用户可见
-// - private: 仅对创建者可见
-func canAccessPublishedSkill(appInfo *app_service.AppInfo, userID, orgID string) bool {
-	if appInfo == nil {
-		return false
-	}
-	switch appInfo.GetPublishType() {
-	case constant.AppPublishPublic:
-		return true
-	case constant.AppPublishOrganization:
-		return appInfo.GetOrgId() == orgID
-	case constant.AppPublishPrivate:
-		return appInfo.GetUserId() == userID
-	default:
-		return false
-	}
-}
-
-// selectAccessiblePublishedSkillAppInfo 从 AppInfo 列表中选择第一条用户可访问的记录。
-// 同一 appId 可能有多条发布记录（不同组织发布），按顺序返回第一条可访问的。
-func selectAccessiblePublishedSkillAppInfo(appInfos []*app_service.AppInfo, userID, orgID string) *app_service.AppInfo {
+// checkAccessibleSkillApp 从 AppInfo 列表中过滤用户可访问的第一条记录。
+// 同一 skillId 可能有多条发布记录（不同组织发布），按顺序返回第一条可访问的。
+// 发布类型权限判断：public 全部可访问，organization 仅同组织可访问，private 仅创建者可访问。
+func checkAccessibleSkillApp(appInfos []*app_service.AppInfo, userID, orgID string) *app_service.AppInfo {
 	for _, appInfo := range appInfos {
-		if canAccessPublishedSkill(appInfo, userID, orgID) {
+		if appInfo == nil {
+			continue
+		}
+		switch appInfo.GetPublishType() {
+		case constant.AppPublishPublic:
 			return appInfo
+		case constant.AppPublishOrganization:
+			if appInfo.GetOrgId() == orgID {
+				return appInfo
+			}
+		case constant.AppPublishPrivate:
+			if appInfo.GetUserId() == userID {
+				return appInfo
+			}
 		}
 	}
 	return nil
-}
-
-// hasAvailableAcquiredSkillPackage 判断 acquired skill 是否有可用的发布包。
-// version 和 objectPath 必须同时非空。
-func hasAvailableAcquiredSkillPackage(skill *mcp_service.AcquiredSkill) bool {
-	if skill == nil {
-		return false
-	}
-	publish := skill.GetSkill()
-	if publish == nil {
-		return false
-	}
-	return publish.GetVersion() != "" && publish.GetObjectPath() != ""
 }
 
 // getSourceSkillAppInfoMap 批量获取源 Skill 的发布信息。
@@ -87,30 +67,34 @@ func isAcquiredSkillAccessible(ctx *gin.Context, skill *mcp_service.AcquiredSkil
 	if skill == nil {
 		return false
 	}
-	// 必须有有效的发布包
-	if !hasAvailableAcquiredSkillPackage(skill) {
+
+	// 必须有有效地发布包
+	publish := skill.GetSkill()
+	if publish == nil {
 		return false
 	}
+	if publish.GetVersion() == "" || publish.GetObjectPath() == "" {
+		return false
+	}
+
 	// 获取源 Skill ID
 	sourceSkillId := skill.GetSkill().GetSkill().GetSkillId()
 	if sourceSkillId == "" {
 		return false
 	}
+
 	// 获取源 Skill 的发布信息列表
 	appInfos := appInfoMap[sourceSkillId]
 	if len(appInfos) == 0 {
 		return false
 	}
-	// 使用 acquired 记录所有者作为访问主体
-	userID := skill.GetUserId()
-	orgID := skill.GetOrgId()
+
 	// 判断是否有任一发布记录可访问
-	return selectAccessiblePublishedSkillAppInfo(appInfos, userID, orgID) != nil
+	return checkAccessibleSkillApp(appInfos, skill.GetUserId(), skill.GetOrgId()) != nil
 }
 
-// ensureAcquiredSourceSkillScopeAccessible 校验源 Skill 的发布范围对添加者是否可访问。
-// 不可访问时返回带 i18n 的错误。访问主体为 acquired 记录的所有者。
-func ensureAcquiredSourceSkillScopeAccessible(ctx *gin.Context, skill *mcp_service.AcquiredSkill) error {
+// checkAcquiredSkillAccess 校验用户是否有权限访问 acquired skill 的源 custom skill。
+func checkAcquiredSkillAccess(ctx *gin.Context, skill *mcp_service.AcquiredSkill) error {
 	if skill == nil {
 		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_acquired_not_found", "acquired skill not found")
 	}
@@ -124,16 +108,8 @@ func ensureAcquiredSourceSkillScopeAccessible(ctx *gin.Context, skill *mcp_servi
 		return err
 	}
 	appInfos := appInfoMap[sourceSkillId]
-	if len(appInfos) == 0 {
-		log.Warnf("ensureAcquiredSourceSkillScopeAccessible: source skill not found in app service, sourceSkillId=%s", sourceSkillId)
-		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_acquired_source_inaccessible", "source skill not found in app service")
-	}
-	// 使用 acquired 记录所有者作为访问主体
-	userID := skill.GetUserId()
-	orgID := skill.GetOrgId()
-	appInfo := selectAccessiblePublishedSkillAppInfo(appInfos, userID, orgID)
-	if appInfo == nil {
-		log.Warnf("ensureAcquiredSourceSkillScopeAccessible: no accessible appInfo, sourceSkillId=%s, reqUserId=%s, reqOrgId=%s", sourceSkillId, userID, orgID)
+	if len(appInfos) == 0 || checkAccessibleSkillApp(appInfos, skill.GetUserId(), skill.GetOrgId()) == nil {
+		log.Warnf("checkAcquiredSkillAccess: no accessible appInfo, sourceSkillId=%s", sourceSkillId)
 		return grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_acquired_no_permission", "no permission to access this skill")
 	}
 	return nil

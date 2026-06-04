@@ -96,6 +96,26 @@ func (s *Service) AcquiredSkillGetHistoryList(ctx context.Context, req *mcp_serv
 	return &mcp_service.AcquiredSkillHistoryListResp{HistoryList: list, Total: total}, nil
 }
 
+// CheckAcquiredSkill 批量检查指定 skillIds 是否已被当前用户获取。
+func (s *Service) CheckAcquiredSkill(ctx context.Context, req *mcp_service.CheckAcquiredSkillReq) (*mcp_service.CheckAcquiredSkillResp, error) {
+	acquiredMap := make(map[string]bool)
+	if len(req.GetSkillIds()) > 0 {
+		acquiredList, _, st := s.cli.GetAcquiredSkillList(ctx, req.Identity.GetUserId(), req.Identity.GetOrgId(), "")
+		if st == nil {
+			for _, acquired := range acquiredList {
+				if acquired.CustomSkillID != "" {
+					acquiredMap[acquired.CustomSkillID] = true
+				}
+			}
+		}
+	}
+	result := make(map[string]bool, len(req.GetSkillIds()))
+	for _, skillId := range req.GetSkillIds() {
+		result[skillId] = acquiredMap[skillId]
+	}
+	return &mcp_service.CheckAcquiredSkillResp{AcquiredMap: result}, nil
+}
+
 func (s *Service) toProtoAcquiredSkills(ctx context.Context, acquiredSkills []*model.AcquiredSkill) ([]*mcp_service.AcquiredSkill, error) {
 	if len(acquiredSkills) == 0 {
 		return []*mcp_service.AcquiredSkill{}, nil

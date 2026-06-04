@@ -52,14 +52,16 @@ func (c *Client) DeleteCustomSkill(ctx context.Context, skillId string) *err_cod
 }
 
 func (c *Client) GetCustomSkill(ctx context.Context, skillId string) (*model.CustomSkill, *err_code.Status) {
+	if skillId == "" {
+		return nil, toErrStatus("mcp_custom_skill_invalid_arg", "skillId is empty")
+	}
 	var cs model.CustomSkill
-	if err := sqlopt.SQLOptions(
-		sqlopt.WithID(util.MustU32(skillId)),
-	).Apply(c.db).WithContext(ctx).First(&cs).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	result := sqlopt.WithID(util.MustU32(skillId)).Apply(c.db).WithContext(ctx).First(&cs)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, toErrStatus("mcp_custom_skill_not_found", skillId)
 		}
-		return nil, toErrStatus("mcp_custom_skill_get", skillId, err.Error())
+		return nil, toErrStatus("mcp_custom_skill_get", skillId, result.Error.Error())
 	}
 	return &cs, nil
 }

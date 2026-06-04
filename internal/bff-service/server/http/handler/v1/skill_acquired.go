@@ -59,8 +59,7 @@ func DeleteAcquiredSkill(ctx *gin.Context) {
 //	@Success		200		{object}	response.Response{data=response.AcquiredSkillDetail}
 //	@Router			/agent/skill/acquired/detail [get]
 func GetAcquiredSkillDetail(ctx *gin.Context) {
-	skillId := ctx.Query("skillId")
-	resp, err := service.GetAcquiredSkill(ctx, getUserID(ctx), getOrgID(ctx), skillId)
+	resp, err := service.GetAcquiredSkill(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))
 	gin_util.Response(ctx, resp, err)
 }
 
@@ -101,8 +100,7 @@ func DownloadAcquiredSkill(ctx *gin.Context) {
 //	@Success		200		{object}	response.Response{data=response.ListResult{list=[]response.SkillVersionInfo}}
 //	@Router			/agent/skill/acquired/version/list [get]
 func GetAcquiredSkillVersionList(ctx *gin.Context) {
-	skillId := ctx.Query("skillId")
-	resp, err := service.GetAcquiredSkillVersionList(ctx, getUserID(ctx), getOrgID(ctx), skillId)
+	resp, err := service.GetAcquiredSkillVersionList(ctx, getUserID(ctx), getOrgID(ctx), ctx.Query("skillId"))
 	gin_util.Response(ctx, resp, err)
 }
 

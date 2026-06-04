@@ -85,6 +85,7 @@ service MCPService {
   rpc GetAcquiredSkillVars(GetAcquiredSkillVarsReq) returns (AcquiredSkillVars) {}
   rpc UpdateAcquiredSkillVar(UpdateAcquiredSkillVarReq) returns (google.protobuf.Empty) {}
   rpc DeleteAcquiredSkillVar(DeleteAcquiredSkillVarReq) returns (google.protobuf.Empty) {}
+  rpc CheckAcquiredSkill(CheckAcquiredSkillReq) returns (CheckAcquiredSkillResp) {}
 
   // --- builtin skill config ---
   rpc CreateBuiltinSkillVar(CreateBuiltinSkillVarReq) returns (SkillVariableCreateResp) {}
