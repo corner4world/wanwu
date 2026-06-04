@@ -1620,7 +1620,12 @@ func checkDocFile(ctx context.Context, req *knowledgebase_doc_service.ReImportDo
 			log.Errorf("文件 '%s' 大小超过限制(%v)", doc.Name, err)
 			continue
 		}
-		//4.文档重名校验
+		//4.文件名合法性校验
+		if !import_service.IsSafeFileName(doc.Name) {
+			log.Errorf("文件 '%s' 文件名非法，不支持重导入", doc.Name)
+			continue
+		}
+		//5.文档重名校验
 		err = orm.CheckKnowledgeDocSameName(ctx, req.UserId, req.KnowledgeId, doc.Name, "", doc.DocId)
 		if err != nil {
 			log.Errorf("文件 '%s' 判断文档重名失败(%v)", doc.Name, err)

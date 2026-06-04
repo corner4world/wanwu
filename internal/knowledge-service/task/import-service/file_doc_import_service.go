@@ -100,7 +100,7 @@ func checkOneFile(ctx context.Context, importTask *model.KnowledgeImportTask, do
 		return false, util.KnowledgeImportFileSizeErr
 	}
 	//3.文件名合法性校验
-	if !isSafeFileName(doc.DocName) {
+	if !IsSafeFileName(doc.DocName) {
 		log.Errorf("文件 '%s' 文件名非法", doc.DocName)
 		return false, util.KnowledgeImportInvalidNameErr
 	}
@@ -113,9 +113,9 @@ func checkOneFile(ctx context.Context, importTask *model.KnowledgeImportTask, do
 	return true, ""
 }
 
-// isSafeFileName 校验文件名是否合法
+// IsSafeFileName 校验文件名是否合法
 // 文件名中不能包含斜杠 /、反斜杠 \、或连续两个点 ..
-func isSafeFileName(name string) bool {
+func IsSafeFileName(name string) bool {
 	if strings.Contains(name, "/") || strings.Contains(name, "\\") {
 		return false
 	}
