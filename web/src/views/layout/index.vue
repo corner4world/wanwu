@@ -697,14 +697,14 @@ export default {
       .menu-group-title {
         font-size: 12px;
         color: #686f82;
-        padding: 12px 16px 6px 24px;
+        padding: 16px 16px 6px 24px;
         line-height: 1;
         font-weight: 400;
         white-space: nowrap;
       }
       .menu-group:first-of-type {
         .menu-group-title {
-          padding-top: 0;
+          padding-top: 5px;
         }
       }
       .flat-menu-item {
