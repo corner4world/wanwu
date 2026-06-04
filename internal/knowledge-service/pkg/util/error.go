@@ -22,6 +22,17 @@ const (
 	KnowledgeDocFileUnUsableErr     = "know_doc_file_unusable"
 )
 
+// IsPreImportCheckFailErr 导入前校验失败的文档从未推送到 RAG，删除时无需调用 RAG 删除接口
+func IsPreImportCheckFailErr(errMsg string) bool {
+	switch errMsg {
+	case KnowledgeImportFileFormatErr, KnowledgeImportFileSizeErr,
+		KnowledgeImportSameNameErr, KnowledgeImportInvalidNameErr:
+		return true
+	default:
+		return false
+	}
+}
+
 func ErrCode(code err_code.Code) error {
 	return grpc_util.ErrorStatusWithKey(code, "")
 }

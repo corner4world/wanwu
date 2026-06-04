@@ -622,7 +622,7 @@ func (s *Service) GetDocSegmentList(ctx context.Context, req *knowledgebase_doc_
 	}
 	//4.查询分片信息
 	segmentListResp := &service.ContentListResp{}
-	if docInfo.ErrorMsg != util.KnowledgeImportSameNameErr {
+	if !util.IsPreImportCheckFailErr(docInfo.ErrorMsg) {
 		segmentListResp, err = service.RagGetDocSegmentList(ctx, &service.RagGetDocSegmentParams{
 			UserId:            knowledge.UserId,
 			KnowledgeBaseName: knowledge.RagName,

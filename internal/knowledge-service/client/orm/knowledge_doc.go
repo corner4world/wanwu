@@ -439,7 +439,11 @@ func CopyDocAndRemoveRag(ctx context.Context, knowledge *model.KnowledgeBase, do
 			log.Errorf("UpdateDocInfo %s", err)
 			return err
 		}
-		//2.rag删除
+		//2.rag删除（导入前校验失败的文档从未推送到 RAG，无需调用 RAG 删除，否则会因非法文件名等触发 RAG 报错）
+		if util.IsPreImportCheckFailErr(knowledgeDoc.ErrorMsg) {
+			log.Infof("导入前校验失败文件未推送rag，重导入时跳过rag删除，id: %s， name: %s, errMsg: %s", knowledgeDoc.DocId, knowledgeDoc.Name, knowledgeDoc.ErrorMsg)
+			return nil
+		}
 		var fileName = service.RebuildFileName(knowledgeDoc.DocId, knowledgeDoc.FileType, knowledgeDoc.Name)
 		err = service.RagDeleteDoc(ctx, &service.RagDeleteDocParams{
 			UserId:          knowledge.UserId,
@@ -817,8 +821,8 @@ func deleteDocAndRag(ctx context.Context, knowledge *model.KnowledgeBase, knowle
 		if err != nil {
 			return err
 		}
-		if knowledgeDoc.ErrorMsg == util.KnowledgeImportSameNameErr {
-			log.Infof("同名错误文件删除不删除rag，id: %s， name: %s", knowledgeDoc.DocId, knowledgeDoc.Name)
+		if util.IsPreImportCheckFailErr(knowledgeDoc.ErrorMsg) {
+			log.Infof("导入前校验失败文件未推送rag，删除时跳过rag删除，id: %s， name: %s, errMsg: %s", knowledgeDoc.DocId, knowledgeDoc.Name, knowledgeDoc.ErrorMsg)
 			return nil
 		}
 		//3.删除 rag 文档
