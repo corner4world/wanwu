@@ -51,12 +51,6 @@ ontology --user-id <accountId> bkn object-type query <kn_id> <ot-id> \
 ontology --user-id <accountId> bkn object-type list <kn_id>
 ```
 
-或用语义检索辅助定位概念（不是实例查询）：
-
-```bash
-ontology --user-id <accountId> bkn search <kn_id> "<中文意图>" [--max-concepts 10]
-```
-
 最终回到主路径的 `bkn object-type query` 走实例检索。
 
 ## 检索词（`<search>`）优化

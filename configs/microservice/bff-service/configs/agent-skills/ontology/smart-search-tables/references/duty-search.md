@@ -51,15 +51,6 @@ ontology --user-id <accountId> bkn object-type query <duty_kn_id> <ot-id> \
 - **结构约束**：与步骤 1 同构；仅允许变动 `condition.sub_conditions[*].value` 与 `limit` / `properties`。
 - **`<ot-id>`**：不确定时先 `ontology --user-id <accountId> bkn object-type list <duty_kn_id>` 列出，由 smart-data-analysis 选定。
 
-### 主路径 B：语义检索（备选，当只想要"匹配的职责概念"而非实例条目）
-
-```bash
-ontology --user-id <accountId> bkn search <duty_kn_id> "<search>" \
-  [--max-concepts 10] [--mode keyword_vector_retrieval] [-bd bd_public]
-```
-
-返回的是匹配的概念（object-type/relation-type 等），不是实例；若需要具体条目，仍要走主路径 A。
-
 ## 响应处理示意
 
 抽取 **部门 / 职责动作 / 适用范围 / 与具体表（或主题）的关系**；去重后与第 1 步候选表/视图对照。

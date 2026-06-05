@@ -68,8 +68,6 @@ ontology --user-id <X> bkn object-type query <DK> <DT> \
 ```
 
 > 若 `<DK>` 未提供 → 跳过本步；在总结里写"未检索职责"。
-> 若需要语义概念命中（而非具体实例条目），可用：
-> `ontology --user-id <X> bkn search <DK> "数据管理部 采购 数据治理 职责"`
 
 ## 3. 总结（中文回复结构）
 

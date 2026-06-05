@@ -16,8 +16,7 @@
       "role": "find_table_metadata",
       "ontology_commands": [
         "bkn object-type query <kn_id> <ot-id> '<condition-json>' [--limit n]",
-        "bkn object-type list <kn_id>（不确定 ot-id 时辅助）",
-        "bkn search <kn_id> <query>（语义定位 object-type 时辅助）"
+        "bkn object-type list <kn_id>（不确定 ot-id 时辅助）"
       ],
       "reference": "references/metadata-search.md",
       "output": "候选表/视图实例（technical_name / business_name / 归属部门 / 主题域 等线索）"
@@ -26,8 +25,7 @@
       "step": 2,
       "role": "department_duty",
       "ontology_commands": [
-        "bkn object-type query <duty_kn_id> <ot-id> '<condition-json>' [--limit n]",
-        "bkn search <duty_kn_id> <query>（语义检索备选）"
+        "bkn object-type query <duty_kn_id> <ot-id> '<condition-json>' [--limit n]"
       ],
       "reference": "references/duty-search.md",
       "condition": "基于步骤 1 派生 query / condition；若 duty_kn_id 缺失则跳过本步并在总结中说明",

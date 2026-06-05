@@ -1,7 +1,7 @@
 {
   "name": "smart-ask-data",
   "version": "2.0.0",
-  "description": "问数编排：bkn list/get 选 KN → bkn search + bkn object-type get 发现 schema → 编排层 LLM 生成 SQL → dataview query --sql 执行 → 总结。所有 ontology 命令均委托给 ontology-core 执行；本 skill 不直接执行 CLI。",
+  "description": "问数编排：bkn list/get 选 KN → bkn object-type get 发现 schema → 编排层 LLM 生成 SQL → dataview query --sql 执行 → 总结。所有 ontology 命令均委托给 ontology-core 执行；本 skill 不直接执行 CLI。",
   "runtime_contract": {
     "user_id_source": "由 smart-data-analysis 把当前会话用户的 accountId 注入 ontology 命令的 --user-id；不在 config 内固化",
     "auth": "本部署 ontology CLI 无须 token；命令体与 body 内均不出现 --token / auth.token / Authorization",
@@ -20,12 +20,11 @@
       "step": 2,
       "role": "schema_discovery",
       "ontology_commands": [
-        "bkn search <kn-id> <query>",
         "bkn object-type list <kn-id>",
         "bkn object-type get <kn-id> <ot-id>"
       ],
       "reference": "references/schema-discovery.md",
-      "output": "schema 摘要：相关对象类、字段、dataview_id、关系"
+      "output": "schema 摘要：相关对象类、字段、dataview-id（取自 data_source.id，type 须为 data_view）、关系"
     },
     {
       "step": 3,

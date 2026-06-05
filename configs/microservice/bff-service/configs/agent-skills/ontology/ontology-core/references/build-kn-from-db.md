@@ -20,7 +20,6 @@ ontology bkn create-from-ds <ds_id> --name "erp-kn" --build
 # 3. 验证
 ontology bkn object-type list <kn_id>
 ontology bkn object-type query <kn_id> <ot_id> '{"limit":5}'
-ontology bkn search <kn_id> "订单"
 ```
 
 ## 分步路径
@@ -129,12 +128,6 @@ ontology bkn object-type query <kn_id> <ot_id> '{"limit":5}'
 # 确认返回 datas 非空，且包含 _instance_identity
 ```
 
-### 语义搜索
-
-```bash
-ontology bkn search <kn_id> "物料"
-# 确认 concepts 列表非空
-```
 
 ### Context Loader（MCP 分层检索）
 

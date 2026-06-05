@@ -19,22 +19,11 @@
 ontology --user-id <X> bkn list
 # 对每个候选取详情：
 ontology --user-id <X> bkn get <candidate-kn-id>
-# （可选）单 KN 内预览匹配概念：
-ontology --user-id <X> bkn search <candidate-kn-id> "销售域上月各区域销售额"
 ```
 
 LLM 输出：`kn_id = d71o5e1e8q1nr9l7mb80`（假定）。
 
 ## 2. Schema 发现：候选对象类与字段
-
-用 KN 自身的语义检索锁定相关对象类：
-
-```bash
-ontology --user-id <X> bkn search d71o5e1e8q1nr9l7mb80 \
-  "销售订单按区域、月份的统计需要哪些对象类与字段" --max-concepts 10
-```
-
-对返回的相关 object-type，逐个取详情拿字段与 `dataview-id`：
 
 ```bash
 ontology --user-id <X> bkn object-type get d71o5e1e8q1nr9l7mb80 fact_sales_order
@@ -47,10 +36,10 @@ ontology --user-id <X> bkn object-type get d71o5e1e8q1nr9l7mb80 dim_region
 KN: d71o5e1e8q1nr9l7mb80
 对象类：
   - fact_sales_order
-      dataview_id: dv_fact_sales_order
+      dataview-id: dv_fact_sales_order     # 取自 data_source.id（type == "data_view"）
       字段: order_id (string), region_id (string), order_month (date), amount (decimal)
   - dim_region
-      dataview_id: dv_dim_region
+      dataview-id: dv_dim_region
       字段: region_id (string), region_name (string)
 关系：fact_sales_order.region_id → dim_region.region_id
 ```

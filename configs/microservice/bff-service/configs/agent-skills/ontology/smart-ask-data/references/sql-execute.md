@@ -10,13 +10,22 @@
 smart-data-analysis 基于：
 
 - 用户问题（中文问数意图）
-- 步骤 2 的 schema 摘要（对象类、字段、`dataview_id`、关系）
+- 步骤 2 的 schema 摘要（对象类、字段、dataview-id、关系）
 
 生成 **SELECT/WITH** SQL，须满足：
 
+- **未拿到 `meta_table_name` 不许进入 SQL 生成**：步骤 2.4 `dataview get` 必须为每个参与的 dataview 都跑过一次，把返回的 `meta_table_name` 缓存进上下文。若发现 schema 摘要里某个 dataview 缺 `meta_table_name`，必须回 2.4 补齐；**不允许**用 dataview-id、对话历史里见过的旧表名、或者凭命名直觉拼一个表名出来。
 - **只允许 SELECT/WITH**：`dataview query --sql` 默认拒绝写操作；不得使用 `--raw-sql` 绕过。
 - 字段、表名必须 **完全来自步骤 2 schema 摘要**；禁止编造。
-- 表（FROM/JOIN）必须是步骤 2 取到的 `dataview_id` 对应的视图；多对象类时跨 dataview JOIN 须保证字段一致。
+- **`FROM/JOIN` 必须用三段式表名** `<catalog>.<schema>.<table>`，取自步骤 2.4 `dataview get` 返回的 `meta_table_name`（形如 `mysql_xxxxxxxx."demo"."bom_event"`）。**禁止**写裸表名（如 `FROM bom_event`）——裸名 mdl-uniquery 解析为空集或报错。
+- 表（FROM/JOIN）必须是步骤 2 取到的 dataview-id 对应的视图；多对象类时跨 dataview JOIN 须保证字段一致。
+- **标识符过滤的防御式写法**：用户给的形如"业务编号 / 编码 / 短码"的字符串作为 WHERE 过滤值时，目标 schema 里往往同时存在多列标识符（典型如 `*_id` / `*_code`，也可能有 `*_no` / `*_sku` 等），列名和列注释都未必能区分这些列各自持有的值格式。除非已通过其它手段确认值落在具体哪一列，否则在 SQL 中对该实体的所有候选标识符列做 OR 兜底：
+
+  ```sql
+  WHERE (<id_col> = '<value>' OR <code_col> = '<value>' [OR <其它候选列> = '<value>'])
+  ```
+
+  候选列从步骤 2 schema 摘要里挑该实体的标识符类列；代价是多几个 OR 条件，收益是消除字段错配导致整查询返回空集的整类错误。
 - 含聚合时同时给出 `GROUP BY`；含时间范围时谓词与字段类型对齐。
 - 输出限制：默认在 SQL 末尾或外层加 `LIMIT`（建议 ≤ 200）；命令侧也可用 `--limit` 兜底。
 
@@ -32,7 +41,7 @@ ontology --user-id <accountId> dataview query <dataview-id> \
   [--limit 200] [--offset 0] [--need-total] [-bd bd_public] [--pretty]
 ```
 
-- **`<dataview-id>`**：通常取自步骤 2 中相关 object-type 的 `dataview_id`。
+- **`<dataview-id>`**：取自步骤 2 中相关 object-type 的 `data_source.id`（要求 `data_source.type == "data_view"`）。
 - **`--sql`**：完整 SELECT/WITH 语句；省略 `--sql` 时使用 view 默认 SQL。
 - **`--limit / --offset`**：分页；优先用 `--limit` 兜底，避免一次拉过大。
 - **`--need-total`**：需要总数时附加（按 mdl-uniquery 行为为准）。

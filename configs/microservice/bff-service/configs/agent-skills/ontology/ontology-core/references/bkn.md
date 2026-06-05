@@ -168,12 +168,6 @@ ontology bkn relation-type update <kn_id> <rt_id> [--name <n>]
 ontology bkn relation-type delete <kn_id> <rt_ids> [--yes/-y]
 ```
 
-## Search
-
-```bash
-ontology bkn search <kn_id> <query> [--max-concepts <n>] [--mode <mode>]   # 语义搜索
-```
-
 ## Subgraph
 
 ```bash
@@ -199,5 +193,4 @@ ontology bkn action-log cancel <kn_id> <log_id> [--yes/-y]
 ontology ds connect mysql db.example.com 3306 erp --account root --password pass
 ontology bkn create-from-ds <ds_id> --name "erp-kn" --build
 ontology bkn object-type list <kn_id>
-ontology bkn search <kn_id> "订单"
 ```
