@@ -283,7 +283,7 @@ services:
     working_dir: /app
     command: ./bin/bff-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "6668"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/6668' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -327,7 +327,7 @@ services:
     working_dir: /app
     command: ./bin/iam-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8888"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8888' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -365,7 +365,7 @@ services:
     working_dir: /app
     command: ./bin/model-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8989"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8989' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -404,7 +404,7 @@ services:
     working_dir: /app
     command: ./bin/mcp-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9898"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/9898' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -450,7 +450,7 @@ services:
     working_dir: /app
     command: ./bin/knowledge-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8889"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8889' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -488,7 +488,7 @@ services:
     working_dir: /app
     command: ./bin/rag-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9640"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/9640' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -535,7 +535,7 @@ services:
     working_dir: /app
     command: ./bin/assistant-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8890"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8890' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -565,7 +565,7 @@ services:
     working_dir: /app
     command: ./bin/agent-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "8990"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/8990' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -598,7 +598,7 @@ services:
     working_dir: /app
     command: ./bin/operate-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9797"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/9797' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
@@ -639,7 +639,7 @@ services:
     working_dir: /app
     command: ./bin/app-service
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9988"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/9988' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 99
