@@ -96,6 +96,11 @@ export default {
       type: Boolean,
       default: false,
     },
+    // 提交前的处理（校验...）
+    beforeEnterSubmit: {
+      type: Function,
+      default: () => Promise.resolve(true),
+    },
   },
   data() {
     return {
@@ -324,7 +329,7 @@ export default {
         this.mentionSearchText = currentText.substring(lastAtIndex + 1, offset);
     },
 
-    handleSenderKeydown(e) {
+    async handleSenderKeydown(e) {
       if (this.showConfigPopover) {
         const keyHandlers = {
           Escape: () => {
@@ -344,6 +349,15 @@ export default {
           keyHandlers[e.key]();
         }
       } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        let canSubmit = true;
+        try {
+          canSubmit = await this.beforeEnterSubmit(e);
+        } catch (error) {
+          canSubmit = false;
+        }
+        if (!canSubmit) return;
         this.$emit('keydown-enter', e);
         this.clear();
       }

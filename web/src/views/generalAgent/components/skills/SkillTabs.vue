@@ -1,16 +1,12 @@
 <template>
-  <aside class="skill-tabs-container">
-    <div class="tabs-header-wrapper">
-      <el-tabs v-model="activeTab" class="skill-custom-tabs">
-        <el-tab-pane
-          :label="$t('generalAgent.skill.panel.preview')"
-          name="preview"
-        ></el-tab-pane>
-        <el-tab-pane
-          :label="$t('generalAgent.skill.panel.variableConfig')"
-          name="config"
-        ></el-tab-pane>
-      </el-tabs>
+  <aside class="skill-workspace-container">
+    <div class="workspace-header">
+      <div class="workspace-title">
+        <i class="el-icon-folder-opened"></i>
+        <span>
+          {{ $t('generalAgent.skill.panel.skillWorkspace') }}
+        </span>
+      </div>
       <div class="header-actions">
         <AppPublishActions
           :appId="skillPreviewParams.customSkillId"
@@ -23,34 +19,41 @@
       </div>
     </div>
 
-    <div
-      class="tabs-content-wrapper"
-      :class="{ 'disable-clicks': disableClick }"
-    >
-      <keep-alive>
-        <component
-          :is="activeTabComponent"
-          :skillPreviewParams="skillPreviewParams"
-          v-bind="$attrs"
-          v-on="$listeners"
-        />
-      </keep-alive>
+    <div class="workspace-body" :class="{ 'disable-clicks': disableClick }">
+      <SkillWorkspaceExplorer
+        ref="explorer"
+        :customSkillId="skillPreviewParams.customSkillId"
+        :activeGitDiffId="activeGitDiffId"
+        @open-file="openFile"
+        @open-search-result="openSearchResult"
+        @open-git-diff="openGitDiff"
+        @close-tabs-by-path="closeTabsByPath"
+        @discard-file="handleDiscardFile"
+      />
+      <SkillWorkbench
+        ref="workbench"
+        :skillPreviewParams="skillPreviewParams"
+        @active-git-diff-change="activeGitDiffId = $event"
+        @file-saved="handleFileSaved"
+        @view-workspace="$emit('view-workspace', $event)"
+        @download-all="$emit('download-all')"
+      />
     </div>
   </aside>
 </template>
 
 <script>
-import PreviewChat from './preview.vue';
-import SkillConfig from './config.vue';
+import SkillWorkspaceExplorer from './SkillWorkspaceExplorer.vue';
+import SkillWorkbench from './SkillWorkbench.vue';
 import AppPublishActions from '@/components/appPublishActions.vue';
 import { getCustomSkillInfo } from '@/api/templateSquare';
-import { AGENT, SKILL } from '@/utils/commonSet';
+import { SKILL } from '@/utils/commonSet';
 
 export default {
   name: 'SkillTabs',
   components: {
-    PreviewChat,
-    SkillConfig,
+    SkillWorkspaceExplorer,
+    SkillWorkbench,
     AppPublishActions,
   },
   props: {
@@ -61,19 +64,13 @@ export default {
   },
   data() {
     return {
-      AGENT,
       SKILL,
-      activeTab: 'preview',
       publishType: '',
       disableClick: false,
       version: '',
       assistantInfo: {},
+      activeGitDiffId: '',
     };
-  },
-  computed: {
-    activeTabComponent() {
-      return this.activeTab === 'preview' ? 'PreviewChat' : 'SkillConfig';
-    },
   },
   watch: {
     'skillPreviewParams.customSkillId': {
@@ -86,15 +83,72 @@ export default {
     },
   },
   methods: {
+    openFile(file) {
+      if (this.$refs.workbench) {
+        this.$refs.workbench.openFile(file);
+      }
+    },
+    openSearchResult(payload) {
+      if (this.$refs.workbench) {
+        this.$refs.workbench.openSearchResult(payload);
+      }
+    },
+    openGitDiff(payload) {
+      if (this.$refs.workbench) {
+        this.$refs.workbench.openGitDiff(payload);
+      }
+    },
+    refreshFiles() {
+      if (this.$refs.explorer) {
+        this.$refs.explorer.refreshFiles();
+      }
+    },
+    closeTabsByPath(path) {
+      if (this.$refs.workbench) {
+        this.$refs.workbench.closeTabsByPath(path);
+      }
+    },
+    async handleDiscardFile(payload) {
+      if (this.$refs.workbench) {
+        await this.$refs.workbench.refreshOpenedFileByPath(payload);
+      }
+    },
+    async refreshWorkspace() {
+      this.refreshFiles();
+      if (this.$refs.workbench) {
+        await this.$refs.workbench.refreshOpenedFiles({ force: true });
+      }
+      if (this.$refs.explorer) {
+        this.refreshGit();
+      }
+    },
+    refreshGit() {
+      if (this.$refs.explorer) {
+        this.$refs.explorer.refreshGit();
+      }
+    },
+    hasUnsavedFiles() {
+      return this.$refs.workbench
+        ? this.$refs.workbench.hasUnsavedFiles()
+        : false;
+    },
+    async discardUnsavedFiles() {
+      if (!this.$refs.workbench) return [];
+      return this.$refs.workbench.discardUnsavedFiles();
+    },
     reloadData() {
       this.disableClick = false;
       this.getAppDetail();
       this.$emit('refresh-workspace');
+      this.refreshWorkspace();
     },
     previewVersion(item) {
       this.disableClick = !item.isCurrent;
       this.version = item.version || '';
       this.getAppDetail();
+    },
+    handleFileSaved() {
+      this.refreshGit();
     },
     async getAppDetail() {
       const params = {
@@ -114,7 +168,7 @@ export default {
 <style lang="scss" scoped>
 @import '../../styles/variables';
 
-.skill-tabs-container {
+.skill-workspace-container {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -126,7 +180,7 @@ export default {
   z-index: 10;
 }
 
-.tabs-header-wrapper {
+.workspace-header {
   height: $header-height;
   position: relative;
   padding: 0 16px;
@@ -135,29 +189,21 @@ export default {
   align-items: center;
   justify-content: space-between;
   background: #fff;
+  flex-shrink: 0;
 
-  .skill-custom-tabs {
-    flex: 1;
-    ::v-deep .el-tabs__header {
-      margin: 0;
-    }
-    ::v-deep .el-tabs__nav-wrap::after {
-      display: none;
-    }
-    ::v-deep .el-tabs__item {
-      height: 52px;
-      line-height: 52px;
-      font-size: 14px;
-      font-weight: 500;
-      color: #666;
+  .workspace-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: #333;
+    font-size: 14px;
+    font-weight: 600;
 
-      &.is-active {
-        color: #10a37f;
-      }
-    }
-    ::v-deep .el-tabs__active-bar {
-      background-color: #10a37f;
-      height: 2px;
+    i {
+      color: #10a37f;
+      font-size: 16px;
+      flex-shrink: 0;
     }
   }
 
@@ -165,25 +211,19 @@ export default {
     display: flex;
     align-items: center;
     gap: 8px;
-
-    .close-btn {
-      font-size: 18px;
-      color: #999;
-      padding: 8px;
-      &:hover {
-        color: #666;
-        background: #f5f5f5;
-        border-radius: 4px;
-      }
-    }
+    flex-shrink: 0;
   }
 }
 
-.tabs-content-wrapper {
+.workspace-body {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
   position: relative;
+  display: flex;
+  background: #fff;
+
   &.disable-clicks {
     pointer-events: none;
     opacity: 0.7;

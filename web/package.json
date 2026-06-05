@@ -31,6 +31,7 @@
     "cafe-ofd": "^1.1.9",
     "core-js": "^3.49.0",
     "crypto-js": "^4.2.0",
+    "dompurify": "^3.4.7",
     "echarts": "^5.4.3",
     "element-ui": "^2.15.14",
     "gxd-file-preview": "^1.2.1",

@@ -105,16 +105,13 @@
           </div>
           <div class="edtable--wrap">
             <streamUploadField
-              v-if="!(type === 'ragChat' && maxPicNum === 0) && visibleUpload"
+              v-if="visibleUpload"
               :fileTypeArr="fileTypeArr"
               :type="type"
               @setFileId="setFileId"
               @setFile="setFile"
             ></streamUploadField>
-            <el-divider
-              v-if="!(type === 'ragChat' && maxPicNum === 0) && visibleUpload"
-              direction="vertical"
-            ></el-divider>
+            <el-divider v-if="visibleUpload" direction="vertical"></el-divider>
             <el-button class="editable-send-btn" circle plain @click="preSend">
               <svg class="editable-send-icon">
                 <use xlink:href="#icon-chatSend" />

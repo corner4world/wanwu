@@ -652,7 +652,10 @@ export default {
             this.editForm.name = res.data.name;
             this.editForm.desc = res.data.desc;
             this.editForm.visionConfig = res.data.visionConfig;
-            this.setMaxPicNum(this.editForm.visionConfig.picNum);
+            // 临时隐藏visionConfig的配置，全都设置为1
+            // this.setMaxPicNum(this.editForm.visionConfig.picNum);
+            this.setMaxPicNum(1);
+
             this.setModelInfo(res.data.modelConfig.modelId);
 
             if (res.data.qaKnowledgeBaseConfig) {
