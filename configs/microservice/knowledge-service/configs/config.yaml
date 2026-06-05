@@ -172,6 +172,7 @@ knowledge-doc-config:
   doc-local-file-path: static/temp
   # 文档预览大小限制，单位：字节，超过此大小不可预览，默认20MB
   doc-preview-size-max: 20971520
+  doc-preview-file-types: ".txt;.md;.docx;.pptx;.xlsx;.xls;.ofd;.csv;.html;.pdf;.png;.jpg;.jpeg;.mp4;.mp3;url;.aac"
 
 splitters:
   - name: "\n\n"

@@ -1108,7 +1108,7 @@ func buildSegmentListResp(importTask *model.KnowledgeImportTask, doc *model.Know
 	segmentConfigMap := buildSegmentConfigMap([]*model.KnowledgeImportTask{importTask})
 
 	// 判断文档是否可预览
-	canPreview, previewFailReason := checkDocPreview(doc.FileSize)
+	canPreview, previewFailReason := checkDocPreview(doc)
 
 	var resp = &knowledgebase_doc_service.DocSegmentListResp{
 		FileName:            doc.Name,
@@ -1134,13 +1134,22 @@ func buildSegmentListResp(importTask *model.KnowledgeImportTask, doc *model.Know
 }
 
 // checkDocPreview 检查文档是否可预览
-func checkDocPreview(fileSize int64) (bool, string) {
+func checkDocPreview(doc *model.KnowledgeDoc) (bool, string) {
 	cfg := config.GetConfig().KnowledgeDocConfig
+
+	// 校验文件类型是否支持预览
+	allowedTypes := cfg.DocPreviewFileTypeMap
+	if len(allowedTypes) > 0 {
+		if !allowedTypes[doc.FileType] {
+			return false, fmt.Sprintf("%s类型文件暂不支持预览", doc.FileType)
+		}
+	}
+
 	if cfg.DocPreviewSizeMax <= 0 {
 		// 未配置限制，默认可预览
 		return true, ""
 	}
-	if fileSize > cfg.DocPreviewSizeMax {
+	if doc.FileSize > cfg.DocPreviewSizeMax {
 		// 超过限制，不可预览
 		maxSizeMB := float64(cfg.DocPreviewSizeMax) / 1024 / 1024
 		return false, fmt.Sprintf("文档大于%.2f MB不可预览", maxSizeMB)
