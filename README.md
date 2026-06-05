@@ -345,7 +345,9 @@ The platform has been successfully applied in multiple industries such as **fina
 
 1. Based on the above Docker installation steps, completely start the system service
 
-2. Before the first run
+2. (Optional) Generate custom RSA keys before the first run
+
+    > Skip this step to use the default keys baked into the images. To use independent keys in production, generate them and inject the mounts into `docker-compose.ontology.yaml` as follows.
 
     2.1 Generate RSA key pair
     ```bash
@@ -355,6 +357,11 @@ The platform has been successfully applied in multiple industries such as **fina
     2.2 Generate frontend public key configuration (cross-platform, requires Node environment)
     ```bash
     node configs/microservice/ontology/vega-server/generate-public-key-js.js
+    ```
+
+    2.3 Inject the generated key/public-key mounts into `docker-compose.ontology.yaml`
+    ```bash
+    ./configs/microservice/ontology/vega-server/gen-compose-override.sh
     ```
 
 3. Copy environment variable file (before first run or after system upgrade)

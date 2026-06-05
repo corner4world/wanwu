@@ -43,9 +43,6 @@ services:
       - VEGA_GATEWAY_PORT=8099
       - OPENSEARCH_TRUST_ALL=true
       - JAVA_OPTS=${ONTOLOGY_DATA_CONNECTION_JAVA_OPTS:--Xms256m -Xmx512m}
-    volumes:
-      - ./configs/microservice/ontology/vega-server/data-connection/application.yml:/opt/data-connection/config/application.yml:ro
-      - ./configs/microservice/ontology/vega-server/data-connection:/opt/vega/config:ro
     # ports:
     #   - "8098:8098"
     depends_on:
@@ -105,8 +102,6 @@ services:
       - DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
       - DATA_CONNECTION_HOST=data-connection
       - DATA_CONNECTION_PORT=8098
-    volumes:
-      - ./configs/microservice/ontology/vega-server/vega-gateway-pro/private_key.pem:/opt/vega-gateway-pro/config/private_key.pem:ro
     # ports:
     #   - "8097:8097"
     depends_on:
@@ -353,8 +348,6 @@ services:
     container_name: vega-web
     # ports:
     #   - "3010:3010"
-    volumes:
-      - ./configs/microservice/ontology/vega-server/web/public-key.js:/usr/share/nginx/html/vega/config/public-key.js:ro
     depends_on:
       - vega-gateway
       - data-connection
