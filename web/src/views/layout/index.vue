@@ -55,115 +55,124 @@
           </el-popover>
           <div v-if="isCollapse" class="collapse-menu-divider"></div>
         </div>
-        <!-- 菜单 -->
-        <el-aside
-          v-if="menuList && menuList.length"
-          :class="['full-menu-aside', { 'full-menu-isCollapse': isCollapse }]"
-        >
-          <!-- 展开状态：扁平化分组列表 -->
-          <div v-if="!isCollapse" class="flat-menu-list">
-            <template v-for="(n, i) in menuList" v-if="checkPerm(n.perm)">
-              <!-- 有子级：渲染每个子项 -->
-              <div v-if="n.children" :key="`${i}ml`" class="menu-group">
-                <div class="menu-group-title">{{ n.name }}</div>
-                <div
-                  v-for="(m, j) in n.children"
-                  :key="`${j}cl`"
-                  v-if="checkPerm(m.perm)"
-                  :class="[
-                    'flat-menu-item',
-                    { 'flat-menu-item-active': activeIndex === m.index },
-                  ]"
-                  @click="menuClick(m)"
-                >
-                  <div class="menu-svg">
-                    <svg-icon
-                      class="menu-icon"
-                      :icon-class="m.icon || 'menu_default'"
-                    />
-                  </div>
-                  <span class="menu-withIcon-title">{{ m.name }}</span>
-                </div>
-              </div>
-              <!-- 无子级的顶级菜单项 -->
-              <div
-                v-else
-                :key="`${i}ml-top`"
-                :class="[
-                  'flat-menu-item',
-                  { 'flat-menu-item-active': activeIndex === n.index },
-                ]"
-                @click="menuClick(n)"
-              >
-                <div class="menu-svg">
-                  <svg-icon class="menu-icon" :icon-class="n.icon" />
-                </div>
-                <span class="menu-withIcon-title">{{ n.name }}</span>
-              </div>
-            </template>
-          </div>
-
-          <!-- 收起状态：仅图标 + 分组分隔 -->
-          <div v-else class="collapse-menu-list">
-            <template v-for="(n, i) in menuList" v-if="checkPerm(n.perm)">
-              <!-- 分组分隔线（非第一组） -->
-              <div
-                v-if="i > 0"
-                :key="`${i}divider`"
-                class="collapse-menu-divider"
-              ></div>
-              <!-- 有子级：渲染每个子项图标 -->
-              <template v-if="n.children">
-                <div
-                  v-for="(m, j) in n.children"
-                  :key="`${i}-${j}cl`"
-                  v-if="checkPerm(m.perm)"
-                >
-                  <el-tooltip
-                    placement="right"
-                    trigger="click"
-                    width="auto"
-                    :content="m.name"
+        <div @mouseenter="menuHover = true" @mouseleave="menuHover = false">
+          <!-- 菜单 -->
+          <el-aside
+            v-if="menuList && menuList.length"
+            :class="[
+              'full-menu-aside',
+              { 'full-menu-isCollapse': isCollapse },
+              { 'menu-hover': menuHover },
+            ]"
+          >
+            <!-- 展开状态：扁平化分组列表 -->
+            <div v-if="!isCollapse" class="flat-menu-list">
+              <template v-for="(n, i) in menuList" v-if="checkPerm(n.perm)">
+                <!-- 有子级：渲染每个子项 -->
+                <div v-if="n.children" :key="`${i}ml`" class="menu-group">
+                  <div class="menu-group-title">{{ n.name }}</div>
+                  <div
+                    v-for="(m, j) in n.children"
+                    :key="`${j}cl`"
+                    v-if="checkPerm(m.perm)"
+                    :class="[
+                      'flat-menu-item',
+                      { 'flat-menu-item-active': activeIndex === m.index },
+                    ]"
+                    @click="menuClick(m)"
                   >
-                    <div
-                      :class="[
-                        'collapse-menu-item',
-                        {
-                          'collapse-menu-item-active': activeIndex === m.index,
-                        },
-                      ]"
-                      @click="menuClick(m)"
-                    >
+                    <div class="menu-svg">
                       <svg-icon
                         class="menu-icon"
                         :icon-class="m.icon || 'menu_default'"
                       />
                     </div>
+                    <span class="menu-withIcon-title">{{ m.name }}</span>
+                  </div>
+                </div>
+                <!-- 无子级的顶级菜单项 -->
+                <div
+                  v-else
+                  :key="`${i}ml-top`"
+                  :class="[
+                    'flat-menu-item',
+                    { 'flat-menu-item-active': activeIndex === n.index },
+                  ]"
+                  @click="menuClick(n)"
+                >
+                  <div class="menu-svg">
+                    <svg-icon class="menu-icon" :icon-class="n.icon" />
+                  </div>
+                  <span class="menu-withIcon-title">{{ n.name }}</span>
+                </div>
+              </template>
+            </div>
+
+            <!-- 收起状态：仅图标 + 分组分隔 -->
+            <div v-else class="collapse-menu-list">
+              <template v-for="(n, i) in menuList" v-if="checkPerm(n.perm)">
+                <!-- 分组分隔线（非第一组） -->
+                <div
+                  v-if="i > 0"
+                  :key="`${i}divider`"
+                  class="collapse-menu-divider"
+                ></div>
+                <!-- 有子级：渲染每个子项图标 -->
+                <template v-if="n.children">
+                  <div
+                    v-for="(m, j) in n.children"
+                    :key="`${i}-${j}cl`"
+                    v-if="checkPerm(m.perm)"
+                  >
+                    <el-tooltip
+                      placement="right"
+                      trigger="click"
+                      width="auto"
+                      :content="m.name"
+                    >
+                      <div
+                        :class="[
+                          'collapse-menu-item',
+                          {
+                            'collapse-menu-item-active':
+                              activeIndex === m.index,
+                          },
+                        ]"
+                        @click="menuClick(m)"
+                      >
+                        <svg-icon
+                          class="menu-icon"
+                          :icon-class="m.icon || 'menu_default'"
+                        />
+                      </div>
+                    </el-tooltip>
+                  </div>
+                </template>
+                <!-- 无子级 -->
+                <div v-else :key="`${i}top`">
+                  <el-tooltip
+                    placement="right"
+                    trigger="click"
+                    width="auto"
+                    :content="n.name"
+                  >
+                    <div
+                      :class="[
+                        'collapse-menu-item',
+                        {
+                          'collapse-menu-item-active': activeIndex === n.index,
+                        },
+                      ]"
+                      @click="menuClick(n)"
+                    >
+                      <svg-icon class="menu-icon" :icon-class="n.icon" />
+                    </div>
                   </el-tooltip>
                 </div>
               </template>
-              <!-- 无子级 -->
-              <div v-else :key="`${i}top`">
-                <el-tooltip
-                  placement="right"
-                  trigger="click"
-                  width="auto"
-                  :content="n.name"
-                >
-                  <div
-                    :class="[
-                      'collapse-menu-item',
-                      { 'collapse-menu-item-active': activeIndex === n.index },
-                    ]"
-                    @click="menuClick(n)"
-                  >
-                    <svg-icon class="menu-icon" :icon-class="n.icon" />
-                  </div>
-                </el-tooltip>
-              </div>
-            </template>
-          </div>
-        </el-aside>
+            </div>
+          </el-aside>
+        </div>
         <div
           :class="['left-bottom-container', { 'menu-isCollapse': isCollapse }]"
         >
@@ -281,6 +290,7 @@ export default {
   components: { ChangeLang, ChangeOrg },
   data() {
     return {
+      menuHover: false,
       isCollapse: false,
       homeLogoPath: '',
       bgColor: '',
@@ -686,11 +696,23 @@ export default {
       position: relative;
       overflow-y: auto;
       overflow-x: hidden;
+      &::-webkit-scrollbar-thumb {
+        background-color: transparent;
+        transition: background-color 0.2s;
+      }
+    }
+
+    .menu-hover.el-aside.full-menu-aside {
+      &::-webkit-scrollbar-thumb {
+        background-color: rgba(16, 18, 25, 0.2) !important;
+      }
     }
 
     /* ===== 展开态：扁平化分组列表 ===== */
     .flat-menu-list {
       padding: 4px 0;
+      width: 200px;
+      margin-left: 3px;
       .menu-group {
         margin-bottom: 4px;
       }
@@ -759,6 +781,8 @@ export default {
       display: flex;
       flex-direction: column;
       align-items: center;
+      width: 40px;
+      margin-left: 12px;
       .collapse-menu-item {
         width: 40px;
         height: 32px;

@@ -47,7 +47,8 @@ body.el-popup-parent--hidden {
   background-color: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(16, 18, 25, 0.3) !important;
+  opacity: 0.6;
+  background-color: rgba(16, 18, 25, 0.2);
   min-height: 40px;
   min-width: 40px;
   -webkit-border-radius: 10px;
