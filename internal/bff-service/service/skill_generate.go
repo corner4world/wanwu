@@ -10,8 +10,8 @@ import (
 	rag_service "github.com/UnicomAI/wanwu/api/proto/rag-service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	mcp2skill "github.com/UnicomAI/wanwu/pkg/mcp2skill"
-	pkg_util "github.com/UnicomAI/wanwu/pkg/util"
 	openapi2skill "github.com/UnicomAI/wanwu/pkg/openapi2skill"
+	pkg_util "github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gin-gonic/gin"
 )

@@ -1515,6 +1515,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/knowledge/doc/segment/status/update": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "更新文档切片启用状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "更新文档切片启用状态",
+                "parameters": [
+                    {
+                        "description": "更新文档切片启用状态请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateDocSegmentStatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/knowledge/doc/update/config": {
             "post": {
                 "security": [
@@ -4592,6 +4631,29 @@ const docTemplate = `{
                 },
                 "tableName": {
                     "description": "敏感词表名称(请求非必填)",
+                    "type": "string"
+                }
+            }
+        },
+        "request.UpdateDocSegmentStatusReq": {
+            "type": "object",
+            "required": [
+                "contentStatus",
+                "docId"
+            ],
+            "properties": {
+                "all": {
+                    "description": "all 代表全部启用，此时将忽略contentId",
+                    "type": "boolean"
+                },
+                "contentId": {
+                    "type": "string"
+                },
+                "contentStatus": {
+                    "description": "\"true\"代表打开，\"false\"代表关闭",
+                    "type": "string"
+                },
+                "docId": {
                     "type": "string"
                 }
             }

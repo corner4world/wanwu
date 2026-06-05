@@ -3,21 +3,20 @@ package agent_tool
 import (
 	"context"
 	"fmt"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 	"time"
-
-	mcp_util "github.com/UnicomAI/wanwu/pkg/mcp-util"
-	"github.com/mark3labs/mcp-go/client/transport"
 
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	mcp_client "github.com/UnicomAI/wanwu/internal/agent-service/service/mcp-client"
 	"github.com/UnicomAI/wanwu/pkg/constant"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	mcp_util "github.com/UnicomAI/wanwu/pkg/mcp-util"
 	"github.com/cloudwego/eino-ext/components/tool/mcp"
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/mark3labs/mcp-go/client"
+	"github.com/mark3labs/mcp-go/client/transport"
 	mcpTypes "github.com/mark3labs/mcp-go/mcp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 type MCPServerInfo struct {

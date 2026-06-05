@@ -1153,6 +1153,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/list": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "callback"
+                ],
+                "summary": "根据userIds获取用户信息",
+                "parameters": [
+                    {
+                        "description": "根据userIds获取用户信息参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GetUserListByUserIdsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "List": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.IDName"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/wga/rag/search-knowledge-base": {
             "post": {
                 "description": "WGA专用知识库检索接口",
@@ -3995,6 +4055,21 @@ const docTemplate = `{
                 }
             }
         },
+        "request.GetUserListByUserIdsReq": {
+            "type": "object",
+            "required": [
+                "userIds"
+            ],
+            "properties": {
+                "userIds": {
+                    "description": "用户ID列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "request.HistoryItem": {
             "type": "object",
             "properties": {
@@ -4824,6 +4899,26 @@ const docTemplate = `{
                 "schema": {
                     "description": "schema",
                     "type": "string"
+                }
+            }
+        },
+        "response.IDName": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ListResult": {
+            "type": "object",
+            "properties": {
+                "list": {},
+                "total": {
+                    "type": "integer"
                 }
             }
         },

@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/config"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 )
 

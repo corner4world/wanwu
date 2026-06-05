@@ -3,13 +3,13 @@ package agent_tool
 import (
 	"context"
 	"encoding/json"
-	tokenizer_service "github.com/UnicomAI/wanwu/internal/agent-service/service/tokenizer-service"
 	"time"
 
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/response"
 	agent_config "github.com/UnicomAI/wanwu/internal/agent-service/pkg/config"
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/http"
 	service_model "github.com/UnicomAI/wanwu/internal/agent-service/service/service-model"
+	tokenizer_service "github.com/UnicomAI/wanwu/internal/agent-service/service/tokenizer-service"
 	http_client "github.com/UnicomAI/wanwu/pkg/http-client"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/cloudwego/eino/components/tool"

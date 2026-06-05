@@ -1,10 +1,11 @@
 package message_compact
 
 import (
+	"slices"
+
 	tokenizer_service "github.com/UnicomAI/wanwu/internal/agent-service/service/tokenizer-service"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/cloudwego/eino/schema"
-	"slices"
 )
 
 func Compact(messages []*schema.Message, userOtherMessages []*schema.Message, tokenLimit int) (retMessages []*schema.Message) {

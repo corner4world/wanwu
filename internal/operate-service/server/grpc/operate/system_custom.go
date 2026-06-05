@@ -107,9 +107,9 @@ func toSystemCustomHome(req *operate_service.CreateSystemCustomHomeReq) orm.Syst
 func toSystemCustomGeneralAgent(req *operate_service.CreateSystemCustomGeneralAgentReq) orm.SystemCustom {
 	return orm.SystemCustom{
 		GeneralAgent: orm.GeneralAgentConfig{
-			GeneralAgentIconPath:  req.GeneralAgent.GetGeneralAgentIcon(),
-			GeneralAgentWelcome:   req.GeneralAgent.GetGeneralAgentWelcome(),
-			GeneralAgentMenuName:  req.GeneralAgent.GetGeneralAgentMenuName(),
+			GeneralAgentIconPath: req.GeneralAgent.GetGeneralAgentIcon(),
+			GeneralAgentWelcome:  req.GeneralAgent.GetGeneralAgentWelcome(),
+			GeneralAgentMenuName: req.GeneralAgent.GetGeneralAgentMenuName(),
 		},
 	}
 }

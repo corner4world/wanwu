@@ -12,9 +12,9 @@ type SystemCustomKey string
 type SystemCustomMode string
 
 const (
-	SystemCustomTabKey         SystemCustomKey = "system_custom_tab"
-	SystemCustomLoginKey       SystemCustomKey = "system_custom_login"
-	SystemCustomHomeKey        SystemCustomKey = "system_custom_home"
+	SystemCustomTabKey          SystemCustomKey = "system_custom_tab"
+	SystemCustomLoginKey        SystemCustomKey = "system_custom_login"
+	SystemCustomHomeKey         SystemCustomKey = "system_custom_home"
 	SystemCustomGeneralAgentKey SystemCustomKey = "system_custom_general_agent"
 )
 const (
@@ -52,9 +52,9 @@ func toErrStatus(key string, args ...string) *err_code.Status {
 }
 
 type SystemCustom struct {
-	Login       LoginConfig       `json:"login"`       // 登录页配置
-	Tab         TabConfig         `json:"tab"`         // 标签页配置
-	Home        HomeConfig        `json:"home"`        // 首页配置
+	Login        LoginConfig        `json:"login"`        // 登录页配置
+	Tab          TabConfig          `json:"tab"`          // 标签页配置
+	Home         HomeConfig         `json:"home"`         // 首页配置
 	GeneralAgent GeneralAgentConfig `json:"generalAgent"` // 通用智能体配置
 }
 
@@ -77,9 +77,9 @@ type HomeConfig struct {
 }
 
 type GeneralAgentConfig struct {
-	GeneralAgentIconPath  string `json:"generalAgentIconPath"`  // 通用智能体图标路径
-	GeneralAgentWelcome   string `json:"generalAgentWelcome"`   // 通用智能体欢迎语
-	GeneralAgentMenuName  string `json:"generalAgentMenuName"`  // 通用智能体菜单名称
+	GeneralAgentIconPath string `json:"generalAgentIconPath"` // 通用智能体图标路径
+	GeneralAgentWelcome  string `json:"generalAgentWelcome"`  // 通用智能体欢迎语
+	GeneralAgentMenuName string `json:"generalAgentMenuName"` // 通用智能体菜单名称
 }
 
 type ClientStatistic struct {

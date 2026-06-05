@@ -206,7 +206,7 @@ func GetGeneralAgentKnowledgeSelect(ctx *gin.Context) {
 //	@Description	获取通用智能体本体数字员工下拉接口列表
 //	@Security		JWT
 //	@Accept			json
-//	@Param			name	query		string	false	"数字员工名称"
+//	@Param			name	query	string	false	"数字员工名称"
 //	@Produce		json
 //	@Success		200	{object}	response.Response{data=response.KnowledgeListResp}
 //	@Router			/general/agent/ontology/employee/select [post]

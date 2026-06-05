@@ -2,12 +2,12 @@ package model
 
 import (
 	"context"
-	"github.com/UnicomAI/wanwu/pkg/util"
 	"strconv"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	model_service "github.com/UnicomAI/wanwu/api/proto/model-service"
 	"github.com/UnicomAI/wanwu/internal/model-service/client/model"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
