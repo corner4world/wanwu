@@ -325,245 +325,7 @@ export default {
   },
 };
 </script>
-<style lang="scss">
-.dialog-content {
-  max-height: 55vh !important;
-  overflow-y: auto;
-}
-
-.segment-list {
-  margin-top: 10px;
-
-  .section-collapse {
-    background-color: #f7f8fa;
-    border-radius: 6px;
-    border: 1px solid $color;
-    overflow: hidden;
-
-    ::v-deep .el-collapse {
-      border: none;
-      border-radius: 6px;
-    }
-
-    ::v-deep .el-collapse-item__header {
-      background-color: #f7f8fa;
-      border-bottom: 1px solid #e4e7ed;
-      padding: 12px 20px;
-      font-weight: normal;
-      border-left: none;
-      border-right: none;
-      border-top: none;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      width: 100%;
-      position: relative;
-
-      &:hover {
-        background-color: #f0f2f5;
-      }
-    }
-
-    ::v-deep .el-collapse-item__content {
-      padding: 15px 20px;
-      background-color: #fff;
-      border-bottom: 1px solid #e4e7ed;
-      border-left: none;
-      border-right: none;
-      border-top: none;
-    }
-
-    ::v-deep .el-collapse-item__header .el-collapse-item__arrow,
-    .el-collapse-item__arrow,
-    [class*='el-collapse-item__arrow'] {
-      display: none !important;
-    }
-
-    ::v-deep .el-collapse-item:last-child .el-collapse-item__content {
-      border-bottom: none;
-    }
-
-    ::v-deep .el-collapse-item__header::after {
-      display: none !important;
-    }
-
-    .segment-badge {
-      color: $color;
-      font-size: 12px;
-      min-width: 40px;
-      text-align: center;
-      font-weight: 500;
-      margin-right: 120px;
-    }
-
-    .segment-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex: 1;
-      justify-content: flex-end;
-      margin-right: 10px;
-
-      .action-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 12px;
-        transition: all 0.3s ease;
-
-        i {
-          font-size: 14px;
-        }
-
-        &.edit-btn {
-          color: $btn_bg;
-
-          &:hover {
-            color: #2a3cc7;
-          }
-        }
-
-        &.delete-btn {
-          color: $btn_bg;
-
-          &:hover {
-            color: #2a3cc7;
-          }
-        }
-
-        &.save-btn {
-          color: $btn_bg;
-
-          &:hover {
-            color: #2a3cc7;
-          }
-        }
-
-        &.cancel-btn {
-          color: #909399;
-
-          &:hover {
-            color: #606266;
-          }
-        }
-      }
-    }
-
-    .segment-score {
-      display: flex;
-      align-items: center;
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-
-      .score-label {
-        font-size: 12px;
-        color: $color;
-        font-weight: bold;
-        margin-right: 5px;
-      }
-
-      .score-value {
-        font-size: 14px;
-        color: $color;
-        font-weight: bold;
-        font-family: 'Courier New', monospace;
-      }
-    }
-
-    .segment-content {
-      padding: 10px;
-      text-align: left;
-
-      .content-display {
-        word-wrap: break-word;
-        line-height: 1.5;
-      }
-
-      .content-edit {
-        .edit-input {
-          ::v-deep .el-textarea__inner {
-            border: 1px solid $color;
-            border-radius: 4px;
-            resize: vertical;
-          }
-        }
-      }
-    }
-
-    ::v-deep .el-collapse-item__content {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.5;
-      text-align: left;
-      word-wrap: break-word;
-      word-break: break-all;
-      overflow-wrap: break-word;
-
-      .segment-action {
-        color: #999;
-        font-size: 12px;
-        margin-left: 8px;
-      }
-
-      .auto-save {
-        color: #666;
-        font-size: 12px;
-        margin-left: 8px;
-        font-style: italic;
-      }
-    }
-  }
-}
-
-.smartDate {
-  padding-top: 3px;
-  color: #888888;
-}
-
-.tagList {
-  cursor: pointer;
-
-  .icon-tag {
-    transform: rotate(-40deg);
-    margin-right: 3px;
-  }
-
-  .tagList-item {
-    color: #888;
-  }
-}
-
-.tagList > .tagList-item:hover {
-  color: $color;
-}
-
-.showMore {
-  margin-left: 5px;
-  background: $color_opacity;
-  padding: 2px;
-  border-radius: 4px;
-}
-
-.metaItem {
-  margin-left: 5px;
-  background: $color_opacity;
-  padding: 2px;
-  border-radius: 4px;
-}
-
-.editIcon {
-  cursor: pointer;
-  color: $color;
-  font-size: 16px;
-  display: inline-block;
-  margin-left: 5px;
-}
-
+<style lang="scss" scoped>
 .section {
   width: 100%;
   height: 100%;
@@ -583,6 +345,7 @@ export default {
   }
 
   .container {
+    display: block;
     min-width: 980px;
     padding: 15px;
     height: calc(100% - 45px);
@@ -591,7 +354,7 @@ export default {
     border-radius: 5px;
     overflow: auto;
 
-    .el-descriptions :not(.is-bordered) .el-descriptions-item__cell {
+    ::v-deep .el-descriptions :not(.is-bordered) .el-descriptions-item__cell {
       &:nth-child(even) {
         width: 25%;
       }
@@ -607,7 +370,7 @@ export default {
     .card {
       flex-wrap: wrap;
 
-      .el-row {
+      ::v-deep .el-row {
         margin: 0 !important;
       }
 
@@ -667,7 +430,7 @@ export default {
         }
       }
 
-      .el-card__header {
+      ::v-deep .el-card__header {
         padding: 8px 20px;
       }
     }
