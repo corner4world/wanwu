@@ -19,6 +19,12 @@ if (!fs.existsSync(pemPath)) {
   process.exit(1);
 }
 
+if (fs.existsSync(outPath)) {
+  console.log(`Existing file detected, skipping generation: ${outPath}`);
+  console.log('Delete this file first if you want to regenerate.');
+  process.exit(0);
+}
+
 const pem = fs.readFileSync(pemPath, 'utf8').replace(/\r\n/g, '\n').trim();
 const content = `window.__VEGA_PUBLIC_KEY__ = ${JSON.stringify(pem)};\n`;
 

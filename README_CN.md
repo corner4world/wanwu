@@ -340,9 +340,11 @@ UniClaw下载地址：https://maas.ai-yuanjing.com/app/uniclaw/uniclaw-official.
 
 1. 基于上述Docker安装步骤，将系统服务完整启动
 
-2. 首次运行前
+2. （可选）首次运行前生成自定义 RSA 密钥
 
-    2.1 生成RSA密钥对
+    > 不执行本步则使用镜像内置的默认密钥；如需在生产环境使用独立密钥，按以下步骤生成并注入到 `docker-compose.ontology.yaml`。
+
+    2.1 生成 RSA 密钥对
     ```bash
     ./configs/microservice/ontology/vega-server/generate-keys.sh configs/microservice/ontology/vega-server
     ```
@@ -350,6 +352,11 @@ UniClaw下载地址：https://maas.ai-yuanjing.com/app/uniclaw/uniclaw-official.
     2.2 生成前端公钥配置（跨平台，需要 Node 环境）
     ```bash
     node configs/microservice/ontology/vega-server/generate-public-key-js.js
+    ```
+
+    2.3 把新生成的密钥/公钥挂载注入 `docker-compose.ontology.yaml`
+    ```bash
+    ./configs/microservice/ontology/vega-server/gen-compose-override.sh
     ```
 
 3. 拷贝环境变量文件（首次运行前或系统升级后）

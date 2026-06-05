@@ -14,8 +14,10 @@ configs/vega-server/
 │   └── public_key.pem                # RSA 公钥 (加密数据源密码)
 ├── vega-gateway-pro/                 # vega-gateway-pro 服务密钥
 │   └── private_key.pem               # RSA 私钥 (解密数据源密码)
-└── web/                              # 前端公钥配置
-    └── public-key.js                 # 注入到 window.__VEGA_PUBLIC_KEY__
+├── web/                              # 前端公钥配置
+│   └── public-key.js                 # 注入到 window.__VEGA_PUBLIC_KEY__
+└── wga-sandbox-ontology/             # 沙箱挂载用
+    └── state.json                    # 公钥的 JSON 形式 (由 generate-keys.sh 派生)
 ```
 
 ## 快速生成
@@ -36,6 +38,7 @@ node configs/vega-server/generate-public-key-js.js
 | data-connection | `configs/vega-server/data-connection/` | `/opt/vega/config/` |
 | vega-gateway-pro | `configs/vega-server/vega-gateway-pro/private_key.pem` | `/opt/vega-gateway-pro/config/private_key.pem` |
 | web | `configs/vega-server/web/public-key.js` | `/usr/share/nginx/html/vega/config/public-key.js` |
+| wga-sandbox-ontology | `configs/vega-server/wga-sandbox-ontology/state.json` | `/root/.ontology/state.json` |
 
 ## RSA 密钥用途
 
@@ -44,6 +47,7 @@ node configs/vega-server/generate-public-key-js.js
 | data-connection | ✓ 加密 | ✓ 解密 | 创建数据源时加密密码；采集元数据时解密连接 |
 | vega-gateway-pro | ✗ | ✓ 解密 | 查询数据源时解密密码建立连接 |
 | web (前端) | ✓ 加密 | ✗ | 提交数据源密码前在浏览器端加密 |
+| wga-sandbox-ontology | ✓ 加密 | ✗ | 命令行工具 ontology 使用公钥加密（读取 `state.json`） |
 
 ## 前端公钥说明
 
