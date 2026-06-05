@@ -33,9 +33,6 @@ type skillWorkspaceContext struct {
 
 // resolveSkillWorkspace 校验归属并解析 Skill 工作区上下文。
 func resolveSkillWorkspace(ctx *gin.Context, userId, orgId, customSkillID string) (*skillWorkspaceContext, error) {
-	if err := checkCustomSkillOwnership(ctx, userId, orgId, customSkillID); err != nil {
-		return nil, err
-	}
 	skillDir, err := getSkillDir(customSkillID)
 	if err != nil {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_get_dir_failed")
@@ -66,7 +63,6 @@ func resolveInitializedSkillWorkspace(ctx *gin.Context, userId, orgId, customSki
 	return ws, nil
 }
 
-
 // getSkillDir 获取 skill 目录路径（包含 .git 和 skill/）。
 func getSkillDir(customSkillID string) (string, error) {
 	store, err := NewGeneralAgentSkillWorkspaceStore(customSkillID)
@@ -79,7 +75,6 @@ func getSkillDir(customSkillID string) (string, error) {
 	}
 	return info.Dir, nil
 }
-
 
 // ensureGitInitializedAt 在指定 skill 目录上按需初始化 Git 仓库。
 func ensureGitInitializedAt(customSkillID, skillDir string) (bool, error) {
@@ -112,7 +107,6 @@ func ensureGitInitializedAt(customSkillID, skillDir string) (bool, error) {
 
 	return true, nil
 }
-
 
 // workspaceFilePath 解析工作区内文件路径并返回绝对路径与清理后的相对路径。
 func workspaceFilePath(basePath, relativePath string) (string, string, error) {

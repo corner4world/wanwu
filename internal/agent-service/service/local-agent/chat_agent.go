@@ -2,6 +2,7 @@ package local_agent
 
 import (
 	"context"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
 	agent_message_flow "github.com/UnicomAI/wanwu/internal/agent-service/service/agent-message-flow"
 	message_compact "github.com/UnicomAI/wanwu/internal/agent-service/service/agent-message-flow/message-compact"

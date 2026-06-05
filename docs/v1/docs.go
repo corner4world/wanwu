@@ -1081,6 +1081,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/agent/skill/workspace/download": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "下载指定工作区文件；目录会打包为 zip",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "下载Skill工作区文件或目录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件路径（相对workspace根目录）",
+                        "name": "path",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
         "/agent/skill/workspace/file": {
             "get": {
                 "security": [
@@ -1162,6 +1206,48 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/request.UpdateSkillWorkspaceFileReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "删除指定工作区文件或目录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "删除Skill工作区文件或目录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Skill ID",
+                        "name": "customSkillId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "文件路径（相对workspace根目录）",
+                        "name": "path",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1479,6 +1565,45 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/skill/workspace/git/discard": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "放弃指定文件的未暂存更改；paths为空时放弃全部未暂存更改",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resource.skill"
+                ],
+                "summary": "放弃Skill工作区未暂存更改",
+                "parameters": [
+                    {
+                        "description": "放弃更改参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GitDiscardReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -7718,7 +7843,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "knowledge"
+                    "wga"
                 ],
                 "summary": "通用智能体知识库下拉接口列表",
                 "parameters": [
@@ -7808,6 +7933,54 @@ const docTemplate = `{
                                                     }
                                                 }
                                             ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/ontology/employee/select": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通用智能体本体数字员工下拉接口列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "通用智能体本体数字员工下拉接口列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "数字员工名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.KnowledgeListResp"
                                         }
                                     }
                                 }
@@ -14389,6 +14562,75 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/ontology/skill/select": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取skill选择列表(Ontology专用)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ontology.digital_employee"
+                ],
+                "summary": "获取skill选择列表(Ontology专用)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "skill名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "skill类型(builtin/custom/acquired)",
+                        "name": "skillType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.SkillInfo"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -24075,6 +24317,23 @@ const docTemplate = `{
                 }
             }
         },
+        "request.GitDiscardReq": {
+            "type": "object",
+            "required": [
+                "customSkillId"
+            ],
+            "properties": {
+                "customSkillId": {
+                    "type": "string"
+                },
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "request.GitResetReq": {
             "type": "object",
             "required": [
@@ -25097,11 +25356,10 @@ const docTemplate = `{
                     "description": "内容",
                     "type": "string"
                 },
-                "fileIdList": {
-                    "description": "文件ID列表",
+                "fileInfo": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/request.ConversionStreamFile"
                     }
                 },
                 "frequencyPenalty": {
@@ -26208,6 +26466,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "contentStatus": {
+                    "description": "\"true\"代表打开，\"false\"代表关闭",
                     "type": "string"
                 },
                 "docId": {
@@ -31490,6 +31749,13 @@ const docTemplate = `{
                 "reasoningContent": {
                     "description": "思考过程",
                     "type": "string"
+                },
+                "requestFiles": {
+                    "description": "文件信息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AssistantRequestFile"
+                    }
                 },
                 "role": {
                     "description": "角色",

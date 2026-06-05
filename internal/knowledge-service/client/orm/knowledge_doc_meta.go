@@ -301,7 +301,7 @@ func UpdateDocStatusMetaData(ctx context.Context, metaDataList []*model.Knowledg
 		// 遍历传入的元数据列表
 		for _, meta := range metaDataList {
 			err := tx.Model(&model.KnowledgeDocMeta{}).
-				Where("meta_id = ?", meta.MetaId). // 匹配metaId
+				Where("meta_id = ?", meta.MetaId).         // 匹配metaId
 				Update("value_main", meta.ValueMain).Error // 仅更新value
 			if err != nil {
 				return err

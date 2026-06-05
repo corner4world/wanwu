@@ -2,9 +2,9 @@ package mcp2skill
 
 // Auth type constants — kept in sync with pkg/util.
 const (
-	AuthTypeNone          = "none"
-	AuthTypeAPIKeyQuery   = "api_key_query"
-	AuthTypeAPIKeyHeader  = "api_key_header"
+	AuthTypeNone         = "none"
+	AuthTypeAPIKeyQuery  = "api_key_query"
+	AuthTypeAPIKeyHeader = "api_key_header"
 
 	ApiKeyHeaderPrefixBasic  = "basic"
 	ApiKeyHeaderPrefixBearer = "bearer"

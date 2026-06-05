@@ -1760,6 +1760,16 @@ definitions:
     required:
     - fileUrl
     type: object
+  request.GetUserListByUserIdsReq:
+    properties:
+      userIds:
+        description: 用户ID列表
+        items:
+          type: string
+        type: array
+    required:
+    - userIds
+    type: object
   request.HistoryItem:
     properties:
       needHistory:
@@ -2314,6 +2324,19 @@ definitions:
       schema:
         description: schema
         type: string
+    type: object
+  response.IDName:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  response.ListResult:
+    properties:
+      list: {}
+      total:
+        type: integer
     type: object
   response.MCPDetail:
     properties:
@@ -3345,6 +3368,39 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: 查询问答列表（命中测试）
+      tags:
+      - callback
+  /user/list:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 根据userIds获取用户信息参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GetUserListByUserIdsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      List:
+                        items:
+                          $ref: '#/definitions/response.IDName'
+                        type: array
+                    type: object
+              type: object
+      summary: 根据userIds获取用户信息
       tags:
       - callback
   /wga/rag/search-knowledge-base:

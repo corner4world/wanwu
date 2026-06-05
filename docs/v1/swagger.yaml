@@ -3049,6 +3049,17 @@ definitions:
     required:
     - customSkillId
     type: object
+  request.GitDiscardReq:
+    properties:
+      customSkillId:
+        type: string
+      paths:
+        items:
+          type: string
+        type: array
+    required:
+    - customSkillId
+    type: object
   request.GitResetReq:
     properties:
       customSkillId:
@@ -3747,10 +3758,9 @@ definitions:
       content:
         description: 内容
         type: string
-      fileIdList:
-        description: 文件ID列表
+      fileInfo:
         items:
-          type: string
+          $ref: '#/definitions/request.ConversionStreamFile'
         type: array
       frequencyPenalty:
         description: 频率惩罚
@@ -4505,6 +4515,7 @@ definitions:
       contentId:
         type: string
       contentStatus:
+        description: '"true"代表打开，"false"代表关闭'
         type: string
       docId:
         type: string
@@ -8044,6 +8055,11 @@ definitions:
       reasoningContent:
         description: 思考过程
         type: string
+      requestFiles:
+        description: 文件信息
+        items:
+          $ref: '#/definitions/response.AssistantRequestFile'
+        type: array
       role:
         description: 角色
         type: string
@@ -10151,7 +10167,62 @@ paths:
       summary: 获取skill选择列表
       tags:
       - resource.skill
+  /agent/skill/workspace/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载指定工作区文件；目录会打包为 zip
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: 文件路径（相对workspace根目录）
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - JWT: []
+      summary: 下载Skill工作区文件或目录
+      tags:
+      - resource.skill
   /agent/skill/workspace/file:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定工作区文件或目录
+      parameters:
+      - description: Skill ID
+        in: query
+        name: customSkillId
+        required: true
+        type: string
+      - description: 文件路径（相对workspace根目录）
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 删除Skill工作区文件或目录
+      tags:
+      - resource.skill
     get:
       consumes:
       - application/json
@@ -10386,6 +10457,30 @@ paths:
       security:
       - JWT: []
       summary: 获取Skill工作区未暂存diff
+      tags:
+      - resource.skill
+  /agent/skill/workspace/git/discard:
+    post:
+      consumes:
+      - application/json
+      description: 放弃指定文件的未暂存更改；paths为空时放弃全部未暂存更改
+      parameters:
+      - description: 放弃更改参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GitDiscardReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 放弃Skill工作区未暂存更改
       tags:
       - resource.skill
   /agent/skill/workspace/git/file:
@@ -14080,7 +14175,7 @@ paths:
       - JWT: []
       summary: 通用智能体知识库下拉接口列表
       tags:
-      - knowledge
+      - wga
   /general/agent/mcp/select:
     get:
       consumes:
@@ -14113,6 +14208,33 @@ paths:
       security:
       - JWT: []
       summary: 通用智能体MCP下拉接口列表
+      tags:
+      - wga
+  /general/agent/ontology/employee/select:
+    post:
+      consumes:
+      - application/json
+      description: 获取通用智能体本体数字员工下拉接口列表
+      parameters:
+      - description: 数字员工名称
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.KnowledgeListResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 通用智能体本体数字员工下拉接口列表
       tags:
       - wga
   /general/agent/question/reject:
@@ -17970,6 +18092,44 @@ paths:
       summary: 更新OAuth应用状态
       tags:
       - oauth
+  /ontology/skill/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取skill选择列表(Ontology专用)
+      parameters:
+      - description: skill名称
+        in: query
+        name: name
+        type: string
+      - description: skill类型(builtin/custom/acquired)
+        in: query
+        name: skillType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.SkillInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取skill选择列表(Ontology专用)
+      tags:
+      - ontology.digital_employee
   /org:
     delete:
       consumes:

@@ -22,8 +22,8 @@ type CustomHomeConfig struct {
 }
 
 type CustomGeneralAgentConfig struct {
-	GeneralAgentIcon      Avatar `json:"generalAgentIcon"`      // 通用智能体图标
-	GeneralAgentWelcome   string `json:"generalAgentWelcome"`   // 通用智能体欢迎语
-	GeneralAgentMenuName  string `json:"generalAgentMenuName"`  // 通用智能体菜单名称
+	GeneralAgentIcon     Avatar `json:"generalAgentIcon"`     // 通用智能体图标
+	GeneralAgentWelcome  string `json:"generalAgentWelcome"`  // 通用智能体欢迎语
+	GeneralAgentMenuName string `json:"generalAgentMenuName"` // 通用智能体菜单名称
 	CommonCheck
 }

@@ -61,9 +61,9 @@ func GetSkillWorkspaceFile(ctx *gin.Context) {
 //	@Security		JWT
 //	@Accept			json
 //	@Produce		application/octet-stream
-//	@Param			customSkillId	query		string	true	"Skill ID"
-//	@Param			path			query		string	true	"文件路径（相对workspace根目录）"
-//	@Success		200				{file}		stream
+//	@Param			customSkillId	query	string	true	"Skill ID"
+//	@Param			path			query	string	true	"文件路径（相对workspace根目录）"
+//	@Success		200				{file}	stream
 //	@Router			/agent/skill/workspace/download [get]
 func DownloadSkillWorkspace(ctx *gin.Context) {
 	userId, orgId := getUserID(ctx), getOrgID(ctx)
