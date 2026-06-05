@@ -5,11 +5,11 @@ import (
 )
 
 type ModelExperienceLlmRequest struct {
-	ModelId           string   `json:"modelId" validate:"required"`   // 模型ID
-	SessionId         string   `json:"sessionId" validate:"required"` // 会话 ID
-	ModelExperienceId string   `json:"modelExperienceId"`             // 体验对话ID（模型对比时为空）
-	Content           string   `json:"content" validate:"required"`   // 内容
-	FileIdList        []string `json:"fileIdList"`                    // 文件ID列表
+	ModelId           string                 `json:"modelId" validate:"required"`   // 模型ID
+	SessionId         string                 `json:"sessionId" validate:"required"` // 会话 ID
+	ModelExperienceId string                 `json:"modelExperienceId"`             // 体验对话ID（模型对比时为空）
+	Content           string                 `json:"content" validate:"required"`   // 内容
+	FileInfo          []ConversionStreamFile `json:"fileInfo" form:"fileInfo"`
 	mp_common.LLMParams
 }
 

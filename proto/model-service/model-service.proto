@@ -178,6 +178,7 @@ message SaveModelExperienceDialogRecordReq {
     string handledContent = 7;  // 处理后的内容
     string reasoningContent = 8;  // 思考过程
     string role = 9;  // 角色
+    string fileInfo = 10; // 文件信息JSON
 }
 
 message GetModelExperienceDialogRecordsReq {
@@ -197,6 +198,7 @@ message ModelExperienceDialogRecord {
     string handledContent = 7;  // 处理后的内容
     string reasoningContent = 8;  // 思考过程
     string role = 9;  // 角色
+    string fileInfo = 10; // 文件信息JSON
 }
 
 message ModelExperienceDialogRecords {

@@ -4,7 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/UnicomAI/wanwu/internal/bff-service/config"
+	minio_util "github.com/UnicomAI/wanwu/internal/bff-service/pkg/minio-util"
 	"net/http"
+	"net/url"
+	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -53,6 +58,25 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 		return
 	}
 
+	// 检查模型是否支持图文问答
+	hasVisionSupport, err := checkModelExperienceModelVisionSupport(modelInfo)
+	if err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+
+	// 校验文件：只有支持图文问答的模型才能上传文件，且需要校验文件大小和类型
+	if len(req.FileInfo) > 0 {
+		if !hasVisionSupport {
+			gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "model does not support vision"))
+			return
+		}
+		if err := validateModelExperienceImageFiles(ctx.Request.Context(), modelInfo, req.FileInfo); err != nil {
+			gin_util.Response(ctx, nil, err)
+			return
+		}
+	}
+
 	// dialog records
 	recordsResp, err := model.GetModelExperienceDialogRecords(ctx, &model_service.GetModelExperienceDialogRecordsReq{
 		UserId: userId,
@@ -66,22 +90,35 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 		gin_util.Response(ctx, nil, err)
 		return
 	}
+
 	var messages []mp_common.OpenAIReqMsg
 	for _, record := range recordsResp.Records {
 		content := record.HandledContent
 		if content == "" {
 			content = record.OriginalContent
 		}
+		// 解析历史记录中的 fileInfo
+		var fileInfo []request.ConversionStreamFile
+		// 只有支持图文问答的模型才处理文件
+		if hasVisionSupport && record.FileInfo != "" {
+			fileInfo = replaceModelExperienceMinioUrl(record.FileInfo)
+		}
 		messages = append(messages, mp_common.OpenAIReqMsg{
 			Role:    mp_common.MsgRole(record.Role),
-			Content: content,
+			Content: buildModelExperienceMultimodalContent(ctx.Request.Context(), content, fileInfo),
 		})
 	}
-	// 添加当前用户消息
-	messages = append(messages, mp_common.OpenAIReqMsg{
+	// 添加当前用户消息（支持多模态）
+	var currentUserFileInfo []request.ConversionStreamFile
+	if hasVisionSupport {
+		currentUserFileInfo = req.FileInfo
+	}
+	userMsg := mp_common.OpenAIReqMsg{
 		Role:    mp_common.MsgRoleUser,
-		Content: req.Content,
-	})
+		Content: buildModelExperienceMultimodalContent(ctx.Request.Context(), req.Content, currentUserFileInfo),
+	}
+
+	messages = append(messages, userMsg)
 
 	// 构造LLM请求
 	stream := true
@@ -146,6 +183,7 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 		SessionId:         req.SessionId,
 		OriginalContent:   req.Content,
 		Role:              string(mp_common.MsgRoleUser),
+		FileInfo:          toJsonFromModelExperienceFileInfo(req.FileInfo),
 	}); err != nil {
 		gin_util.Response(ctx, nil, err)
 		return
@@ -341,6 +379,7 @@ func ListModelExperienceDialogRecords(ctx *gin.Context, userId, orgId string, re
 			OriginalContent:   record.OriginalContent,
 			ReasoningContent:  record.ReasoningContent,
 			Role:              record.Role,
+			RequestFiles:      toAssistantRequestFileFromModelExperienceFileInfo(record.FileInfo),
 		})
 	}
 	return &response.ListResult{
@@ -406,4 +445,147 @@ func (m *modelExperienceSensitiveService) buildSensitiveResp(id, content string)
 	}
 	marshal, _ := json.Marshal(resp)
 	return []string{"data: " + string(marshal) + "\n\n"}
+}
+
+// toJsonFromModelExperienceFileInfo 将 FileInfo 列表序列化为 JSON 字符串，FileUrl 转为相对路径存储
+func toJsonFromModelExperienceFileInfo(files []request.ConversionStreamFile) string {
+	if len(files) == 0 {
+		return ""
+	}
+	// 复制切片，避免修改原始数据，并将 FileUrl 转为相对路径存储
+	result := make([]request.ConversionStreamFile, len(files))
+	for i, f := range files {
+		result[i] = f
+		// 将完整 URL 转为 bucket/objectName 格式存储
+		bucketName, objectName, _ := minio_util.SplitMinioPath(f.FileUrl)
+		if bucketName != "" && objectName != "" {
+			result[i].FileUrl = bucketName + "/" + objectName
+		}
+	}
+	data, err := json.Marshal(result)
+	if err != nil {
+		log.Errorf("toJsonFromModelExperienceFileInfo error: %v", err)
+		return ""
+	}
+	return string(data)
+}
+
+// toAssistantRequestFileFromModelExperienceFileInfo 从 JSON 字符串解析并转换为响应格式
+func toAssistantRequestFileFromModelExperienceFileInfo(fileInfoJson string) []response.AssistantRequestFile {
+	files := replaceModelExperienceMinioUrl(fileInfoJson)
+	if len(files) == 0 {
+		return nil
+	}
+	result := make([]response.AssistantRequestFile, 0, len(files))
+	for _, f := range files {
+		result = append(result, response.AssistantRequestFile{
+			FileName: f.FileName,
+			FileSize: f.FileSize,
+			FileUrl:  f.FileUrl,
+		})
+	}
+	return result
+}
+
+// replaceModelExperienceMinioUrl 从 JSON 字符串解析并替换相对路径为对外下载 URL
+func replaceModelExperienceMinioUrl(fileInfoJson string) []request.ConversionStreamFile {
+	if fileInfoJson == "" {
+		return nil
+	}
+	var files []request.ConversionStreamFile
+	if err := json.Unmarshal([]byte(fileInfoJson), &files); err != nil {
+		log.Errorf("replaceModelExperienceMinioUrl unmarshal error: %v", err)
+		return nil
+	}
+	for i := range files {
+		files[i].FileUrl, _ = url.JoinPath(config.Cfg().Minio.DownloadURL, files[i].FileUrl)
+	}
+	return files
+}
+
+// checkModelExperienceModelVisionSupport 检查模型是否支持图文问答
+func checkModelExperienceModelVisionSupport(modelInfo *model_service.ModelInfo) (bool, error) {
+	allModelTags, err := getModelAllTags(modelInfo)
+	if err != nil {
+		return false, err
+	}
+	for _, tag := range allModelTags {
+		if tag.Text == mp_common.TagVisionSupport {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// getMaxImageSize 从模型配置中获取 maxImageSize（单位：MB）
+// validateImageFiles 校验图片文件
+func validateModelExperienceImageFiles(ctx context.Context, modelInfo *model_service.ModelInfo, files []request.ConversionStreamFile) error {
+	// 获取模型的 maxImageSize 配置（单位：MB），0表示不限制
+	maxImageSize := int64(0)
+	if modelInfo.ProviderConfig != "" {
+		var config map[string]interface{}
+		if err := json.Unmarshal([]byte(modelInfo.ProviderConfig), &config); err == nil {
+			if size, ok := config["maxImageSize"].(float64); ok {
+				maxImageSize = int64(size)
+			}
+		}
+	}
+
+	const mb = 1024 * 1024
+	supportedImageExts := []string{".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg", ".tiff"}
+	for _, file := range files {
+		ext := strings.ToLower(filepath.Ext(file.FileName))
+		if !slices.Contains(supportedImageExts, ext) {
+			return grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("unsupported image format: %s, supported formats: jpg, jpeg, png, gif, bmp, webp, svg, tiff", ext))
+		}
+		// 使用前端传入的 FileSize 进行校验
+		if maxImageSize > 0 && file.FileSize > maxImageSize*mb {
+			return grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("image size exceeds limit: %s, max size: %dMB", file.FileName, maxImageSize))
+		}
+	}
+	return nil
+}
+
+// buildMultimodalContent 构建多模态消息内容
+// 如果没有文件，返回纯文本；否则返回 OpenAI 多模态格式（图片转 base64）
+func buildModelExperienceMultimodalContent(ctx context.Context, content string, fileInfo []request.ConversionStreamFile) interface{} {
+	if len(fileInfo) == 0 {
+		return content
+	}
+
+	// OpenAI 多模态格式
+	contents := make([]map[string]interface{}, 0)
+
+	// 先添加文本
+	if content != "" {
+		contents = append(contents, map[string]interface{}{
+			"type": "text",
+			"text": content,
+		})
+	}
+
+	// 添加文件（图片转 base64）
+	for _, file := range fileInfo {
+		if file.FileUrl == "" {
+			continue
+		}
+		// 从 minio 下载图片并转成 base64
+		_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx, file.FileUrl)
+		if err != nil {
+			log.Errorf("buildMultimodalContent: failed to convert image to base64: %v, url: %s", err, file.FileUrl)
+			continue
+		}
+		contents = append(contents, map[string]interface{}{
+			"type": "image_url",
+			"image_url": map[string]string{
+				"url": base64StrWithPrefix,
+			},
+		})
+	}
+
+	// 如果没有有效的文件，返回纯文本
+	if len(contents) == 0 || (len(contents) == 1 && content != "") {
+		return content
+	}
+	return contents
 }

@@ -2,9 +2,8 @@ package model
 
 import (
 	"context"
-	"strconv"
-
 	"github.com/UnicomAI/wanwu/pkg/util"
+	"strconv"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	model_service "github.com/UnicomAI/wanwu/api/proto/model-service"
@@ -69,6 +68,7 @@ func (s *Service) SaveModelExperienceDialogRecord(ctx context.Context, req *mode
 		HandledContent:    req.HandledContent,
 		ReasoningContent:  req.ReasoningContent,
 		Role:              req.Role,
+		FileInfo:          req.FileInfo,
 		PublicModel: model.PublicModel{
 			OrgID:  req.OrgId,
 			UserID: req.UserId,
@@ -113,5 +113,6 @@ func toModelExperienceDialogRecord(record *model.ModelExperienceDialogRecord) *m
 		HandledContent:    record.HandledContent,
 		ReasoningContent:  record.ReasoningContent,
 		Role:              record.Role,
+		FileInfo:          record.FileInfo,
 	}
 }
