@@ -993,7 +993,7 @@ func renderConfig(config wga_sandbox_option.ModelConfig, mcps []wga_sandbox_opti
 	for _, mcp := range mcps {
 		pm := processedMCP{
 			Name:        mcp.Name,
-			Description: mcp.Description,
+			Description: strings.Join(strings.Fields(mcp.Description), " "),
 			Headers:     make(map[string]string),
 		}
 		// 自定义请求头优先注入
