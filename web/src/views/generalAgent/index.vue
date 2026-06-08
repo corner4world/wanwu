@@ -76,15 +76,7 @@
           </div>
 
           <div v-if="isSkillType" class="header-right">
-            <button
-              v-if="isSkillType && !panelVisible"
-              class="header-icon-btn workspace-entry-btn"
-              @click="handleViewSkillWorkspace"
-            >
-              <span>
-                {{ $t('generalAgent.header.workspace') }}
-              </span>
-            </button>
+            <!-- Skill 模式下不再使用传统的 WorkspacePanel 入口，改为由 SkillTabs 集成代码编辑 -->
           </div>
         </div>
 
@@ -234,6 +226,7 @@
                 :disabled="isStreaming || previewIsStreaming"
                 :isDIP="selectedMode?.value === 'DIP Agent'"
                 :placeholder="inputPlaceholder"
+                :before-enter-submit="beforeEnterSubmit"
                 @keydown-enter="handleKeyDown"
               />
             </div>
@@ -405,6 +398,7 @@
               3. SkillTabs 和文件预览抽屉互斥显示，占用相同空间
             -->
           <SkillTabs
+            ref="skillTabs"
             v-if="shouldMountSkillTabs"
             v-show="shouldShowSkillTabs"
             :key="skillTabsKey"
@@ -540,6 +534,7 @@ export default {
       customSkillId: '',
       previewId: '',
       skillChatMode: 'normal', // normal | import | convert
+      pendingSkillWorkspaceRefresh: false,
     };
   },
   computed: {
@@ -649,6 +644,9 @@ export default {
     shouldShowSkillTabs(val) {
       if (val) {
         this.sidebarCollapsed = true;
+        if (this.pendingSkillWorkspaceRefresh) {
+          this.$nextTick(() => this.refreshSkillWorkspace());
+        }
       }
     },
   },
@@ -1308,7 +1306,18 @@ export default {
     handleKeyDown(e) {
       if (e.shiftKey) return;
       e.preventDefault();
-      this.sendMessage();
+      this.sendMessage({ skipUnsavedCheck: true });
+    },
+
+    async beforeEnterSubmit() {
+      const content = this.inputMessage.trim();
+      if (!content && this.uploadedFiles.length === 0) return false;
+      if (this.previewIsStreaming) return false;
+
+      const currentStreaming = this.streamingMap[this.currentThreadId];
+      if (currentStreaming && currentStreaming.isStreaming) return false;
+
+      return this.confirmSkillUnsavedBeforeSend();
     },
 
     handleModelChange(value) {
@@ -1329,7 +1338,8 @@ export default {
       });
     },
 
-    async sendMessage() {
+    async sendMessage(options = {}) {
+      const skipUnsavedCheck = options?.skipUnsavedCheck === true;
       const content = this.inputMessage.trim();
       if (!content && this.uploadedFiles.length === 0) return;
       if (this.previewIsStreaming) return;
@@ -1397,6 +1407,13 @@ export default {
       }
 
       if (this.previewIsStreaming) return;
+      if (!skipUnsavedCheck) {
+        const canSendAfterUnsavedCheck =
+          await this.confirmSkillUnsavedBeforeSend();
+        if (!canSendAfterUnsavedCheck) {
+          return;
+        }
+      }
 
       const userMessage = this.buildUserMessage(content);
       this.ensureMessageList(this.currentThreadId);
@@ -1407,6 +1424,43 @@ export default {
       this.$nextTick(() => this.scrollToBottom());
 
       await this.startStreaming(userMessage);
+    },
+
+    async confirmSkillUnsavedBeforeSend() {
+      if (!this.isSkillType) return true;
+
+      const skillTabs = this.$refs.skillTabs;
+      if (
+        !skillTabs ||
+        !skillTabs.hasUnsavedFiles ||
+        !skillTabs.hasUnsavedFiles()
+      ) {
+        return true;
+      }
+
+      try {
+        await this.$confirm(
+          '您有未保存的文件内容，继续对话将丢弃这些内容。是否继续？',
+          '提示',
+          {
+            confirmButtonText: '继续对话',
+            cancelButtonText: '取消',
+            type: 'warning',
+          },
+        );
+      } catch (e) {
+        return false;
+      }
+
+      const results = skillTabs.discardUnsavedFiles
+        ? await skillTabs.discardUnsavedFiles()
+        : [];
+      const hasFailed = results.some(item => item && item.failed);
+      if (hasFailed) {
+        this.$message.warning('未保存内容丢弃失败，请保存后重试');
+        return false;
+      }
+      return true;
     },
 
     async startStreaming(userMessage) {
@@ -1506,8 +1560,37 @@ export default {
             this.resetScrollState();
             this.$nextTick(() => this.scrollToBottom(true));
           }
+          if (this.isSkillType && this.currentThreadId === streamingThreadId) {
+            this.requestSkillWorkspaceRefresh();
+          }
         }
       }
+    },
+
+    requestSkillWorkspaceRefresh() {
+      if (!this.isSkillType) return;
+      if (!this.customSkillId || !this.previewId) {
+        this.pendingSkillWorkspaceRefresh = true;
+        return;
+      }
+      this.$nextTick(() => this.refreshSkillWorkspace());
+    },
+
+    refreshSkillWorkspace() {
+      if (!this.isSkillType) return;
+      if (!this.customSkillId || !this.previewId) {
+        this.pendingSkillWorkspaceRefresh = true;
+        return;
+      }
+
+      const skillTabs = this.$refs.skillTabs;
+      if (skillTabs && skillTabs.refreshWorkspace) {
+        skillTabs.refreshWorkspace();
+        this.pendingSkillWorkspaceRefresh = false;
+        return;
+      }
+
+      this.pendingSkillWorkspaceRefresh = true;
     },
 
     async loadWorkspaceFiles() {
@@ -1754,12 +1837,22 @@ export default {
       width: 0;
       overflow: hidden;
     }
+
+    .message-list,
+    .input-area .input-container {
+      max-width: $message-main-max-width;
+    }
   }
 
   // 有工作空间时，左侧自适应，右侧工作空间宽度
   &.has-workspace:not(.has-preview) {
     .right-area {
       width: 400px;
+    }
+
+    .message-list,
+    .input-area .input-container {
+      max-width: $message-workspace-max-width;
     }
   }
 
@@ -1771,6 +1864,11 @@ export default {
 
     .right-area {
       width: 60%;
+    }
+
+    .message-list,
+    .input-area .input-container {
+      max-width: 100%;
     }
   }
 
@@ -2035,6 +2133,8 @@ export default {
 
   .message-list {
     max-width: $message-max-width;
+    width: 100%;
+    box-sizing: border-box;
     margin: 0 auto;
     padding: 24px;
     min-height: 100%;
@@ -2172,6 +2272,8 @@ export default {
 
   .input-container {
     max-width: $message-max-width;
+    width: 100%;
+    box-sizing: border-box;
     margin: 0 auto;
     background: #fff;
     border-radius: 16px;

@@ -21,6 +21,7 @@ export const SUPPORTED_TYPES = [
   'pdf', // PDF 文档
   'ppt', // PPT 演示文稿 (.ppt)
   'pptx', // PPT 演示文稿 (.pptx)
+  'ofd', // OFD 版式文档
   'txt', // 纯文本文件
   // 多媒体 - 音频
   'aac', // AAC 音频

@@ -26,7 +26,9 @@
         <div class="empty-avatar">
           <i class="el-icon-cpu empty-avatar-icon"></i>
         </div>
-        <div class="empty-title">预览会话</div>
+        <div class="empty-title">
+          {{ $t('generalAgent.skill.skillWorkBench.preview.title') }}
+        </div>
       </div>
     </div>
 
@@ -272,7 +274,9 @@ export default {
         if (previewId) {
           this.currentThreadId = previewId;
         } else {
-          this.$message.warning('预览 ID 未就绪，请稍后');
+          this.$message.warning(
+            this.$t('generalAgent.skill.skillWorkBench.preview.notReady'),
+          );
           return;
         }
       }
@@ -586,7 +590,6 @@ $border: #e5e7eb;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
   max-width: $message-max-width;
   margin: 0 auto;
 }

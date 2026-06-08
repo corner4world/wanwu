@@ -1,6 +1,7 @@
 <template>
   <el-image-viewer
     v-show="showImageViewer"
+    :key="currentImageIndex"
     :initial-index="currentImageIndex"
     :on-close="handleClose"
     :url-list="imageList"

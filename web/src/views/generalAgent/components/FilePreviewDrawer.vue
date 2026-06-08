@@ -71,7 +71,7 @@
           <!-- PPT 预览 -->
           <div v-else-if="previewType === 'ppt'" class="preview-ppt-wrapper">
             <ppt-preview
-              :src="blob"
+              :src="internalBlob"
               :file-name="fileName"
               @close="handleClose"
             />
@@ -154,7 +154,16 @@
             v-else-if="previewType === 'word'"
             class="preview-office-wrapper"
           >
-            <vue-office-docx :src="blob" @error="handleWordError" />
+            <vue-office-docx :src="internalBlob" @error="handleWordError" />
+          </div>
+
+          <!-- OFD 预览 -->
+          <div v-else-if="previewType === 'ofd'" class="preview-ofd-wrapper">
+            <ofd-preview
+              :file-name="fileName"
+              :src="internalBlob"
+              @close="handleClose"
+            />
           </div>
 
           <!-- 文本/代码预览 -->
@@ -178,16 +187,18 @@
 
 <script>
 import PptPreview from './PptPreview.vue';
+import OfdPreview from './OfdPreview.vue';
 import StreamMarkdown from './StreamMarkdown.vue';
 import VueOfficeDocx from '@vue-office/docx';
 import '@vue-office/docx/lib/index.css';
-import { resDownloadFile, getFileType } from '@/utils/util';
+import { resDownloadFile, getFileType, getMimeType } from '@/utils/util';
 import * as XLSX from 'xlsx';
 
 export default {
   name: 'FilePreviewDrawer',
   components: {
     PptPreview,
+    OfdPreview,
     StreamMarkdown,
     VueOfficeDocx,
   },
@@ -229,6 +240,7 @@ export default {
       previewContent: '',
       previewBlobUrl: '',
       previewExcelData: null,
+      internalBlob: null,
     };
   },
   computed: {
@@ -275,27 +287,24 @@ export default {
 
       try {
         this.previewType = getFileType(this.fileName);
+        // 根据文件扩展名自动设置正确的 MIME 类型，确保浏览器能正确预览而非下载
+        const mimeType = getMimeType(this.fileExt);
+        // 使用内部副本，避免直接修改 prop
+        this.internalBlob = mimeType
+          ? new Blob([this.blob], { type: mimeType })
+          : this.blob;
 
         if (
           ['image', 'video', 'audio', 'pdf', 'html'].includes(this.previewType)
         ) {
-          // SVG 需要正确的 MIME 类型才能在 <img> 中渲染，
-          // API 返回的 Blob 通常是 application/octet-stream，浏览器无法据此识别 SVG
-          if (this.previewType === 'image' && this.fileExt === 'svg') {
-            const svgBlob = new Blob([this.blob], {
-              type: 'image/svg+xml',
-            });
-            this.previewBlobUrl = URL.createObjectURL(svgBlob);
-          } else {
-            this.previewBlobUrl = URL.createObjectURL(this.blob);
-          }
+          this.previewBlobUrl = URL.createObjectURL(this.internalBlob);
           this.previewUrl = this.previewBlobUrl;
         } else if (['markdown', 'text'].includes(this.previewType)) {
-          this.previewContent = await this.blob.text();
+          this.previewContent = await this.internalBlob.text();
         } else if (this.previewType === 'excel') {
-          const arrayBuffer = await this.blob.arrayBuffer();
+          const arrayBuffer = await this.internalBlob.arrayBuffer();
           const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-          const excelData = workbook.SheetNames.map(sheetName => {
+          this.previewExcelData = workbook.SheetNames.map(sheetName => {
             const sheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(sheet, {
               header: 1,
@@ -319,7 +328,6 @@ export default {
               ),
             };
           });
-          this.previewExcelData = excelData;
         }
       } catch (error) {
         console.error('处理文件失败:', error);
@@ -390,12 +398,12 @@ export default {
 
     // 下载文件
     async handleDownload() {
-      if (!this.fileName || !this.blob) {
+      if (!this.fileName || !this.internalBlob) {
         return;
       }
 
       try {
-        resDownloadFile(this.blob, this.fileName);
+        resDownloadFile(this.internalBlob, this.fileName);
         this.$message.success(
           this.$t('generalAgent.workspace.downloadSuccess'),
         );
@@ -669,6 +677,7 @@ export default {
 
 .preview-pdf-wrapper,
 .preview-ppt-wrapper,
+.preview-ofd-wrapper,
 .preview-html-wrapper {
   overflow: hidden;
   width: 100%;

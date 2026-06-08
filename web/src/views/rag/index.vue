@@ -55,12 +55,14 @@ export default {
             this.editForm.qaKnowledgeBaseConfig =
               res.data.qaKnowledgeBaseConfig;
           }
-          this.editForm.recommendQuestion = res.data.recommendQuestion.map(
+          this.editForm.recommendQuestion = res.data.recommendQuestion?.map(
             item => ({
               value: item,
             }),
           );
-          this.setMaxPicNum(res.data.visionConfig.picNum);
+          // 临时隐藏visionConfig的配置，全都设置为1
+          // this.setMaxPicNum(res.data.visionConfig.picNum);
+          this.setMaxPicNum(1);
         }
       });
     },

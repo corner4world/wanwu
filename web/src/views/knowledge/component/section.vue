@@ -646,7 +646,6 @@ export default {
     return {
       submitLoading: false,
       oldContent: '',
-      title: '',
       dialogVisible: false,
       editingSegments: {},
       editingContent: {},
@@ -989,7 +988,7 @@ export default {
     },
     getList() {
       this.loading.itemStatus = true;
-      // 预览文件只在 created 首次加载时下载一次，后续 getList 不再重复下载
+      // 预览文件只在 created 首次加载时下载一次,后续 getList 不再重复下载
       this.previewLoading = !this.previewFileName;
 
       getSectionList({
@@ -998,7 +997,7 @@ export default {
         pageNo: this.page.pageNo,
         pageSize: this.page.pageSize,
       })
-        .then(async res => {
+        .then(res => {
           this.res = res.data;
           this.page.total = res.data.segmentTotalNum || 0;
           this.metaRuleList = res.data.metaDataList.filter(
@@ -1014,23 +1013,28 @@ export default {
             const fileName = this.obj.name;
             const hasExtension = fileName.includes('.');
             this.previewFileName = hasExtension ? fileName : `${fileName}.url`;
-            try {
-              const response = await fetch(res.data.downloadUrl);
-              if (response.ok) {
-                this.previewBlob = await response.blob();
-              }
-            } catch (e) {
-              console.error('文件预览下载失败:', e);
-            }
+            this.downloadPreviewFile(res.data.downloadUrl);
           }
         })
         .catch(() => {
           this.$message.error(this.$t('knowledgeManage.getListFail'));
         })
         .finally(() => {
-          this.previewLoading = false;
           this.loading.itemStatus = false;
         });
+    },
+    // 异步下载预览文件,不阻塞列表加载
+    async downloadPreviewFile(url) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          this.previewBlob = await response.blob();
+        }
+      } catch (e) {
+        console.error('文件预览下载失败:', e);
+      } finally {
+        this.previewLoading = false;
+      }
     },
     handleCurrentChange(val) {
       this.page.pageNo = val;

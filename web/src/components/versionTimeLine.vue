@@ -80,7 +80,7 @@
                       :command="{ action: 'rollback', index }"
                       :divided="appType === 'workflow'"
                     >
-                      {{ $t('list.version.rollback') }}
+                      {{ rollbackLabel }}
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </el-dropdown>
@@ -133,6 +133,13 @@ export default {
   created() {
     this.getAppVersionList();
   },
+  computed: {
+    rollbackLabel() {
+      return this.appType === SKILL
+        ? this.$t('list.version.rollbackSkill')
+        : this.$t('list.version.rollback');
+    },
+  },
   methods: {
     getAppVersionList() {
       getAppVersionList({ appId: this.appId, appType: this.appType }).then(
@@ -164,7 +171,7 @@ export default {
       this.version = item.version;
       this.$emit('previewVersion', item);
     },
-    rollbackVersion(index) {
+    doRollbackVersion(index) {
       rollbackAppVersion({
         appId: this.appId,
         appType: this.appType,
@@ -175,6 +182,26 @@ export default {
           this.$emit('reloadData');
         }
       });
+    },
+    rollbackVersion(index) {
+      if (this.appType !== SKILL) {
+        this.doRollbackVersion(index);
+        return;
+      }
+
+      this.$confirm(
+        this.$t('list.version.rollbackSkillConfirmContent'),
+        this.$t('list.version.rollbackSkill'),
+        {
+          confirmButtonText: this.$t('common.confirm.confirm'),
+          cancelButtonText: this.$t('common.confirm.cancel'),
+          type: 'warning',
+        },
+      )
+        .then(() => {
+          this.doRollbackVersion(index);
+        })
+        .catch(() => {});
     },
     exportVersion(index) {
       const versionItem = this.versionList[index];
