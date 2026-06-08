@@ -29,7 +29,7 @@ const (
 	customSkillFileType = ".zip"
 )
 
-func CreateCustomSkill(ctx *gin.Context, userId, orgId string, avatarKey, author, zipUrl string) (*response.CustomSkillIDResp, error) {
+func CreateCustomSkill(ctx *gin.Context, userId, orgId string, avatarKey, zipUrl string) (*response.CustomSkillIDResp, error) {
 	var skillName, skillDesc string
 
 	if zipUrl != "" {
@@ -58,7 +58,7 @@ func CreateCustomSkill(ctx *gin.Context, userId, orgId string, avatarKey, author
 	createResp, err := mcp.CustomSkillCreate(ctx.Request.Context(), &mcp_service.CustomSkillCreateReq{
 		Name:     skillName,
 		Avatar:   avatarKey,
-		Author:   author,
+		Author:   getUserName(ctx.Request.Context(), userId),
 		Desc:     skillDesc,
 		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
 	})

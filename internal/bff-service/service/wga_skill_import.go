@@ -60,14 +60,10 @@ func ImportGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string,
 		return nil, err
 	}
 
-	author := req.Author
-	if author == "" {
-		author = skillConversationAuthor
-	}
 	customSkillResp, err := mcp.CustomSkillCreate(ctx.Request.Context(), &mcp_service.CustomSkillCreateReq{
 		Name:            gin_util.I18nKey(ctx, "wga_skill_import_title"),
 		Avatar:          req.Avatar.Key,
-		Author:          author,
+		Author:          getUserName(ctx.Request.Context(), userId),
 		WgaThreadId:     threadResp.ThreadId,
 		PreviewThreadId: previewID,
 		Identity:        &mcp_service.Identity{UserId: userId, OrgId: orgId},

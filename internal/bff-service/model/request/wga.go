@@ -60,7 +60,6 @@ type ConvertGeneralAgentSkillConversationReq struct {
 	ID          string          `json:"id" validate:"required"`
 	Type        string          `json:"type" validate:"required"`
 	ModelConfig *AppModelConfig `json:"modelConfig" validate:"required"`
-	Author      string          `json:"author"`
 }
 
 func (c *ConvertGeneralAgentSkillConversationReq) Check() error {

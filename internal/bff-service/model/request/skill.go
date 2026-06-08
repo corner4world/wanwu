@@ -16,7 +16,6 @@ type SkillVariable struct {
 
 type CreateCustomSkillReq struct {
 	Avatar Avatar `json:"avatar" form:"avatar"`
-	Author string `json:"author" form:"author"`
 	ZipUrl string `json:"zipUrl" form:"zipUrl" validate:"required"`
 }
 

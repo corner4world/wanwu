@@ -10,6 +10,7 @@ import (
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
 	"github.com/UnicomAI/wanwu/api/proto/common"
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
+	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
 	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	model_service "github.com/UnicomAI/wanwu/api/proto/model-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
@@ -34,9 +35,18 @@ const (
 	generalAgentSkillChatNormalAgentID  = "Skill Chat Agent"
 	generalAgentSkillChatImportAgentID  = "Skill Import Agent"
 	generalAgentSkillChatPreviewAgentID = "Skill Preview Agent"
-
-	skillConversationAuthor = "conversation"
 )
+
+// getUserName 通过 userId 获取用户名，如果获取失败返回 "unknown"
+func getUserName(ctx context.Context, userID string) string {
+	resp, err := iam.GetUserSelectByUserIDs(ctx, &iam_service.GetUserSelectByUserIDsReq{
+		UserIds: []string{userID},
+	})
+	if err != nil || len(resp.Selects) == 0 {
+		return "unknown"
+	}
+	return resp.Selects[0].Name
+}
 
 func CreateGeneralAgentConversation(ctx *gin.Context, userId, orgId string, req request.CreateGeneralAgentConversationReq) (*response.CreateGeneralAgentConversationResp, error) {
 	if err := checkModelConfig(ctx, req.ModelConfig); err != nil {
@@ -71,7 +81,7 @@ func CreateGeneralAgentSkillConversation(ctx *gin.Context, userId, orgId string,
 	previewID := util.GenUUID()
 	customSkillResp, err := mcp.CustomSkillCreate(ctx.Request.Context(), &mcp_service.CustomSkillCreateReq{
 		Name:            req.Title,
-		Author:          skillConversationAuthor,
+		Author:          getUserName(ctx.Request.Context(), userId),
 		WgaThreadId:     generalConversationResp.ThreadID,
 		PreviewThreadId: previewID,
 		Identity:        &mcp_service.Identity{UserId: userId, OrgId: orgId},
