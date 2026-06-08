@@ -17,7 +17,7 @@ export default {
 * {
   margin: 0;
   padding: 0;
-  font-family: NotoSansSC;
+  font-family: 'PingFang SC', 'Noto Sans SC', sans-serif !important;
   font-size: 12px;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased; /*chrome、safari*/
