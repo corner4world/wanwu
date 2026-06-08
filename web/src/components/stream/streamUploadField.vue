@@ -165,6 +165,11 @@
                 }}
               </p>
               <div class="tips">
+                <p v-if="visibleImageSizeLimit">
+                  {{
+                    $t('app.imageSizeModelLimit', { maxSize: maxImageSizeMB })
+                  }}
+                </p>
                 <p>
                   {{ $t('common.fileUpload.typeFileTip1') }}
                   <span>{{ tipsArr }}</span>
@@ -248,6 +253,9 @@ export default {
     },
     maxImageSizeBytes() {
       return this.maxImageSizeMB ? this.maxImageSizeMB * 1024 * 1024 : 0;
+    },
+    visibleImageSizeLimit() {
+      return this.maxImageSizeMB > 0;
     },
   },
   methods: {

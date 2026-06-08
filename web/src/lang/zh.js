@@ -2163,6 +2163,7 @@ export default {
     imgLimit: '图片类型限制{num}个文件，其他类型限制1个文件',
     imgLimitOnly: '图片类型限制{num}个文件',
     imgLimitTips: '非图片类型文件会替换已有文件',
+    imageSizeModelLimit: '当前模型仅支持上传{maxSize}MB以下图片',
     uploadModelTips:
       ' *若该智能体基于大语言模型创建，则上传图片暂时无法进行解析',
     uploadImgTips: '只能上传{num}个图片文件',

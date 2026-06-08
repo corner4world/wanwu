@@ -88,6 +88,16 @@
                     >
                       {{ skillTypeTagMap[item.skillType] }}
                     </div>
+                    <el-tooltip
+                      v-if="toolDescription(item)"
+                      effect="dark"
+                      :content="toolDescription(item)"
+                      placement="top-start"
+                    >
+                      <span class="tool-description">
+                        {{ toolDescription(item) }}
+                      </span>
+                    </el-tooltip>
                   </div>
                 </div>
                 <div>
@@ -116,23 +126,33 @@
                         v-if="item.avatar && item.avatar.path"
                       />
                     </div>
-                    <div
-                      :class="
-                        type === AGENT_TOOL_TYPE.TOOL && 'tool-name-container'
-                      "
-                    >
-                      <h3 class="tool-name">{{ item.toolName }}</h3>
-                      <span
-                        v-if="item.loading"
-                        class="el-icon-loading loading-text"
-                      ></span>
-                      <span v-if="type === AGENT_TOOL_TYPE.TOOL" class="tag">
-                        {{
-                          item.toolType === 'builtin'
-                            ? $t('agent.toolDialog.builtinTools')
-                            : $t('agent.toolDialog.customTools')
-                        }}
-                      </span>
+                    <div class="tool-name-container">
+                      <div class="tool-name-main">
+                        <div class="tool-title-line">
+                          <h3 class="tool-name">{{ item.toolName }}</h3>
+                          <span
+                            v-if="item.loading"
+                            class="el-icon-loading loading-text"
+                          ></span>
+                        </div>
+                        <span v-if="type === AGENT_TOOL_TYPE.TOOL" class="tag">
+                          {{
+                            item.toolType === 'builtin'
+                              ? $t('agent.toolDialog.builtinTools')
+                              : $t('agent.toolDialog.customTools')
+                          }}
+                        </span>
+                        <el-tooltip
+                          v-if="toolDescription(item)"
+                          effect="dark"
+                          :content="toolDescription(item)"
+                          placement="top-start"
+                        >
+                          <span class="tool-description">
+                            {{ toolDescription(item) }}
+                          </span>
+                        </el-tooltip>
+                      </div>
                     </div>
                   </template>
                   <template v-if="item.children && item.children.length">
@@ -269,6 +289,9 @@ export default {
   },
   methods: {
     avatarSrc,
+    toolDescription(item) {
+      return item.description || item.desc || '';
+    },
     showToolNum(type) {
       if (type === AGENT_TOOL_TYPE.TOOL) {
         return this.customCount;
@@ -560,6 +583,8 @@ export default {
   .el-collapse-item__header {
     background: none !important;
     border-bottom: none !important;
+    height: auto;
+    line-height: normal;
   }
   .el-collapse-item__wrap {
     border-bottom: none !important;
@@ -620,23 +645,33 @@ export default {
       color: #4b4a58;
       font-size: 12px;
       border-radius: 6px;
+      width: fit-content;
     }
     .tool_box {
       display: flex;
       align-items: center;
+      min-width: 0;
+      flex: 1;
+      margin-right: 20px;
     }
     .tool-info {
       display: flex;
       flex-direction: column;
       gap: 4px;
+      min-width: 0;
+      flex: 1;
     }
     .tool-title-row {
       display: flex;
       align-items: center;
       line-height: 1.5;
+      min-width: 0;
     }
     .tool-title {
       color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .tool-author {
       color: #666;
@@ -645,6 +680,17 @@ export default {
     .skill-type-tag {
       width: fit-content;
       line-height: 1.5;
+    }
+    .tool-description {
+      display: block;
+      min-width: 0;
+      overflow: hidden;
+      color: #8b8b95;
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: left;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .tool_img {
       width: 35px;
@@ -690,15 +736,41 @@ export default {
 .tool-name-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  justify-content: center;
+  min-width: 0;
+  width: calc(100% - 48px);
+  margin-right: 20px;
+  .tool-name-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .tool-title-line {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
   .tool-name {
     height: auto;
     line-height: 1.5;
+    margin: 0;
   }
   .tag {
     height: auto;
     line-height: 1.5;
     width: fit-content;
+  }
+  .tool-description {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: #8b8b95;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 </style>
