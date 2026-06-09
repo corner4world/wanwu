@@ -29,6 +29,7 @@ import (
 )
 
 func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.ModelExperienceLlmRequest) {
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	// 敏感词检测 - 输入检测
 	matchDicts, err := BuildSensitiveDict(ctx, nil, false)
 	if err != nil {
@@ -148,19 +149,11 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 
 	llm, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
 	if err != nil {
-		go func() {
-			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
-		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
 	iLLM, ok := llm.(mp.ILLM)
 	if !ok {
-		go func() {
-			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
-		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
@@ -169,10 +162,6 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 	// chat completions
 	iLLMReq, err := iLLM.NewReq(llmReq)
 	if err != nil {
-		go func() {
-			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
-		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
@@ -180,7 +169,7 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 	if err != nil {
 		go func() {
 			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+			recordModelStatistic(detachedCtx, modelInfo, false, 0, 0, 0, 0, 0, false)
 		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
@@ -242,7 +231,7 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 			default:
 			}
 		}
-		recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, true,
+		recordModelStatistic(detachedCtx, modelInfo, true,
 			promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
 	}()
 

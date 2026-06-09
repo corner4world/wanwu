@@ -22,11 +22,12 @@ func OpenAPIWorkflowRun(ctx *gin.Context, userId, orgId, workflowID string, inpu
 	// 将用户输入的intput透传
 	startTime := time.Now()
 	isSuccess := false
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	defer func() {
 		costs := time.Since(startTime).Milliseconds()
 		go func() {
 			defer util.PrintPanicStack()
-			RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userId, orgId, workflowID, constant.AppTypeWorkflow, isSuccess, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+			RecordAppStatistic(detachedCtx, userId, orgId, workflowID, constant.AppTypeWorkflow, isSuccess, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
 		}()
 	}()
 

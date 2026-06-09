@@ -17,6 +17,7 @@ import (
 )
 
 func ModelTextRerank(ctx *gin.Context, modelID string, req *mp_common.TextRerankReq) {
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	// modelInfo by modelID
 	modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: modelID})
 	if err != nil {
@@ -70,14 +71,14 @@ func ModelTextRerank(ctx *gin.Context, modelID string, req *mp_common.TextRerank
 		costs := int(time.Since(startTime).Milliseconds())
 		go func() {
 			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, true,
+			recordModelStatistic(detachedCtx, modelInfo, true,
 				data.Usage.PromptTokens, data.Usage.CompletionTokens, data.Usage.TotalTokens, costs, 0, false)
 		}()
 		return
 	}
 	go func() {
 		defer util.PrintPanicStack()
-		recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		recordModelStatistic(detachedCtx, modelInfo, false, 0, 0, 0, 0, 0, false)
 	}()
 	gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v rerank err: invalid resp", modelInfo.ModelId)))
 }

@@ -39,6 +39,7 @@ func ModelSyncAsr(ctx *gin.Context, modelID string, req *mp_common.SyncAsrReq) {
 }
 
 func modelSyncAsr(ctx *gin.Context, modelInfo *model_service.ModelInfo, modelId, provider, modelType, providerConfig string, req *mp_common.SyncAsrReq) {
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	// sync_asr config
 	sync_asr, err := mp.ToModelConfig(provider, modelType, providerConfig)
 	if err != nil {
@@ -69,13 +70,13 @@ func modelSyncAsr(ctx *gin.Context, modelInfo *model_service.ModelInfo, modelId,
 		costs := int(time.Since(startTime).Milliseconds())
 		go func() {
 			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, true, 0, 0, 0, costs, 0, false)
+			recordModelStatistic(detachedCtx, modelInfo, true, 0, 0, 0, costs, 0, false)
 		}()
 		return
 	}
 	go func() {
 		defer util.PrintPanicStack()
-		recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		recordModelStatistic(detachedCtx, modelInfo, false, 0, 0, 0, 0, 0, false)
 	}()
 	gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v sync_asr err: invalid resp", modelId)))
 }

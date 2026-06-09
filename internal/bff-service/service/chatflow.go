@@ -161,10 +161,11 @@ func ChatflowChat(ctx *gin.Context, userId, orgId, workflowId, conversationId, m
 	var firstTokenLatency int64
 	var firstTokenRecorded bool
 	var hasErr bool
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	defer func() {
 		go func() {
 			defer util.PrintPanicStack()
-			RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userId, orgId, workflowId, constant.AppTypeChatflow, !hasErr, true, firstTokenLatency, 0, constant.AppStatisticSourceOpenAPI)
+			RecordAppStatistic(detachedCtx, userId, orgId, workflowId, constant.AppTypeChatflow, !hasErr, true, firstTokenLatency, 0, constant.AppStatisticSourceOpenAPI)
 		}()
 	}()
 

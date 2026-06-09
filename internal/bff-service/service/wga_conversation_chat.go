@@ -191,7 +191,8 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 	}
 
 	// 异步保存智能体返回的消息
-	go saveWgaChatHistoryEvent(trace_util.DetachContext(ctx.Request.Context()), historyEventCh, params.UserID, params.OrgID, params.ThreadID, runID,
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
+	go saveWgaChatHistoryEvent(detachedCtx, historyEventCh, params.UserID, params.OrgID, params.ThreadID, runID,
 		eventWorkspaceStore,
 		lastWorkspaceTotalSize,
 		lastWorkspaceFileCount,

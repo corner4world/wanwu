@@ -91,11 +91,12 @@ type ragChunkInner struct {
 // ChatRagStream RAG 私域问答，流式返回 AG-UI 协议事件
 func ChatRagStream(ctx *gin.Context, userId, orgId string, req request.ChatRagRequest, needLatestPublished bool, source string) (err error) {
 	streamParams := &ragChatStreamParams{ctx: ctx, startTime: time.Now()}
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	defer func() {
 		if source != constant.AppStatisticSourceDraft {
 			go func() {
 				defer util.PrintPanicStack()
-				RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userId, orgId, req.RagID, constant.AppTypeRag, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, source)
+				RecordAppStatistic(detachedCtx, userId, orgId, req.RagID, constant.AppTypeRag, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, source)
 			}()
 		}
 	}()
@@ -451,11 +452,12 @@ func convertRagStream2AGUIEvents(
 // 两者共用同一个底层 CallRagChatStream，仅输出层不同。
 func ChatRagStreamLegacy(ctx *gin.Context, userId, orgId string, req request.ChatRagRequest, needLatestPublished bool, source string) (err error) {
 	streamParams := &ragChatStreamParams{ctx: ctx, startTime: time.Now()}
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	defer func() {
 		if source != constant.AppStatisticSourceDraft {
 			go func() {
 				defer util.PrintPanicStack()
-				RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userId, orgId, req.RagID, constant.AppTypeRag, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, source)
+				RecordAppStatistic(detachedCtx, userId, orgId, req.RagID, constant.AppTypeRag, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, source)
 			}()
 		}
 	}()

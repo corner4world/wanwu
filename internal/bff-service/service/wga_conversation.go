@@ -667,9 +667,10 @@ func GeneralAgentSkillConversationChat(ctx *gin.Context, userId, orgId string, r
 		}
 	}
 	if mode != generalAgentSkillChatModePreview {
+		detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 		go func() {
 			defer util.PrintPanicStack()
-			ctx, cancel := context.WithTimeout(trace_util.DetachContext(ctx.Request.Context()), 30*time.Second)
+			ctx, cancel := context.WithTimeout(detachedCtx, 30*time.Second)
 			defer cancel()
 			updateCustomSkillMetaFromWorkspace(ctx, req.CustomSkillID)
 		}()
@@ -696,6 +697,7 @@ func updateCustomSkillMetaFromWorkspace(ctx context.Context, customSkillID strin
 }
 
 func GeneralAgentReplyQuestion(ctx *gin.Context, runID string, questionID string, answers [][]string) error {
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	sandboxCfg, err := getWgaSandboxConfig()
 	if err != nil {
 		return err
@@ -709,7 +711,7 @@ func GeneralAgentReplyQuestion(ctx *gin.Context, runID string, questionID string
 				log.Errorf("get ontology sandbox config failed: %v", err)
 				return
 			}
-			if err := wga_sandbox.ReplyQuestion(trace_util.DetachContext(ctx.Request.Context()), ontologySandboxCfg, runID, questionID, answers); err != nil {
+			if err := wga_sandbox.ReplyQuestion(detachedCtx, ontologySandboxCfg, runID, questionID, answers); err != nil {
 				log.Warnf("reply ontology question failed, runID: %s, questionID: %s, err: %v", runID, questionID, err)
 			}
 		}()
@@ -719,6 +721,7 @@ func GeneralAgentReplyQuestion(ctx *gin.Context, runID string, questionID string
 }
 
 func GeneralAgentRejectQuestion(ctx *gin.Context, runID string, questionID string) error {
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	sandboxCfg, err := getWgaSandboxConfig()
 	if err != nil {
 		return err
@@ -732,7 +735,7 @@ func GeneralAgentRejectQuestion(ctx *gin.Context, runID string, questionID strin
 				log.Errorf("get ontology sandbox config failed: %v", err)
 				return
 			}
-			if err := wga_sandbox.RejectQuestion(trace_util.DetachContext(ctx.Request.Context()), ontologySandboxCfg, runID, questionID); err != nil {
+			if err := wga_sandbox.RejectQuestion(detachedCtx, ontologySandboxCfg, runID, questionID); err != nil {
 				log.Warnf("reject ontology question failed, runID: %s, questionID: %s, err: %v", runID, questionID, err)
 			}
 		}()

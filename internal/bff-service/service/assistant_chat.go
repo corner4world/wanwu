@@ -38,11 +38,12 @@ type agentChatStreamParams struct {
 func AssistantConversionStream(ctx *gin.Context, userId, orgId string, req request.ConversionStreamRequest, needLatestPublished bool, source string) (err error) {
 	// 1. CallAssistantConversationStream
 	streamParams := &agentChatStreamParams{ctx: ctx, startTime: time.Now()}
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	defer func() {
 		if source != constant.AppStatisticSourceDraft {
 			go func() {
 				defer util.PrintPanicStack()
-				RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userId, orgId, req.AssistantId, constant.AppTypeAgent, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, source)
+				RecordAppStatistic(detachedCtx, userId, orgId, req.AssistantId, constant.AppTypeAgent, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, source)
 			}()
 		}
 	}()

@@ -142,10 +142,11 @@ func AppUrlConversionStream(ctx *gin.Context, req request.UrlConversionStreamReq
 		return err
 	}
 	streamParams := &agentChatStreamParams{startTime: time.Now()}
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	defer func() {
 		go func() {
 			defer util.PrintPanicStack()
-			RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), appUrlInfo.UserId, appUrlInfo.OrgId, appUrlInfo.AppId, constant.AppTypeAgent, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, constant.AppStatisticSourceWebUrl)
+			RecordAppStatistic(detachedCtx, appUrlInfo.UserId, appUrlInfo.OrgId, appUrlInfo.AppId, constant.AppTypeAgent, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, constant.AppStatisticSourceWebUrl)
 		}()
 	}()
 

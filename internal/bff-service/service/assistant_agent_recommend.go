@@ -47,6 +47,7 @@ type RecommendRespChoice struct {
 }
 
 func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_common.LLMReq) {
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	// modelInfo by modelID
 	modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: modelID})
 	if err != nil {
@@ -67,10 +68,6 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	// llm config
 	llm, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
 	if err != nil {
-		go func() {
-			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
-		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: %v", modelInfo.ModelId, err)))
 		return
 	}
@@ -87,10 +84,6 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	}
 	iLLM, ok := llm.(mp.ILLM)
 	if !ok {
-		go func() {
-			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
-		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: invalid provider", modelInfo.ModelId)))
 		return
 	}
@@ -99,10 +92,6 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	// chat completions
 	llmReq, err := iLLM.NewReq(req)
 	if err != nil {
-		go func() {
-			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
-		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v chat completions NewReq err: %v", modelInfo.ModelId, err)))
 		return
 	}
@@ -110,7 +99,7 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	if err != nil {
 		go func() {
 			defer util.PrintPanicStack()
-			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+			recordModelStatistic(detachedCtx, modelInfo, false, 0, 0, 0, 0, 0, false)
 		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: %v", modelInfo.ModelId, err)))
 		return
@@ -236,7 +225,7 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	ctx.Set(gin_util.RESULT, answer)
 	go func() {
 		defer util.PrintPanicStack()
-		recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, true,
+		recordModelStatistic(detachedCtx, modelInfo, true,
 			promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
 	}()
 }

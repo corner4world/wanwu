@@ -102,6 +102,7 @@ func CreateAgentConversation(ctx *gin.Context) {
 //	@Success		400		{object}	response.Response
 //	@Router			/agent/chat [post]
 func ChatAgent(ctx *gin.Context) {
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	var req request.OpenAPIAgentChatRequest
 	if !gin_util.Bind(ctx, &req) {
 		return
@@ -140,7 +141,7 @@ func ChatAgent(ctx *gin.Context) {
 	if err != nil {
 		go func() {
 			defer util.PrintPanicStack()
-			service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userID, orgID, appID, constant.AppTypeAgent, false, false, 0, 0, constant.AppStatisticSourceOpenAPI)
+			service.RecordAppStatistic(detachedCtx, userID, orgID, appID, constant.AppTypeAgent, false, false, 0, 0, constant.AppStatisticSourceOpenAPI)
 		}()
 		gin_util.Response(ctx, nil, err)
 		return
@@ -164,7 +165,7 @@ func ChatAgent(ctx *gin.Context) {
 	costs := time.Since(startTime).Milliseconds()
 	go func() {
 		defer util.PrintPanicStack()
-		service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userID, orgID, appID, constant.AppTypeAgent, true, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+		service.RecordAppStatistic(detachedCtx, userID, orgID, appID, constant.AppTypeAgent, true, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
 	}()
 	b, _ := json.Marshal(resp)
 	status := http.StatusOK
@@ -185,6 +186,7 @@ func ChatAgent(ctx *gin.Context) {
 //	@Success		400		{object}	response.Response
 //	@Router			/rag/chat [post]
 func ChatRag(ctx *gin.Context) {
+	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	var req request.OpenAPIRagChatRequest
 	if !gin_util.Bind(ctx, &req) {
 		return
@@ -212,7 +214,7 @@ func ChatRag(ctx *gin.Context) {
 	if err != nil {
 		go func() {
 			defer util.PrintPanicStack()
-			service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userID, orgID, req.UUID, constant.AppTypeRag, false, false, 0, 0, constant.AppStatisticSourceOpenAPI)
+			service.RecordAppStatistic(detachedCtx, userID, orgID, req.UUID, constant.AppTypeRag, false, false, 0, 0, constant.AppStatisticSourceOpenAPI)
 		}()
 		gin_util.Response(ctx, nil, err)
 		return
@@ -235,7 +237,7 @@ func ChatRag(ctx *gin.Context) {
 	costs := time.Since(startTime).Milliseconds()
 	go func() {
 		defer util.PrintPanicStack()
-		service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userID, orgID, req.UUID, constant.AppTypeRag, true, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+		service.RecordAppStatistic(detachedCtx, userID, orgID, req.UUID, constant.AppTypeRag, true, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
 	}()
 	b, _ := json.Marshal(resp)
 	status := http.StatusOK
