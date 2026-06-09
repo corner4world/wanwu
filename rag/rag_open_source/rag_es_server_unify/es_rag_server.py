@@ -19,9 +19,27 @@ import utils.mapping_util as es_mapping
 from utils import emb_util
 from utils.util import get_qa_index_name
 from utils.http_util import validate_request
+from utils.otel import init_tracer
+from utils.trace import register_tracing
 from model.model_manager import is_multimodal_model
 
+# 初始化 OpenTelemetry（必须在 Flask app 创建之前）
+init_tracer("rag-es-proxy")
+
+# 自动 instrument requests 库（出站 HTTP 传播 traceparent）
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+RequestsInstrumentor().instrument()
+
 app = Flask(__name__)
+
+# 自动 instrument Flask（入站 HTTP 提取 traceparent，创建 Span）
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+FlaskInstrumentor().instrument_app(app)
+
+# 添加日志记录（含 trace_id/span_id 关联）
+register_tracing(app)
 
 def batch_list(lst: list, batch_size=32):
     """ 切分生成器 """

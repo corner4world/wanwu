@@ -28,14 +28,32 @@ from logging_config import init_logging
 from pymongo import MongoClient
 from utils import redis_utils
 from utils.constant import CHUNK_SIZE
+from utils.otel import init_tracer
+from utils.trace_asgi import TraceLoggingMiddleware
 import uuid
 import hashlib
 import tiktoken
-from openai import OpenAI
+
+# 初始化 OpenTelemetry（必须在 FastAPI app 创建之前）
+init_tracer("rag-sse-service")
+
+# 自动 instrument requests 库（出站 HTTP 传播 traceparent）
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+RequestsInstrumentor().instrument()
+
 user_data_path = r'./user_data'
 app = FastAPI()
 init_logging()
 logger = logging.getLogger(__name__)
+
+# 自动 instrument FastAPI（入站 HTTP 提取 traceparent，创建 Span）
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+FastAPIInstrumentor.instrument_app(app)
+
+# 添加日志记录（含 trace_id/span_id 关联）
+app.add_middleware(TraceLoggingMiddleware)
 # 解决跨域问题
 app.add_middleware(
     CORSMiddleware,

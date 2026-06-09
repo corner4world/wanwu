@@ -9,6 +9,7 @@ from utils import mq_rel_utils
 from utils import redis_utils
 from utils import graph_utils
 from utils import knowledge_base_utils
+from utils.otel import init_tracer
 
 from concurrent.futures import ThreadPoolExecutor
 from kafka import KafkaConsumer, TopicPartition, OffsetAndMetadata
@@ -16,6 +17,14 @@ import json
 import threading
 
 from settings import *
+
+# 初始化 OpenTelemetry，并自动 instrument requests / kafka 客户端
+init_tracer("rag-graph-extract")
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.instrumentation.kafka import KafkaInstrumentor
+
+RequestsInstrumentor().instrument()
+KafkaInstrumentor().instrument()
 
 logger = logging.getLogger(__name__)
 

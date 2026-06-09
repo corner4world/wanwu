@@ -77,7 +77,7 @@ def upload_local_file(file_path):
         return {"code": 1, 'message': f'Minio 上传失败{e}', "download_link": ''}
 
 
-def craete_download_url(bucket_name, object_name, expire=timedelta(days=1)):
+def create_download_url(bucket_name, object_name, expire=timedelta(days=1)):
     """生成预签名下载链接"""
     # 生成预签名下载链接
     try:

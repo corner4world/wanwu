@@ -12,6 +12,7 @@ from utils import knowledge_base_utils
 from utils.file_utils import SplitConfig
 from utils import schema_utils
 from utils import redis_utils
+from utils.otel import init_tracer
 import subprocess
 from kafka import KafkaConsumer, TopicPartition, OffsetAndMetadata
 import json
@@ -20,6 +21,15 @@ from datetime import datetime
 import re
 from settings import *
 from utils.constant import CONVERT_DIR, USER_DATA_PATH
+
+# 初始化 OpenTelemetry，并自动 instrument requests / kafka 客户端
+init_tracer("rag-add-file")
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+from opentelemetry.instrumentation.kafka import KafkaInstrumentor
+
+RequestsInstrumentor().instrument()
+KafkaInstrumentor().instrument()
+
 graph_redis_client = redis_utils.get_redis_connection()
 
 # 定义路径
