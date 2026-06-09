@@ -33,7 +33,7 @@ from utils.otel import init_tracer
 from utils.trace import register_tracing
 
 # 初始化 OpenTelemetry（必须在 Flask app 创建之前）
-init_tracer("rag-core-service")
+init_tracer("rag-wanwu-core-service")
 
 # 自动 instrument requests 库（出站 HTTP 传播 traceparent）
 from opentelemetry.instrumentation.requests import RequestsInstrumentor

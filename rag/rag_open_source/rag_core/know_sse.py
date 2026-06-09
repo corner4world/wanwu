@@ -35,7 +35,7 @@ import hashlib
 import tiktoken
 
 # 初始化 OpenTelemetry（必须在 FastAPI app 创建之前）
-init_tracer("rag-sse-service")
+init_tracer("rag-wanwu-sse-service")
 
 # 自动 instrument requests 库（出站 HTTP 传播 traceparent）
 from opentelemetry.instrumentation.requests import RequestsInstrumentor

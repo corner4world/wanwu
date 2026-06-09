@@ -24,7 +24,7 @@ from utils.trace import register_tracing
 from model.model_manager import is_multimodal_model
 
 # 初始化 OpenTelemetry（必须在 Flask app 创建之前）
-init_tracer("rag-es-proxy")
+init_tracer("rag-wanwu-es-proxy")
 
 # 自动 instrument requests 库（出站 HTTP 传播 traceparent）
 from opentelemetry.instrumentation.requests import RequestsInstrumentor

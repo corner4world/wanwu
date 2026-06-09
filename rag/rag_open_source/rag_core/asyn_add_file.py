@@ -23,7 +23,7 @@ from settings import *
 from utils.constant import CONVERT_DIR, USER_DATA_PATH
 
 # 初始化 OpenTelemetry，并自动 instrument requests / kafka 客户端
-init_tracer("rag-add-file")
+init_tracer("rag-wanwu-add-file")
 from opentelemetry import trace as otel_trace
 from opentelemetry.propagate import extract
 from opentelemetry.instrumentation.requests import RequestsInstrumentor

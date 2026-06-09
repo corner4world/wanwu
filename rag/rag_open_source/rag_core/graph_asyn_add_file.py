@@ -19,7 +19,7 @@ import threading
 from settings import *
 
 # 初始化 OpenTelemetry，并自动 instrument requests / kafka 客户端
-init_tracer("rag-graph-extract")
+init_tracer("rag-wanwu-graph-extract")
 from opentelemetry import trace as otel_trace
 from opentelemetry.propagate import extract
 from opentelemetry.instrumentation.requests import RequestsInstrumentor

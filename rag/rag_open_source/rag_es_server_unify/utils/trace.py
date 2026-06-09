@@ -62,12 +62,11 @@ def register_tracing(app: Flask):
 
             method = request_log.get("method", "-")
             full_path = request_log.get("full_path", "-")
-            body = json.dumps(request_log.get("body"), ensure_ascii=False)
 
             # trace_id / span_id 已由 log formatter（TraceIdFilter）统一注入，此处不再重复拼接
             log_msg = (
                 f"{cost}ms | {response.status_code} | "
-                f"{method} | {full_path} | {body} | {resp_body.rstrip(chr(10))}"
+                f"{method} | {full_path} | {resp_body.rstrip(chr(10))}"
             )
             if response.status_code < 400:
                 logger.info(log_msg)
