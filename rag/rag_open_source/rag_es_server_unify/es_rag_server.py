@@ -252,7 +252,7 @@ def add_vector_data(request_json=None):
         logger.info(f"当前用户:{userId},知识库:{kb_name},add的接口返回结果为：{jsonarr}")
         return jsonarr
     finally:
-        logger.info(f"{userId},{kb_name},bulk_add end")
+        logger.info(f"user_id: {userId}, kb_name: {kb_name}, bulk_add end")
 
 @app.route('/rag/kn/get_kb_info', methods=['POST'])
 @validate_request

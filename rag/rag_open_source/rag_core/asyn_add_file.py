@@ -24,11 +24,18 @@ from utils.constant import CONVERT_DIR, USER_DATA_PATH
 
 # 初始化 OpenTelemetry，并自动 instrument requests / kafka 客户端
 init_tracer("rag-add-file")
+from opentelemetry import trace as otel_trace
+from opentelemetry.propagate import extract
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.kafka import KafkaInstrumentor
 
 RequestsInstrumentor().instrument()
 KafkaInstrumentor().instrument()
+
+# KafkaInstrumentor 对 kafka-python 的 consumer 自动 span 只在 __next__ 那一瞬有效，
+# for 循环体内业务代码会失去 active span。手动用 extract + start_as_current_span
+# 重建 consumer span，让整段处理（含业务日志和出向 HTTP）都能挂在同一条 trace 上。
+tracer = otel_trace.get_tracer(__name__)
 
 graph_redis_client = redis_utils.get_redis_connection()
 
@@ -74,90 +81,104 @@ def kafkal():
                                      # max_poll_interval_ms=8000000,  # 设置最大轮询间隔为120分钟
                                      value_deserializer=lambda x: x.decode('utf-8'))
         for message in consumer:
-            # 初始化用户知识库路径
-            print('收到新kafka消息：' + repr(message.value))
-            logger.info('收到新kafka消息：' + repr(message.value))
-            try:
-                message_value = json.loads(message.value)
-                doc = message_value.get("doc", {})
-            except (json.JSONDecodeError, AttributeError) as e:
-                logger.error(f"Failed to parse message: {e}")
-                continue
+            # 从 Kafka 消息 headers 抽出上游 producer 注入的 traceparent
+            headers_dict = {}
+            if message.headers:
+                for hk, hv in message.headers:
+                    key = hk.decode() if isinstance(hk, (bytes, bytearray)) else hk
+                    val = hv.decode() if isinstance(hv, (bytes, bytearray)) else hv
+                    headers_dict[key] = val
+            parent_ctx = extract(headers_dict)
+
+            with tracer.start_as_current_span(
+                "kafka.consume",
+                context=parent_ctx,
+                kind=otel_trace.SpanKind.CONSUMER,
+            ):
+                # 初始化用户知识库路径
+                print('收到新kafka消息：' + repr(message.value))
+                logger.info('收到新kafka消息：' + repr(message.value))
+                try:
+                    message_value = json.loads(message.value)
+                    doc = message_value.get("doc", {})
+                except (json.JSONDecodeError, AttributeError) as e:
+                    logger.error(f"Failed to parse message: {e}")
+                    continue
 
 
-            file_id = doc.get("id")
-            user_id = doc.get("userId")
-            kb_id = doc.get("kb_id")
-            if not kb_id:
-                logger.error(f"kafka 消息缺少 kb_id, doc: {doc}")
-                continue
-            kb_name = doc.get("categoryId")
-            filename = doc.get("originalName")
-            object_name = doc.get("objectName")
+                file_id = doc.get("id")
+                user_id = doc.get("userId")
+                kb_id = doc.get("kb_id")
+                if not kb_id:
+                    logger.error(f"kafka 消息缺少 kb_id, doc: {doc}")
+                    continue
+                kb_name = doc.get("categoryId")
+                filename = doc.get("originalName")
+                object_name = doc.get("objectName")
 
-            # 分块与解析配置
-            sentence_size = doc.get("chunk_size")
-            overlap_size = doc.get("overlap")
-            split_type = doc.get("split_type", "common")
-            chunk_type = doc.get("chunk_type", "default")
-            separators = doc.get("separators", ['。'])
+                # 分块与解析配置
+                sentence_size = doc.get("chunk_size")
+                overlap_size = doc.get("overlap")
+                split_type = doc.get("split_type", "common")
+                chunk_type = doc.get("chunk_type", "default")
+                separators = doc.get("separators", ['。'])
 
-            # 状态开关（建议处理成布尔值或统一格式）
-            is_enhanced = doc.get("is_enhanced", "false")
-            enable_knowledge_graph = doc.get("enable_knowledge_graph", "false")
+                # 状态开关（建议处理成布尔值或统一格式）
+                is_enhanced = doc.get("is_enhanced", "false")
+                enable_knowledge_graph = doc.get("enable_knowledge_graph", "false")
 
-            # 文件导入时选择解析方式，默认勾选文字提取，可选光学识别ocr当多选时此参数默认为["text"],当勾选ocr时传：["text","ocr"]
-            parser_choices = doc.get("parser_choices", ["text"])
-            asr_model_id = doc.get("asr_model_id", "")
-            multimodal_model_id = doc.get("multimodal_model_id", "")
-            ocr_model_id = doc.get("ocr_model_id", "")
-            pre_process = doc.get("pre_process", [])
-            meta_data_rules = doc.get("meta_data", [])
-            child_chunk_config = doc.get("child_chunk_config")
+                # 文件导入时选择解析方式，默认勾选文字提取，可选光学识别ocr当多选时此参数默认为["text"],当勾选ocr时传：["text","ocr"]
+                parser_choices = doc.get("parser_choices", ["text"])
+                asr_model_id = doc.get("asr_model_id", "")
+                multimodal_model_id = doc.get("multimodal_model_id", "")
+                ocr_model_id = doc.get("ocr_model_id", "")
+                pre_process = doc.get("pre_process", [])
+                meta_data_rules = doc.get("meta_data", [])
+                child_chunk_config = doc.get("child_chunk_config")
 
-            split_config = SplitConfig(
-                sentence_size=sentence_size,
-                overlap_size=overlap_size,
-                chunk_type=chunk_type,
-                separators=separators,
-                parser_choices=parser_choices,
-                ocr_model_id=ocr_model_id,
-                asr_model_id=asr_model_id,
-                multimodal_model_id=multimodal_model_id,
-                split_type=split_type,
-                child_chunk_config=child_chunk_config
-            )
+                split_config = SplitConfig(
+                    sentence_size=sentence_size,
+                    overlap_size=overlap_size,
+                    chunk_type=chunk_type,
+                    separators=separators,
+                    parser_choices=parser_choices,
+                    ocr_model_id=ocr_model_id,
+                    asr_model_id=asr_model_id,
+                    multimodal_model_id=multimodal_model_id,
+                    split_type=split_type,
+                    child_chunk_config=child_chunk_config
+                )
 
-            try:
-                if not KAFKA_ENABLE_AUTO_COMMIT:
-                    # 提交当前消息的偏移量
-                    tp = TopicPartition(KAFKA_TOPICS, message.partition)
-                    offset_and_metadata = OffsetAndMetadata(offset=message.offset + 1, metadata="")
-                    offsets = {tp: offset_and_metadata}
-                    # consumer.commit(offsets=offsets)  # 不需要使用这个提交
-                    consumer.commit()
-                    logger.info('kafka异步消费完成 ===== 已提交 offset：' + str(message.offset) + '===== kafka消息：' + repr(message.value))
-                    logger.info('consumer.commit offset：' + repr(offsets))
+                try:
+                    if not KAFKA_ENABLE_AUTO_COMMIT:
+                        # 提交当前消息的偏移量
+                        tp = TopicPartition(KAFKA_TOPICS, message.partition)
+                        offset_and_metadata = OffsetAndMetadata(offset=message.offset + 1, metadata="")
+                        offsets = {tp: offset_and_metadata}
+                        # consumer.commit(offsets=offsets)  # 不需要使用这个提交
+                        consumer.commit()
+                        logger.info('kafka异步消费完成 ===== 已提交 offset：' + str(message.offset) + '===== kafka消息：' + repr(message.value))
+                        logger.info('consumer.commit offset：' + repr(offsets))
 
-                kb_info = {"kb_name": kb_name, "kb_id": kb_id}
-                if KAFKA_USE_ASYN_ADD:
-                    # ============ 异步添加 =============
-                    lock = threading.Lock()
-                    thread = threading.Thread(target=add_files, args=(
-                    user_id, kb_info, filename, object_name, file_id, is_enhanced, enable_knowledge_graph, pre_process, meta_data_rules, split_config))
-                    lock.acquire()
-                    thread.start()
-                    lock.release()
-                    # ============ 异步添加 =============
-                else:
-                    # ============ 顺序添加 =============
-                    add_files(user_id, kb_info, filename, object_name, file_id, is_enhanced, enable_knowledge_graph, pre_process, meta_data_rules, split_config)
-                    # ============ 顺序添加 =============
-                logger.info('----->kafka异步消费完成：user_id=%s,kb_name=%s,filename=%s,file_id=%s,process finished' % (user_id, kb_name,filename,file_id))
+                    kb_info = {"kb_name": kb_name, "kb_id": kb_id}
+                    if KAFKA_USE_ASYN_ADD:
+                        # ============ 异步添加 =============
+                        lock = threading.Lock()
+                        thread = threading.Thread(target=add_files, args=(
+                        user_id, kb_info, filename, object_name, file_id, is_enhanced, enable_knowledge_graph, pre_process, meta_data_rules, split_config))
+                        lock.acquire()
+                        thread.start()
+                        lock.release()
+                        # ============ 异步添加 =============
+                    else:
+                        # ============ 顺序添加 =============
+                        add_files(user_id, kb_info, filename, object_name, file_id, is_enhanced, enable_knowledge_graph, pre_process, meta_data_rules, split_config)
+                        # ============ 顺序添加 =============
+                    logger.info('----->kafka异步消费完成：user_id=%s,kb_name=%s,filename=%s,file_id=%s,process finished' % (user_id, kb_name,filename,file_id))
 
-            except Exception as e:
-                logger.error("kafka处理异常：" + repr(e))
-                continue
+                except Exception as e:
+                    logger.error("kafka处理异常：" + repr(e))
+                    continue
 
 
 

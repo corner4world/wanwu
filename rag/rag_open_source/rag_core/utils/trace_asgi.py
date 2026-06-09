@@ -40,15 +40,19 @@ class TraceLoggingMiddleware:
         try:
             await self.app(scope, receive, send_wrapper)
         finally:
-            cost = round((time.time() - start_time) * 1000, 2)
-            status = status_holder["code"]
+            # access log 仅用于观察，任何异常都不得影响下游 ASGI 行为
+            try:
+                cost = round((time.time() - start_time) * 1000, 2)
+                status = status_holder["code"]
 
-            # trace_id / span_id 已由 logging_config.TraceIdFilter 统一注入，此处不再重复拼接
-            log_msg = (
-                f"{cost}ms | {status} | "
-                f"{method} | {full_path}"
-            )
-            if status and status < 400:
-                logger.info(log_msg)
-            else:
-                logger.error(log_msg)
+                # trace_id / span_id 已由 logging_config.TraceIdFilter 统一注入，此处不再重复拼接
+                log_msg = (
+                    f"{cost}ms | {status} | "
+                    f"{method} | {full_path}"
+                )
+                if status and status < 400:
+                    logger.info(log_msg)
+                else:
+                    logger.error(log_msg)
+            except Exception:
+                logger.exception("TraceLoggingMiddleware access log failed (response untouched)")

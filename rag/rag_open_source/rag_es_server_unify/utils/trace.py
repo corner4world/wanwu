@@ -43,31 +43,36 @@ def register_tracing(app: Flask):
 
     @app.after_request
     def end_trace(response):
-        request_log = g.get("request_log", {})
-        if "/apidocs" in request_log.get("full_path", ""):
-            return response
-
-        cost = round((time.time() - g.get("start_time", time.time())) * 1000, 2)
-
+        # access log 仅用于观察，任何异常都不得污染业务响应（避免 Flask
+        # 把 after_request 的异常转成默认 HTML 500，丢弃 view 已正常返回的 body）
         try:
-            if response.is_streamed:
-                resp_body = "<流式响应，暂无记录>"
+            request_log = g.get("request_log", {})
+            if "/apidocs" in request_log.get("full_path", ""):
+                return response
+
+            cost = round((time.time() - g.get("start_time", time.time())) * 1000, 2)
+
+            try:
+                if response.is_streamed:
+                    resp_body = "<流式响应，暂无记录>"
+                else:
+                    resp_body = response.get_data(as_text=True)
+            except Exception:
+                resp_body = "<无法读取响应体>"
+
+            method = request_log.get("method", "-")
+            full_path = request_log.get("full_path", "-")
+            body = json.dumps(request_log.get("body"), ensure_ascii=False)
+
+            # trace_id / span_id 已由 log formatter（TraceIdFilter）统一注入，此处不再重复拼接
+            log_msg = (
+                f"{cost}ms | {response.status_code} | "
+                f"{method} | {full_path} | {body} | {resp_body.rstrip(chr(10))}"
+            )
+            if response.status_code < 400:
+                logger.info(log_msg)
             else:
-                resp_body = response.get_data(as_text=True)
+                logger.error(log_msg)
         except Exception:
-            resp_body = "<无法读取响应体>"
-
-        method = request_log.get("method", "-")
-        full_path = request_log.get("full_path", "-")
-        body = json.dumps(request_log.get("body"), ensure_ascii=False)
-
-        # trace_id / span_id 已由 log formatter（TraceIdFilter）统一注入，此处不再重复拼接
-        log_msg = (
-            f"{cost}ms | {response.status_code} | "
-            f"{method} | {full_path} | {body} | {resp_body.rstrip(chr(10))}"
-        )
-        if response.status_code < 400:
-            logger.info(log_msg)
-        else:
-            logger.error(log_msg)
+            logger.exception("end_trace failed (access log only, response untouched)")
         return response

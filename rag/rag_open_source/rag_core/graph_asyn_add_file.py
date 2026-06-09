@@ -20,11 +20,18 @@ from settings import *
 
 # 初始化 OpenTelemetry，并自动 instrument requests / kafka 客户端
 init_tracer("rag-graph-extract")
+from opentelemetry import trace as otel_trace
+from opentelemetry.propagate import extract
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from opentelemetry.instrumentation.kafka import KafkaInstrumentor
 
 RequestsInstrumentor().instrument()
 KafkaInstrumentor().instrument()
+
+# KafkaInstrumentor 对 kafka-python 的 consumer 自动 span 只在 __next__ 那一瞬有效，
+# for 循环体内业务代码会失去 active span。手动用 extract + start_as_current_span
+# 重建 consumer span，让整段处理（含业务日志和出向 HTTP）都能挂在同一条 trace 上。
+tracer = otel_trace.get_tracer(__name__)
 
 logger = logging.getLogger(__name__)
 
@@ -57,62 +64,76 @@ def kafkal():
                                      # max_poll_interval_ms=8000000,  # 设置最大轮询间隔为120分钟
                                      value_deserializer=lambda x: x.decode('utf-8'))
         for message in consumer:
-            print('收到kafka消息：' + repr(message.value))
-            logger.info('收到kafka消息：' + repr(message.value))
-            message_value = json.loads(message.value)
+            # 从 Kafka 消息 headers 抽出上游 producer 注入的 traceparent
+            headers_dict = {}
+            if message.headers:
+                for hk, hv in message.headers:
+                    key = hk.decode() if isinstance(hk, (bytes, bytearray)) else hk
+                    val = hv.decode() if isinstance(hv, (bytes, bytearray)) else hv
+                    headers_dict[key] = val
+            parent_ctx = extract(headers_dict)
 
-            kb_name = message_value["doc"]["categoryId"]
-            user_id = message_value["doc"]["userId"]
-            kb_id = message_value["doc"].get("kb_id")
-            if not kb_id:
-                logger.error(f"kafka 消息缺少 kb_id, doc: {message_value.get('doc')}")
-                continue
-            filename = message_value["doc"].get("originalName", "")
-            file_id = message_value["doc"].get("id", "")
-            graph_schema_objectname = message_value["doc"].get("graph_schema_objectname", "")
-            graph_schema_filename = message_value["doc"].get("graph_schema_filename", "")
-            enable_knowledge_graph = message_value["doc"].get("enable_knowledge_graph", False)
-            message_type = message_value["doc"].get("message_type", "graph")
-            graph_model_id = message_value["doc"].get("graph_model_id", "")
+            with tracer.start_as_current_span(
+                "kafka.consume",
+                context=parent_ctx,
+                kind=otel_trace.SpanKind.CONSUMER,
+            ):
+                print('收到kafka消息：' + repr(message.value))
+                logger.info('收到kafka消息：' + repr(message.value))
+                message_value = json.loads(message.value)
 
-            try:
-                if not KAFKA_ENABLE_AUTO_COMMIT:
-                    # 提交当前消息的偏移量
-                    tp = TopicPartition(KAFKA_GRAPH_TOPICS, message.partition)
-                    offset_and_metadata = OffsetAndMetadata(offset=message.offset + 1, metadata="")
-                    offsets = {tp: offset_and_metadata}
-                    consumer.commit()
-                    logger.info('kafka异步消费完成 ===== 已提交 offset：' + str(message.offset) + '===== kafka消息：' + repr(message.value))
-                    logger.info('consumer.commit offset：' + repr(offsets))
+                kb_name = message_value["doc"]["categoryId"]
+                user_id = message_value["doc"]["userId"]
+                kb_id = message_value["doc"].get("kb_id")
+                if not kb_id:
+                    logger.error(f"kafka 消息缺少 kb_id, doc: {message_value.get('doc')}")
+                    continue
+                filename = message_value["doc"].get("originalName", "")
+                file_id = message_value["doc"].get("id", "")
+                graph_schema_objectname = message_value["doc"].get("graph_schema_objectname", "")
+                graph_schema_filename = message_value["doc"].get("graph_schema_filename", "")
+                enable_knowledge_graph = message_value["doc"].get("enable_knowledge_graph", False)
+                message_type = message_value["doc"].get("message_type", "graph")
+                graph_model_id = message_value["doc"].get("graph_model_id", "")
 
-                kb_info = {"kb_name": kb_name, "kb_id": kb_id}
-                if KAFKA_USE_GRAPH_ASYN_ADD:
-                    # ============ 异步添加 =============
-                    if message_type == "graph":
-                        executor.submit(extrac_graph_data,
-                                        user_id, kb_info, filename, file_id, enable_knowledge_graph,
-                                        graph_schema_objectname, graph_schema_filename, graph_model_id)
-                    elif message_type == "community_report":
-                        executor.submit(generate_community_report,
-                                        user_id, kb_info, enable_knowledge_graph, graph_model_id)
+                try:
+                    if not KAFKA_ENABLE_AUTO_COMMIT:
+                        # 提交当前消息的偏移量
+                        tp = TopicPartition(KAFKA_GRAPH_TOPICS, message.partition)
+                        offset_and_metadata = OffsetAndMetadata(offset=message.offset + 1, metadata="")
+                        offsets = {tp: offset_and_metadata}
+                        consumer.commit()
+                        logger.info('kafka异步消费完成 ===== 已提交 offset：' + str(message.offset) + '===== kafka消息：' + repr(message.value))
+                        logger.info('consumer.commit offset：' + repr(offsets))
+
+                    kb_info = {"kb_name": kb_name, "kb_id": kb_id}
+                    if KAFKA_USE_GRAPH_ASYN_ADD:
+                        # ============ 异步添加 =============
+                        if message_type == "graph":
+                            executor.submit(extrac_graph_data,
+                                            user_id, kb_info, filename, file_id, enable_knowledge_graph,
+                                            graph_schema_objectname, graph_schema_filename, graph_model_id)
+                        elif message_type == "community_report":
+                            executor.submit(generate_community_report,
+                                            user_id, kb_info, enable_knowledge_graph, graph_model_id)
+                        else:
+                            logger.warning(f"未知的message_type: {message_type}")
+                            continue
                     else:
-                        logger.warning(f"未知的message_type: {message_type}")
-                        continue
-                else:
-                    # ============ 顺序添加 =============
-                    if message_type == "graph":
-                        extrac_graph_data(user_id, kb_info, filename, file_id, enable_knowledge_graph,
-                                        graph_schema_objectname, graph_schema_filename, graph_model_id)
-                    elif message_type == "community_report":
-                        generate_community_report(user_id, kb_info, enable_knowledge_graph, graph_model_id)
-                    else:
-                        logger.warning(f"未知的message_type: {message_type}")
-                        continue
-                logger.info('----->kafka异步消费完成：user_id=%s,kb_name=%s,filename=%s,file_id=%s,process finished' % (user_id, kb_name,filename,file_id))
+                        # ============ 顺序添加 =============
+                        if message_type == "graph":
+                            extrac_graph_data(user_id, kb_info, filename, file_id, enable_knowledge_graph,
+                                            graph_schema_objectname, graph_schema_filename, graph_model_id)
+                        elif message_type == "community_report":
+                            generate_community_report(user_id, kb_info, enable_knowledge_graph, graph_model_id)
+                        else:
+                            logger.warning(f"未知的message_type: {message_type}")
+                            continue
+                    logger.info('----->kafka异步消费完成：user_id=%s,kb_name=%s,filename=%s,file_id=%s,process finished' % (user_id, kb_name,filename,file_id))
 
-            except Exception as e:
-                logger.error("kafka处理异常：" + repr(e))
-                continue
+                except Exception as e:
+                    logger.error("kafka处理异常：" + repr(e))
+                    continue
 
 
 def extrac_graph_data(user_id, kb_info, file_name, file_id, enable_knowledge_graph, graph_schema_objectname, graph_schema_filename, graph_model_id=""):
