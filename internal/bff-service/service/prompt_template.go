@@ -19,6 +19,8 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -144,7 +146,10 @@ func getPromptCustom(ctx *gin.Context, modelId string, reqInfo *mp_common.LLMReq
 
 	llm, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: %v", modelInfo.ModelId, err)))
 		return
 	}
@@ -164,7 +169,10 @@ func getPromptCustom(ctx *gin.Context, modelId string, reqInfo *mp_common.LLMReq
 
 	iLLM, ok := llm.(mp.ILLM)
 	if !ok {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: invalid provider", modelInfo.ModelId)))
 		return
 	}
@@ -173,13 +181,19 @@ func getPromptCustom(ctx *gin.Context, modelId string, reqInfo *mp_common.LLMReq
 	// chat completions
 	llmReq, err := iLLM.NewReq(reqInfo)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("model %v chat completions NewReq err: %v", modelInfo.ModelId, err)))
 		return
 	}
 	_, sseCh, err := iLLM.ChatCompletions(ctx.Request.Context(), llmReq)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: %v", modelInfo.ModelId, err)))
 		return
 	}
@@ -305,15 +319,21 @@ func getPromptCustom(ctx *gin.Context, modelId string, reqInfo *mp_common.LLMReq
 	}
 
 	if len(answer) == 0 {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, true)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, true)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, "answer is empty"))
 		return
 	}
 
 	ctx.Set(gin_util.STATUS, http.StatusOK)
 	ctx.Set(gin_util.RESULT, answer)
-	recordModelStatistic(ctx, modelInfo, true,
-		promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
+	go func() {
+		defer util.PrintPanicStack()
+		recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, true,
+			promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
+	}()
 }
 
 func buildPromptTempDetail(wtfCfg config.PromptTempConfig) *response.PromptTemplateDetail {

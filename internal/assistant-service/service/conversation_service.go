@@ -14,6 +14,7 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/es"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -119,9 +120,11 @@ func saveConversation(originalCtx context.Context, req *ConversationParams, conv
 	if len(req.ConversationId) == 0 {
 		return
 	}
-	// 如果原始上下文已取消，创建一个新的独立上下文
+	// 如果原始上下文已取消，创建一个新的独立上下文，保留 trace 链路
 	if originalCtx.Err() != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), esTimeout)
+		spanCtx := trace.SpanContextFromContext(originalCtx)
+		ctx := trace.ContextWithSpanContext(context.Background(), spanCtx)
+		ctx, cancel := context.WithTimeout(ctx, esTimeout)
 		defer cancel()
 
 		if err := saveConversationDetailToES(ctx, req, conversationResp, detailId); err != nil {

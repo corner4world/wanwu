@@ -46,8 +46,8 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	ag_ui_util "github.com/UnicomAI/wanwu/pkg/ag-ui-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
-	http_client "github.com/UnicomAI/wanwu/pkg/http-client"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	wga_persistent "github.com/UnicomAI/wanwu/pkg/wga-persistent"
 	aguievents "github.com/ag-ui-protocol/ag-ui/sdks/community/go/pkg/core/events"
@@ -581,7 +581,7 @@ func PrepareWgaWorkspaceDirs(store *wga_persistent.Store, runID string, withCopy
 // ============================================================
 
 // DownloadWgaWorkspaceURLs 下载 URL 文件到指定目录
-func DownloadWgaWorkspaceURLs(urls map[string]string, dir string) error {
+func DownloadWgaWorkspaceURLs(ctx context.Context, urls map[string]string, dir string) error {
 	if len(urls) == 0 {
 		return nil
 	}
@@ -590,19 +590,18 @@ func DownloadWgaWorkspaceURLs(urls map[string]string, dir string) error {
 	}
 	for fileName, urlStr := range urls {
 		log.Infof("[DownloadWgaWorkspaceURLs] downloading URL %s to %s", urlStr, dir)
-		body, err := http_client.Default().Get(context.Background(), &http_client.HttpRequestParams{
-			Url: urlStr,
-		})
+		resp, err := trace_util.NewResty(ctx).R().SetContext(ctx).Get(urlStr)
 		if err != nil {
 			log.Errorf("[DownloadWgaWorkspaceURLs] download URL %s failed: %v", urlStr, err)
 			continue
 		}
+		bodyBytes := resp.Body()
 		filePath := filepath.Join(dir, fileName)
-		if err := os.WriteFile(filePath, body, 0644); err != nil {
+		if err := os.WriteFile(filePath, bodyBytes, 0644); err != nil {
 			log.Errorf("[DownloadWgaWorkspaceURLs] save file %s failed: %v", filePath, err)
 			continue
 		}
-		log.Infof("[DownloadWgaWorkspaceURLs] downloaded URL %s to %s, size: %d bytes", urlStr, filePath, len(body))
+		log.Infof("[DownloadWgaWorkspaceURLs] downloaded URL %s to %s, size: %d bytes", urlStr, filePath, len(bodyBytes))
 	}
 	return nil
 }

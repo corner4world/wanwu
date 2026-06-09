@@ -162,7 +162,10 @@ func ChatflowChat(ctx *gin.Context, userId, orgId, workflowId, conversationId, m
 	var firstTokenRecorded bool
 	var hasErr bool
 	defer func() {
-		RecordAppStatistic(ctx.Request.Context(), userId, orgId, workflowId, constant.AppTypeChatflow, !hasErr, true, firstTokenLatency, 0, constant.AppStatisticSourceOpenAPI)
+		go func() {
+			defer util.PrintPanicStack()
+			RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userId, orgId, workflowId, constant.AppTypeChatflow, !hasErr, true, firstTokenLatency, 0, constant.AppStatisticSourceOpenAPI)
+		}()
 	}()
 
 	url, _ := url.JoinPath(config.Cfg().Workflow.Endpoint, config.Cfg().Workflow.ChatflowRunByOpenapiUri)

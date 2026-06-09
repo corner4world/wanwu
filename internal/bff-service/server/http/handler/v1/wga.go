@@ -605,7 +605,7 @@ func GeneralAgentReplyQuestion(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.GeneralAgentReplyQuestion(ctx.Request.Context(), req.RunID, req.QuestionID, req.Answers)
+	err := service.GeneralAgentReplyQuestion(ctx, req.RunID, req.QuestionID, req.Answers)
 	gin_util.Response(ctx, nil, err)
 }
 
@@ -627,6 +627,6 @@ func GeneralAgentRejectQuestion(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.GeneralAgentRejectQuestion(ctx.Request.Context(), req.RunID, req.QuestionID)
+	err := service.GeneralAgentRejectQuestion(ctx, req.RunID, req.QuestionID)
 	gin_util.Response(ctx, nil, err)
 }

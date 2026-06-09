@@ -14,6 +14,8 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -65,7 +67,10 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	// llm config
 	llm, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: %v", modelInfo.ModelId, err)))
 		return
 	}
@@ -82,7 +87,10 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	}
 	iLLM, ok := llm.(mp.ILLM)
 	if !ok {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: invalid provider", modelInfo.ModelId)))
 		return
 	}
@@ -91,13 +99,19 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	// chat completions
 	llmReq, err := iLLM.NewReq(req)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v chat completions NewReq err: %v", modelInfo.ModelId, err)))
 		return
 	}
 	_, sseCh, err := iLLM.ChatCompletions(ctx.Request.Context(), llmReq)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v chat completions err: %v", modelInfo.ModelId, err)))
 		return
 	}
@@ -220,8 +234,11 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	}
 	ctx.Set(gin_util.STATUS, http.StatusOK)
 	ctx.Set(gin_util.RESULT, answer)
-	recordModelStatistic(ctx, modelInfo, true,
-		promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
+	go func() {
+		defer util.PrintPanicStack()
+		recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, true,
+			promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
+	}()
 }
 
 func buildRecommendResp(errorFlag bool, data *mp_common.LLMResp) *RecommendLLMResp {

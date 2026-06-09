@@ -17,6 +17,7 @@ import (
 	ag_ui_util "github.com/UnicomAI/wanwu/pkg/ag-ui-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/wga"
 	wga_persistent "github.com/UnicomAI/wanwu/pkg/wga-persistent"
@@ -190,7 +191,7 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 	}
 
 	// 异步保存智能体返回的消息
-	go saveWgaChatHistoryEvent(context.Background(), historyEventCh, params.UserID, params.OrgID, params.ThreadID, runID,
+	go saveWgaChatHistoryEvent(trace_util.DetachContext(ctx.Request.Context()), historyEventCh, params.UserID, params.OrgID, params.ThreadID, runID,
 		eventWorkspaceStore,
 		lastWorkspaceTotalSize,
 		lastWorkspaceFileCount,
@@ -562,7 +563,7 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 				opts = append(opts, wga_option.WithOutputDir(dirs.OutputDir))
 			}
 			if urls := userInputMessage.GetURLs(); len(urls) > 0 {
-				if err := DownloadWgaWorkspaceURLs(urls, dirs.OutputDir); err != nil {
+				if err := DownloadWgaWorkspaceURLs(ctx.Request.Context(), urls, dirs.OutputDir); err != nil {
 					log.Errorf("[wga] thread %v download URLs %+v to workspace dir %v failed: %v", threadID, urls, dirs.OutputDir, err)
 				}
 			}

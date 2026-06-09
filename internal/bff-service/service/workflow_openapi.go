@@ -13,6 +13,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/pkg/constant"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,7 +24,10 @@ func OpenAPIWorkflowRun(ctx *gin.Context, userId, orgId, workflowID string, inpu
 	isSuccess := false
 	defer func() {
 		costs := time.Since(startTime).Milliseconds()
-		RecordAppStatistic(ctx.Request.Context(), userId, orgId, workflowID, constant.AppTypeWorkflow, isSuccess, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+		go func() {
+			defer util.PrintPanicStack()
+			RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userId, orgId, workflowID, constant.AppTypeWorkflow, isSuccess, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+		}()
 	}()
 
 	testRunUrl, _ := net_url.JoinPath(config.Cfg().Workflow.Endpoint, fmt.Sprintf(config.Cfg().Workflow.WorkflowRunByOpenapiUri, workflowID))

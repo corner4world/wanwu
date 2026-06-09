@@ -14,6 +14,8 @@ import (
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -136,7 +138,10 @@ func ChatAgent(ctx *gin.Context) {
 		FileInfo:       req.FileInfo,
 	}, true)
 	if err != nil {
-		service.RecordAppStatistic(ctx.Request.Context(), userID, orgID, appID, constant.AppTypeAgent, false, false, 0, 0, constant.AppStatisticSourceOpenAPI)
+		go func() {
+			defer util.PrintPanicStack()
+			service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userID, orgID, appID, constant.AppTypeAgent, false, false, 0, 0, constant.AppStatisticSourceOpenAPI)
+		}()
 		gin_util.Response(ctx, nil, err)
 		return
 	}
@@ -157,7 +162,10 @@ func ChatAgent(ctx *gin.Context) {
 	}
 	resp.Response = output
 	costs := time.Since(startTime).Milliseconds()
-	service.RecordAppStatistic(ctx.Request.Context(), userID, orgID, appID, constant.AppTypeAgent, true, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+	go func() {
+		defer util.PrintPanicStack()
+		service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userID, orgID, appID, constant.AppTypeAgent, true, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+	}()
 	b, _ := json.Marshal(resp)
 	status := http.StatusOK
 	ctx.Set(gin_util.STATUS, status)
@@ -202,7 +210,10 @@ func ChatRag(ctx *gin.Context) {
 	startTime := time.Now()
 	chatCh, _, err := service.CallRagChatStream(ctx, userID, orgID, request.ChatRagRequest{RagID: req.UUID, Question: req.Query, History: req.History}, true)
 	if err != nil {
-		service.RecordAppStatistic(ctx.Request.Context(), userID, orgID, req.UUID, constant.AppTypeRag, false, false, 0, 0, constant.AppStatisticSourceOpenAPI)
+		go func() {
+			defer util.PrintPanicStack()
+			service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userID, orgID, req.UUID, constant.AppTypeRag, false, false, 0, 0, constant.AppStatisticSourceOpenAPI)
+		}()
 		gin_util.Response(ctx, nil, err)
 		return
 	}
@@ -222,7 +233,10 @@ func ChatRag(ctx *gin.Context) {
 	}
 	resp.Data.Output = output
 	costs := time.Since(startTime).Milliseconds()
-	service.RecordAppStatistic(ctx.Request.Context(), userID, orgID, req.UUID, constant.AppTypeRag, true, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+	go func() {
+		defer util.PrintPanicStack()
+		service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userID, orgID, req.UUID, constant.AppTypeRag, true, false, 0, int64(costs), constant.AppStatisticSourceOpenAPI)
+	}()
 	b, _ := json.Marshal(resp)
 	status := http.StatusOK
 	ctx.Set(gin_util.STATUS, status)

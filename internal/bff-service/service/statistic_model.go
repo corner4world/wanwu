@@ -10,7 +10,6 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
-	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 	"github.com/xuri/excelize/v2"
 )
@@ -138,28 +137,25 @@ func ExportModelStatisticList(ctx *gin.Context, filter request.StatisticFilter, 
 	return writeModelListExcel(resp.List.([]response.ModelStatisticItem))
 }
 
-func recordModelStatistic(_ *gin.Context, modelInfo *model_service.ModelInfo, isSuccess bool, promptTokens, completionTokens, totalTokens, costs, firstTokenLatency int, isStream bool) {
-	go func() {
-		defer util.PrintPanicStack()
-		_, err := app.RecordModelStatistic(context.Background(), &app_service.RecordModelStatisticReq{
-			UserId:            modelInfo.UserId,
-			OrgId:             modelInfo.OrgId,
-			ModelId:           modelInfo.ModelId,
-			Model:             modelInfo.Model,
-			Provider:          modelInfo.Provider,
-			ModelType:         modelInfo.ModelType,
-			PromptTokens:      int64(promptTokens),
-			CompletionTokens:  int64(completionTokens),
-			TotalTokens:       int64(totalTokens),
-			FirstTokenLatency: int64(firstTokenLatency),
-			Costs:             int64(costs),
-			IsSuccess:         isSuccess,
-			IsStream:          isStream,
-		})
-		if err != nil {
-			log.Errorf("record modelId %v modelName %v modelType %v statistic err:%v", modelInfo.ModelId, modelInfo.Model, modelInfo.ModelType, err)
-		}
-	}()
+func recordModelStatistic(ctx context.Context, modelInfo *model_service.ModelInfo, isSuccess bool, promptTokens, completionTokens, totalTokens, costs, firstTokenLatency int, isStream bool) {
+	_, err := app.RecordModelStatistic(ctx, &app_service.RecordModelStatisticReq{
+		UserId:            modelInfo.UserId,
+		OrgId:             modelInfo.OrgId,
+		ModelId:           modelInfo.ModelId,
+		Model:             modelInfo.Model,
+		Provider:          modelInfo.Provider,
+		ModelType:         modelInfo.ModelType,
+		PromptTokens:      int64(promptTokens),
+		CompletionTokens:  int64(completionTokens),
+		TotalTokens:       int64(totalTokens),
+		FirstTokenLatency: int64(firstTokenLatency),
+		Costs:             int64(costs),
+		IsSuccess:         isSuccess,
+		IsStream:          isStream,
+	})
+	if err != nil {
+		log.Errorf("record modelId %v modelName %v modelType %v statistic err:%v", modelInfo.ModelId, modelInfo.Model, modelInfo.ModelType, err)
+	}
 }
 
 func convertModelStatisticOverviewItem(item *app_service.ModelStatisticOverviewItem) response.StatisticOverviewItem {

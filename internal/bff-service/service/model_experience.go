@@ -23,6 +23,7 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
@@ -147,13 +148,19 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 
 	llm, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
 	iLLM, ok := llm.(mp.ILLM)
 	if !ok {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
@@ -162,14 +169,19 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 	// chat completions
 	iLLMReq, err := iLLM.NewReq(llmReq)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
-	// 使用 context.Background() 避免 ctx 被取消导致请求中断
-	_, sseCh, err := iLLM.ChatCompletions(context.Background(), iLLMReq)
+	_, sseCh, err := iLLM.ChatCompletions(trace_util.DetachContext(ctx.Request.Context()), iLLMReq)
 	if err != nil {
-		recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
@@ -230,7 +242,7 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId string, req *request.Mod
 			default:
 			}
 		}
-		recordModelStatistic(ctx, modelInfo, true,
+		recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, true,
 			promptTokens, completionTokens, totalTokens, 0, firstTokenLatency, true)
 	}()
 

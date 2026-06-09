@@ -17,6 +17,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/wga"
 	wga_persistent "github.com/UnicomAI/wanwu/pkg/wga-persistent"
@@ -35,7 +36,6 @@ const (
 	generalAgentSkillChatImportAgentID  = "Skill Import Agent"
 	generalAgentSkillChatPreviewAgentID = "Skill Preview Agent"
 )
-
 
 func CreateGeneralAgentConversation(ctx *gin.Context, userId, orgId string, req request.CreateGeneralAgentConversationReq) (*response.CreateGeneralAgentConversationResp, error) {
 	if err := checkModelConfig(ctx, req.ModelConfig); err != nil {
@@ -668,7 +668,8 @@ func GeneralAgentSkillConversationChat(ctx *gin.Context, userId, orgId string, r
 	}
 	if mode != generalAgentSkillChatModePreview {
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer util.PrintPanicStack()
+			ctx, cancel := context.WithTimeout(trace_util.DetachContext(ctx.Request.Context()), 30*time.Second)
 			defer cancel()
 			updateCustomSkillMetaFromWorkspace(ctx, req.CustomSkillID)
 		}()
@@ -677,8 +678,6 @@ func GeneralAgentSkillConversationChat(ctx *gin.Context, userId, orgId string, r
 }
 
 func updateCustomSkillMetaFromWorkspace(ctx context.Context, customSkillID string) {
-	defer util.PrintPanicStack()
-
 	frontMatter, err := findGeneratedSkillFrontMatter(customSkillID)
 	if err != nil {
 		log.Warnf("[wga-skill] customSkillID %v generated skill metadata not ready: %s", customSkillID, formatGeneratedSkillMetaError(err))
@@ -696,7 +695,7 @@ func updateCustomSkillMetaFromWorkspace(ctx context.Context, customSkillID strin
 	log.Infof("[wga-skill] customSkillID %v updated generated skill metadata from workspace", customSkillID)
 }
 
-func GeneralAgentReplyQuestion(ctx context.Context, runID string, questionID string, answers [][]string) error {
+func GeneralAgentReplyQuestion(ctx *gin.Context, runID string, questionID string, answers [][]string) error {
 	sandboxCfg, err := getWgaSandboxConfig()
 	if err != nil {
 		return err
@@ -710,16 +709,16 @@ func GeneralAgentReplyQuestion(ctx context.Context, runID string, questionID str
 				log.Errorf("get ontology sandbox config failed: %v", err)
 				return
 			}
-			if err := wga_sandbox.ReplyQuestion(context.Background(), ontologySandboxCfg, runID, questionID, answers); err != nil {
+			if err := wga_sandbox.ReplyQuestion(trace_util.DetachContext(ctx.Request.Context()), ontologySandboxCfg, runID, questionID, answers); err != nil {
 				log.Warnf("reply ontology question failed, runID: %s, questionID: %s, err: %v", runID, questionID, err)
 			}
 		}()
 	}
 
-	return wga_sandbox.ReplyQuestion(ctx, sandboxCfg, runID, questionID, answers)
+	return wga_sandbox.ReplyQuestion(ctx.Request.Context(), sandboxCfg, runID, questionID, answers)
 }
 
-func GeneralAgentRejectQuestion(ctx context.Context, runID string, questionID string) error {
+func GeneralAgentRejectQuestion(ctx *gin.Context, runID string, questionID string) error {
 	sandboxCfg, err := getWgaSandboxConfig()
 	if err != nil {
 		return err
@@ -733,11 +732,11 @@ func GeneralAgentRejectQuestion(ctx context.Context, runID string, questionID st
 				log.Errorf("get ontology sandbox config failed: %v", err)
 				return
 			}
-			if err := wga_sandbox.RejectQuestion(context.Background(), ontologySandboxCfg, runID, questionID); err != nil {
+			if err := wga_sandbox.RejectQuestion(trace_util.DetachContext(ctx.Request.Context()), ontologySandboxCfg, runID, questionID); err != nil {
 				log.Warnf("reject ontology question failed, runID: %s, questionID: %s, err: %v", runID, questionID, err)
 			}
 		}()
 	}
 
-	return wga_sandbox.RejectQuestion(ctx, sandboxCfg, runID, questionID)
+	return wga_sandbox.RejectQuestion(ctx.Request.Context(), sandboxCfg, runID, questionID)
 }

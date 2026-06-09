@@ -11,6 +11,8 @@ import (
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	mp "github.com/UnicomAI/wanwu/pkg/model-provider"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -55,10 +57,16 @@ func ModelGui(ctx *gin.Context, modelID string, req *mp_common.GuiReq) {
 		//ctx.Set(config.RESULT, resp.String())
 		ctx.JSON(status, data)
 		costs := int(time.Since(startTime).Milliseconds())
-		recordModelStatistic(ctx, modelInfo, true,
-			data.Usage.PromptTokens, data.Usage.CompletionTokens, data.Usage.TotalTokens, costs, 0, false)
+		go func() {
+			defer util.PrintPanicStack()
+			recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, true,
+				data.Usage.PromptTokens, data.Usage.CompletionTokens, data.Usage.TotalTokens, costs, 0, false)
+		}()
 		return
 	}
-	recordModelStatistic(ctx, modelInfo, false, 0, 0, 0, 0, 0, false)
+	go func() {
+		defer util.PrintPanicStack()
+		recordModelStatistic(trace_util.DetachContext(ctx.Request.Context()), modelInfo, false, 0, 0, 0, 0, 0, false)
+	}()
 	gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v gui err: invalid resp", modelInfo.ModelId)))
 }

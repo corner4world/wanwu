@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"sort"
 	"strings"
 
@@ -129,7 +130,7 @@ func ChangeExplorationAppFavorite(ctx *gin.Context, userId, orgId string, req re
 	return err
 }
 
-func AddAppHistoryRecord(ctx *gin.Context, userId, appId, appType string) error {
+func AddAppHistoryRecord(ctx context.Context, userId, appId, appType string) error {
 	if _, err := app.RecordAppHistory(ctx, &app_service.RecordAppHistoryReq{
 		UserId:  userId,
 		AppId:   appId,

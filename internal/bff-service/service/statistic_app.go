@@ -15,7 +15,6 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/constant"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
-	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 	"github.com/xuri/excelize/v2"
 )
@@ -201,33 +200,28 @@ func getAppNameMap(ctx *gin.Context, appId []string, appType string) (map[string
 }
 
 func RecordAppStatistic(ctx context.Context, userId, orgId, appId, appType string, isSuccess, isStream bool, streamCosts, nonStreamCosts int64, source string) {
-	go func() {
-		// 不使用外部ctx，避免外部ctx过期导致统计记录失败
-		defer util.PrintPanicStack()
-		// 修复bug,需要去app-service查询创建者的userId和orgId
-		appInfo, err := app.GetAppInfo(context.Background(), &app_service.GetAppInfoReq{
-			AppId:   appId,
-			AppType: appType,
-		})
-		if err != nil {
-			log.Errorf("get app info err: %v", err)
-			return
-		}
-		_, err = app.RecordAppStatistic(context.Background(), &app_service.RecordAppStatisticReq{
-			UserId:         appInfo.UserId,
-			OrgId:          appInfo.OrgId,
-			AppId:          appId,
-			AppType:        appType,
-			IsSuccess:      isSuccess,
-			IsStream:       isStream,
-			StreamCosts:    streamCosts,
-			NonStreamCosts: nonStreamCosts,
-			Source:         source,
-		})
-		if err != nil {
-			log.Errorf("record app %v type %v source %v statistic err: %v", appId, appType, source, err)
-		}
-	}()
+	appInfo, err := app.GetAppInfo(ctx, &app_service.GetAppInfoReq{
+		AppId:   appId,
+		AppType: appType,
+	})
+	if err != nil {
+		log.Errorf("get app info err: %v", err)
+		return
+	}
+	_, err = app.RecordAppStatistic(ctx, &app_service.RecordAppStatisticReq{
+		UserId:         appInfo.UserId,
+		OrgId:          appInfo.OrgId,
+		AppId:          appId,
+		AppType:        appType,
+		IsSuccess:      isSuccess,
+		IsStream:       isStream,
+		StreamCosts:    streamCosts,
+		NonStreamCosts: nonStreamCosts,
+		Source:         source,
+	})
+	if err != nil {
+		log.Errorf("record app %v type %v source %v statistic err: %v", appId, appType, source, err)
+	}
 }
 
 func GetAppListSelect(ctx *gin.Context, filter request.StatisticFilter, appType string, userId, orgId string, isAdmin, isSystem bool) (*response.ListResult, error) {

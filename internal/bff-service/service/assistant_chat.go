@@ -17,6 +17,7 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -39,7 +40,10 @@ func AssistantConversionStream(ctx *gin.Context, userId, orgId string, req reque
 	streamParams := &agentChatStreamParams{ctx: ctx, startTime: time.Now()}
 	defer func() {
 		if source != constant.AppStatisticSourceDraft {
-			RecordAppStatistic(ctx.Request.Context(), userId, orgId, req.AssistantId, constant.AppTypeAgent, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, source)
+			go func() {
+				defer util.PrintPanicStack()
+				RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), userId, orgId, req.AssistantId, constant.AppTypeAgent, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, source)
+			}()
 		}
 	}()
 

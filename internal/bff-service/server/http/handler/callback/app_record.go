@@ -4,6 +4,8 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,5 +24,8 @@ func AppRecord(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	service.RecordAppStatistic(ctx, req.UserID, req.OrgID, req.AppID, req.AppType, req.IsSuccess, req.IsStream, req.StreamCosts, 0, req.Source)
+	go func() {
+		defer util.PrintPanicStack()
+		service.RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), req.UserID, req.OrgID, req.AppID, req.AppType, req.IsSuccess, req.IsStream, req.StreamCosts, 0, req.Source)
+	}()
 }

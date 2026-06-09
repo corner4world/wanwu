@@ -13,6 +13,8 @@ import (
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -141,7 +143,10 @@ func AppUrlConversionStream(ctx *gin.Context, req request.UrlConversionStreamReq
 	}
 	streamParams := &agentChatStreamParams{startTime: time.Now()}
 	defer func() {
-		RecordAppStatistic(ctx.Request.Context(), appUrlInfo.UserId, appUrlInfo.OrgId, appUrlInfo.AppId, constant.AppTypeAgent, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, constant.AppStatisticSourceWebUrl)
+		go func() {
+			defer util.PrintPanicStack()
+			RecordAppStatistic(trace_util.DetachContext(ctx.Request.Context()), appUrlInfo.UserId, appUrlInfo.OrgId, appUrlInfo.AppId, constant.AppTypeAgent, !streamParams.hasErr, true, streamParams.firstTokenLatency, 0, constant.AppStatisticSourceWebUrl)
+		}()
 	}()
 
 	chatCh, err := CallAssistantConversationStream(ctx, xCid, appUrlInfo.OrgId, request.ConversionStreamRequest{
