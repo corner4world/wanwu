@@ -277,3 +277,17 @@ func GetPromptTemplateDetail(ctx *gin.Context) {
 	resp, err := service.GetPromptTemplateDetail(ctx, ctx.Query("templateId"))
 	gin_util.Response(ctx, resp, err)
 }
+
+// GetReleaseNotes
+//
+//	@Tags			guest
+//	@Summary		获取版本和更新日志
+//	@Description	获取平台版本号和更新日志内容
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.ReleaseNotesResp}
+//	@Router			/custom/about [get]
+func GetReleaseNotes(ctx *gin.Context) {
+	gin_util.Response(ctx, service.GetReleaseNotes(), nil)
+}

@@ -194,6 +194,13 @@ func ResetPasswordByEmail(ctx *gin.Context, reset *request.ResetPasswordByEmail)
 	return err
 }
 
+func GetReleaseNotes() *response.ReleaseNotesResp {
+	return &response.ReleaseNotesResp{
+		Version:      config.Cfg().CustomInfo.Version,
+		ReleaseNotes: config.Cfg().CustomInfo.ReleaseNotes,
+	}
+}
+
 // --- internal ---
 
 func getLanguageByCode(languageCode string) response.Language {

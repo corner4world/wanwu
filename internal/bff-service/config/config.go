@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"net/url"
+	"os"
 
 	oauth2_util "github.com/UnicomAI/wanwu/internal/bff-service/pkg/oauth2-util"
 	"github.com/UnicomAI/wanwu/pkg/i18n"
@@ -310,6 +311,8 @@ type CustomInfoConfig struct {
 	DefaultMode          string        `json:"default_mode" mapstructure:"default_mode"`
 	Modes                []CustomTheme `json:"modes" mapstructure:"modes"`
 	Version              string        `json:"version" mapstructure:"version"`
+	ReleaseNotesPath     string        `json:"release_notes_path" mapstructure:"release_notes_path"`
+	ReleaseNotes         string        `json:"-" mapstructure:"-"`
 	RegisterByEmail      int           `json:"register_by_email" mapstructure:"register_by_email"`
 	ResetPasswordByEmail int           `json:"reset_password_by_email" mapstructure:"reset_password_by_email"`
 	LoginByEmail         int           `json:"login_by_email" mapstructure:"login_by_email"`
@@ -417,6 +420,17 @@ func LoadConfig(in string) error {
 		if err := util.LoadConfig(recommendModelPath, _c); err != nil {
 			return fmt.Errorf("load recommend model config err: %v", err)
 		}
+	}
+	// 加载 release notes
+	if _c.CustomInfo.ReleaseNotesPath != "" {
+		data, err := os.ReadFile(_c.CustomInfo.ReleaseNotesPath)
+		if err != nil {
+			log.Warnf("load release notes from %s err: %v", _c.CustomInfo.ReleaseNotesPath, err)
+		} else {
+			_c.CustomInfo.ReleaseNotes = string(data)
+		}
+	} else {
+		log.Warnf("release_notes_path is empty, skip loading release notes")
 	}
 	return nil
 }

@@ -6355,6 +6355,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/custom/about": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取平台版本号和更新日志内容",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "guest"
+                ],
+                "summary": "获取版本和更新日志",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ReleaseNotesResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/custom/general-agent": {
             "post": {
                 "security": [
@@ -32507,6 +32547,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "threadId": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.ReleaseNotesResp": {
+            "type": "object",
+            "properties": {
+                "releaseNotes": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "string"
                 }
             }

@@ -8546,6 +8546,13 @@ definitions:
       threadId:
         type: string
     type: object
+  response.ReleaseNotesResp:
+    properties:
+      releaseNotes:
+        type: string
+      version:
+        type: string
+    type: object
   response.RerankInfo:
     properties:
       fileUrl:
@@ -13286,6 +13293,28 @@ paths:
       summary: 删除对话流会话
       tags:
       - chatflow
+  /custom/about:
+    get:
+      consumes:
+      - application/json
+      description: 获取平台版本号和更新日志内容
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.ReleaseNotesResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取版本和更新日志
+      tags:
+      - guest
   /custom/general-agent:
     post:
       consumes:

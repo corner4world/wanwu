@@ -105,3 +105,8 @@ type Language struct {
 	Code string `json:"code"` // 语言代码
 	Name string `json:"name"` // 语言名称
 }
+
+type ReleaseNotesResp struct {
+	Version      string `json:"version"`
+	ReleaseNotes string `json:"releaseNotes"`
+}
