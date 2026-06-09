@@ -32,33 +32,6 @@ func (cfg *SyncAsr) Tags() []mp_common.Tag {
 	return tags
 }
 
-// 元景ASR原生模型入参
-//type syncAsrReq struct {
-//	File   *multipart.FileHeader `form:"file" json:"file" validate:"required"`
-//	Config SyncAsrConfigOut      `form:"config" json:"config" validate:"required"`
-//}
-//
-//type SyncAsrConfigOut struct {
-//	Config SyncAsrConfig `form:"config" json:"config" validate:"required"`
-//}
-//
-//type SyncAsrConfig struct {
-//	SessionId           string  `json:"session_id" validate:"required"`
-//	AddPunc             int     `json:"add_punc,omitempty"`
-//	ItnSwitch           int     `json:"itn_switch,omitempty"`
-//	VadSwitch           int     `json:"vad_switch,omitempty"`
-//	Diarization         int     `json:"diarization,omitempty"`
-//	SpkNum              int     `json:"spk_num,omitempty"`
-//	Translate           int     `json:"translate,omitempty"`
-//	Sensitive           int     `json:"sensitive,omitempty"`
-//	Language            int     `json:"language,omitempty"`
-//	AudioClassification int     `json:"audio_classification,omitempty"`
-//	DiarizationMode     int     `json:"diarization_mode,omitempty"`
-//	MaxEndSil           int     `json:"max_end_sil,omitempty"`
-//	MaxSingleSeg        int     `json:"max_single_seg,omitempty"`
-//	SpeechNoiseThres    float64 `json:"speech_noise_thres,omitempty"`
-//}
-
 func (cfg *SyncAsr) NewReq(req *mp_common.SyncAsrReq) (mp_common.ISyncAsrReq, error) {
 	var targetContent mp_common.SyncAsrReqC
 	msg := req.Messages[0]

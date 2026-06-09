@@ -79,9 +79,9 @@ recommend_models:
     ocr:
       - model: "unicom-ocr"
         display_name: "元景-PDF文字解析"
-    sync-asr:
-      - model: "yuanjing-asr"
-        display_name: "yuanjing-asr"
+#    sync-asr:
+#      - model: "yuanjing-asr"
+#        display_name: "yuanjing-asr"
     pdf-parser:
       - model: "pdf-parser"
         display_name: "知识库-高精度文档解析工具"

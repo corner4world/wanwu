@@ -118,6 +118,9 @@ func ValidateLLMModel(ctx *gin.Context, modelInfo *model_service.ModelInfo) erro
 		if len(openAIRespTool.Choices) == 0 || openAIRespTool.Choices[0].Message.ToolCalls == nil {
 			return fmt.Errorf("model does not support toolcall functionality")
 		}
+		if openAIRespTool.Choices[0].FinishReason != "tool_calls" {
+			return fmt.Errorf("model does not support toolcall functionality: finish_reason is %s, expected tool_calls", openAIRespTool.Choices[0].FinishReason)
+		}
 		// 打印工具调用日志
 		data, _ := json.MarshalIndent(openAIRespTool.Choices[0].Message.ToolCalls, "", "  ")
 		log.Debugf("tool call: %v", string(data))
