@@ -9,8 +9,8 @@ import (
 )
 
 func registerWorkflow(apiV1 *gin.RouterGroup) {
-	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow/list", http.MethodGet, v1.GetAppSpaceAppList, "获取工作流/对话流应用列表")
-	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow", http.MethodPost, v1.CreateWorkflow, "创建workflow")
+	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow/list", http.MethodGet, v1.GetWorkflowAndChatflowList, "获取工作流/对话流应用列表")
+	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow", http.MethodPost, v1.CreateWorkflow, "创建工作流或对话流")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow/convert", http.MethodPost, v1.WorkflowConvert, "workflow转为chatflow")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow/copy/draft", http.MethodPost, v1.CopyWorkflowDraft, "拷贝workflow草稿")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/workflow/model/select/llm", http.MethodGet, v1.ListLlmModelsByWorkflow, "llm模型列表（用于workflow）")
@@ -26,7 +26,6 @@ func registerWorkflow(apiV1 *gin.RouterGroup) {
 
 	mid.Sub("app.workflow").Reg(apiV1, "/workflow/template", http.MethodPost, v1.CreateWorkflowByTemplate, "复制工作流模板")
 	// --- chatflow ---
-	mid.Sub("app.workflow").Reg(apiV1, "/appspace/chatflow", http.MethodPost, v1.CreateChatflow, "创建chatflow")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/chatflow/convert", http.MethodPost, v1.ChatflowConvert, "chatflow转为workflow")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/chatflow/copy/draft", http.MethodPost, v1.CopyChatflowDraft, "拷贝chatflow草稿")
 	mid.Sub("app.workflow").Reg(apiV1, "/appspace/chatflow/import", http.MethodPost, v1.ImportChatflow, "导入chatflow")

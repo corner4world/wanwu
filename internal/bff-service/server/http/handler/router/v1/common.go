@@ -52,7 +52,6 @@ func registerCommon(apiV1 *gin.RouterGroup) {
 
 	// rag/agent/workflow通用
 	mid.Sub("common").Reg(apiV1, "/appspace/app", http.MethodDelete, v1.DeleteAppSapceApp, "刪除应用")
-	mid.Sub("common").Reg(apiV1, "/appspace/app/list", http.MethodGet, v1.GetAppSpaceAppList, "获取应用列表")
 	mid.Sub("common").Reg(apiV1, "/appspace/app/publish", http.MethodPost, v1.PublishApp, "发布应用")
 	mid.Sub("common").Reg(apiV1, "/appspace/app/publish", http.MethodDelete, v1.UnPublishApp, "取消发布应用")
 

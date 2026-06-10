@@ -1,8 +1,10 @@
 package request
 
 import (
+	"fmt"
 	"mime/multipart"
 
+	"github.com/UnicomAI/wanwu/pkg/constant"
 	"github.com/UnicomAI/wanwu/pkg/util"
 )
 
@@ -24,11 +26,21 @@ func (g *GetWorkflowListReq) Check() error {
 }
 
 type CreateWorkflowReq struct {
+	AppType string `json:"appType" validate:"required"` // workflow 或 chatflow
 	AppBriefConfig
 }
 
 func (r *CreateWorkflowReq) Check() error {
-	return util.ValidateBriefCreate(&r.Name, &r.Desc, util.SubjectWorkflow)
+	// 校验 appType
+	if r.AppType != constant.AppTypeWorkflow && r.AppType != constant.AppTypeChatflow {
+		return fmt.Errorf("appType must be 'workflow' or 'chatflow'")
+	}
+	// 根据 appType 选择 subject
+	subject := util.SubjectWorkflow
+	if r.AppType == constant.AppTypeChatflow {
+		subject = util.SubjectChatflow
+	}
+	return util.ValidateBriefCreate(&r.Name, &r.Desc, subject)
 }
 
 type CreateChatflowReq struct {

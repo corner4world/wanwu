@@ -8,6 +8,7 @@ import (
 	"io"
 	net_url "net/url"
 	"sort"
+	"strconv"
 	"time"
 
 	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
@@ -110,6 +111,24 @@ func ListWorkflowByIDs(ctx *gin.Context, name string, workflowIDs []string) (*re
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_apps_list", fmt.Sprintf("code %v msg %v", ret.Code, ret.Msg))
 	}
 	return ret.Data, nil
+}
+
+// CreateWorkflowOrChatflow 统一创建工作流或对话流，包含名称唯一性校验
+func CreateWorkflowOrChatflow(ctx *gin.Context, orgID, appType, name, desc, iconUri string) (*response.CozeWorkflowIDData, error) {
+	// 1. 校验名称唯一性
+	exists, err := checkWorkflowNameExists(ctx, orgID, name)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_name_exists")
+	}
+
+	// 2. 根据类型调用相应的创建接口
+	if appType == constant.AppTypeChatflow {
+		return CreateChatflow(ctx, orgID, name, desc, iconUri)
+	}
+	return CreateWorkflow(ctx, orgID, name, desc, iconUri)
 }
 
 func CreateWorkflow(ctx *gin.Context, orgID, name, desc, iconUri string) (*response.CozeWorkflowIDData, error) {
@@ -243,6 +262,11 @@ func ImportWorkflow(ctx *gin.Context, orgID, appType string) (*response.CozeWork
 	// 校验name和desc
 	if rawData.Name == "" || rawData.Desc == "" {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_import_file", "name or desc is empty")
+	}
+	// 校验名称唯一性，重名则自动加后缀
+	rawData.Name, err = resolveWorkflowNameConflict(ctx, orgID, rawData.Name)
+	if err != nil {
+		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_workflow_import_file", err.Error())
 	}
 	switch appType {
 	case constant.AppTypeChatflow:
@@ -756,4 +780,71 @@ func toModelInfo4Workflow(modelInfo *response.ModelInfo) (*response.CozeWorkflow
 	}
 
 	return ret, nil
+}
+
+// checkWorkflowNameExists 检查工作流/对话流名称是否已存在
+// 在工作流和对话流中都不允许重名
+func checkWorkflowNameExists(ctx *gin.Context, orgID, name string) (bool, error) {
+	names, err := collectExistingWorkflowNames(ctx, orgID, name)
+	if err != nil {
+		return false, err
+	}
+	_, exists := names[name]
+	return exists, nil
+}
+
+// collectExistingWorkflowNames 收集工作流和对话流中与 baseName 同名或同名_序号 形式的名称集合
+// ListWorkflow 的 name 参数为模糊查询，会返回包含该名称的所有结果
+func collectExistingWorkflowNames(ctx *gin.Context, orgID, name string) (map[string]struct{}, error) {
+	names := make(map[string]struct{})
+
+	// 收集工作流中的同名
+	workflowResp, err := ListWorkflow(ctx, orgID, name, constant.AppTypeWorkflow)
+	if err != nil {
+		return nil, err
+	}
+	for _, w := range workflowResp.Workflows {
+		names[w.Name] = struct{}{}
+	}
+
+	// 收集对话流中的同名
+	chatflowResp, err := ListWorkflow(ctx, orgID, name, constant.AppTypeChatflow)
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range chatflowResp.Workflows {
+		names[c.Name] = struct{}{}
+	}
+
+	return names, nil
+}
+
+// resolveWorkflowNameConflict 解决名称冲突：如果名称已存在则自动追加序号后缀
+// 依次尝试 原名_1, 原名_2, ... 直到找到不重名的名称
+func resolveWorkflowNameConflict(ctx *gin.Context, orgID, name string) (string, error) {
+	names, err := collectExistingWorkflowNames(ctx, orgID, name)
+	if err != nil {
+		return "", err
+	}
+	if _, exists := names[name]; !exists {
+		return name, nil
+	}
+
+	// 名称冲突，自动加序号后缀
+	base := util.CopyNameBase(name)
+	for i := 1; i <= 9999; i++ {
+		candidate := util.GenCopyName(name, i)
+		if _, exists := names[candidate]; !exists {
+			return candidate, nil
+		}
+		// 如果 GenCopyName 生成名称的 base 和当前 base 不同（名称被截断导致），
+		// 也需要用 base 来生成候选名称
+		if util.CopyNameBase(candidate) != base {
+			candidate = base + "_" + strconv.Itoa(i)
+			if _, exists := names[candidate]; !exists {
+				return candidate, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("无法为导入的工作流生成唯一名称")
 }

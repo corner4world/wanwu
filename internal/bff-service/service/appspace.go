@@ -89,57 +89,37 @@ func GetAppSpaceAppList(ctx *gin.Context, userId, orgId, name, appType string) (
 			ret = append(ret, appBriefProto2Model(ctx, assistantInfo.Info, assistantInfo.Category))
 		}
 	}
-	if appType == constant.AppTypeWorkflow {
-		resp, err := ListWorkflow(ctx, orgId, name, constant.AppTypeWorkflow)
+	return fillAppPublishInfo(ctx, userId, orgId, ret)
+}
+
+// GetWorkflowAndChatflowList 获取工作流和对话流列表
+// appType: 空=全部, workflow=工作流, chatflow=对话流
+func GetWorkflowAndChatflowList(ctx *gin.Context, userId, orgId, name, appType string) (*response.ListResult, error) {
+	var ret []response.AppBriefInfo
+
+	// 根据 appType 决定获取哪些列表
+	if appType == "" || appType == constant.AppTypeWorkflow {
+		// 获取工作流列表
+		workflowResp, err := ListWorkflow(ctx, orgId, name, constant.AppTypeWorkflow)
 		if err != nil {
 			return nil, err
 		}
-		for _, workflowInfo := range resp.Workflows {
+		for _, workflowInfo := range workflowResp.Workflows {
 			ret = append(ret, cozeWorkflowInfo2Model(workflowInfo))
 		}
 	}
-	if appType == constant.AppTypeChatflow {
-		resp, err := ListWorkflow(ctx, orgId, name, constant.AppTypeChatflow)
+
+	if appType == "" || appType == constant.AppTypeChatflow {
+		// 获取对话流列表
+		chatflowResp, err := ListWorkflow(ctx, orgId, name, constant.AppTypeChatflow)
 		if err != nil {
 			return nil, err
 		}
-		for _, chatflowInfo := range resp.Workflows {
+		for _, chatflowInfo := range chatflowResp.Workflows {
 			ret = append(ret, cozeChatflowInfo2Model(chatflowInfo))
 		}
 	}
-	var appIds []string
-	for _, appInfo := range ret {
-		appIds = append(appIds, appInfo.AppId)
-	}
-	appInfos, err := app.GetAppListByIds(ctx, &app_service.GetAppListByIdsReq{
-		AppIdsList: appIds,
-		AppType:    appType,
-	})
-	if err != nil {
-		return nil, err
-	}
-	publishAppMap := make(map[string]*app_service.AppInfo, len(appInfos.Infos))
-	for _, appInfo := range appInfos.Infos {
-		publishAppMap[appInfo.AppId] = appInfo
-	}
-
-	versionMap := getAppVersionBatch(ctx, userId, orgId, publishAppMap)
-	for idx, appInfo := range ret {
-		// 填充发布类型和版本信息
-		if publishAppInfo, ok := publishAppMap[appInfo.AppId]; ok {
-			ret[idx].PublishType = publishAppInfo.PublishType
-			if version, ok := versionMap[appInfo.AppId]; ok {
-				ret[idx].Version = version
-			}
-		}
-	}
-	sort.SliceStable(ret, func(i, j int) bool {
-		return ret[i].UpdatedAt > ret[j].UpdatedAt
-	})
-	return &response.ListResult{
-		List:  ret,
-		Total: int64(len(ret)),
-	}, nil
+	return fillAppPublishInfo(ctx, userId, orgId, ret)
 }
 
 func PublishApp(ctx *gin.Context, userId, orgId string, req request.PublishAppRequest) error {
@@ -375,4 +355,55 @@ func getAppVersionBatch(ctx *gin.Context, userId, orgId string, publishAppMap ma
 	}
 
 	return versionMap
+}
+
+// fillAppPublishInfo 批量填充应用发布信息（发布类型和版本）
+func fillAppPublishInfo(ctx *gin.Context, userId, orgId string, apps []response.AppBriefInfo) (*response.ListResult, error) {
+	if len(apps) == 0 {
+		return &response.ListResult{List: apps, Total: 0}, nil
+	}
+
+	// 收集 appIds
+	var appIds []string
+	for _, appInfo := range apps {
+		appIds = append(appIds, appInfo.AppId)
+	}
+
+	// 批量获取 app 信息
+	appInfos, err := app.GetAppListByIds(ctx, &app_service.GetAppListByIdsReq{
+		AppIdsList: appIds,
+		AppType:    "",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// 构建 map
+	publishAppMap := make(map[string]*app_service.AppInfo, len(appInfos.Infos))
+	for _, appInfo := range appInfos.Infos {
+		publishAppMap[appInfo.AppId] = appInfo
+	}
+
+	// 批量获取版本信息
+	versionMap := getAppVersionBatch(ctx, userId, orgId, publishAppMap)
+
+	// 填充发布类型和版本
+	for idx := range apps {
+		if publishAppInfo, ok := publishAppMap[apps[idx].AppId]; ok {
+			apps[idx].PublishType = publishAppInfo.PublishType
+			if version, ok := versionMap[apps[idx].AppId]; ok {
+				apps[idx].Version = version
+			}
+		}
+	}
+
+	// 按更新时间降序排序
+	sort.SliceStable(apps, func(i, j int) bool {
+		return apps[i].UpdatedAt > apps[j].UpdatedAt
+	})
+
+	return &response.ListResult{
+		List:  apps,
+		Total: int64(len(apps)),
+	}, nil
 }

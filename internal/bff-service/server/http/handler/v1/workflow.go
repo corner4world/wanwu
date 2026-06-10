@@ -29,21 +29,21 @@ func ListLlmModelsByWorkflow(ctx *gin.Context) {
 
 // CreateWorkflow
 //
-//	@Tags		workflow
-//	@Summary	创建Workflow
-//	@Description
-//	@Security	JWT
-//	@Accept		json
-//	@Produce	json
-//	@Param		data	body		request.CreateWorkflowReq	true	"创建Workflow的请求参数"
-//	@Success	200		{object}	response.Response{data=response.CozeWorkflowIDData}
-//	@Router		/appspace/workflow [post]
+//	@Tags			workflow
+//	@Summary		创建工作流或对话流
+//	@Description	通过 appType 区分创建工作流(workflow)或对话流(chatflow)，默认为 workflow
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.CreateWorkflowReq	true	"创建工作流/对话流的请求参数"
+//	@Success		200		{object}	response.Response{data=response.CozeWorkflowIDData}
+//	@Router			/appspace/workflow [post]
 func CreateWorkflow(ctx *gin.Context) {
 	var req request.CreateWorkflowReq
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	resp, err := service.CreateWorkflow(ctx, getOrgID(ctx), req.Name, req.Desc, req.Avatar.Key)
+	resp, err := service.CreateWorkflowOrChatflow(ctx, getOrgID(ctx), req.AppType, req.Name, req.Desc, req.Avatar.Key)
 	gin_util.Response(ctx, resp, err)
 }
 

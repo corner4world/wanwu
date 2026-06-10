@@ -22,7 +22,7 @@ type GetAppSpaceAppListRequest struct {
 
 type GetAppSpaceAppListByTypeRequest struct {
 	Name    string `form:"name" json:"name"`
-	AppType string `form:"appType" json:"appType" validate:"required"`
+	AppType string `form:"appType" json:"appType"`
 }
 
 type PublishAppRequest struct {

@@ -2378,82 +2378,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/appspace/app/list": {
-            "get": {
-                "security": [
-                    {
-                        "JWT": []
-                    }
-                ],
-                "description": "获取智能体、工作流、文本问答等应用",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "app"
-                ],
-                "summary": "获取应用列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "应用名(模糊查询)",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "agent",
-                            "workflow",
-                            "rag",
-                            "chatflow"
-                        ],
-                        "type": "string",
-                        "description": "应用类型 Enums(agent,workflow,rag,chatflow)",
-                        "name": "appType",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "allOf": [
-                                                {
-                                                    "$ref": "#/definitions/response.ListResult"
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "list": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "$ref": "#/definitions/response.AppBriefInfo"
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/appspace/app/openurl": {
             "put": {
                 "security": [
@@ -3775,6 +3699,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
+                "description": "通过 appType 区分创建工作流(workflow)或对话流(chatflow)，默认为 workflow",
                 "consumes": [
                     "application/json"
                 ],
@@ -3784,10 +3709,10 @@ const docTemplate = `{
                 "tags": [
                     "workflow"
                 ],
-                "summary": "创建Workflow",
+                "summary": "创建工作流或对话流",
                 "parameters": [
                     {
-                        "description": "创建Workflow的请求参数",
+                        "description": "创建工作流/对话流的请求参数",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -4077,6 +4002,75 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.CozeWorkflowIDData"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/appspace/workflow/list": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取工作流和对话流列表，不传appType返回全部，传workflow只返回工作流，传chatflow只返回对话流",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "workflow"
+                ],
+                "summary": "获取工作流和对话流列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "名称(模糊查询)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "类型: workflow/chatflow, 不传返回全部",
+                        "name": "appType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.AppBriefInfo"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -23232,9 +23226,14 @@ const docTemplate = `{
         "request.CreateWorkflowReq": {
             "type": "object",
             "required": [
+                "appType",
                 "name"
             ],
             "properties": {
+                "appType": {
+                    "description": "workflow 或 chatflow",
+                    "type": "string"
+                },
                 "avatar": {
                     "description": "图标",
                     "allOf": [
