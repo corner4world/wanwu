@@ -41,6 +41,13 @@ func NewBashTool(ctx context.Context, backend *ShellOnlyBackend) (tool.BaseTool,
 			if result.Truncated {
 				output += "\n[输出因大小限制被截断]"
 			}
+			// 命令执行成功且无任何输出时（如 mv、mkdir、touch），output 为空字符串。
+			// 下游 go-openai ChatCompletionMessage.Content 的 json tag 带有 omitempty，
+			// 空字符串会被序列化时省略，导致发给 LLM 的 tool message 缺少 content 字段，
+			// 部分模型会因此误判工具未返回结果而重复调用或直接报错。补一个占位文本避免此问题，视情况再移除。
+			if output == "" {
+				output = "(命令执行完毕，无输出)"
+			}
 			return output, nil
 		})
 	if err != nil {
