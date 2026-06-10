@@ -86,11 +86,13 @@ type SharedSkillDetail struct {
 // PublishedSkillInfo 我发布的skill列表项（资源库 custom list + 广场 created list 共用）
 type PublishedSkillInfo struct {
 	SkillBasicInfo
-	IsPublished bool   `json:"isPublished"`
-	Version     string `json:"version"`
-	PublishType string `json:"publishType"`
-	ThreadID    string `json:"threadId,omitempty"`
-	PreviewID   string `json:"previewId,omitempty"`
+	IsPublished   bool   `json:"isPublished"`
+	Version       string `json:"version"`
+	PublishType   string `json:"publishType"`
+	ThreadID      string `json:"threadId,omitempty"`
+	PreviewID     string `json:"previewId,omitempty"`
+	DownloadCount int32  `json:"downloadCount"`
+	AcquiredCount int32  `json:"acquiredCount"`
 }
 
 // PublishedSkillDetail 我发布的skill详情
