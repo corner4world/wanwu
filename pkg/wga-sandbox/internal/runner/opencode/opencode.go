@@ -1141,12 +1141,12 @@ func formatMessageInputPart(part schema.MessageInputPart) string {
 // 工具函数
 // ============================================================================
 
-// toSkillName 将工具名称转换为 skill 名称，替换空格为连字符，移除括号。
+// toSkillName 将工具名称转换为 skill 名称，替换空格为连字符，移除括号，并转为小写以与 openapi2skill 保持一致。
 func toSkillName(name string) string {
 	result := strings.ReplaceAll(name, " ", "-")
 	result = strings.ReplaceAll(result, "(", "")
 	result = strings.ReplaceAll(result, ")", "")
-	return result
+	return strings.ToLower(result)
 }
 
 // formatAuthContent 格式化认证信息为 Markdown 格式。
