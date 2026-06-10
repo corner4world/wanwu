@@ -36,12 +36,21 @@ func GetAgentSkillListDetail(ctx *gin.Context, skillIdList []string) (*response.
 
 func GetBuiltinSkillList(ctx *gin.Context, name string) (*response.ListResult, error) {
 	var list []*response.BuiltinSkillInfo
+	var skillIds []string
 	for _, skillsCfg := range config.Cfg().AgentSkills {
 		if name != "" && !strings.Contains(skillsCfg.Name, name) {
 			continue
 		}
 		info := buildBuiltinSkillInfo(*skillsCfg)
 		list = append(list, &info)
+		skillIds = append(skillIds, skillsCfg.SkillId)
+	}
+	// 批量填充下载计数
+	downloadMap := getBuiltinSkillDownloadCounts(ctx, skillIds)
+	for i, info := range list {
+		if info != nil {
+			list[i].DownloadCount = downloadMap[info.SkillId]
+		}
 	}
 	return &response.ListResult{
 		List:  list,
@@ -59,6 +68,10 @@ func GetBuiltinSkillDetail(ctx *gin.Context, userId, orgId, skillId string) (*re
 		BuiltinSkillInfo: buildBuiltinSkillInfo(skillsCfg),
 		SkillMarkdown:    string(skillsCfg.SkillMarkdown),
 	}
+	// 填充下载计数
+	downloadMap := getBuiltinSkillDownloadCounts(ctx, []string{skillId})
+	detail.DownloadCount = downloadMap[skillId]
+
 	configResp, err := mcp.GetBuiltinSkillVars(ctx.Request.Context(), &mcp_service.GetBuiltinSkillVarsReq{
 		SkillId:  skillId,
 		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
@@ -77,6 +90,8 @@ func DownloadBuiltinSkill(ctx *gin.Context, skillId string) ([]byte, error) {
 	if !exist {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_builtin_not_found", "skill not found in builtin skills")
 	}
+	// 递增下载计数
+	incrementBuiltinSkillDownload(ctx, skillId)
 	return skillsCfg.AgentSkillZipToBytes(skillId)
 }
 

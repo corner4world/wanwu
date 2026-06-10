@@ -24,9 +24,18 @@ func GetSquareBuiltinSkillList(ctx *gin.Context, userId, orgId, name string) (*r
 	}
 
 	list := make([]*response.BuiltinSkillInfo, 0, len(skillsCfgList))
+	var skillIds []string
 	for _, skillsCfg := range skillsCfgList {
 		info := buildBuiltinSkillInfo(*skillsCfg)
 		list = append(list, &info)
+		skillIds = append(skillIds, skillsCfg.SkillId)
+	}
+	// 批量填充下载计数
+	downloadMap := getBuiltinSkillDownloadCounts(ctx, skillIds)
+	for i, info := range list {
+		if info != nil {
+			list[i].DownloadCount = downloadMap[info.SkillId]
+		}
 	}
 
 	return &response.ListResult{
@@ -40,10 +49,14 @@ func GetSquareBuiltinSkillDetail(ctx *gin.Context, skillId string) (*response.Bu
 	if !exist {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_builtin_not_found", "skill not found in builtin skills")
 	}
-	return &response.BuiltinSkillDetail{
+	detail := &response.BuiltinSkillDetail{
 		BuiltinSkillInfo: buildBuiltinSkillInfo(skillsCfg),
 		SkillMarkdown:    string(skillsCfg.SkillMarkdown),
-	}, nil
+	}
+	// 填充下载计数
+	downloadMap := getBuiltinSkillDownloadCounts(ctx, []string{skillId})
+	detail.DownloadCount = downloadMap[skillId]
+	return detail, nil
 }
 
 func GetSquareShareSkillList(ctx *gin.Context, userId, orgId, name string) (*response.ListResult, error) {
@@ -115,7 +128,12 @@ func ShareSquareSkill(ctx *gin.Context, userId, orgId, skillId string) error {
 		Identity:      &mcp_service.Identity{UserId: userId, OrgId: orgId},
 		CustomSkillId: skillId,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	// 递增添加计数
+	incrementCustomSkillAcquired(ctx, skillId)
+	return nil
 }
 
 func GetSquareShareSkillDetail(ctx *gin.Context, userId, orgId, skillId string) (*response.SharedSkillDetail, error) {
@@ -161,6 +179,8 @@ func DownloadSquareShareSkill(ctx *gin.Context, skillId string) ([]byte, error) 
 	if publish.GetObjectPath() == "" {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "skill_publish_package_not_available", "latest skill package objectPath is empty")
 	}
+	// 递增下载计数
+	incrementCustomSkillDownload(ctx, skillId)
 	return downloadCustomSkillZip(ctx, publish.GetObjectPath())
 }
 
@@ -279,16 +299,19 @@ func isSquareShareSkill(appInfo *app_service.ExplorationAppInfo, userId, orgId s
 }
 
 func toSharedSkillDetail(ctx *gin.Context, publish *mcp_service.PublishCustomSkill, isAcquired bool) *response.SharedSkillDetail {
+	skill := publish.GetSkill()
 	return &response.SharedSkillDetail{
 		SharedSkillInfo: response.SharedSkillInfo{
 			SkillBasicInfo: response.SkillBasicInfo{
-				SkillId: publish.Skill.GetSkillId(),
-				Name:    publish.Skill.GetName(),
-				Avatar:  cacheSkillAvatar(ctx, publish.Skill.GetAvatar()),
-				Author:  publish.Skill.GetAuthor(),
-				Desc:    publish.Skill.GetDesc(),
+				SkillId: skill.GetSkillId(),
+				Name:    skill.GetName(),
+				Avatar:  cacheSkillAvatar(ctx, skill.GetAvatar()),
+				Author:  skill.GetAuthor(),
+				Desc:    skill.GetDesc(),
 			},
-			IsShared: isAcquired,
+			IsShared:      isAcquired,
+			DownloadCount: skill.GetDownloadCount(),
+			AcquiredCount:  skill.GetAcquiredCount(),
 		},
 		SkillMarkdown: config.FixFrontMatterFormat(publish.GetMarkdown()),
 	}
@@ -303,7 +326,9 @@ func toSharedSkillInfo(ctx *gin.Context, skill *mcp_service.CustomSkill, isAcqui
 			Author:  skill.GetAuthor(),
 			Desc:    skill.GetDesc(),
 		},
-		IsShared: isAcquired,
+		IsShared:      isAcquired,
+		DownloadCount: skill.GetDownloadCount(),
+		AcquiredCount:  skill.GetAcquiredCount(),
 	}
 }
 

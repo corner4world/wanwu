@@ -102,6 +102,12 @@ service MCPService {
   rpc GetPublishCustomSkillByVersion(GetPublishCustomSkillByVersionReq) returns (PublishCustomSkill) {}
   rpc GetPublishCustomSkillList(GetPublishCustomSkillListReq) returns (GetPublishCustomSkillListResp) {}
   rpc GetPublishCustomSkillByIDList(GetPublishCustomSkillByIDListReq) returns (GetPublishCustomSkillByIDListResp) {}
+
+  // --- skill statistic ---
+  rpc IncrementCustomSkillDownloadCount(IncrementCustomSkillDownloadCountReq) returns (google.protobuf.Empty) {}
+  rpc IncrementCustomSkillAcquiredCount(IncrementCustomSkillAcquiredCountReq) returns (google.protobuf.Empty) {}
+  rpc IncrementBuiltinSkillDownloadCount(IncrementBuiltinSkillDownloadCountReq) returns (google.protobuf.Empty) {}
+  rpc GetBuiltinSkillDownloadCounts(GetBuiltinSkillDownloadCountsReq) returns (GetBuiltinSkillDownloadCountsResp) {}
 }
 
 // --- req ---
@@ -483,5 +489,27 @@ message GetToolByToolIdListResp {
 message GetToolDetailByToolIdListResp {
   repeated GetCustomToolInfoResp customList = 1;
   repeated SquareToolDetail toolSquareInfoList = 2;
+}
+
+// --- skill statistic ---
+
+message IncrementCustomSkillDownloadCountReq {
+  string skill_id = 1;
+}
+
+message IncrementCustomSkillAcquiredCountReq {
+  string skill_id = 1;
+}
+
+message IncrementBuiltinSkillDownloadCountReq {
+  string skillId = 1;
+}
+
+message GetBuiltinSkillDownloadCountsReq {
+  repeated string skillIds = 1;
+}
+
+message GetBuiltinSkillDownloadCountsResp {
+  map<string, int32> countMap = 1;  // skill_id -> download_count
 }
 

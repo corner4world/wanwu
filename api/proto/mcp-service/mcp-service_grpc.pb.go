@@ -20,74 +20,78 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MCPService_GetSquareMCP_FullMethodName                     = "/mcp_service.MCPService/GetSquareMCP"
-	MCPService_GetSquareMCPList_FullMethodName                 = "/mcp_service.MCPService/GetSquareMCPList"
-	MCPService_CreateCustomMCP_FullMethodName                  = "/mcp_service.MCPService/CreateCustomMCP"
-	MCPService_UpdateCustomMCP_FullMethodName                  = "/mcp_service.MCPService/UpdateCustomMCP"
-	MCPService_GetCustomMCP_FullMethodName                     = "/mcp_service.MCPService/GetCustomMCP"
-	MCPService_DeleteCustomMCP_FullMethodName                  = "/mcp_service.MCPService/DeleteCustomMCP"
-	MCPService_GetCustomMCPList_FullMethodName                 = "/mcp_service.MCPService/GetCustomMCPList"
-	MCPService_GetMCPToolList_FullMethodName                   = "/mcp_service.MCPService/GetMCPToolList"
-	MCPService_GetMCPAvatar_FullMethodName                     = "/mcp_service.MCPService/GetMCPAvatar"
-	MCPService_CreateCustomTool_FullMethodName                 = "/mcp_service.MCPService/CreateCustomTool"
-	MCPService_GetCustomToolInfo_FullMethodName                = "/mcp_service.MCPService/GetCustomToolInfo"
-	MCPService_GetCustomToolList_FullMethodName                = "/mcp_service.MCPService/GetCustomToolList"
-	MCPService_GetCustomToolByCustomToolIdList_FullMethodName  = "/mcp_service.MCPService/GetCustomToolByCustomToolIdList"
-	MCPService_UpdateCustomTool_FullMethodName                 = "/mcp_service.MCPService/UpdateCustomTool"
-	MCPService_DeleteCustomTool_FullMethodName                 = "/mcp_service.MCPService/DeleteCustomTool"
-	MCPService_GetSquareTool_FullMethodName                    = "/mcp_service.MCPService/GetSquareTool"
-	MCPService_GetSquareToolList_FullMethodName                = "/mcp_service.MCPService/GetSquareToolList"
-	MCPService_UpsertBuiltinToolAPIKey_FullMethodName          = "/mcp_service.MCPService/UpsertBuiltinToolAPIKey"
-	MCPService_CreateMCPServer_FullMethodName                  = "/mcp_service.MCPService/CreateMCPServer"
-	MCPService_DeleteMCPServer_FullMethodName                  = "/mcp_service.MCPService/DeleteMCPServer"
-	MCPService_UpdateMCPServer_FullMethodName                  = "/mcp_service.MCPService/UpdateMCPServer"
-	MCPService_GetMCPServer_FullMethodName                     = "/mcp_service.MCPService/GetMCPServer"
-	MCPService_GetMCPServerList_FullMethodName                 = "/mcp_service.MCPService/GetMCPServerList"
-	MCPService_CreateMCPServerTool_FullMethodName              = "/mcp_service.MCPService/CreateMCPServerTool"
-	MCPService_UpdateMCPServerTool_FullMethodName              = "/mcp_service.MCPService/UpdateMCPServerTool"
-	MCPService_DeleteMCPServerTool_FullMethodName              = "/mcp_service.MCPService/DeleteMCPServerTool"
-	MCPService_GetMCPServerTool_FullMethodName                 = "/mcp_service.MCPService/GetMCPServerTool"
-	MCPService_GetMCPServerToolList_FullMethodName             = "/mcp_service.MCPService/GetMCPServerToolList"
-	MCPService_GetToolSelect_FullMethodName                    = "/mcp_service.MCPService/GetToolSelect"
-	MCPService_GetToolByIdList_FullMethodName                  = "/mcp_service.MCPService/GetToolByIdList"
-	MCPService_GetToolDetailByIdList_FullMethodName            = "/mcp_service.MCPService/GetToolDetailByIdList"
-	MCPService_GetMCPByMCPIdList_FullMethodName                = "/mcp_service.MCPService/GetMCPByMCPIdList"
-	MCPService_CustomSkillCreate_FullMethodName                = "/mcp_service.MCPService/CustomSkillCreate"
-	MCPService_CustomSkillDelete_FullMethodName                = "/mcp_service.MCPService/CustomSkillDelete"
-	MCPService_CustomSkillGet_FullMethodName                   = "/mcp_service.MCPService/CustomSkillGet"
-	MCPService_GetCustomSkillByPreviewID_FullMethodName        = "/mcp_service.MCPService/GetCustomSkillByPreviewID"
-	MCPService_GetCustomSkillByThreadID_FullMethodName         = "/mcp_service.MCPService/GetCustomSkillByThreadID"
-	MCPService_GetCustomSkillListByThreadIDList_FullMethodName = "/mcp_service.MCPService/GetCustomSkillListByThreadIDList"
-	MCPService_CustomSkillGetList_FullMethodName               = "/mcp_service.MCPService/CustomSkillGetList"
-	MCPService_GetCustomSkillDetailByIdList_FullMethodName     = "/mcp_service.MCPService/GetCustomSkillDetailByIdList"
-	MCPService_UpdateCustomSkillBasicMeta_FullMethodName       = "/mcp_service.MCPService/UpdateCustomSkillBasicMeta"
-	MCPService_UpdateCustomSkillThreadMeta_FullMethodName      = "/mcp_service.MCPService/UpdateCustomSkillThreadMeta"
-	MCPService_CreateCustomSkillVar_FullMethodName             = "/mcp_service.MCPService/CreateCustomSkillVar"
-	MCPService_GetCustomSkillVars_FullMethodName               = "/mcp_service.MCPService/GetCustomSkillVars"
-	MCPService_UpdateCustomSkillVar_FullMethodName             = "/mcp_service.MCPService/UpdateCustomSkillVar"
-	MCPService_DeleteCustomSkillVar_FullMethodName             = "/mcp_service.MCPService/DeleteCustomSkillVar"
-	MCPService_AcquiredSkillCreate_FullMethodName              = "/mcp_service.MCPService/AcquiredSkillCreate"
-	MCPService_AcquiredSkillDelete_FullMethodName              = "/mcp_service.MCPService/AcquiredSkillDelete"
-	MCPService_AcquiredSkillGet_FullMethodName                 = "/mcp_service.MCPService/AcquiredSkillGet"
-	MCPService_AcquiredSkillGetList_FullMethodName             = "/mcp_service.MCPService/AcquiredSkillGetList"
-	MCPService_AcquiredSkillGetByIDList_FullMethodName         = "/mcp_service.MCPService/AcquiredSkillGetByIDList"
-	MCPService_AcquiredSkillGetHistoryList_FullMethodName      = "/mcp_service.MCPService/AcquiredSkillGetHistoryList"
-	MCPService_CreateAcquiredSkillVar_FullMethodName           = "/mcp_service.MCPService/CreateAcquiredSkillVar"
-	MCPService_GetAcquiredSkillVars_FullMethodName             = "/mcp_service.MCPService/GetAcquiredSkillVars"
-	MCPService_UpdateAcquiredSkillVar_FullMethodName           = "/mcp_service.MCPService/UpdateAcquiredSkillVar"
-	MCPService_DeleteAcquiredSkillVar_FullMethodName           = "/mcp_service.MCPService/DeleteAcquiredSkillVar"
-	MCPService_CheckAcquiredSkill_FullMethodName               = "/mcp_service.MCPService/CheckAcquiredSkill"
-	MCPService_CreateBuiltinSkillVar_FullMethodName            = "/mcp_service.MCPService/CreateBuiltinSkillVar"
-	MCPService_DeleteBuiltinSkillVar_FullMethodName            = "/mcp_service.MCPService/DeleteBuiltinSkillVar"
-	MCPService_GetBuiltinSkillVars_FullMethodName              = "/mcp_service.MCPService/GetBuiltinSkillVars"
-	MCPService_UpdateBuiltinSkillVar_FullMethodName            = "/mcp_service.MCPService/UpdateBuiltinSkillVar"
-	MCPService_CreatePublishCustomSkill_FullMethodName         = "/mcp_service.MCPService/CreatePublishCustomSkill"
-	MCPService_UpdatePublishCustomSkill_FullMethodName         = "/mcp_service.MCPService/UpdatePublishCustomSkill"
-	MCPService_GetPublishCustomSkillHistoryList_FullMethodName = "/mcp_service.MCPService/GetPublishCustomSkillHistoryList"
-	MCPService_GetPublishCustomSkillByLatest_FullMethodName    = "/mcp_service.MCPService/GetPublishCustomSkillByLatest"
-	MCPService_GetPublishCustomSkillByVersion_FullMethodName   = "/mcp_service.MCPService/GetPublishCustomSkillByVersion"
-	MCPService_GetPublishCustomSkillList_FullMethodName        = "/mcp_service.MCPService/GetPublishCustomSkillList"
-	MCPService_GetPublishCustomSkillByIDList_FullMethodName    = "/mcp_service.MCPService/GetPublishCustomSkillByIDList"
+	MCPService_GetSquareMCP_FullMethodName                       = "/mcp_service.MCPService/GetSquareMCP"
+	MCPService_GetSquareMCPList_FullMethodName                   = "/mcp_service.MCPService/GetSquareMCPList"
+	MCPService_CreateCustomMCP_FullMethodName                    = "/mcp_service.MCPService/CreateCustomMCP"
+	MCPService_UpdateCustomMCP_FullMethodName                    = "/mcp_service.MCPService/UpdateCustomMCP"
+	MCPService_GetCustomMCP_FullMethodName                       = "/mcp_service.MCPService/GetCustomMCP"
+	MCPService_DeleteCustomMCP_FullMethodName                    = "/mcp_service.MCPService/DeleteCustomMCP"
+	MCPService_GetCustomMCPList_FullMethodName                   = "/mcp_service.MCPService/GetCustomMCPList"
+	MCPService_GetMCPToolList_FullMethodName                     = "/mcp_service.MCPService/GetMCPToolList"
+	MCPService_GetMCPAvatar_FullMethodName                       = "/mcp_service.MCPService/GetMCPAvatar"
+	MCPService_CreateCustomTool_FullMethodName                   = "/mcp_service.MCPService/CreateCustomTool"
+	MCPService_GetCustomToolInfo_FullMethodName                  = "/mcp_service.MCPService/GetCustomToolInfo"
+	MCPService_GetCustomToolList_FullMethodName                  = "/mcp_service.MCPService/GetCustomToolList"
+	MCPService_GetCustomToolByCustomToolIdList_FullMethodName    = "/mcp_service.MCPService/GetCustomToolByCustomToolIdList"
+	MCPService_UpdateCustomTool_FullMethodName                   = "/mcp_service.MCPService/UpdateCustomTool"
+	MCPService_DeleteCustomTool_FullMethodName                   = "/mcp_service.MCPService/DeleteCustomTool"
+	MCPService_GetSquareTool_FullMethodName                      = "/mcp_service.MCPService/GetSquareTool"
+	MCPService_GetSquareToolList_FullMethodName                  = "/mcp_service.MCPService/GetSquareToolList"
+	MCPService_UpsertBuiltinToolAPIKey_FullMethodName            = "/mcp_service.MCPService/UpsertBuiltinToolAPIKey"
+	MCPService_CreateMCPServer_FullMethodName                    = "/mcp_service.MCPService/CreateMCPServer"
+	MCPService_DeleteMCPServer_FullMethodName                    = "/mcp_service.MCPService/DeleteMCPServer"
+	MCPService_UpdateMCPServer_FullMethodName                    = "/mcp_service.MCPService/UpdateMCPServer"
+	MCPService_GetMCPServer_FullMethodName                       = "/mcp_service.MCPService/GetMCPServer"
+	MCPService_GetMCPServerList_FullMethodName                   = "/mcp_service.MCPService/GetMCPServerList"
+	MCPService_CreateMCPServerTool_FullMethodName                = "/mcp_service.MCPService/CreateMCPServerTool"
+	MCPService_UpdateMCPServerTool_FullMethodName                = "/mcp_service.MCPService/UpdateMCPServerTool"
+	MCPService_DeleteMCPServerTool_FullMethodName                = "/mcp_service.MCPService/DeleteMCPServerTool"
+	MCPService_GetMCPServerTool_FullMethodName                   = "/mcp_service.MCPService/GetMCPServerTool"
+	MCPService_GetMCPServerToolList_FullMethodName               = "/mcp_service.MCPService/GetMCPServerToolList"
+	MCPService_GetToolSelect_FullMethodName                      = "/mcp_service.MCPService/GetToolSelect"
+	MCPService_GetToolByIdList_FullMethodName                    = "/mcp_service.MCPService/GetToolByIdList"
+	MCPService_GetToolDetailByIdList_FullMethodName              = "/mcp_service.MCPService/GetToolDetailByIdList"
+	MCPService_GetMCPByMCPIdList_FullMethodName                  = "/mcp_service.MCPService/GetMCPByMCPIdList"
+	MCPService_CustomSkillCreate_FullMethodName                  = "/mcp_service.MCPService/CustomSkillCreate"
+	MCPService_CustomSkillDelete_FullMethodName                  = "/mcp_service.MCPService/CustomSkillDelete"
+	MCPService_CustomSkillGet_FullMethodName                     = "/mcp_service.MCPService/CustomSkillGet"
+	MCPService_GetCustomSkillByPreviewID_FullMethodName          = "/mcp_service.MCPService/GetCustomSkillByPreviewID"
+	MCPService_GetCustomSkillByThreadID_FullMethodName           = "/mcp_service.MCPService/GetCustomSkillByThreadID"
+	MCPService_GetCustomSkillListByThreadIDList_FullMethodName   = "/mcp_service.MCPService/GetCustomSkillListByThreadIDList"
+	MCPService_CustomSkillGetList_FullMethodName                 = "/mcp_service.MCPService/CustomSkillGetList"
+	MCPService_GetCustomSkillDetailByIdList_FullMethodName       = "/mcp_service.MCPService/GetCustomSkillDetailByIdList"
+	MCPService_UpdateCustomSkillBasicMeta_FullMethodName         = "/mcp_service.MCPService/UpdateCustomSkillBasicMeta"
+	MCPService_UpdateCustomSkillThreadMeta_FullMethodName        = "/mcp_service.MCPService/UpdateCustomSkillThreadMeta"
+	MCPService_CreateCustomSkillVar_FullMethodName               = "/mcp_service.MCPService/CreateCustomSkillVar"
+	MCPService_GetCustomSkillVars_FullMethodName                 = "/mcp_service.MCPService/GetCustomSkillVars"
+	MCPService_UpdateCustomSkillVar_FullMethodName               = "/mcp_service.MCPService/UpdateCustomSkillVar"
+	MCPService_DeleteCustomSkillVar_FullMethodName               = "/mcp_service.MCPService/DeleteCustomSkillVar"
+	MCPService_AcquiredSkillCreate_FullMethodName                = "/mcp_service.MCPService/AcquiredSkillCreate"
+	MCPService_AcquiredSkillDelete_FullMethodName                = "/mcp_service.MCPService/AcquiredSkillDelete"
+	MCPService_AcquiredSkillGet_FullMethodName                   = "/mcp_service.MCPService/AcquiredSkillGet"
+	MCPService_AcquiredSkillGetList_FullMethodName               = "/mcp_service.MCPService/AcquiredSkillGetList"
+	MCPService_AcquiredSkillGetByIDList_FullMethodName           = "/mcp_service.MCPService/AcquiredSkillGetByIDList"
+	MCPService_AcquiredSkillGetHistoryList_FullMethodName        = "/mcp_service.MCPService/AcquiredSkillGetHistoryList"
+	MCPService_CreateAcquiredSkillVar_FullMethodName             = "/mcp_service.MCPService/CreateAcquiredSkillVar"
+	MCPService_GetAcquiredSkillVars_FullMethodName               = "/mcp_service.MCPService/GetAcquiredSkillVars"
+	MCPService_UpdateAcquiredSkillVar_FullMethodName             = "/mcp_service.MCPService/UpdateAcquiredSkillVar"
+	MCPService_DeleteAcquiredSkillVar_FullMethodName             = "/mcp_service.MCPService/DeleteAcquiredSkillVar"
+	MCPService_CheckAcquiredSkill_FullMethodName                 = "/mcp_service.MCPService/CheckAcquiredSkill"
+	MCPService_CreateBuiltinSkillVar_FullMethodName              = "/mcp_service.MCPService/CreateBuiltinSkillVar"
+	MCPService_DeleteBuiltinSkillVar_FullMethodName              = "/mcp_service.MCPService/DeleteBuiltinSkillVar"
+	MCPService_GetBuiltinSkillVars_FullMethodName                = "/mcp_service.MCPService/GetBuiltinSkillVars"
+	MCPService_UpdateBuiltinSkillVar_FullMethodName              = "/mcp_service.MCPService/UpdateBuiltinSkillVar"
+	MCPService_CreatePublishCustomSkill_FullMethodName           = "/mcp_service.MCPService/CreatePublishCustomSkill"
+	MCPService_UpdatePublishCustomSkill_FullMethodName           = "/mcp_service.MCPService/UpdatePublishCustomSkill"
+	MCPService_GetPublishCustomSkillHistoryList_FullMethodName   = "/mcp_service.MCPService/GetPublishCustomSkillHistoryList"
+	MCPService_GetPublishCustomSkillByLatest_FullMethodName      = "/mcp_service.MCPService/GetPublishCustomSkillByLatest"
+	MCPService_GetPublishCustomSkillByVersion_FullMethodName     = "/mcp_service.MCPService/GetPublishCustomSkillByVersion"
+	MCPService_GetPublishCustomSkillList_FullMethodName          = "/mcp_service.MCPService/GetPublishCustomSkillList"
+	MCPService_GetPublishCustomSkillByIDList_FullMethodName      = "/mcp_service.MCPService/GetPublishCustomSkillByIDList"
+	MCPService_IncrementCustomSkillDownloadCount_FullMethodName  = "/mcp_service.MCPService/IncrementCustomSkillDownloadCount"
+	MCPService_IncrementCustomSkillAcquiredCount_FullMethodName  = "/mcp_service.MCPService/IncrementCustomSkillAcquiredCount"
+	MCPService_IncrementBuiltinSkillDownloadCount_FullMethodName = "/mcp_service.MCPService/IncrementBuiltinSkillDownloadCount"
+	MCPService_GetBuiltinSkillDownloadCounts_FullMethodName      = "/mcp_service.MCPService/GetBuiltinSkillDownloadCounts"
 )
 
 // MCPServiceClient is the client API for MCPService service.
@@ -174,6 +178,11 @@ type MCPServiceClient interface {
 	GetPublishCustomSkillByVersion(ctx context.Context, in *GetPublishCustomSkillByVersionReq, opts ...grpc.CallOption) (*PublishCustomSkill, error)
 	GetPublishCustomSkillList(ctx context.Context, in *GetPublishCustomSkillListReq, opts ...grpc.CallOption) (*GetPublishCustomSkillListResp, error)
 	GetPublishCustomSkillByIDList(ctx context.Context, in *GetPublishCustomSkillByIDListReq, opts ...grpc.CallOption) (*GetPublishCustomSkillByIDListResp, error)
+	// --- skill statistic ---
+	IncrementCustomSkillDownloadCount(ctx context.Context, in *IncrementCustomSkillDownloadCountReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	IncrementCustomSkillAcquiredCount(ctx context.Context, in *IncrementCustomSkillAcquiredCountReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	IncrementBuiltinSkillDownloadCount(ctx context.Context, in *IncrementBuiltinSkillDownloadCountReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetBuiltinSkillDownloadCounts(ctx context.Context, in *GetBuiltinSkillDownloadCountsReq, opts ...grpc.CallOption) (*GetBuiltinSkillDownloadCountsResp, error)
 }
 
 type mCPServiceClient struct {
@@ -864,6 +873,46 @@ func (c *mCPServiceClient) GetPublishCustomSkillByIDList(ctx context.Context, in
 	return out, nil
 }
 
+func (c *mCPServiceClient) IncrementCustomSkillDownloadCount(ctx context.Context, in *IncrementCustomSkillDownloadCountReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, MCPService_IncrementCustomSkillDownloadCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mCPServiceClient) IncrementCustomSkillAcquiredCount(ctx context.Context, in *IncrementCustomSkillAcquiredCountReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, MCPService_IncrementCustomSkillAcquiredCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mCPServiceClient) IncrementBuiltinSkillDownloadCount(ctx context.Context, in *IncrementBuiltinSkillDownloadCountReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, MCPService_IncrementBuiltinSkillDownloadCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mCPServiceClient) GetBuiltinSkillDownloadCounts(ctx context.Context, in *GetBuiltinSkillDownloadCountsReq, opts ...grpc.CallOption) (*GetBuiltinSkillDownloadCountsResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBuiltinSkillDownloadCountsResp)
+	err := c.cc.Invoke(ctx, MCPService_GetBuiltinSkillDownloadCounts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MCPServiceServer is the server API for MCPService service.
 // All implementations must embed UnimplementedMCPServiceServer
 // for forward compatibility.
@@ -948,6 +997,11 @@ type MCPServiceServer interface {
 	GetPublishCustomSkillByVersion(context.Context, *GetPublishCustomSkillByVersionReq) (*PublishCustomSkill, error)
 	GetPublishCustomSkillList(context.Context, *GetPublishCustomSkillListReq) (*GetPublishCustomSkillListResp, error)
 	GetPublishCustomSkillByIDList(context.Context, *GetPublishCustomSkillByIDListReq) (*GetPublishCustomSkillByIDListResp, error)
+	// --- skill statistic ---
+	IncrementCustomSkillDownloadCount(context.Context, *IncrementCustomSkillDownloadCountReq) (*emptypb.Empty, error)
+	IncrementCustomSkillAcquiredCount(context.Context, *IncrementCustomSkillAcquiredCountReq) (*emptypb.Empty, error)
+	IncrementBuiltinSkillDownloadCount(context.Context, *IncrementBuiltinSkillDownloadCountReq) (*emptypb.Empty, error)
+	GetBuiltinSkillDownloadCounts(context.Context, *GetBuiltinSkillDownloadCountsReq) (*GetBuiltinSkillDownloadCountsResp, error)
 	mustEmbedUnimplementedMCPServiceServer()
 }
 
@@ -1161,6 +1215,18 @@ func (UnimplementedMCPServiceServer) GetPublishCustomSkillList(context.Context, 
 }
 func (UnimplementedMCPServiceServer) GetPublishCustomSkillByIDList(context.Context, *GetPublishCustomSkillByIDListReq) (*GetPublishCustomSkillByIDListResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPublishCustomSkillByIDList not implemented")
+}
+func (UnimplementedMCPServiceServer) IncrementCustomSkillDownloadCount(context.Context, *IncrementCustomSkillDownloadCountReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncrementCustomSkillDownloadCount not implemented")
+}
+func (UnimplementedMCPServiceServer) IncrementCustomSkillAcquiredCount(context.Context, *IncrementCustomSkillAcquiredCountReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncrementCustomSkillAcquiredCount not implemented")
+}
+func (UnimplementedMCPServiceServer) IncrementBuiltinSkillDownloadCount(context.Context, *IncrementBuiltinSkillDownloadCountReq) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IncrementBuiltinSkillDownloadCount not implemented")
+}
+func (UnimplementedMCPServiceServer) GetBuiltinSkillDownloadCounts(context.Context, *GetBuiltinSkillDownloadCountsReq) (*GetBuiltinSkillDownloadCountsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBuiltinSkillDownloadCounts not implemented")
 }
 func (UnimplementedMCPServiceServer) mustEmbedUnimplementedMCPServiceServer() {}
 func (UnimplementedMCPServiceServer) testEmbeddedByValue()                    {}
@@ -2407,6 +2473,78 @@ func _MCPService_GetPublishCustomSkillByIDList_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MCPService_IncrementCustomSkillDownloadCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncrementCustomSkillDownloadCountReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).IncrementCustomSkillDownloadCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_IncrementCustomSkillDownloadCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).IncrementCustomSkillDownloadCount(ctx, req.(*IncrementCustomSkillDownloadCountReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MCPService_IncrementCustomSkillAcquiredCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncrementCustomSkillAcquiredCountReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).IncrementCustomSkillAcquiredCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_IncrementCustomSkillAcquiredCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).IncrementCustomSkillAcquiredCount(ctx, req.(*IncrementCustomSkillAcquiredCountReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MCPService_IncrementBuiltinSkillDownloadCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IncrementBuiltinSkillDownloadCountReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).IncrementBuiltinSkillDownloadCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_IncrementBuiltinSkillDownloadCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).IncrementBuiltinSkillDownloadCount(ctx, req.(*IncrementBuiltinSkillDownloadCountReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MCPService_GetBuiltinSkillDownloadCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBuiltinSkillDownloadCountsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).GetBuiltinSkillDownloadCounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_GetBuiltinSkillDownloadCounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).GetBuiltinSkillDownloadCounts(ctx, req.(*GetBuiltinSkillDownloadCountsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MCPService_ServiceDesc is the grpc.ServiceDesc for MCPService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2685,6 +2823,22 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPublishCustomSkillByIDList",
 			Handler:    _MCPService_GetPublishCustomSkillByIDList_Handler,
+		},
+		{
+			MethodName: "IncrementCustomSkillDownloadCount",
+			Handler:    _MCPService_IncrementCustomSkillDownloadCount_Handler,
+		},
+		{
+			MethodName: "IncrementCustomSkillAcquiredCount",
+			Handler:    _MCPService_IncrementCustomSkillAcquiredCount_Handler,
+		},
+		{
+			MethodName: "IncrementBuiltinSkillDownloadCount",
+			Handler:    _MCPService_IncrementBuiltinSkillDownloadCount_Handler,
+		},
+		{
+			MethodName: "GetBuiltinSkillDownloadCounts",
+			Handler:    _MCPService_GetBuiltinSkillDownloadCounts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

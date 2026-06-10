@@ -22779,9 +22779,6 @@ const docTemplate = `{
                 "type"
             ],
             "properties": {
-                "author": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -22841,9 +22838,6 @@ const docTemplate = `{
                 "zipUrl"
             ],
             "properties": {
-                "author": {
-                    "type": "string"
-                },
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
                 },
@@ -24413,9 +24407,6 @@ const docTemplate = `{
                 "zipUrl"
             ],
             "properties": {
-                "author": {
-                    "type": "string"
-                },
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
                 },
@@ -27309,6 +27300,9 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "downloadCount": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -27337,6 +27331,9 @@ const docTemplate = `{
                 },
                 "desc": {
                     "type": "string"
+                },
+                "downloadCount": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -28067,6 +28064,9 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "downloadCount": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -28095,6 +28095,9 @@ const docTemplate = `{
                 },
                 "desc": {
                     "type": "string"
+                },
+                "downloadCount": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -32777,6 +32780,9 @@ const docTemplate = `{
         "response.SharedSkillDetail": {
             "type": "object",
             "properties": {
+                "acquiredCount": {
+                    "type": "integer"
+                },
                 "author": {
                     "type": "string"
                 },
@@ -32785,6 +32791,9 @@ const docTemplate = `{
                 },
                 "desc": {
                     "type": "string"
+                },
+                "downloadCount": {
+                    "type": "integer"
                 },
                 "isShared": {
                     "type": "boolean"
@@ -32803,6 +32812,9 @@ const docTemplate = `{
         "response.SharedSkillInfo": {
             "type": "object",
             "properties": {
+                "acquiredCount": {
+                    "type": "integer"
+                },
                 "author": {
                     "type": "string"
                 },
@@ -32811,6 +32823,9 @@ const docTemplate = `{
                 },
                 "desc": {
                     "type": "string"
+                },
+                "downloadCount": {
+                    "type": "integer"
                 },
                 "isShared": {
                     "type": "boolean"

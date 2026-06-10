@@ -233,6 +233,15 @@ func WithSkillID(skillID string) SQLOption {
 	})
 }
 
+func WithStatType(statType string) SQLOption {
+	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
+		if statType != "" {
+			return db.Where("stat_type = ?", statType)
+		}
+		return db
+	})
+}
+
 func WithSkillIDs(skillIDs []string) SQLOption {
 	return funcSQLOption(func(db *gorm.DB) *gorm.DB {
 		if len(skillIDs) > 0 {

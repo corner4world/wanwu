@@ -128,6 +128,11 @@ func DownloadAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId stri
 	if skill.GetSkill().GetObjectPath() == "" {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "skill_publish_package_not_available", "acquired skill package objectPath is empty")
 	}
+	// 递增下载计数
+	sourceSkillId := skill.GetSkill().GetSkill().GetSkillId()
+	if sourceSkillId != "" {
+		incrementCustomSkillDownload(ctx, sourceSkillId)
+	}
 	return downloadCustomSkillZip(ctx, skill.GetSkill().GetObjectPath())
 }
 
@@ -217,6 +222,7 @@ func toAcquiredSkillDetail(ctx *gin.Context, skill *mcp_service.AcquiredSkill, i
 				Author:  customSkill.GetAuthor(),
 				Desc:    customSkill.GetDesc(),
 			},
+			DownloadCount: customSkill.GetDownloadCount(),
 		},
 		SkillMarkdown: config.FixFrontMatterFormat(publish.GetMarkdown()),
 	}
@@ -266,5 +272,6 @@ func toAcquiredSkillInfo(ctx *gin.Context, skill *mcp_service.AcquiredSkill) *re
 			Author:  customSkill.GetAuthor(),
 			Desc:    customSkill.GetDesc(),
 		},
+		DownloadCount: customSkill.GetDownloadCount(),
 	}
 }

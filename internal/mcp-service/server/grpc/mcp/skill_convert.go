@@ -22,6 +22,8 @@ func toProtoCustomSkill(cs *model.CustomSkill) *mcp_service.CustomSkill {
 		Identity:        &mcp_service.Identity{UserId: cs.UserID, OrgId: cs.OrgID},
 		CreatedAt:       cs.CreatedAt,
 		UpdatedAt:       cs.UpdatedAt,
+		DownloadCount:   cs.DownloadCount,
+		AcquiredCount:   cs.AcquiredCount,
 	}
 }
 

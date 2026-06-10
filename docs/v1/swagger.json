@@ -22771,9 +22771,6 @@
                 "type"
             ],
             "properties": {
-                "author": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -22833,9 +22830,6 @@
                 "zipUrl"
             ],
             "properties": {
-                "author": {
-                    "type": "string"
-                },
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
                 },
@@ -24405,9 +24399,6 @@
                 "zipUrl"
             ],
             "properties": {
-                "author": {
-                    "type": "string"
-                },
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
                 },
@@ -27301,6 +27292,9 @@
                 "desc": {
                     "type": "string"
                 },
+                "downloadCount": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -27329,6 +27323,9 @@
                 },
                 "desc": {
                     "type": "string"
+                },
+                "downloadCount": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -28059,6 +28056,9 @@
                 "desc": {
                     "type": "string"
                 },
+                "downloadCount": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -28087,6 +28087,9 @@
                 },
                 "desc": {
                     "type": "string"
+                },
+                "downloadCount": {
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -32769,6 +32772,9 @@
         "response.SharedSkillDetail": {
             "type": "object",
             "properties": {
+                "acquiredCount": {
+                    "type": "integer"
+                },
                 "author": {
                     "type": "string"
                 },
@@ -32777,6 +32783,9 @@
                 },
                 "desc": {
                     "type": "string"
+                },
+                "downloadCount": {
+                    "type": "integer"
                 },
                 "isShared": {
                     "type": "boolean"
@@ -32795,6 +32804,9 @@
         "response.SharedSkillInfo": {
             "type": "object",
             "properties": {
+                "acquiredCount": {
+                    "type": "integer"
+                },
                 "author": {
                     "type": "string"
                 },
@@ -32803,6 +32815,9 @@
                 },
                 "desc": {
                     "type": "string"
+                },
+                "downloadCount": {
+                    "type": "integer"
                 },
                 "isShared": {
                     "type": "boolean"

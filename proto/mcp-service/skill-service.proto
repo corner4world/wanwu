@@ -19,6 +19,8 @@ message CustomSkill {
   Identity identity = 9;
   int64 createdAt = 10;
   int64 updatedAt = 11;
+  int32 downloadCount = 12;
+  int32 acquiredCount = 13;
 }
 
 message PublishCustomSkill {

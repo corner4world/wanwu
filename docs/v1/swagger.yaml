@@ -1979,8 +1979,6 @@ definitions:
     type: object
   request.ConvertGeneralAgentSkillConversationReq:
     properties:
-      author:
-        type: string
       id:
         type: string
       modelConfig:
@@ -2021,8 +2019,6 @@ definitions:
     type: object
   request.CreateCustomSkillReq:
     properties:
-      author:
-        type: string
       avatar:
         $ref: '#/definitions/request.Avatar'
       zipUrl:
@@ -3083,8 +3079,6 @@ definitions:
     type: object
   request.ImportGeneralAgentSkillConversationReq:
     properties:
-      author:
-        type: string
       avatar:
         $ref: '#/definitions/request.Avatar'
       modelConfig:
@@ -5069,6 +5063,8 @@ definitions:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
+      downloadCount:
+        type: integer
       name:
         type: string
       skillId:
@@ -5088,6 +5084,8 @@ definitions:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
+      downloadCount:
+        type: integer
       name:
         type: string
       skillId:
@@ -5573,6 +5571,8 @@ definitions:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
+      downloadCount:
+        type: integer
       name:
         type: string
       skillId:
@@ -5592,6 +5592,8 @@ definitions:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
+      downloadCount:
+        type: integer
       name:
         type: string
       skillId:
@@ -8700,12 +8702,16 @@ definitions:
     type: object
   response.SharedSkillDetail:
     properties:
+      acquiredCount:
+        type: integer
       author:
         type: string
       avatar:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
+      downloadCount:
+        type: integer
       isShared:
         type: boolean
       name:
@@ -8717,12 +8723,16 @@ definitions:
     type: object
   response.SharedSkillInfo:
     properties:
+      acquiredCount:
+        type: integer
       author:
         type: string
       avatar:
         $ref: '#/definitions/request.Avatar'
       desc:
         type: string
+      downloadCount:
+        type: integer
       isShared:
         type: boolean
       name:
