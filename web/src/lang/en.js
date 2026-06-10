@@ -317,6 +317,7 @@ export default {
   appSpace: {
     title: '应用空间',
     search: '按照应用名称搜索',
+    selectWorkflowType: '类型筛选',
     workflowExport: '文件导入',
     workflow: '工作流',
     chat: '对话流',
@@ -355,6 +356,11 @@ export default {
     hint: '文件格式：json文件',
     noUpload: '请上传文件',
     uploadError: '上传失败，请重新上传',
+    importType: '导入类型: ',
+    workflow: '工作流',
+    workflowDesc: '自动执行不打扰，适用于数据处理、自动报告、系统串联等场景',
+    chat: '对话流',
+    chatDesc: '多轮交互边聊办，适用于智能客服、导购推荐、业务办理等场景',
   },
   userInfo: {
     title: '个人信息',
