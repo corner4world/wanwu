@@ -176,7 +176,7 @@ const constantRoutes = [
         path: '/mcp',
         component: resolve =>
           require(['@/views/mcpManagementPublic/square'], resolve),
-        meta: { perm: [PERMS.MCP] },
+        meta: { perm: [PERMS.MCP], cacheName: 'McpSquare' },
       },
       {
         path: '/mcp/detail/square',
