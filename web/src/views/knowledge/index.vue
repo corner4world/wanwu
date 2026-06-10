@@ -124,6 +124,7 @@ import {
   CATEGORY_TYPE_OBJ,
 } from '@/views/knowledge/constants';
 export default {
+  name: 'Knowledge',
   components: {
     ExternalAPIDrawer,
     SearchInput,
@@ -163,12 +164,7 @@ export default {
       ],
     };
   },
-  beforeRouteEnter(to, from, next) {
-    next(vm => {
-      vm.handleRouteFrom(from);
-    });
-  },
-  mounted() {
+  activated() {
     this.getTableData();
     this.getList();
   },
@@ -178,13 +174,6 @@ export default {
     },
     updateExternalAPI() {
       this.$refs.createKnowledge.getExternalAPIList();
-    },
-    handleRouteFrom(from) {
-      if (from.path.includes('/qa/docList')) {
-        this.category = QA;
-      } else {
-        this.category = KNOWLEDGE;
-      }
     },
     tabClick(status) {
       this.category = status;

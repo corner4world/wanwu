@@ -83,6 +83,7 @@ import { getPublicMcpList } from '@/api/mcp';
 import SearchInput from '@/components/searchInput.vue';
 import { avatarSrc } from '@/utils/util';
 export default {
+  name: 'McpSquare',
   components: { SearchInput },
   data() {
     return {

@@ -138,6 +138,7 @@ import CreateWorkflow from '@/components/createApp/createWorkflow.vue';
 import MdRender from '@/components/mdRender.vue';
 
 export default {
+  name: 'TemplateSquareDetail',
   components: { CreateWorkflow, MdRender },
   data() {
     return {

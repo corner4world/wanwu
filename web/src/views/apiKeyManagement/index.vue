@@ -139,6 +139,7 @@ import {
 } from '@/api/apiKeyManagement';
 import { copy, copyCb } from '@/utils/util';
 export default {
+  name: 'ApiKeyManagement',
   components: { Pagination, CreateApiKeyDialog },
   data() {
     return {

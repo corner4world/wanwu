@@ -90,6 +90,7 @@ import { mapGetters } from 'vuex';
 import { fetchPermFirPath } from '@/utils/util';
 
 export default {
+  name: 'AppSpace',
   components: {
     SearchInput,
     CreateTotalDialog,

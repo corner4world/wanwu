@@ -16,6 +16,7 @@ import { getUserDetail } from '@/api/user';
 import userDetailInfo from '../common/userDetailInfo.vue';
 
 export default {
+  name: 'UserInfo',
   components: {
     userDetailInfo,
   },

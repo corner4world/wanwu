@@ -214,6 +214,7 @@ import sectionShow from './sectionShow.vue';
 import ImagePreview from '@/components/ImagePreview.vue';
 
 export default {
+  name: 'KnowledgeHitTest',
   components: {
     LinkIcon,
     uploadImg,

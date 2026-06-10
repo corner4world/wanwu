@@ -634,6 +634,7 @@ import SearchInput from '@/components/searchInput.vue';
 import uploadImgMd from '@/components/uploadImgMd.vue';
 
 export default {
+  name: 'KnowledgeSection',
   components: {
     SearchInput,
     dataBaseDialog,
@@ -708,26 +709,6 @@ export default {
   created() {
     this.obj = this.$route.query;
     this.getList();
-    if (
-      this.permissionType === INITIAL ||
-      this.permissionType === null ||
-      this.permissionType === undefined
-    ) {
-      const savedData = localStorage.getItem('permission_data');
-      if (savedData) {
-        try {
-          const parsed = JSON.parse(savedData);
-          const savedPermissionType =
-            parsed && parsed.app && parsed.app.permissionType;
-          if (
-            savedPermissionType !== undefined &&
-            savedPermissionType !== INITIAL
-          ) {
-            this.$store.dispatch('app/setPermissionType', savedPermissionType);
-          }
-        } catch (e) {}
-      }
-    }
   },
   beforeDestroy() {
     this.clearTimer();

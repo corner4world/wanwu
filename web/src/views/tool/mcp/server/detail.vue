@@ -248,6 +248,7 @@ import toolDialog from './toolDialog.vue';
 
 const APPTYPE_MCPSERVER = 'mcpserver';
 export default {
+  name: 'McpServiceServerDetail',
   components: { CopyIcon, addDialog, toolDialog },
   data() {
     return {

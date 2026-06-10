@@ -65,6 +65,7 @@ import { downloadBuiltinSkill } from '@/api/templateSquare';
 import { resDownloadFile } from '@/utils/util';
 
 export default {
+  name: 'SkillSquareDetail',
   components: {
     SkillDetail,
   },

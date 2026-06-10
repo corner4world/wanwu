@@ -150,6 +150,7 @@ import createKeyWords from './create.vue';
 import LinkIcon from '@/components/linkIcon.vue';
 
 export default {
+  name: 'KnowledgeKeyword',
   components: { LinkIcon, Pagination, SearchInput, createKeyWords },
   data() {
     return {

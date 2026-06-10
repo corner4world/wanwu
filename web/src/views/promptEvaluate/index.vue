@@ -135,6 +135,7 @@ import ModelSelect from '@/components/modelSelect.vue';
 import sseMethod from '@/mixins/sseMethod';
 
 export default {
+  name: 'PromptEvaluate',
   components: { ModelSelect },
   mixins: [sseMethod],
   data() {

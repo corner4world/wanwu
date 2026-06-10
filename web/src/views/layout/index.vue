@@ -257,7 +257,9 @@
         <el-main :class="[{ 'no-header-main': !isShowMenu }]">
           <div class="page-container">
             <div class="right-page-content">
-              <router-view></router-view>
+              <keep-alive :include="cachedViews">
+                <router-view></router-view>
+              </keep-alive>
               <div id="container" class="qk-container"></div>
             </div>
           </div>
@@ -303,6 +305,7 @@ export default {
       menuKey: 'menu_key',
       activeIndex: '',
       isShowMenu: true,
+      cachedViews: [],
       popoverList: [
         [
           {
@@ -374,9 +377,11 @@ export default {
         this.getMenuList(val.path);
         this.redirectUserInfo();
         this.initScroll();
+        // 缓存当前路由组件
+        this.addCachedView(val);
       },
-      // 深度观察监听
       deep: true,
+      immediate: true,
     },
     orgInfo: {
       handler(val) {
@@ -428,9 +433,6 @@ export default {
     },
   },
   async created() {
-    // 判断是否展示左侧菜单
-    this.justifyIsShowMenu(this.$route.path);
-
     // 设置语言
     // await this.setLanguage()
 
@@ -509,6 +511,8 @@ export default {
       this.defaultOpeneds = menus.map(item => item.index);
     },
     menuClick(item) {
+      // 菜单切换时销毁所有缓存组件
+      this.cachedViews = [];
       if (item.redirect) {
         item.redirect();
         this.changeMenuIndex(item.index);
@@ -531,6 +535,12 @@ export default {
     },
     changeMenuIndex(index) {
       this.activeIndex = index;
+    },
+    addCachedView(route) {
+      const cacheName = route.meta?.cacheName;
+      if (cacheName && !this.cachedViews.includes(cacheName)) {
+        this.cachedViews.push(cacheName);
+      }
     },
     async changeOrg(orgId) {
       this.$store.state.user.userInfo.orgId = orgId;
