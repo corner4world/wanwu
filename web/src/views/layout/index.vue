@@ -257,7 +257,9 @@
         <el-main :class="[{ 'no-header-main': !isShowMenu }]">
           <div class="page-container">
             <div class="right-page-content">
-              <router-view></router-view>
+              <keep-alive :include="cachedViews">
+                <router-view :key="routerViewKey"></router-view>
+              </keep-alive>
               <div id="container" class="qk-container"></div>
             </div>
           </div>
@@ -303,6 +305,7 @@ export default {
       menuKey: 'menu_key',
       activeIndex: '',
       isShowMenu: true,
+      cachedViews: [],
       popoverList: [
         [
           {
@@ -374,9 +377,11 @@ export default {
         this.getMenuList(val.path);
         this.redirectUserInfo();
         this.initScroll();
+        // 缓存当前路由组件
+        this.addCachedView(val);
       },
-      // 深度观察监听
       deep: true,
+      immediate: true,
     },
     orgInfo: {
       handler(val) {
@@ -404,6 +409,12 @@ export default {
     },
   },
   computed: {
+    // 共用组件的路由（如 /tool、/prompt、/mcpService）通过 routeType 区分实例，
+    // 避免 Vue 复用同一组件导致状态残留；其他路由返回 undefined 保持原行为
+    routerViewKey() {
+      const { routeType } = this.$route.meta || {};
+      return routeType || undefined;
+    },
     ...mapGetters('user', [
       'orgInfo',
       'userInfo',
@@ -428,9 +439,6 @@ export default {
     },
   },
   async created() {
-    // 判断是否展示左侧菜单
-    this.justifyIsShowMenu(this.$route.path);
-
     // 设置语言
     // await this.setLanguage()
 
@@ -509,12 +517,16 @@ export default {
       this.defaultOpeneds = menus.map(item => item.index);
     },
     menuClick(item) {
-      if (item.redirect) {
-        item.redirect();
-        this.changeMenuIndex(item.index);
-      } else {
-        if (item.path) this.$router.push({ path: item.path });
-      }
+      // 菜单切换时销毁所有缓存组件
+      this.cachedViews = [];
+      this.$nextTick(() => {
+        if (item.redirect) {
+          item.redirect();
+          this.changeMenuIndex(item.index);
+        } else {
+          if (item.path) this.$router.push({ path: item.path });
+        }
+      });
     },
     getCurrentMenu() {
       const { path } = this.$route || {};
@@ -531,6 +543,12 @@ export default {
     },
     changeMenuIndex(index) {
       this.activeIndex = index;
+    },
+    addCachedView(route) {
+      const cacheName = route.meta?.cacheName;
+      if (cacheName && !this.cachedViews.includes(cacheName)) {
+        this.cachedViews.push(cacheName);
+      }
     },
     async changeOrg(orgId) {
       this.$store.state.user.userInfo.orgId = orgId;

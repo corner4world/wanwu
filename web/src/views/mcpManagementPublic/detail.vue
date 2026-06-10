@@ -234,6 +234,7 @@ import { avatarSrc, formatTools } from '@/utils/util';
 import MdRender from '@/components/mdRender.vue';
 
 export default {
+  name: 'McpServiceCustomDetail',
   props: {
     type: {
       type: String,

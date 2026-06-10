@@ -58,6 +58,7 @@ import CreateUrl from './createUrl.vue';
 import CreateScope from './createScope.vue';
 import { AGENT } from '@/utils/commonSet';
 export default {
+  name: 'AgentPublishConfig',
   components: { CommonLayout, CreateApi, CreateUrl, CreateScope },
   data() {
     return {

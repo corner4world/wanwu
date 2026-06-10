@@ -169,6 +169,7 @@ import uploadAvatar from '@/components/uploadAvatar.vue';
 import ApiAuthDialog from '@/components/apiAuthDialog.vue';
 
 export default {
+  name: 'McpIntegrateAddDialog',
   components: { uploadAvatar, ApiAuthDialog },
   props: {
     title: {
@@ -415,7 +416,7 @@ export default {
     },
     checkCustomParams() {
       const customParams = this.ruleForm.customParams || [];
-      const names = customParams.map(p => p.name.trim()).filter(n => n);
+      const names = customParams.map(p => p.name.trim()).filter(Boolean);
       const uniqueNames = new Set(names);
       if (names.length !== uniqueNames.size) {
         this.$message.warning(this.$t('tool.integrate.addDuplicateTips'));

@@ -10,6 +10,7 @@
 
 <script>
 export default {
+  name: 'UserCenter',
   data() {
     return {};
   },

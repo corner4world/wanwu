@@ -43,6 +43,7 @@ import PromptTempSquare from './prompt/promptTempSquare.vue';
 import { WORKFLOW, PROMPT, SKILL } from './constants';
 
 export default {
+  name: 'TemplateSquare',
   components: { TempSquare, PromptTempSquare },
   data() {
     return {

@@ -46,6 +46,7 @@ import { SKILL, SKILLCUSTOM, SKILLADDED, SKILLBUILTIN } from '../constants';
 import { directDownload, resDownloadFile } from '@/utils/util';
 
 export default {
+  name: 'SkillDetailWrapper',
   components: {
     SkillDetail,
   },

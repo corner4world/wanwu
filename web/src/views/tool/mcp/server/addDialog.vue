@@ -59,6 +59,7 @@ import { addServer, editServer } from '@/api/mcp';
 import uploadAvatar from '@/components/uploadAvatar.vue';
 
 export default {
+  name: 'McpServerAddDialog',
   components: {
     uploadAvatar,
   },

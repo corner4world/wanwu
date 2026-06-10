@@ -56,6 +56,7 @@ import { downloadBuiltinSkill } from '@/api/templateSquare';
 import { resDownloadFile } from '@/utils/util';
 
 export default {
+  name: 'SkillSquarePage',
   components: { SearchInput, CreateTotalDialog, SkillList },
   data() {
     return {

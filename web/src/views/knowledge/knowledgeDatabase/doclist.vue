@@ -585,6 +585,7 @@ import createKnowledge from '@/views/knowledge/component/create.vue';
 import { selectModelList } from '@/api/modelAccess';
 
 export default {
+  name: 'KnowledgeDoclist',
   components: {
     CopyIcon,
     exportRecord,
@@ -615,7 +616,7 @@ export default {
         metaValue: '',
         metaStartTime: '',
         metaEndTime: '',
-        knowledgeId: this.$route.params.id,
+        knowledgeId: '',
         status: [ALL],
         graphStatus: [ALL],
       },
@@ -684,30 +685,11 @@ export default {
       ].includes(this.permissionType);
     },
   },
-  mounted() {
+  activated() {
+    this.docQuery.knowledgeId = this.$route.params.id;
     this.getTableData(this.docQuery);
-    if (
-      this.permissionType === INITIAL ||
-      this.permissionType === null ||
-      this.permissionType === undefined
-    ) {
-      const savedData = localStorage.getItem('permission_data');
-      if (savedData) {
-        try {
-          const parsed = JSON.parse(savedData);
-          const savedPermissionType =
-            parsed && parsed.app && parsed.app.permissionType;
-          if (
-            savedPermissionType !== undefined &&
-            savedPermissionType !== INITIAL
-          ) {
-            this.$store.dispatch('app/setPermissionType', savedPermissionType);
-          }
-        } catch (e) {}
-      }
-    }
   },
-  beforeDestroy() {
+  deactivated() {
     this.clearTimer();
   },
   methods: {

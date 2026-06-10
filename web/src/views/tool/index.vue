@@ -10,9 +10,9 @@
         </span>
       </div>-->
 
-      <mcp ref="mcp" v-if="![tool, prompt].includes(tabActive)" />
-      <tool ref="tool" v-if="tabActive === tool" />
-      <prompt ref="prompt" v-if="tabActive === prompt" />
+      <mcp v-show="![tool, prompt].includes(tabActive)" ref="mcp" />
+      <tool v-show="tabActive === tool" ref="tool" />
+      <prompt v-show="tabActive === prompt" ref="prompt" />
     </div>
   </div>
 </template>
@@ -23,6 +23,7 @@ import prompt from './prompt';
 import { MCP, TOOL, PROMPT } from './constants';
 
 export default {
+  name: 'Tool',
   data() {
     return {
       tabActive: MCP,
@@ -45,13 +46,15 @@ export default {
       deep: true,
     },
   },
-  mounted() {
+  activated() {
     this.changeRoute();
   },
   methods: {
     changeRoute() {
       const { routeType } = this.$route.meta || {};
-      this.tabActive = routeType;
+      if ([this.mcp, this.tool, this.prompt].includes(routeType)) {
+        this.tabActive = routeType;
+      }
     },
   },
   components: {

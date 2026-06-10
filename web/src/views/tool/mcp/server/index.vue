@@ -87,6 +87,7 @@ import SearchInput from '@/components/searchInput.vue';
 import { getServerList, deleteServer } from '@/api/mcp';
 import { avatarSrc } from '@/utils/util';
 export default {
+  name: 'McpServer',
   components: { SearchInput, addDialog },
   data() {
     return {

@@ -103,6 +103,7 @@ import { MCP, PROMPT, TOOL } from '@/views/tool/constants';
 import { avatarSrc } from '@/utils/util';
 
 export default {
+  name: 'McpServerToolDialog',
   data() {
     return {
       TOOL: TOOL,

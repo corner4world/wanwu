@@ -109,6 +109,7 @@ import { getList, setDelete } from '@/api/mcp';
 import LinkIcon from '@/components/linkIcon.vue';
 import { avatarSrc } from '@/utils/util';
 export default {
+  name: 'McpIntegrate',
   components: { LinkIcon, SearchInput, addDialog, ConvertSkillDialog },
   data() {
     return {

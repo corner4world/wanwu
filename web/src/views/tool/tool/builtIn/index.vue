@@ -54,6 +54,7 @@ import OverflowTags from '@/components/OverflowTags.vue';
 import { getBuiltInList } from '@/api/mcp';
 import { avatarSrc } from '@/utils/util';
 export default {
+  name: 'ToolBuiltIn',
   components: { SearchInput, OverflowTags },
   data() {
     return {

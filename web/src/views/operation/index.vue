@@ -45,6 +45,7 @@ import Oauth from '@/views/permission/oauth';
 import { checkPerm, PERMS } from '@/router/permission';
 
 export default {
+  name: 'Operation',
   components: { Statistics, Oauth },
   data() {
     return {

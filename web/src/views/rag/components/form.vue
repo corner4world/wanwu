@@ -366,6 +366,7 @@ import { avatarSrc } from '@/utils/util';
 import visualSet from '@/views/agent/components/visualSet.vue';
 import modelSelect from '@/components/modelSelect.vue';
 export default {
+  name: 'RagTest',
   components: {
     modelSelect,
     visualSet,
