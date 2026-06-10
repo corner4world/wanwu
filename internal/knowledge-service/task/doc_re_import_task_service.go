@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"sync"
 
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/client/model"
@@ -120,6 +121,7 @@ func reImportDoc(ctx context.Context, taskCtx string) Result {
 		log.Errorf("unmarshal json err: %s", err)
 		return Result{Error: err}
 	}
+	ctx = trace_util.InjectContext(ctx, docReImportTaskParams.TraceID, docReImportTaskParams.SpanID)
 	importTask, err := orm.SelectKnowledgeImportTaskById(ctx, docReImportTaskParams.TaskId)
 	if err != nil {
 		log.Errorf("select knowledge import task err: %s", err)

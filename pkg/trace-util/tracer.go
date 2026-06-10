@@ -83,6 +83,11 @@ func GetTraceID(ctx context.Context) string {
 	return spanCtx.TraceID().String()
 }
 
+func GetSpanID(ctx context.Context) string {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	return spanCtx.SpanID().String()
+}
+
 // GetTraceUser retrieves trace user info from Redis by traceID.
 func GetTraceUser(ctx context.Context) (traceInfo *common.TraceInfo, err error) {
 	defer utils.PrintPanicStackWithCall(func(panicOccur bool, recoverError error) {

@@ -2,6 +2,7 @@ package orm
 
 import (
 	"context"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/client/model"
@@ -81,6 +82,10 @@ func CreateKnowledgeImportTask(ctx context.Context, importTask *model.KnowledgeI
 		//2.通知rag更新知识库
 		return async_task.SubmitTask(ctx, async_task.DocImportTaskType, &async_task.DocImportTaskParams{
 			TaskId: importTask.ImportId,
+			TaskTraceParams: async_task.TaskTraceParams{
+				TraceID: trace_util.GetTraceID(ctx),
+				SpanID:  trace_util.GetSpanID(ctx),
+			},
 		})
 	})
 }
@@ -102,6 +107,10 @@ func CreateKnowledgeReImportTask(ctx context.Context, importTask *model.Knowledg
 		return async_task.SubmitTask(ctx, async_task.DocReImportTaskType, &async_task.DocReImportTaskParams{
 			TaskId: importTask.ImportId,
 			DocId:  knowledgeDoc.DocId,
+			TaskTraceParams: async_task.TaskTraceParams{
+				TraceID: trace_util.GetTraceID(ctx),
+				SpanID:  trace_util.GetSpanID(ctx),
+			},
 		})
 	})
 }
