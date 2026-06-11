@@ -183,12 +183,18 @@ def markdown_to_pdf(md_content: str) -> bytes:
         if line.strip().startswith(("- ", "* ", "+ ")):
             indent_level = (len(line) - len(line.lstrip())) // 2
             text = line.strip()[2:]
-            bullet_text = f"• {_md_inline_to_reportlab(text)}"
+            
+            left_indent = 20 + indent_level * 15
+            bullet_indent = left_indent - 12  # bullet 在文字左侧 12pt 处
+
             style = ParagraphStyle(
-                "BulletIndented", parent=styles["bullet"],
-                leftIndent=20 + indent_level * 15,
+                f"BulletIndented_{indent_level}",  # 注意：不同层级用不同name，避免样式缓存冲突
+                parent=styles["bullet"],
+                leftIndent=left_indent,
+                bulletIndent=bullet_indent,
+                bulletText="•",
             )
-            story.append(Paragraph(bullet_text, style))
+            story.append(Paragraph(_md_inline_to_reportlab(text), style))
             i += 1
             continue
 
