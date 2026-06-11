@@ -454,16 +454,24 @@ ontology:
     - "ontology/smart-ask-data"
     - "ontology/smart-data-analysis"
     - "ontology/smart-search-tables"
+    - "ontology/smart-data-collection"
+    - "ontology/yj-ocr"
   smart_data_skills:
+    - name: ontology-core
+      desc: "操作知识网络（BKN）—构建知识网络、查询Schema/实例、语义搜索、执行Action。操作数据源与数据视图—数据源连接与查询、原子/自定义视图浏览与SQL查询。操作Vega可观测平台—查询Catalog/资源/连接器类型、健康巡检。当用户提到\"知识网络\"、\"知识图谱\"、\"查询对象类\"、\"执行Action\"、\"数据源\"、\"数据视图\"、\"原子视图\"、\"Catalog\"、\"Vega\"、\"健康检查\"、\"巡检\"等意图时自动使用。"
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/ontology-core
+    - name: smart-ask-data
+      desc: "问数端到端编排（native CLI 版）：从候选 KN 选定知识网络，用 bkn object-type 发现对象类与字段，由编排层 LLM 生成 SQL，再由 ontology dataview query 执行取数；最后输出中文结论与口径说明。当用户需要指标、统计、趋势、SQL 取数或数据查询时使用。"
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-ask-data
     - name: smart-data-analysis
-      desc: 数据分析总入口，负责意图识别、KN选择、SQL生成和路由
+      desc: "数据分析员工（Data Analyst Agent）的唯一总入口：凡与数据资产、取数、指标、表/视图、治理职责、知识网络、统计或分析相关的问题，必须先经本 skill 做编排与路由，再进入找表或问数等子流程。负责 kn 分域、上下文注入（accountId / date）、多候选 KN 时的 LLM 决策、问数分支的 SQL 生成；与 smart-search-tables / smart-ask-data / ontology-core 的交接。当用户提出任何数据类自然语言任务、或需在多条业务 KN 间切换时使用；所有 ontology CLI 执行均委托 ontology-core 完成，本 skill 不直接执行 CLI。"
       skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-data-analysis
     - name: smart-search-tables
-      desc: 找表/找数编排，在元数据型知识网络下检索表/视图实例
+      desc: "找表/找数端到端编排：在元数据型知识网络下用 ontology bkn object-type query 检索表/视图实例，再在职责型知识网络下检索相关部门职责与治理边界，最后汇总为中文结论（候选表 + 职责要点 + 下一步）。当用户问「表在哪、哪个视图、数据资产归属、谁负责这类数据」时使用。所有 ontology CLI 执行均委托 ontology-core 完成；本 skill 不直接执行 CLI。"
       skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-search-tables
-    - name: smart-ask-data
-      desc: 问数编排，执行SQL取数
-      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-ask-data
-    - name: ontology-core
-      desc: ontology CLI命令执行器，所有ontology命令的底层执行
-      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/ontology-core
+    - name: smart-data-collection
+      desc: "智能数据采集技能，用于从图片或文档（PDF、Word、Excel）中提取结构化数据，基于知识网络完成字段映射，生成SQL并写入数据库。当用户提到\"数据采集\"、\"从文档提取数据\"、\"图片转数据\"、\"数据导入\"、\"文档数据入库\"、\"批量数据提取\"或需要从非结构化文件中提取结构化数据并存储时，自动使用此技能。"
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-data-collection
+    - name: yj-ocr
+      desc: "元景OCR图片文字识别服务。当用户需要从图片中提取文字、识别图片内容、OCR识别、图片转文字、扫描文档识别等场景时使用。支持图片 URL 与本地文件输入,统一先下载到本地再以文件形式上传解析。即使只提到\"识别图片\"或\"提取文字\"而未明确说OCR,也应考虑使用此技能。"
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/yj-ocr

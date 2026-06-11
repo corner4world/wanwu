@@ -375,7 +375,7 @@ func buildWgaOntologyDIPMode(ctx *gin.Context, userId, orgId, threadId, runId, t
 //
 // 非 DIP Agent 模式：可用于本体知识网络问数，确定知识网络 ID：@提及 > 配置表，无配置则不加载；最多只有一个知识网络 ID
 //  1. 系统提示：告知 userId 和知识网络 ID，提示 agent 如何使用这些信息
-//  2. 数据查询技能：smart-data-analysis / smart-search-tables / smart-ask-data / ontology-core
+//  2. 数据查询技能：ontology-core / smart-ask-data / smart-data-analysis / smart-search-tables / smart-data-collection / yj-ocr
 func buildWgaOntologyNonDIPMode(ctx *gin.Context, userId, orgId string,
 	ontologyKnowledgeMentions, ontologyKnowledgeList []*assistant_service.WgaConfigOntologyKnowledge) ([]wga_option.Option, *schema.Message, error) {
 
