@@ -27,7 +27,7 @@ const (
 	MaxScanTokenSize = 1024 * 1024 // Set the maximum token size to 1 MB
 )
 
-var specialFileExtList = []string{".tar.gz"}
+var specialFileExtList = []string{".tar.gz", ".tar.bz2"}
 
 type FileInfo struct {
 	IsDir    bool
@@ -49,8 +49,9 @@ func FileExt(filePath string) string {
 	if len(filePath) == 0 {
 		return ""
 	}
+	lower := strings.ToLower(filePath)
 	for _, ext := range specialFileExtList {
-		if strings.HasSuffix(filePath, ext) {
+		if strings.HasSuffix(lower, ext) {
 			return ext
 		}
 	}

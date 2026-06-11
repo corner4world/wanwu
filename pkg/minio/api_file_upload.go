@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
@@ -96,7 +97,7 @@ func GetUploadFileWithExpire(ctx context.Context, fileName string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	return buildFilePath(BucketFileUpload, object.Key), nil
+	return buildMinioUrl(BucketFileUpload, object.Key), nil
 }
 
 func GetUploadFileWithNotExpire(ctx context.Context, fileName string) (string, error) {
@@ -105,7 +106,7 @@ func GetUploadFileWithNotExpire(ctx context.Context, fileName string) (string, e
 	if err != nil {
 		return "", err
 	}
-	return buildFilePath(BucketFileUpload, object.Key), nil
+	return buildMinioUrl(BucketFileUpload, object.Key), nil
 }
 
 func UploadFile(ctx context.Context, bucketName string, dir string, fileName string, reader io.Reader, objectSize int64) (string, int64, error) {
@@ -118,7 +119,7 @@ func UploadFile(ctx context.Context, bucketName string, dir string, fileName str
 		return "", 0, err
 	}
 	if len(uploadInfo.Location) == 0 {
-		return buildFilePath(bucketName, objectName), uploadInfo.Size, nil
+		return buildMinioUrl(bucketName, objectName), uploadInfo.Size, nil
 	}
 	return uploadInfo.Location, uploadInfo.Size, nil
 }
@@ -127,8 +128,20 @@ func buildObjectName(dir, fileName string) string {
 	return dir + "/" + fileName
 }
 
-func buildFilePath(bucketName, objectName string) string {
-	return "http://" + _minioFileUpload.config.Endpoint + "/" + bucketName + "/" + objectName
+func buildMinioUrl(bucketName, objectName string) string {
+	u, err := url.JoinPath("http://"+_minioFileUpload.config.Endpoint, bucketName, objectName)
+	if err != nil {
+		return ""
+	}
+	return u
+}
+
+func buildDownloadUrl(bucketName, objectName string) string {
+	u, err := url.JoinPath(_minioFileUpload.config.DownloadURL, bucketName, objectName)
+	if err != nil {
+		return ""
+	}
+	return u
 }
 
 func (c *client) createBucketIfAbsent(ctx context.Context, bucketName string) (bool, error) {

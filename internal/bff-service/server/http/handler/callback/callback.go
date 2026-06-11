@@ -49,6 +49,25 @@ func UploadFileByBase64(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
+// UnarchiveFile
+//
+//	@Tags		callback
+//	@Summary	解压压缩包
+//	@Description	解压MinIO中的压缩包，将文件上传到MinIO并返回目录结构
+//	@Accept		json
+//	@Produce	json
+//	@Param		data	body		request.UnarchiveFileReq	true	"解压压缩包请求参数"
+//	@Success	200		{object}	response.Response{data=response.UnarchiveFileResp}
+//	@Router		/file/unarchive [post]
+func UnarchiveFile(ctx *gin.Context) {
+	var req request.UnarchiveFileReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	resp, err := service.UnarchiveFile(ctx, &req)
+	gin_util.Response(ctx, resp, err)
+}
+
 // GetUserListByUserIds
 //
 //	@Tags		callback

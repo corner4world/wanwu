@@ -20,6 +20,14 @@ func (u *UploadFileByBase64Req) Check() error {
 	return nil
 }
 
+type UnarchiveFileReq struct {
+	FileUrl string `form:"fileUrl" json:"fileUrl" validate:"required"` // 压缩包的MinIO URL
+}
+
+func (u *UnarchiveFileReq) Check() error {
+	return nil
+}
+
 type GetUserListByUserIdsReq struct {
 	UserIds []string `json:"userIds" validate:"required"` // 用户ID列表
 }
