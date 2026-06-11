@@ -12,6 +12,7 @@ func Register(callbackAPI *gin.RouterGroup) {
 	// callback
 	mid.Sub("callback").Reg(callbackAPI, "/file/url/base64", http.MethodPost, callback.FileUrlConvertBase64, "文件URL转换为base64")
 	mid.Sub("callback").Reg(callbackAPI, "/file/upload/base64", http.MethodPost, callback.UploadFileByBase64, "通过base64上传文件")
+	mid.Sub("callback").Reg(callbackAPI, "/file/unarchive", http.MethodPost, callback.UnarchiveFile, "解压压缩包")
 	// user
 	mid.Sub("callback").Reg(callbackAPI, "/user/list", http.MethodPost, callback.GetUserListByUserIds, "根据userId获取用户信息")
 	// model
