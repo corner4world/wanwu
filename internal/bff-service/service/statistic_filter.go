@@ -2,6 +2,7 @@ package service
 
 import (
 	"slices"
+	"sort"
 
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
 	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
@@ -83,6 +84,9 @@ func GetStatisticUsersSelect(ctx *gin.Context, userID, orgID string, isAdmin boo
 			})
 		}
 	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].UserName < items[j].UserName
+	})
 	return &response.ListResult{List: items, Total: int64(len(items))}, nil
 }
 
@@ -130,6 +134,9 @@ func GetStatisticModelSelect(ctx *gin.Context, modelType, userID, orgID string, 
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].DisplayName < list[j].DisplayName
+	})
 	return &response.ListResult{List: list, Total: int64(len(list))}, nil
 }
 

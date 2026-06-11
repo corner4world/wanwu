@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sort"
 
 	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
@@ -328,6 +329,10 @@ func GetAppListSelect(ctx *gin.Context, filter request.StatisticFilter, appType 
 			items = append(items, item)
 		}
 	}
+	// 按照 item.Name 排序
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Name < items[j].Name
+	})
 	return &response.ListResult{
 		List:  items,
 		Total: int64(len(items)),
