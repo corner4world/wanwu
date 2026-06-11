@@ -110,6 +110,7 @@ message KnowledgeInfo {
   string llmModelId = 8; // llm模型id（知识图谱）
   int32 category = 9; // 知识库分类 0：知识库，1：问答库 2: 多模态知识库
   string avatarPath = 10; // 知识库头像
+  int32 permissionType = 11; // 当前用户对该知识库的权限类型 -1:无权限 0:查看 10:编辑 20:授权 30:系统管理授权
 }
 
 message KeywordsInfo {

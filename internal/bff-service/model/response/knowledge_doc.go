@@ -42,8 +42,9 @@ type DocKnowledgeInfo struct {
 	Keywords        []*KeywordsInfo `json:"keywords"`
 	EmbeddingModel  *ModelInfo      `json:"embeddingModel"`
 	LlmModelId      string          `json:"llmModelId"`
-	Category        int32           `json:"category"` // 0: 知识库 1: 问答库 2: 多模态知识库
-	Avatar          request.Avatar  `json:"avatar"`   // 头像
+	Category        int32           `json:"category"`       // 0: 知识库 1: 问答库 2: 多模态知识库
+	Avatar          request.Avatar  `json:"avatar"`         // 头像
+	PermissionType  int32           `json:"permissionType"` // 当前用户对该知识库的权限类型 -1:无权限 0:查看 10:编辑 20:授权 30:系统管理授权
 }
 
 type ListDocResp struct {

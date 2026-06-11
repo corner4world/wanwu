@@ -50,6 +50,11 @@ func (s *Service) GetDocList(ctx context.Context, req *knowledgebase_doc_service
 		log.Errorf("没有操作该知识库的权限 错误(%v) 参数(%v)", err, req)
 		return nil, util.ErrCode(errs.Code_KnowledgeBaseSelectFailed)
 	}
+	// 查询当前用户对该知识库的权限类型，无记录时默认查看权限(0)
+	permissionType := int32(model.PermissionTypeView)
+	if permission, perErr := orm.SelectUserKnowledgePermission(ctx, req.UserId, req.OrgId, req.KnowledgeId); perErr == nil {
+		permissionType = int32(permission.PermissionType)
+	}
 	docIdList := make([]string, 0)
 	// 2.若docIdList不为空，直接返回文档列表，忽略其他筛选条件
 	if len(req.DocIdList) > 0 {
@@ -69,7 +74,7 @@ func (s *Service) GetDocList(ctx context.Context, req *knowledgebase_doc_service
 		}
 		//无结果直接返回
 		if len(docIdList) == 0 {
-			return buildDocListResp(nil, nil, knowledge, 0, req.PageSize, req.PageNum, keywords), nil
+			return buildDocListResp(nil, nil, knowledge, 0, req.PageSize, req.PageNum, keywords, permissionType), nil
 		}
 	}
 	// 5.按文档名字查询列表
@@ -87,7 +92,7 @@ func (s *Service) GetDocList(ctx context.Context, req *knowledgebase_doc_service
 			log.Errorf("获取知识库列表失败(%v)  参数(%v)", err, req)
 		}
 	}
-	return buildDocListResp(list, importTaskList, knowledge, total, req.PageSize, req.PageNum, keywords), nil
+	return buildDocListResp(list, importTaskList, knowledge, total, req.PageSize, req.PageNum, keywords, permissionType), nil
 }
 
 func (s *Service) GetDocListByDocIdList(ctx context.Context, req *knowledgebase_doc_service.GetDocListByDocIdListReq) (*knowledgebase_doc_service.GetDocListResp, error) {
@@ -721,7 +726,7 @@ func checkDocStatus(docList []*model.KnowledgeDoc) ([]*model.KnowledgeDoc, error
 }
 
 // buildDocListResp 构造知识库文档列表
-func buildDocListResp(list []*model.KnowledgeDoc, importTaskList []*model.KnowledgeImportTask, knowledge *model.KnowledgeBase, total int64, pageSize int32, pageNum int32, keywords []*knowledgebase_keywords_service.KeywordsInfo) *knowledgebase_doc_service.GetDocListResp {
+func buildDocListResp(list []*model.KnowledgeDoc, importTaskList []*model.KnowledgeImportTask, knowledge *model.KnowledgeBase, total int64, pageSize int32, pageNum int32, keywords []*knowledgebase_keywords_service.KeywordsInfo, permissionType int32) *knowledgebase_doc_service.GetDocListResp {
 	segmentConfigMap := buildSegmentConfigMap(importTaskList)
 	var retList = make([]*knowledgebase_doc_service.DocInfo, 0)
 	showGraphReport := false
@@ -755,6 +760,7 @@ func buildDocListResp(list []*model.KnowledgeDoc, importTaskList []*model.Knowle
 			LlmModelId:       knowledgeGraph.LlmModelId,
 			Category:         int32(knowledge.Category),
 			AvatarPath:       knowledge.AvatarPath,
+			PermissionType:   permissionType,
 		},
 	}
 }

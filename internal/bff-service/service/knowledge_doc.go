@@ -75,6 +75,7 @@ func GetDocList(ctx *gin.Context, userId, orgId string, r *request.DocListReq) (
 			LlmModelId:      knowledgeInfo.LlmModelId,
 			Category:        knowledgeInfo.Category,
 			Avatar:          cacheKnowledgeAvatar(ctx, knowledgeInfo.AvatarPath, knowledgeInfo.Category),
+			PermissionType:  knowledgeInfo.PermissionType,
 		},
 	}, nil
 }
