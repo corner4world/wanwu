@@ -257,6 +257,14 @@ func UploadFileByBase64(ctx *gin.Context, req *request.UploadFileByBase64Req) (*
 		finalExt = inferredExt
 	}
 
+	// 当 FileName 包含复合扩展名（如 .tar.gz）时，优先使用完整扩展名，
+	// 避免 FileExt/MIME 推断只取末尾扩展名导致 .tar.gz 变成 .gz
+	if req.FileName != "" {
+		if fileExt := util.FileExt(req.FileName); fileExt != "" && len(fileExt) > len(finalExt) {
+			finalExt = fileExt
+		}
+	}
+
 	if finalExt != "" {
 		finalFileName += finalExt
 	}
@@ -286,7 +294,7 @@ func UploadFileByBase64(ctx *gin.Context, req *request.UploadFileByBase64Req) (*
 // UnarchiveFile 解压压缩包并将文件上传到 MinIO，返回目录树和访问路径
 func UnarchiveFile(ctx *gin.Context, r *request.UnarchiveFileReq) (*response.UnarchiveFileResp, error) {
 	// 1. 从 MinIO 下载压缩包到本地临时目录
-	tmpDir := filepath.Join("tmp", UnarchiveFilePrefix, util.GenUUID())
+	tmpDir := filepath.Join(FileUploadTmpLocalDir, UnarchiveFilePrefix, util.GenUUID())
 	if err := util.MkDir(tmpDir); err != nil {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_unarchive_create_tmp_dir", err.Error())
 	}

@@ -247,7 +247,12 @@ func untar(reader io.Reader, destDir string) error {
 	return nil
 }
 
-// ungz 解压单个 gz 文件
+// ungz 解压 gz 文件。
+// 当压缩文件的后缀传递不完整（如 .tar.gz 变为 .gz）时，
+// Unarchive 会误判格式进入 ungz 分支，仅解压 gzip 层而不展开 tar，
+// 导致输出为 tar 二进制文件而非解压目录。
+// 因此 ungz 需要自动检测解压内容是否为 tar 流，若是则转交 untar 处理。
+// 检测优先级：文件名后缀 (.tar) > 内容嗅探 (ustar 魔数)
 func ungz(reader io.Reader, destDir string, originalFilename string) error {
 	gzReader, err := gzip.NewReader(reader)
 	if err != nil {
@@ -263,12 +268,31 @@ func ungz(reader io.Reader, destDir string, originalFilename string) error {
 	outputName := gzReader.Name
 	if outputName == "" {
 		outputName = strings.TrimSuffix(filepath.Base(originalFilename), ".gz")
-		// 如果去除后缀后为空，使用默认名
 		if outputName == "" {
 			outputName = "decompressed_file"
 		}
 	}
 
+	// 如果去除 .gz 后缀后文件名以 .tar 结尾，直接走 tar 解压
+	if strings.HasSuffix(strings.ToLower(outputName), ".tar") {
+		return untar(gzReader, destDir)
+	}
+
+	// 文件名无法判断时，通过内容嗅探检测是否为 tar 流
+	// tar 文件在偏移 257 处有 "ustar" 魔数，读取前 512 字节（一个 tar block）用于检测
+	peekBuf := make([]byte, 512)
+	n, readErr := io.ReadFull(gzReader, peekBuf)
+	if readErr != nil && readErr != io.ErrUnexpectedEOF && readErr != io.EOF {
+		return fmt.Errorf("read gzip content for tar detection error: %w", readErr)
+	}
+
+	if n >= 262 && string(peekBuf[257:262]) == "ustar" {
+		// 内容是 tar 格式，将偷窥的数据和剩余流拼接后交给 untar
+		combined := io.MultiReader(bytes.NewReader(peekBuf[:n]), gzReader)
+		return untar(combined, destDir)
+	}
+
+	// 非 tar 的普通 gz 文件：将偷窥的数据和剩余流拼接后写入磁盘
 	outputPath := filepath.Join(destDir, outputName)
 	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
 		return fmt.Errorf("create parent directory error: %w", err)
@@ -284,7 +308,8 @@ func ungz(reader io.Reader, destDir string, originalFilename string) error {
 		}
 	}()
 
-	if _, err := io.Copy(outFile, gzReader); err != nil {
+	remaining := io.MultiReader(bytes.NewReader(peekBuf[:n]), gzReader)
+	if _, err := io.Copy(outFile, remaining); err != nil {
 		return fmt.Errorf("write decompressed file error: %w", err)
 	}
 
