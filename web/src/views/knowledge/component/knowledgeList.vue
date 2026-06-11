@@ -182,7 +182,6 @@ import { AppType } from '@/utils/commonSet';
 import tagDialog from './tagDialog.vue';
 import PowerManagement from './power/index.vue';
 import exportRecord from '@/views/knowledge/qaDatabase/exportRecord.vue';
-import { mapActions } from 'vuex';
 import {
   INITIAL,
   POWER_TYPE_READ,
@@ -260,7 +259,6 @@ export default {
 
   methods: {
     avatarSrc,
-    ...mapActions('app', ['setPermissionType', 'clearPermissionType']),
     formattedTagNames(data) {
       if (data.length === 0) {
         return [];
@@ -365,8 +363,6 @@ export default {
       } else if (this.category === DB) {
         this.$router.push({ path: `/knowledge/db/docList/${n.knowledgeId}` });
       }
-
-      this.setPermissionType(n.permissionType);
     },
     showPowerManagement(knowledgeItem) {
       this.$refs.powerManagement.knowledgeId = knowledgeItem.knowledgeId;

@@ -620,7 +620,6 @@ import dataBaseDialog from './dataBaseDialog';
 import tagDialog from './tagDialog.vue';
 import createChunk from './chunk/createChunk.vue';
 import FilePreviewDrawer from '@/views/generalAgent/components/FilePreviewDrawer.vue';
-import { mapGetters } from 'vuex';
 import { Md2Img } from '@/utils/util';
 import {
   INITIAL,
@@ -695,10 +694,10 @@ export default {
       POWER_TYPE_EDIT,
       POWER_TYPE_ADMIN,
       POWER_TYPE_SYSTEM_ADMIN,
+      permissionType: null,
     };
   },
   computed: {
-    ...mapGetters('app', ['permissionType']),
     isMultiModal() {
       return Number(this.obj.category) === MULTIMODAL;
     },
@@ -708,6 +707,7 @@ export default {
   },
   created() {
     this.obj = this.$route.query;
+    this.permissionType = Number(this.$route.query.permissionType);
     this.getList();
   },
   beforeDestroy() {
