@@ -1,6 +1,5 @@
 import { getHistoryList } from '@/api/explore';
 import { getEmbeddingList } from '@/api/modelAccess';
-import { INITIAL } from '@/views/knowledge/constants';
 
 export const app = {
   namespaced: true,
@@ -24,16 +23,9 @@ export const app = {
     historyAppList: [],
     embeddingList: [],
     fromList: '',
-    permissionType: INITIAL,
   },
 
   mutations: {
-    SET_PERMISSION_TYPE(state, data) {
-      state.permissionType = data;
-    },
-    CLEAR_PERMISSION_TYPE(state) {
-      state.permissionType = INITIAL;
-    },
     SET_MAX_PICNUM(state, data) {
       state.maxPicNum = data;
     },
@@ -84,12 +76,6 @@ export const app = {
     },
   },
   actions: {
-    setPermissionType({ commit }, data) {
-      commit('SET_PERMISSION_TYPE', data);
-    },
-    clearPermissionType({ commit }) {
-      commit('CLEAR_PERMISSION_TYPE');
-    },
     setMaxPicNum({ commit }, data) {
       commit('SET_MAX_PICNUM', data);
     },
@@ -161,6 +147,5 @@ export const app = {
     embeddingList: state => state.embeddingList,
     fromList: state => state.fromList,
     maxPicNum: state => state.maxPicNum,
-    permissionType: state => state.permissionType,
   },
 };

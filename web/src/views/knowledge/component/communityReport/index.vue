@@ -157,7 +157,6 @@ import {
   COMMUNITY_REPORT_STATUS,
   COMMUNITY_IMPORT_STATUS,
 } from '@/views/knowledge/config';
-import { mapGetters } from 'vuex';
 import commonMixin from '@/mixins/common';
 import createReport from './create.vue';
 import {
@@ -196,13 +195,13 @@ export default {
       POWER_TYPE_EDIT,
       POWER_TYPE_ADMIN,
       POWER_TYPE_SYSTEM_ADMIN,
+      permissionType: null,
     };
   },
-  computed: {
-    ...mapGetters('app', ['permissionType']),
-  },
+  computed: {},
   created() {
     this.obj = this.$route.query;
+    this.permissionType = Number(this.$route.query.permissionType);
     this.getList();
   },
   methods: {

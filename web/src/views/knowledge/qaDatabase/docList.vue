@@ -444,7 +444,6 @@ import {
   qaDocExport,
   qaTips,
 } from '@/api/qaDatabase';
-import { mapGetters } from 'vuex';
 import {
   COMMUNITY_IMPORT_STATUS,
   DROPDOWN_GROUPS,
@@ -524,6 +523,7 @@ export default {
       STATUS_FINISHED,
       STATUS_PENDING,
       STATUS_PROCESSING,
+      permissionType: null,
     };
   },
   watch: {
@@ -541,7 +541,6 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('app', ['permissionType']),
     hasManagePerm() {
       return [
         POWER_TYPE_EDIT,
@@ -857,6 +856,7 @@ export default {
         this.description = tableInfo.qaKnowledgeInfo.description;
         this.avatar = tableInfo.qaKnowledgeInfo.avatar;
         this.embeddingModel = tableInfo.qaKnowledgeInfo.embeddingModel;
+        this.permissionType = tableInfo.qaKnowledgeInfo.permissionType;
       }
     },
     filterCurrentStatus(data) {

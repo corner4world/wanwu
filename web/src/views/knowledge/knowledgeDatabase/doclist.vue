@@ -555,7 +555,6 @@ import {
   exportDoc,
   docReImport,
 } from '@/api/knowledge';
-import { mapGetters } from 'vuex';
 import {
   DROPDOWN_GROUPS,
   KNOWLEDGE_GRAPH_STATUS_OPTIONS,
@@ -656,6 +655,7 @@ export default {
       KNOWLEDGE_STATUS_CHECK_FAIL,
       KNOWLEDGE_STATUS_FAIL,
       KNOWLEDGE_GRAPH_STATUS_INITIAL,
+      permissionType: null,
     };
   },
   watch: {
@@ -676,7 +676,6 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('app', ['permissionType']),
     hasManagePerm() {
       return [
         POWER_TYPE_EDIT,
@@ -720,9 +719,14 @@ export default {
       );
     },
     goCommunityReport() {
-      this.$router.push(
-        `/knowledge/communityReport?knowledgeId=${this.docQuery.knowledgeId} &name=${this.knowledgeName}`,
-      );
+      this.$router.push({
+        path: '/knowledge/communityReport',
+        query: {
+          knowledgeId: this.docQuery.knowledgeId,
+          name: this.knowledgeName,
+          permissionType: this.permissionType,
+        },
+      });
     },
     exportData(docIdList) {
       if (!this.docQuery.knowledgeId) {
@@ -1139,6 +1143,7 @@ export default {
             KNOWLEDGE_STATUS_ANALYSING,
             KNOWLEDGE_STATUS_FAIL,
           ].includes(Number(row.status)),
+          permissionType: this.permissionType,
         },
       });
     },
@@ -1164,6 +1169,7 @@ export default {
         this.embeddingModel = tableInfo.docKnowledgeInfo.embeddingModel;
         this.keywords = tableInfo.docKnowledgeInfo.keywords;
         this.llmModelId = tableInfo.docKnowledgeInfo.llmModelId;
+        this.permissionType = tableInfo.docKnowledgeInfo.permissionType;
         // 如果开启了知识图谱且有大模型ID，则查询模型详情
         if (this.graphSwitch && this.llmModelId) {
           selectModelList().then(res => {
