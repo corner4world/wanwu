@@ -709,7 +709,7 @@ export default {
 
     .menu-hover.el-aside.full-menu-aside {
       &::-webkit-scrollbar-thumb {
-        background-color: rgba(16, 18, 25, 0.2) !important;
+        background-color: rgba(16, 18, 25, 0.12) !important;
       }
     }
 
