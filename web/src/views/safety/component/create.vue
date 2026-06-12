@@ -115,18 +115,14 @@ export default {
       });
     },
     createSensitive() {
-      createSensitive({ ...this.ruleForm, type: this.type })
-        .then(res => {
-          if (res.code === 0) {
-            this.$message.success(this.$t('common.info.create'));
-            this.$emit('reloadData');
-            this.dialogVisible = false;
-            this.$router.push({ path: `/safety/wordList/${res.data.tableId}` });
-          }
-        })
-        .catch(error => {
-          this.$message.error(error);
-        });
+      createSensitive({ ...this.ruleForm, type: this.type }).then(res => {
+        if (res.code === 0) {
+          this.$message.success(this.$t('common.info.create'));
+          this.$emit('reloadData');
+          this.dialogVisible = false;
+          this.$router.push({ path: `/safety/wordList/${res.data.tableId}` });
+        }
+      });
     },
     editSensitive() {
       const data = {
