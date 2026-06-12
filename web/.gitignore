@@ -20,6 +20,7 @@ pnpm-debug.log*
 .idea
 .vscode
 .lingma
+CLAUDE.md
 *.suo
 *.ntvs*
 *.njsproj

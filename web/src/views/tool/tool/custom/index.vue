@@ -88,6 +88,7 @@ import ConvertSkillDialog from '@/components/skills/convertSkillDialog.vue';
 import { getCustomList, deleteCustom } from '@/api/mcp';
 import { avatarSrc } from '@/utils/util';
 export default {
+  name: 'ToolCustom',
   components: { SearchInput, addDialog, ConvertSkillDialog },
   data() {
     return {

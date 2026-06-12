@@ -78,6 +78,7 @@
             :supportReminder="true"
             :visibleClearHistory="false"
             :visibleUpload="visibleUpload"
+            :maxImageSize="maxImageSize"
             :fileTypeArr="['image/*']"
             @preSend="preSend"
           />
@@ -169,6 +170,12 @@ export default {
       return this.modelChatList.every(
         item => item?.modelDetail?.config?.visionSupport === 'support',
       );
+    },
+    maxImageSize() {
+      const sizes = this.modelChatList
+        .map(item => item?.modelDetail?.config?.maxImageSize)
+        .filter(v => v); // 过滤出有限制的 size，如果是 0：默认不限制尺寸
+      return sizes.length > 0 ? Math.min(...sizes) : null;
     },
     title() {
       return this.mode === 'modelExprience'

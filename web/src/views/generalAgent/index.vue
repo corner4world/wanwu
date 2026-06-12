@@ -1764,9 +1764,8 @@ export default {
           config: selectedModelConfig?.config,
         };
 
-        const { author, avatar, zipUrl } = formData;
+        const { avatar, zipUrl } = formData;
         const res = await importGeneralAgentSkillConversation({
-          author,
           avatar,
           zipUrl,
           modelConfig,

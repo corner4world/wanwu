@@ -623,3 +623,16 @@ export const refreshGeneralAgentSkillConversation = data => {
     data,
   });
 };
+
+/**
+ * 恢复 Skill 工作区到指定 commit
+ * @param {string} customSkillId - Skill ID（必填）
+ * @param {string} commit - commit hash（必填）
+ */
+export const postSkillWorkspaceGitRestore = (customSkillId, commit) => {
+  return service({
+    url: `${SERVICE_API}/agent/skill/workspace/git/restore`,
+    method: 'post',
+    data: { customSkillId, commit },
+  });
+};

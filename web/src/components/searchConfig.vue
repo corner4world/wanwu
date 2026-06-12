@@ -253,6 +253,7 @@ export default {
     'category',
     'knowledgeCategory',
     'isAllExternal',
+    'hideMaxHistory',
   ],
   data() {
     return {
@@ -444,6 +445,7 @@ export default {
     },
     showHistory(n) {
       return (
+        !this.hideMaxHistory &&
         !this.setType &&
         (n.value === 'vector' || n.value === 'text' || n.value === 'mix') //&& n.mixTypeValue === "rerank"
       );

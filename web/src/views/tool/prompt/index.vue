@@ -93,6 +93,7 @@ import {
 } from '@/api/templateSquare';
 import { avatarSrc } from '@/utils/util';
 export default {
+  name: 'PromptCustom',
   components: { SearchInput, CreatePrompt },
   data() {
     return {

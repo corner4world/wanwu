@@ -6,6 +6,7 @@
 
 <script>
 export default {
+  name: 'Workflow',
   data() {
     const query = `?workflow_id=${this.$route.query.id}&space_id=${this.$store.state.user.userInfo.orgId}`;
     return {

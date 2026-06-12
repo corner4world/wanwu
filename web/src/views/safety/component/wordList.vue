@@ -88,6 +88,7 @@ import { getSensitiveWord, delSensitiveWord } from '@/api/safety';
 import LinkIcon from '@/components/linkIcon.vue';
 
 export default {
+  name: 'SafetyWordList',
   components: { LinkIcon, createWord, setReply, Pagination },
   data() {
     return {

@@ -1,11 +1,5 @@
 <template>
-  <div
-    :class="[
-      'app-card-container',
-      'scroll-card-container',
-      { 'scroll-card-container-workflow': type === workflow },
-    ]"
-  >
+  <div :class="['app-card-container', 'scroll-card-container']">
     <div class="app-card scroll-card-pr">
       <div class="smart rl smart-create" v-if="isShowTool">
         <div class="app-card-create" @click="showCreate">

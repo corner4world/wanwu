@@ -297,6 +297,7 @@ import { schemaConfig } from '@/utils/schema.conf';
 import uploadAvatar from '@/components/uploadAvatar.vue';
 
 export default {
+  name: 'ToolCustomAddDialog',
   components: { uploadAvatar },
   data() {
     const validateApiAuthFields = (rule, value, callback) => {

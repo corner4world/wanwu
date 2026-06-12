@@ -138,6 +138,7 @@ import CreateWorkflow from '@/components/createApp/createWorkflow.vue';
 import MdRender from '@/components/mdRender.vue';
 
 export default {
+  name: 'TemplateSquareDetail',
   components: { CreateWorkflow, MdRender },
   data() {
     return {
@@ -228,7 +229,8 @@ export default {
       this.foldStatus = !this.foldStatus;
     },
     back() {
-      this.$router.push({ path: this.getPath() });
+      const { type } = this.$route.query || {};
+      this.$router.push({ path: this.getPath(), query: { type } });
     },
   },
 };

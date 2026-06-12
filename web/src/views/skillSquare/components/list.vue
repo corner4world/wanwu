@@ -28,27 +28,68 @@
                         "
                         placement="top"
                       >
-                        <i
-                          :class="[
-                            'el-icon-s-promotion',
-                            { 'is-disabled': info.isShared },
-                          ]"
-                          @click.stop="handleSendToResource(info)"
-                        ></i>
+                        <div class="card-btn">
+                          <span>
+                            {{ formatCount(info.acquiredCount, 2, false) }}
+                          </span>
+                          <i
+                            :class="[
+                              'el-icon-s-promotion',
+                              { 'is-disabled': info.isShared },
+                            ]"
+                            @click.stop="handleSendToResource(info)"
+                          ></i>
+                        </div>
                       </el-tooltip>
 
                       <el-tooltip
                         :content="$t('tempSquare.download')"
                         placement="top"
                       >
-                        <i
-                          class="el-icon-download"
-                          @click.stop="handleDownload(info)"
-                        ></i>
+                        <div class="card-btn">
+                          <span>
+                            {{ formatCount(info.downloadCount, 2, false) }}
+                          </span>
+                          <i
+                            class="el-icon-download"
+                            @click.stop="handleDownload(info)"
+                          ></i>
+                        </div>
                       </el-tooltip>
                     </div>
-                    <!-- 空置占位--用于不显示任何按钮 -->
-                    <div v-else></div>
+                    <!-- 我发布的--仅展示数量 -->
+                    <div class="skill-card-operations" v-else>
+                      <el-tooltip
+                        v-if="showShared"
+                        :content="$t('skillSpace.sharedCount')"
+                        placement="top"
+                      >
+                        <div class="card-btn">
+                          <span>
+                            {{ formatCount(info.acquiredCount, 2, false) }}
+                          </span>
+                          <i
+                            :class="['el-icon-s-promotion']"
+                            @click.stop="() => {}"
+                          ></i>
+                        </div>
+                      </el-tooltip>
+
+                      <el-tooltip
+                        :content="$t('skillSpace.downloadCount')"
+                        placement="top"
+                      >
+                        <div class="card-btn">
+                          <span>
+                            {{ formatCount(info.downloadCount, 2, false) }}
+                          </span>
+                          <i
+                            class="el-icon-download"
+                            @click.stop="() => {}"
+                          ></i>
+                        </div>
+                      </el-tooltip>
+                    </div>
                   </template>
                 </skill-card>
                 <div
@@ -73,6 +114,7 @@
 </template>
 <script>
 import SkillCard from '@/views/templateSquare/skills/card.vue';
+import { formatCount } from '@/utils/util';
 
 export default {
   components: { SkillCard },
@@ -109,6 +151,7 @@ export default {
     },
   },
   methods: {
+    formatCount,
     handleDownload(info) {
       this.$emit('download', info);
     },
@@ -166,6 +209,11 @@ export default {
         cursor: not-allowed;
         color: #c0c4cc;
       }
+    }
+    .card-btn {
+      display: inline-flex;
+      gap: 2px;
+      align-items: center;
     }
   }
 }

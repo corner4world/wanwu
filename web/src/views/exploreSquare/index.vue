@@ -50,6 +50,7 @@ import { getExplorationList } from '@/api/explore';
 import { AGENT, WORKFLOW, RAG, CHAT } from '@/utils/commonSet';
 
 export default {
+  name: 'ExploreSquare',
   components: { SearchInput, CreateTotalDialog, AppList },
   data() {
     return {

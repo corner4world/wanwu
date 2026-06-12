@@ -6,12 +6,6 @@
     @close="handleClose"
   >
     <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-      <el-form-item :label="$t('tempSquare.skills.form.author')" prop="author">
-        <el-input
-          v-model="form.author"
-          :placeholder="$t('tempSquare.skills.form.authorPlaceholder')"
-        />
-      </el-form-item>
       <el-form-item :label="$t('tempSquare.skills.form.model')" prop="modelId">
         <ModelSelect
           v-model="form.modelId"
@@ -53,17 +47,9 @@ export default {
       form: {
         id: '',
         type: '',
-        author: '',
         modelId: '',
       },
       rules: {
-        author: [
-          {
-            required: true,
-            message: this.$t('tempSquare.skills.form.authorRequired'),
-            trigger: 'blur',
-          },
-        ],
         modelId: [
           {
             required: true,
@@ -89,10 +75,6 @@ export default {
       this.form.id = id;
       this.form.type = type;
       this.visible = true;
-
-      const userInfo = this.$store.getters['user/userInfo'];
-      this.form.author = userInfo && userInfo.userName ? userInfo.userName : '';
-
       this.form.modelId = '';
       if (this.$refs.form) {
         this.$refs.form.clearValidate();
@@ -161,7 +143,6 @@ export default {
         const res = await createConvertSkillConversation({
           id: this.form.id,
           type: this.form.type,
-          author: this.form.author,
           modelConfig,
         });
 

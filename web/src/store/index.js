@@ -13,41 +13,6 @@ const vuexLocal = new VuexPersistence({
   storage: localStorage,
   modules: ['user'],
 });
-//知识库全选权限持久化
-const permissionLocal = new VuexPersistence({
-  key: 'permission_data',
-  storage: localStorage,
-  modules: ['app'],
-  reducer: state => {
-    return {
-      app: {
-        permissionType: state.app.permissionType,
-      },
-    };
-  },
-  filter: mutation => {
-    return (
-      mutation.type === 'app/SET_PERMISSION_TYPE' ||
-      mutation.type === 'app/CLEAR_PERMISSION_TYPE'
-    );
-  },
-  restoreState: (key, storage) => {
-    const userData = localStorage.getItem('access_cert');
-    if (!userData) {
-      return {};
-    }
-    const savedData = storage.getItem(key);
-    if (!savedData) {
-      return {};
-    }
-    try {
-      const parsed = JSON.parse(savedData);
-      return parsed.app || {};
-    } catch (e) {
-      return {};
-    }
-  },
-});
 
 export const store = new Vuex.Store({
   modules: {
@@ -56,5 +21,5 @@ export const store = new Vuex.Store({
     app,
     workflow,
   },
-  plugins: [vuexLocal.plugin, permissionLocal.plugin],
+  plugins: [vuexLocal.plugin],
 });

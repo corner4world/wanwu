@@ -32,6 +32,7 @@ import API from './components/api/api.vue';
 import { STATISTIC } from './constants';
 
 export default {
+  name: 'StatisticsDashboard',
   components: { Model, App, API },
   data() {
     return {

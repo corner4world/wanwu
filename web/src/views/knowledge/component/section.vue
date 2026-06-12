@@ -620,7 +620,6 @@ import dataBaseDialog from './dataBaseDialog';
 import tagDialog from './tagDialog.vue';
 import createChunk from './chunk/createChunk.vue';
 import FilePreviewDrawer from '@/views/generalAgent/components/FilePreviewDrawer.vue';
-import { mapGetters } from 'vuex';
 import { Md2Img } from '@/utils/util';
 import {
   INITIAL,
@@ -634,6 +633,7 @@ import SearchInput from '@/components/searchInput.vue';
 import uploadImgMd from '@/components/uploadImgMd.vue';
 
 export default {
+  name: 'KnowledgeSection',
   components: {
     SearchInput,
     dataBaseDialog,
@@ -694,10 +694,10 @@ export default {
       POWER_TYPE_EDIT,
       POWER_TYPE_ADMIN,
       POWER_TYPE_SYSTEM_ADMIN,
+      permissionType: null,
     };
   },
   computed: {
-    ...mapGetters('app', ['permissionType']),
     isMultiModal() {
       return Number(this.obj.category) === MULTIMODAL;
     },
@@ -707,27 +707,8 @@ export default {
   },
   created() {
     this.obj = this.$route.query;
+    this.permissionType = Number(this.$route.query.permissionType);
     this.getList();
-    if (
-      this.permissionType === INITIAL ||
-      this.permissionType === null ||
-      this.permissionType === undefined
-    ) {
-      const savedData = localStorage.getItem('permission_data');
-      if (savedData) {
-        try {
-          const parsed = JSON.parse(savedData);
-          const savedPermissionType =
-            parsed && parsed.app && parsed.app.permissionType;
-          if (
-            savedPermissionType !== undefined &&
-            savedPermissionType !== INITIAL
-          ) {
-            this.$store.dispatch('app/setPermissionType', savedPermissionType);
-          }
-        } catch (e) {}
-      }
-    }
   },
   beforeDestroy() {
     this.clearTimer();

@@ -183,6 +183,7 @@ import {
 import { mapGetters } from 'vuex';
 
 export default {
+  name: 'DocCenter',
   components: { DocPage, MdContent },
   data() {
     return {

@@ -17,6 +17,7 @@ import CommonLayout from '@/components/exploreContainer.vue';
 import Chat from './components/chat.vue';
 import { getRagPublishedInfo } from '@/api/rag';
 export default {
+  name: 'ExploreRag',
   components: { CommonLayout, Chat },
   data() {
     return {

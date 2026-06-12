@@ -20,6 +20,7 @@
 import customize from './integrate';
 import server from './server';
 export default {
+  name: 'McpTabs',
   data() {
     return {
       tabActive: 0,
@@ -31,10 +32,10 @@ export default {
   },
   watch: {
     $route: {
-      handler() {
-        this.setInitTab();
+      handler(val) {
+        // keep-alive 下组件不会销毁，离开当前页面 watcher 仍然触发触发，需忽略非当前页面的路由
+        if (val.path === '/mcpService') this.setInitTab();
       },
-      // 深度观察监听
       deep: true,
     },
   },

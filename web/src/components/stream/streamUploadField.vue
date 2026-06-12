@@ -35,6 +35,7 @@
             :accept="tipsArr"
             :file-list="fileList"
             :on-change="uploadOnChange"
+            :on-exceed="uploadOnExceed"
           >
             <div v-if="fileUrl" class="echo-img-box">
               <div class="echo-img">
@@ -164,6 +165,11 @@
                 }}
               </p>
               <div class="tips">
+                <p v-if="visibleImageSizeLimit">
+                  {{
+                    $t('app.imageSizeModelLimit', { maxSize: maxImageSizeMB })
+                  }}
+                </p>
                 <p>
                   {{ $t('common.fileUpload.typeFileTip1') }}
                   <span>{{ tipsArr }}</span>
@@ -197,7 +203,19 @@
 import { mapGetters } from 'vuex';
 import uploadChunk from '@/mixins/uploadChunk';
 export default {
-  props: ['fileTypeArr', 'type'],
+  props: {
+    fileTypeArr: {
+      type: Array,
+      required: false,
+      default: () => [],
+    },
+    type: { type: String },
+    maxImageSize: {
+      type: [Number, String],
+      required: false,
+      default: null,
+    },
+  },
   mixins: [uploadChunk],
   data() {
     return {
@@ -229,6 +247,16 @@ export default {
   },
   computed: {
     ...mapGetters('app', ['maxPicNum']),
+    maxImageSizeMB() {
+      const maxSize = Number(this.maxImageSize);
+      return maxSize > 0 ? maxSize : 0;
+    },
+    maxImageSizeBytes() {
+      return this.maxImageSizeMB ? this.maxImageSizeMB * 1024 * 1024 : 0;
+    },
+    visibleImageSizeLimit() {
+      return this.maxImageSizeMB > 0;
+    },
   },
   methods: {
     checkScrollable() {
@@ -282,61 +310,78 @@ export default {
       this.clearFile();
       this.dialogVisible = false;
     },
+    uploadOnExceed(files) {
+      if (this.fileType === 'image/*' && this.maxPicNum === 1) {
+        const rawFile = files && files[0];
+        if (!rawFile) return;
+        const file = this.createUploadFile(rawFile);
+        const validateResult = this.validateUploadFile(file);
+        if (!validateResult.valid) {
+          this.showUploadValidateMessage(validateResult);
+          return;
+        }
+
+        this.resetReplacingFiles();
+        this.uploadOnChange(file, [file]);
+        return;
+      }
+
+      this.$message.warning(
+        this.$t('app.uploadImgTips', { num: this.maxPicNum }),
+      );
+    },
     uploadOnChange(file, fileList) {
       const prevFileType = this.fileType;
       let filename = file.name;
       let fileType = filename.split('.')[filename.split('.').length - 1];
-      this.imgUrl = '';
+      let nextFileType = '';
+      let nextImgUrl = '';
 
       const fileTypeLower = fileType.toLowerCase();
 
       if (this.tipsObj['image/*'].includes(fileTypeLower)) {
-        this.fileType = 'image/*';
+        nextFileType = 'image/*';
         if (file.url) {
-          this.imgUrl = file.url;
-        } else if (file.raw) {
-          this.imgUrl = URL.createObjectURL(file.raw);
+          nextImgUrl = file.url;
         }
       }
       if (this.tipsObj['audio/*'].includes(fileTypeLower)) {
-        this.fileType = 'audio/*';
+        nextFileType = 'audio/*';
       }
       if ([...this.tipsObj['doc/*'], 'md'].includes(fileTypeLower)) {
-        this.fileType = 'doc/*';
+        nextFileType = 'doc/*';
       }
 
-      // 创建文件预览URL
-      this.fileUrl = URL.createObjectURL(file.raw);
-
       // 格式拦截
-      const acceptedExtensions = this.tipsArr
-        .split(',')
-        .map(ext => ext.trim().toLowerCase());
-      const isAccepted = acceptedExtensions.some(ext =>
-        filename.toLowerCase().endsWith(ext),
-      );
-
-      if (!isAccepted) {
-        this.$message.warning(
-          this.$t('common.fileUpload.typeFileTip1') +
-            this.tipsArr +
-            this.$t('common.fileUpload.typeFileTip'),
-        );
-        const index = fileList.indexOf(file);
-        if (index > -1) {
-          fileList.splice(index, 1);
-        }
+      const validateResult = this.validateUploadFile(file, nextFileType);
+      if (!validateResult.valid) {
+        this.showUploadValidateMessage(validateResult);
+        this.removeUploadFile(file, fileList);
         return;
       }
 
+      if (nextFileType === 'image/*' && fileList.length > this.maxPicNum) {
+        this.$message.warning(
+          this.$t('app.uploadImgTips', { num: this.maxPicNum }),
+        );
+        this.removeUploadFile(file, fileList);
+        return;
+      }
+
+      if (this.shouldResetFileInfo(nextFileType, prevFileType)) {
+        this.resetReplacingFiles();
+      }
+
+      if (nextFileType === 'image/*' && !nextImgUrl && file.raw) {
+        nextImgUrl = URL.createObjectURL(file.raw);
+      }
+
+      this.fileType = nextFileType;
+      this.imgUrl = nextImgUrl;
+      this.fileUrl = file.raw ? URL.createObjectURL(file.raw) : file.url;
+
       if (this.fileType === 'image/*') {
         // 图片类型可累加至maxPicNum个
-        if (fileList.length > this.maxPicNum) {
-          this.$message.warning(
-            this.$t('app.uploadImgTips', { num: this.maxPicNum }),
-          );
-          return;
-        }
         if (prevFileType && prevFileType !== this.fileType) {
           this.fileList = [];
           this.canScroll = false;
@@ -369,6 +414,92 @@ export default {
           }
         }
       }
+    },
+    removeUploadFile(file, fileList) {
+      const index = fileList.indexOf(file);
+      if (index > -1) {
+        fileList.splice(index, 1);
+      }
+    },
+    createUploadFile(rawFile) {
+      const uid = rawFile.uid || this.$guid();
+      rawFile.uid = uid;
+      return {
+        name: rawFile.name,
+        size: rawFile.size,
+        uid,
+        raw: rawFile,
+        percentage: 0,
+        progressStatus: 'active',
+      };
+    },
+    validateUploadFile(file, fileType) {
+      const filename = (file && file.name) || '';
+      const acceptedExtensions = this.tipsArr
+        .split(',')
+        .map(ext => ext.trim().toLowerCase())
+        .filter(Boolean);
+      const isAccepted = acceptedExtensions.some(ext =>
+        filename.toLowerCase().endsWith(ext),
+      );
+      if (!isAccepted) {
+        return { valid: false, type: 'fileType' };
+      }
+
+      const nextFileType = fileType || this.getFileType(filename);
+      if (nextFileType === 'image/*' && this.isImageOverSize(file)) {
+        return { valid: false, type: 'imageSize' };
+      }
+
+      return { valid: true, type: nextFileType };
+    },
+    showUploadValidateMessage(validateResult) {
+      if (validateResult.type === 'imageSize') {
+        this.$message.warning(
+          this.$t('knowledgeManage.multiKnowledgeDatabase.imageSizeLimit', {
+            maxSize: this.maxImageSizeMB,
+          }),
+        );
+        return;
+      }
+
+      this.$message.warning(
+        this.$t('common.fileUpload.typeFileTip1') +
+          this.tipsArr +
+          this.$t('common.fileUpload.typeFileTip'),
+      );
+    },
+    getFileType(filename) {
+      const fileTypeLower = (filename.split('.').pop() || '').toLowerCase();
+      if (this.tipsObj['image/*'].includes(fileTypeLower)) return 'image/*';
+      if (this.tipsObj['audio/*'].includes(fileTypeLower)) return 'audio/*';
+      if ([...this.tipsObj['doc/*'], 'md'].includes(fileTypeLower)) {
+        return 'doc/*';
+      }
+      return '';
+    },
+    shouldResetFileInfo(nextFileType, prevFileType) {
+      const hasPreviousFile =
+        (this.fileList && this.fileList.length) ||
+        (this.fileInfo && this.fileInfo.length);
+      if (!hasPreviousFile) return false;
+      return nextFileType !== 'image/*' || prevFileType !== nextFileType;
+    },
+    resetReplacingFiles() {
+      this.cancelAllRequests();
+      this.fileList = [];
+      this.fileType = '';
+      this.fileUrl = '';
+      this.imgUrl = '';
+      this.fileInfo = [];
+      this.fileIdList = [];
+      this.lastFileType = '';
+      this.canScroll = false;
+    },
+    isImageOverSize(file) {
+      return (
+        this.maxImageSizeBytes && file && file.size > this.maxImageSizeBytes
+      );
     },
     uploadFile(fileName, oldFileName, fiePath) {
       //文件上传完之后

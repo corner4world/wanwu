@@ -56,6 +56,7 @@ import { downloadBuiltinSkill } from '@/api/templateSquare';
 import { resDownloadFile } from '@/utils/util';
 
 export default {
+  name: 'SkillSquarePage',
   components: { SearchInput, CreateTotalDialog, SkillList },
   data() {
     return {
@@ -179,6 +180,7 @@ export default {
 
       downloadApi({ skillId: info.skillId }).then(response => {
         resDownloadFile(response, `${info.name}.zip`);
+        this.$set(info, 'downloadCount', (Number(info.downloadCount) || 0) + 1);
       });
     },
     handleSendToResource(info) {
@@ -191,6 +193,11 @@ export default {
         if (res.code === 0) {
           this.$message.success(this.$t('common.info.send'));
           info.isShared = true;
+          this.$set(
+            info,
+            'acquiredCount',
+            (Number(info.acquiredCount) || 0) + 1,
+          );
         }
       });
     },

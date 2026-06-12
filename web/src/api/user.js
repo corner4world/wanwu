@@ -173,3 +173,11 @@ export const getCommonInfo = () => {
     hasLang,
   });
 };
+
+// 获取关于-更新日志
+export const getAboutDetail = () => {
+  return service({
+    url: `${USER_API}/custom/about`,
+    method: 'get',
+  });
+};

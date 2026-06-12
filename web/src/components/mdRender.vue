@@ -61,7 +61,7 @@ export default {
 <style lang="scss">
 @import '@/style/markdown.scss';
 .mark__render .markdown-body {
-  font-family: 'Microsoft YaHei', Arial, sans-serif;
+  background: rgba(255, 255, 255, 0);
   color: #333;
 }
 </style>

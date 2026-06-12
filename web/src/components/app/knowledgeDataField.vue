@@ -123,6 +123,7 @@
       :category="category"
       :knowledgeCategory="knowledgeCategory"
       :isAllExternal="isAllExternalKnowledgeSelected"
+      :hideMaxHistory="appType === 'agent'"
     />
   </div>
 </template>

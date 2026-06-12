@@ -108,6 +108,7 @@
               v-if="visibleUpload"
               :fileTypeArr="fileTypeArr"
               :type="type"
+              :maxImageSize="maxImageSize"
               @setFileId="setFileId"
               @setFile="setFile"
             ></streamUploadField>
@@ -179,6 +180,11 @@ export default {
     hasHistory: { type: Boolean, default: false },
     visibleClearHistory: { type: Boolean, default: true },
     visibleUpload: { type: Boolean, default: true },
+    maxImageSize: {
+      type: [Number, String],
+      required: false,
+      default: null,
+    },
   },
   mixins: [commonMixin, uploadChunk],
   components: { streamUploadField },
@@ -235,6 +241,13 @@ export default {
         ? this.$t('common.input.modelChatPlaceholder2')
         : this.$t('common.input.modelChatPlaceholder1');
     },
+    maxImageSizeMB() {
+      const maxSize = Number(this.maxImageSize);
+      return maxSize > 0 ? maxSize : 0;
+    },
+    maxImageSizeBytes() {
+      return this.maxImageSizeMB ? this.maxImageSizeMB * 1024 * 1024 : 0;
+    },
   },
   mounted() {
     if (this.supportReminder) {
@@ -282,6 +295,7 @@ export default {
         this.$setupDragAndDrop({
           containerSelector: '.editable-wp',
           maxImageFiles: maxFiles,
+          maxSizeMB: Number.MAX_SAFE_INTEGER,
           onFiles: files => {
             this.isDragging = true;
             this.processFiles(files);
@@ -291,7 +305,8 @@ export default {
     },
     processFiles(files) {
       if (!files || files.length === 0) return;
-      const picked = files;
+      const picked = this.filterImageSize(files);
+      if (!picked.length) return;
       const fileObjs = picked.map(f => ({
         raw: f,
         uid: f.uid || this.$guid(),
@@ -333,6 +348,32 @@ export default {
           }
         }
       }
+    },
+    isImageFile(file) {
+      if (!file || !file.name) return false;
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      return (
+        (file.type && file.type.indexOf('image/') === 0) ||
+        ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].indexOf(ext) > -1
+      );
+    },
+    filterImageSize(files) {
+      const picked = Array.prototype.slice.call(files || []);
+      if (!this.maxImageSizeBytes) return picked;
+
+      const validFiles = picked.filter(file => {
+        return !this.isImageFile(file) || file.size <= this.maxImageSizeBytes;
+      });
+
+      if (validFiles.length !== picked.length) {
+        this.$message.warning(
+          this.$t('knowledgeManage.multiKnowledgeDatabase.imageSizeLimit', {
+            maxSize: this.maxImageSizeMB,
+          }),
+        );
+      }
+
+      return validFiles;
     },
     uploadFile(fileName, oldFileName, fiePath) {
       //文件上传完之后

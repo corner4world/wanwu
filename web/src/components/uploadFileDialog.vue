@@ -5,7 +5,7 @@
       :visible.sync="dialogVisible"
       append-to-body
       :close-on-click-modal="false"
-      width="500px"
+      width="600px"
     >
       <el-form
         label-width="100px"
@@ -13,6 +13,21 @@
         :rules="rules"
         ref="uploadForm"
       >
+        <el-form-item
+          :rules="[{ required: true }]"
+          style="margin-bottom: 10px"
+          :label="$t('uploadDialog.importType')"
+        >
+          <el-radio-group v-model="importType">
+            <el-radio
+              v-for="item in importTypeList"
+              :key="item.value"
+              :label="item.value"
+            >
+              {{ item.name }}
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item :label="$t('uploadDialog.file')" prop="file">
           <el-upload
             class="avatar-uploader"
@@ -50,6 +65,8 @@
 <script>
 import Pagination from '@/components/pagination.vue';
 import { importWorkflow } from '@/api/workflow';
+import { WORKFLOW, WorkflowTypeList } from '@/utils/commonSet';
+
 export default {
   props: {
     title: '',
@@ -70,6 +87,8 @@ export default {
       uploadForm: {
         file: '',
       },
+      importType: WORKFLOW,
+      importTypeList: WorkflowTypeList,
       rules: {
         file: [
           {
@@ -100,6 +119,7 @@ export default {
       for (let key in this.uploadForm) {
         this.uploadForm[key] = '';
       }
+      this.importType = WORKFLOW;
       this.$refs.uploadForm.resetFields();
     },
     handleSubmit() {
@@ -111,7 +131,7 @@ export default {
             formData.append(key, this.uploadForm[key]);
           }
           this.uploading = true;
-          importWorkflow(formData, config, this.appType)
+          importWorkflow(formData, config, this.importType)
             .then(() => {
               this.uploading = false;
               this.$message.success(this.$t('common.message.success'));

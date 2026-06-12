@@ -11,6 +11,10 @@ export const AppType = {
   [RAG]: i18n.t('appSpace.rag'),
   [AGENT]: i18n.t('appSpace.agent'),
 };
+export const WorkflowTypeList = [
+  { value: WORKFLOW, name: i18n.t('appSpace.workflow') },
+  { value: CHAT, name: i18n.t('appSpace.chat') },
+];
 export const SafetyType = {
   Political: i18n.t('common.safetyType.political'),
   Revile: i18n.t('common.safetyType.revile'),

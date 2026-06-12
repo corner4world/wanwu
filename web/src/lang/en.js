@@ -53,6 +53,8 @@ export default {
   },
   about: {
     version: '版本',
+    currentVersion: '当前版本：',
+    log: '更新日志：',
   },
   aiAssistant: {
     serviceUnavailable: 'AI Assistant service is unavailable',
@@ -168,6 +170,7 @@ export default {
       save: '保 存',
       edit: '编辑',
       delete: '删除',
+      remove: '移除',
       copy: '复制',
       publish: '发布',
       search: '查询',
@@ -314,6 +317,7 @@ export default {
   appSpace: {
     title: '应用空间',
     search: '按照应用名称搜索',
+    selectWorkflowType: '类型筛选',
     workflowExport: '文件导入',
     workflow: '工作流',
     chat: '对话流',
@@ -345,6 +349,8 @@ export default {
     builtin: '内置',
     shared: '共享',
     mine: '我发布的',
+    sharedCount: '发送量',
+    downloadCount: '下载量',
   },
   uploadDialog: {
     title: '文件上传',
@@ -352,6 +358,11 @@ export default {
     hint: '文件格式：json文件',
     noUpload: '请上传文件',
     uploadError: '上传失败，请重新上传',
+    importType: '导入类型: ',
+    workflow: '工作流',
+    workflowDesc: '自动执行不打扰，适用于数据处理、自动报告、系统串联等场景',
+    chat: '对话流',
+    chatDesc: '多轮交互边聊办，适用于智能客服、导购推荐、业务办理等场景',
   },
   userInfo: {
     title: '个人信息',
@@ -429,6 +440,7 @@ export default {
     },
     confirm: {
       delete: '该账户删除后不可恢复，是否确认删除？',
+      remove: '该账户将从组织内移除，是否确认?',
     },
     switch: {
       startHint: '该账户状态已停用，是否确定开启？',
@@ -548,6 +560,8 @@ export default {
       color: '颜色',
       platformTitle: '显示“帮助文档”页面上方',
       imgUpload: '点击图标上传，可上传 .png、.jpg、.jpeg文件',
+      bgSizeLimit: '背景图大小不能超过1MB',
+      logoSizeLimit: '图标大小不能超过100KB',
       labelIcon: '显示在浏览器标签页上的图标',
       logo: '显示在平台左上方的LOGO',
       oneColor: '单色',
@@ -648,6 +662,7 @@ export default {
       urlError: 'URL格式不正确',
       yuanjing: '可前往 https://maas.ai-yuanjing.com/ 申请API Key',
       upload: '可上传 .png、jpg、jpeg 文件',
+      minLimit: '最小值为1',
     },
   },
   modelExprience: {
@@ -1967,6 +1982,8 @@ export default {
     selectKnowledge: '请选择知识库',
     recommendedQuestion: '推荐问题:',
     qaUplodFileTips: '文件上传成功，请手动刷新问答库列表',
+    imageSizeModelLimit:
+      'The current model only supports image files under {maxSize} MB',
     publishType: {
       private: '私密发布为应用：仅自己可见',
       organization: '公开发布为应用：组织内可见',
@@ -2183,6 +2200,8 @@ export default {
           commitPlaceholder: '提交信息 (Ctrl+Enter 提交)',
           commit: '提交',
           history: '历史',
+          restore: '回退',
+          restoreConfirm: '回退会导致工作区未提交的内容丢失，是否确认操作？',
           noHistory: '暂无版本记录',
           stageFailed: '暂存失败',
           stageAllFailed: '全部暂存失败',
@@ -2190,6 +2209,7 @@ export default {
           discardFailed: '放弃更改失败',
           commitSuccess: '提交成功',
           commitFailed: '提交失败',
+          restoreFailed: '回退失败',
           justNow: '刚刚',
           minutesAgo: '{count}分钟前',
           hoursAgo: '{count}小时前',

@@ -238,19 +238,20 @@
           ></el-input-number>
           tokens
         </el-form-item>-->
-        <el-form-item
-          v-if="showMaxAudioLimit()"
-          :label="$t('modelAccess.table.maxAudioLimit')"
-          prop="maxAsrFileSize"
-        >
-          <el-input-number
-            v-model="createForm.maxAsrFileSize"
-            :placeholder="$t('common.input.placeholder')"
-            :min="0"
-            :disabled="!allowEdit"
-          ></el-input-number>
-          M
-        </el-form-item>
+        <div v-if="showMaxAudioLimit()">
+          <el-form-item
+            :label="$t('modelAccess.table.maxAudioLimit')"
+            prop="maxAsrFileSize"
+          >
+            <el-input-number
+              v-model="createForm.maxAsrFileSize"
+              :placeholder="$t('common.input.placeholder')"
+              :min="0"
+              :disabled="!allowEdit"
+            ></el-input-number>
+            M
+          </el-form-item>
+        </div>
         <el-form-item
           v-if="showContextSize()"
           :label="$t('modelAccess.table.contextSize')"
@@ -473,6 +474,13 @@ import LinkIcon from '@/components/linkIcon.vue';
 export default {
   components: { LinkIcon },
   data() {
+    const minLimit = (rule, value, callback) => {
+      if (value !== null && value < 1) {
+        callback(new Error(this.$t('modelAccess.hint.minLimit')));
+      } else {
+        callback();
+      }
+    };
     return {
       isSystem: this.$store.state.user.permission.isSystem || false,
       allowEdit: true,
@@ -555,6 +563,17 @@ export default {
             trigger: 'blur',
           },
         ],
+        maxAsrFileSize: [
+          {
+            required: true,
+            message: this.$t('common.input.placeholder'),
+            trigger: 'blur',
+          },
+          {
+            validator: minLimit,
+            trigger: 'blur',
+          },
+        ],
         contextSize: [
           {
             required: true,
@@ -566,6 +585,17 @@ export default {
           {
             required: true,
             message: this.$t('common.input.placeholder'),
+            trigger: 'blur',
+          },
+        ],
+        maxImageSize: [
+          {
+            required: true,
+            message: this.$t('common.input.placeholder'),
+            trigger: 'blur',
+          },
+          {
+            validator: minLimit,
             trigger: 'blur',
           },
         ],

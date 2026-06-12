@@ -38,6 +38,7 @@ import { getSensitiveList } from '@/api/safety';
 import safetyList from './component/safetyList.vue';
 import createSafety from './component/create.vue';
 export default {
+  name: 'Safety',
   components: { safetyList, createSafety },
   data() {
     return {

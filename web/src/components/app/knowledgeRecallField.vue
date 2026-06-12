@@ -15,6 +15,7 @@
           :category="category"
           :knowledgeCategory="knowledgeCategory"
           :isAllExternal="isAllExternal"
+          :hideMaxHistory="hideMaxHistory"
         />
       </span>
       <span slot="footer" class="dialog-footer">
@@ -37,6 +38,7 @@ export default {
     'category',
     'knowledgeCategory',
     'isAllExternal',
+    'hideMaxHistory',
   ],
   components: {
     searchConfig,

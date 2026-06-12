@@ -80,6 +80,7 @@ import { getApiKeyRoot } from '@/api/appspace';
 import sseMethod from '@/mixins/sseMethod';
 import { MULTIPLE_AGENT, SINGLE_AGENT } from '@/views/agent/constants';
 export default {
+  name: 'ExploreAgent',
   components: { CommonLayout, Chat },
   mixins: [sseMethod],
   provide() {

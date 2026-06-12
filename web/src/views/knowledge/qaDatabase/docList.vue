@@ -444,7 +444,6 @@ import {
   qaDocExport,
   qaTips,
 } from '@/api/qaDatabase';
-import { mapGetters } from 'vuex';
 import {
   COMMUNITY_IMPORT_STATUS,
   DROPDOWN_GROUPS,
@@ -467,6 +466,7 @@ import CopyIcon from '@/components/copyIcon.vue';
 import createKnowledge from '@/views/knowledge/component/create.vue';
 
 export default {
+  name: 'KnowledgeQaDoclist',
   components: {
     CopyIcon,
     Pagination,
@@ -497,7 +497,7 @@ export default {
         metaValue: '',
         metaStartTime: '',
         metaEndTime: '',
-        knowledgeId: this.$route.params.id,
+        knowledgeId: '',
         status: [ALL],
       },
       metaDateRange: null,
@@ -523,6 +523,7 @@ export default {
       STATUS_FINISHED,
       STATUS_PENDING,
       STATUS_PROCESSING,
+      permissionType: null,
     };
   },
   watch: {
@@ -540,7 +541,6 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('app', ['permissionType']),
     hasManagePerm() {
       return [
         POWER_TYPE_EDIT,
@@ -549,30 +549,11 @@ export default {
       ].includes(this.permissionType);
     },
   },
-  mounted() {
+  activated() {
+    this.docQuery.knowledgeId = this.$route.params.id;
     this.getTableData(this.docQuery);
-    if (
-      this.permissionType === INITIAL ||
-      this.permissionType === null ||
-      this.permissionType === undefined
-    ) {
-      const savedData = localStorage.getItem('permission_data');
-      if (savedData) {
-        try {
-          const parsed = JSON.parse(savedData);
-          const savedPermissionType =
-            parsed && parsed.app && parsed.app.permissionType;
-          if (
-            savedPermissionType !== undefined &&
-            savedPermissionType !== INITIAL
-          ) {
-            this.$store.dispatch('app/setPermissionType', savedPermissionType);
-          }
-        } catch (e) {}
-      }
-    }
   },
-  beforeDestroy() {
+  deactivated() {
     this.clearTimer();
   },
   methods: {
@@ -875,6 +856,7 @@ export default {
         this.description = tableInfo.qaKnowledgeInfo.description;
         this.avatar = tableInfo.qaKnowledgeInfo.avatar;
         this.embeddingModel = tableInfo.qaKnowledgeInfo.embeddingModel;
+        this.permissionType = tableInfo.qaKnowledgeInfo.permissionType;
       }
     },
     filterCurrentStatus(data) {

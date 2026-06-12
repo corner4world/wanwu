@@ -701,6 +701,7 @@ import commonMixin from '@/mixins/common';
 import { avatarSrc } from '@/utils/util';
 import modelSelect from '@/components/modelSelect.vue';
 export default {
+  name: 'AgentTest',
   mixins: [commonMixin],
   components: {
     modelSelect,

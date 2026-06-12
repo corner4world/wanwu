@@ -726,6 +726,7 @@ import modelSelect from '@/components/modelSelect.vue';
 import { selectASRList, selectModelList } from '@/api/modelAccess';
 
 export default {
+  name: 'KnowledgeFileUpload',
   components: { modelSelect, LinkIcon, urlAnalysis, splitterDialog, mataData },
   mixins: [uploadChunk],
   data() {

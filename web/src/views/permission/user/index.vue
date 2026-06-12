@@ -130,7 +130,11 @@
                 type="text"
                 @click="preDel(scope.row)"
               >
-                {{ $t('common.button.delete') }}
+                {{
+                  isSystem
+                    ? $t('common.button.delete')
+                    : $t('common.button.remove')
+                }}
               </el-button>
               <el-button type="text" @click="resetPsw(scope.row)">
                 {{ $t('user.table.resetPassword') }}
@@ -570,7 +574,9 @@ export default {
     },
     preDel(row) {
       this.$confirm(
-        this.$t('user.confirm.delete'),
+        this.isSystem
+          ? this.$t('user.confirm.delete')
+          : this.$t('user.confirm.remove'),
         this.$t('common.confirm.title'),
         {
           confirmButtonText: this.$t('common.confirm.confirm'),

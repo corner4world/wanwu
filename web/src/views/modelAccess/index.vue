@@ -301,6 +301,7 @@ import {
 import { avatarSrc, getModelDefaultIcon } from '@/utils/util';
 
 export default {
+  name: 'ModelAccess',
   components: { Pagination, CreateSelectDialog, CreateDialog },
   data() {
     return {

@@ -97,17 +97,6 @@
           </div>
         </el-form-item>
         <el-form-item
-          :label="$t('tempSquare.skills.form.author') + ':'"
-          prop="author"
-        >
-          <el-input
-            v-model="form.author"
-            maxlength="30"
-            show-word-limit
-            :placeholder="$t('tempSquare.skills.form.authorPlaceholder')"
-          ></el-input>
-        </el-form-item>
-        <el-form-item
           :label="$t('tempSquare.skills.form.name') + ':'"
           prop="name"
         >
@@ -166,7 +155,6 @@ export default {
       form: {
         name: '',
         desc: '',
-        author: '',
         avatar: {
           key: '',
           path: '',
@@ -196,13 +184,6 @@ export default {
           {
             required: false,
             message: this.$t('tempSquare.skills.formRules.desc'),
-            trigger: 'blur',
-          },
-        ],
-        author: [
-          {
-            required: true,
-            message: this.$t('tempSquare.skills.form.authorPlaceholder'),
             trigger: 'blur',
           },
         ],
@@ -315,7 +296,6 @@ export default {
       this.form = {
         name: '',
         desc: '',
-        author: '',
         avatar: {
           key: '',
           path: '',

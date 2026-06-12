@@ -7,6 +7,27 @@
       append-to-body
       :close-on-click-modal="false"
     >
+      <!-- 类型选择：仅创建模式显示 -->
+      <div class="workflow-type-list" v-if="type === 'create'">
+        <div
+          v-for="typeItem in workflowTypeList"
+          :key="typeItem.key"
+          :class="[
+            'workflow-type-item',
+            form.appType === typeItem.key ? 'active' : '',
+          ]"
+          @click="changeAppType(typeItem.key)"
+        >
+          <div class="item-img">
+            <svg-icon class="item-icon" :icon-class="typeItem.icon" />
+          </div>
+          <div class="item-content">
+            <p class="item-text">{{ typeItem.text }}</p>
+            <h3 class="item-desc">{{ typeItem.desc }}</h3>
+          </div>
+        </div>
+      </div>
+
       <el-form ref="form" :model="form" label-width="120px" :rules="rules">
         <el-form-item :label="$t('list.pluginPic') + ':'" prop="avatar">
           <el-upload
@@ -48,13 +69,6 @@
             maxlength="200"
           ></el-input>
         </el-form-item>
-        <!--v-if="type === 'create'"-->
-        <el-form-item v-if="false" :label="$t('list.mapTypeLabel') + ':'">
-          <el-radio-group v-model="form.isStream">
-            <el-radio :label="false">{{ $t('list.normalMap') }}</el-radio>
-            <!-- <el-radio :label="true">{{$t('list.streamMap')}}</el-radio> -->
-          </el-radio-group>
-        </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">
@@ -72,15 +86,13 @@
 import { createWorkFlow, uploadFile } from '@/api/workflow';
 import { copyWorkflowTemplate } from '@/api/templateSquare';
 import { avatarSrc } from '@/utils/util';
+import { WORKFLOW, CHAT } from '@/utils/commonSet';
 
 export default {
   props: {
     type: {
       type: String,
       default: 'create',
-    },
-    editForm: {
-      type: Object,
     },
   },
   data() {
@@ -95,6 +107,8 @@ export default {
           key: '',
           path: '',
         },
+        // 创建时选择的类型：workflow 或 chatflow
+        appType: WORKFLOW,
       },
       titleMap: {
         edit: this.$t('list.editplugin'),
@@ -103,6 +117,21 @@ export default {
       },
       workflowID: '',
       templateId: '',
+      // 工作流/对话流选项列表
+      workflowTypeList: [
+        {
+          key: WORKFLOW,
+          icon: 'workflow_icon',
+          text: this.$t('uploadDialog.workflow'),
+          desc: this.$t('uploadDialog.workflowDesc'),
+        },
+        {
+          key: CHAT,
+          icon: 'chatflow_icon',
+          text: this.$t('uploadDialog.chat'),
+          desc: this.$t('uploadDialog.chatDesc'),
+        },
+      ],
       rules: {
         name: [
           {
@@ -142,6 +171,15 @@ export default {
     this.defaultIcon = avatarSrc(defaultIcon.workflowIcon);
   },
   methods: {
+    changeAppType(appType) {
+      this.form.appType = appType;
+      const { defaultIcon = {} } = this.$store.state.user.commonInfo.data || {};
+      this.defaultIcon = avatarSrc(
+        appType === WORKFLOW
+          ? defaultIcon.workflowIcon
+          : defaultIcon.chatflowIcon,
+      );
+    },
     getBase64(file) {
       return new Promise((resolve, reject) => {
         const fileReader = new FileReader();
@@ -183,11 +221,7 @@ export default {
       this.$message.error(this.$t('common.message.uploadError'));
     },
     openDialog(row) {
-      if (this.type === 'edit' && this.editForm) {
-        this.form = this.editForm;
-      } else {
-        this.clearForm();
-      }
+      this.clearForm();
       if (row) {
         const { templateId, desc, avatar } = row;
         this.templateId = templateId;
@@ -206,7 +240,7 @@ export default {
           key: '',
           path: '',
         },
-        isStream: false,
+        appType: WORKFLOW,
       };
     },
     async doPublish() {
@@ -266,6 +300,59 @@ export default {
     line-height: 26px;
     z-index: 10;
     border-radius: 0 0 8px 8px;
+  }
+}
+
+.workflow-type-list {
+  display: flex;
+  margin-bottom: 20px;
+  gap: 15px;
+
+  .workflow-type-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 6px;
+    gap: 15px;
+    width: 50%;
+
+    &.active {
+      border-color: $color;
+    }
+
+    .item-img {
+      width: 45px;
+      height: 45px;
+      border: 1px solid #eeeded;
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+
+      .item-icon {
+        color: $color;
+        font-size: 22px;
+      }
+    }
+
+    .item-content {
+      width: calc(100% - 45px);
+    }
+
+    .item-text {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.8;
+    }
+
+    .item-desc {
+      line-height: 1.2;
+      color: #b4b3b3;
+      font-weight: unset;
+    }
   }
 }
 </style>

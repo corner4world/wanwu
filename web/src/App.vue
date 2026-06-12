@@ -17,7 +17,7 @@ export default {
 * {
   margin: 0;
   padding: 0;
-  font-family: NotoSansSC;
+  font-family: 'PingFang SC', 'Noto Sans SC', sans-serif !important;
   font-size: 12px;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased; /*chrome、safari*/
@@ -36,8 +36,8 @@ body.el-popup-parent--hidden {
 }
 
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 6px;
+  width: 4px;
+  height: 5px;
   background-color: rgba(255, 255, 255, 0);
 }
 ::-webkit-scrollbar-button {
@@ -47,7 +47,8 @@ body.el-popup-parent--hidden {
   background-color: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(16, 18, 25, 0.3) !important;
+  opacity: 0.6;
+  background-color: rgba(16, 18, 25, 0.12);
   min-height: 40px;
   min-width: 40px;
   -webkit-border-radius: 10px;

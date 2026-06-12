@@ -685,3 +685,46 @@ export function formatDuration(ms) {
   }
   return `${secs}s`;
 }
+
+/**
+ * 格式化数字，将大数字转换为带 'k' 或 'w' 单位的字符串（采用向下截取法，不进行四舍五入）。
+ * * @description
+ * - 小于 1000: 返回原数字字符串
+ * - 1000 ~ 9999: 转换为 'k' 单位 (如 9999 -> '9.99k')
+ * - 10000 及以上: 转换为 'w' 单位 (如 10500 -> '1.05w')
+ *
+ * @param {number} num - 需要格式化的原始数字。如果传入非数字或 NaN，将统一返回 '0'。
+ * @param {number} [fixed=2] - 保留的小数位数。默认为 2。
+ * @param {boolean} [strictFixed=true] - 是否严格保留指定的小数位数。
+ * - true: 严格补零（如 '1.00k', '1.10w'）
+ * - false: 省略末尾无用的零（如 '1k', '1.1w'）
+ * @returns {string} 格式化后的数字字符串。
+ */
+export function formatCount(num, fixed = 2, strictFixed = true) {
+  if (typeof num !== 'number' || Number.isNaN(num)) {
+    return '0';
+  }
+
+  // 小于 1000 的情况，直接原样返回
+  if (num < 1000) {
+    return String(num);
+  }
+
+  // 不四舍五入的向下截取
+  const floorToFixed = (value, precision) => {
+    const multiplier = Math.pow(10, precision);
+
+    const truncated = Math.floor(value * multiplier) / multiplier;
+
+    const formatted = truncated.toFixed(precision);
+    return strictFixed ? formatted : Number(formatted).toString();
+  };
+
+  // 3. 大于等于 10000 转换为 'w'
+  if (num >= 10000) {
+    return `${floorToFixed(num / 10000, fixed)}w`;
+  }
+
+  // 4. 1000 ~ 10000 之间转换为 'k'
+  return `${floorToFixed(num / 1000, fixed)}k`;
+}

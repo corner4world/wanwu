@@ -45,6 +45,7 @@ import InfoSetting from '@/views/infoSetting/index.vue';
 import { checkPerm, PERMS } from '@/router/permission';
 
 export default {
+  name: 'Permission',
   components: { User, Role, Org, InfoSetting },
   data() {
     return {

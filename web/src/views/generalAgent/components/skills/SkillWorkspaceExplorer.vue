@@ -181,128 +181,15 @@
         </div>
 
         <div v-else class="result-tree">
-          <div
+          <SearchResultTreeNode
             v-for="node in searchResultTree"
             :key="node.path"
-            class="tree-node"
-          >
-            <div
-              class="tree-node-header"
-              :style="{ paddingLeft: '8px' }"
-              @click="
-                node.isDir ? toggleTreeNode(node) : handleTreeResultClick(node)
-              "
-            >
-              <i
-                :class="
-                  node.isDir
-                    ? node.expanded
-                      ? 'el-icon-folder-opened'
-                      : 'el-icon-folder'
-                    : getFileIcon(node.name).icon
-                "
-                :style="{
-                  color: node.isDir ? '#dcb67a' : getFileIcon(node.name).color,
-                }"
-                class="node-icon"
-              ></i>
-              <span class="node-name">{{ node.name }}</span>
-              <span v-if="!node.isDir && node.matches" class="match-count">
-                ({{ node.matches.length }})
-              </span>
-              <i
-                v-if="node.isDir"
-                :class="[
-                  'expand-icon',
-                  node.expanded ? 'el-icon-arrow-down' : 'el-icon-arrow-right',
-                ]"
-              ></i>
-            </div>
-
-            <div
-              v-if="node.isDir && node.expanded && node.children"
-              class="tree-children"
-            >
-              <div
-                v-for="child in node.children"
-                :key="child.path"
-                class="tree-node"
-              >
-                <div
-                  class="tree-node-header"
-                  :style="{ paddingLeft: '20px' }"
-                  @click="
-                    child.isDir
-                      ? toggleTreeNode(child)
-                      : handleTreeResultClick(child)
-                  "
-                >
-                  <i
-                    :class="
-                      child.isDir
-                        ? child.expanded
-                          ? 'el-icon-folder-opened'
-                          : 'el-icon-folder'
-                        : getFileIcon(child.name).icon
-                    "
-                    :style="{
-                      color: child.isDir
-                        ? '#dcb67a'
-                        : getFileIcon(child.name).color,
-                    }"
-                    class="node-icon"
-                  ></i>
-                  <span class="node-name">{{ child.name }}</span>
-                  <span
-                    v-if="!child.isDir && child.matches"
-                    class="match-count"
-                  >
-                    ({{ child.matches.length }})
-                  </span>
-                  <i
-                    v-if="child.isDir"
-                    :class="[
-                      'expand-icon',
-                      child.expanded
-                        ? 'el-icon-arrow-down'
-                        : 'el-icon-arrow-right',
-                    ]"
-                  ></i>
-                </div>
-                <div
-                  v-if="!child.isDir && child.expanded && child.matches"
-                  class="match-list"
-                >
-                  <div
-                    v-for="(match, idx) in child.matches"
-                    :key="idx"
-                    class="match-item"
-                    @click="handleTreeMatchClick(match)"
-                  >
-                    <span class="match-line">:{{ match.line }}</span>
-                    <span class="match-content">
-                      {{ match.content.trim() }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="!node.isDir && node.expanded && node.matches"
-              class="match-list"
-            >
-              <div
-                v-for="(match, idx) in node.matches"
-                :key="idx"
-                class="match-item"
-                @click="handleTreeMatchClick(match)"
-              >
-                <span class="match-line">:{{ match.line }}</span>
-                <span class="match-content">{{ match.content.trim() }}</span>
-              </div>
-            </div>
-          </div>
+            :node="node"
+            :level="0"
+            @toggle-node="toggleTreeNode"
+            @result-click="handleTreeResultClick"
+            @match-click="handleTreeMatchClick"
+          />
         </div>
       </div>
       <div class="search-empty" v-else-if="searchDone && searchKeyword">
@@ -484,6 +371,17 @@
           :class="{ active: activeGitDiffId === commitDiffId(commit) }"
           @click="selectGitCommit(commit)"
         >
+          <el-button
+            class="commit-restore-btn"
+            type="text"
+            :title="$t('generalAgent.skill.skillWorkBench.git.restore')"
+            :aria-label="$t('generalAgent.skill.skillWorkBench.git.restore')"
+            :loading="restoringCommitHash === commit.hash"
+            :disabled="!!restoringCommitHash"
+            @click.stop="restoreGitCommit(commit)"
+          >
+            <svg-icon class-name="restore-icon" icon-class="history" />
+          </el-button>
           <div class="commit-message">{{ commit.message }}</div>
           <div class="commit-meta">
             <span class="commit-hash">{{ commit.hash.substring(0, 7) }}</span>
@@ -500,6 +398,7 @@
 
 <script>
 import FileTree from './FileTree.vue';
+import SearchResultTreeNode from './SearchResultTreeNode.vue';
 import {
   searchSkillWorkspace,
   getSkillWorkspaceGitLog,
@@ -514,6 +413,7 @@ import {
   downloadSkillWorkspace,
   deleteSkillWorkspaceFile,
 } from '@/api/skillResource/skillWorkSpace';
+import { postSkillWorkspaceGitRestore } from '@/api/generalAgent';
 import { getFileIcon } from '@/utils/fileIcons';
 import { resDownloadFile } from '@/utils/util';
 
@@ -525,6 +425,7 @@ export default {
   name: 'SkillWorkspaceExplorer',
   components: {
     FileTree,
+    SearchResultTreeNode,
   },
   props: {
     customSkillId: {
@@ -551,6 +452,8 @@ export default {
       showAdvancedSearch: false,
       viewMode: 'list',
       searchDebounceTimer: null,
+      searchTreeExpandedPaths: {},
+      searchTreeRenderKey: 0,
       gitCommits: [],
       gitLoading: false,
       gitStatusFiles: [],
@@ -559,6 +462,7 @@ export default {
       groupExpanded: { unstaged: true, staged: true },
       downloadingPaths: {},
       discardingPaths: {},
+      restoringCommitHash: '',
     };
   },
   computed: {
@@ -571,6 +475,12 @@ export default {
     searchResultTree() {
       if (this.searchResults.length === 0) return [];
 
+      const expandedPaths = this.searchTreeExpandedPaths;
+      const expandedVersion = this.searchTreeRenderKey;
+      // Vue 2 cannot reliably react to properties added to temporary computed
+      // nodes, so this counter makes expand/collapse changes an explicit dep.
+      const isExpanded = path =>
+        expandedVersion >= 0 && Boolean(expandedPaths[path]);
       const root = { name: '', children: [], isDir: true };
       const nodeMap = new Map();
 
@@ -589,6 +499,7 @@ export default {
               isDir: !isFile,
               children: isFile ? undefined : [],
               matches: isFile ? [] : undefined,
+              expanded: !isFile && isExpanded(path),
             };
             nodeMap.set(path, node);
             current.children.push(node);
@@ -672,8 +583,7 @@ export default {
       }
     },
     refreshGit() {
-      this.fetchGitLog();
-      this.fetchGitStatus();
+      return Promise.all([this.fetchGitLog(), this.fetchGitStatus()]);
     },
     async doSearch() {
       if (!this.searchKeyword.trim()) return;
@@ -704,6 +614,8 @@ export default {
     clearSearch() {
       this.searchResults = [];
       this.searchDone = false;
+      this.searchTreeExpandedPaths = {};
+      this.searchTreeRenderKey += 1;
     },
     toggleViewMode() {
       this.viewMode = this.viewMode === 'list' ? 'tree' : 'list';
@@ -717,7 +629,13 @@ export default {
       this.openSearchResult(match);
     },
     toggleTreeNode(node) {
-      this.$set(node, 'expanded', !node.expanded);
+      if (!node || !node.isDir || !node.path) return;
+      if (this.searchTreeExpandedPaths[node.path]) {
+        this.$delete(this.searchTreeExpandedPaths, node.path);
+      } else {
+        this.$set(this.searchTreeExpandedPaths, node.path, true);
+      }
+      this.searchTreeRenderKey += 1;
     },
     openSearchResult(result) {
       this.sidebarView = 'files';
@@ -838,6 +756,55 @@ export default {
           this.$t('generalAgent.skill.skillWorkBench.git.commitFailed'),
         );
         console.error('gitCommit error', e);
+      }
+    },
+    async restoreGitCommit(commit) {
+      if (
+        !this.customSkillId ||
+        !commit ||
+        !commit.hash ||
+        this.restoringCommitHash
+      ) {
+        return;
+      }
+
+      try {
+        await this.$confirm(
+          this.$t('generalAgent.skill.skillWorkBench.git.restoreConfirm'),
+          this.$t('common.confirm.title'),
+          {
+            confirmButtonText: this.$t('common.button.confirm'),
+            cancelButtonText: this.$t('common.button.cancel'),
+            type: 'warning',
+          },
+        );
+      } catch (e) {
+        return;
+      }
+
+      this.restoringCommitHash = commit.hash;
+      try {
+        const res = await postSkillWorkspaceGitRestore(
+          this.customSkillId,
+          commit.hash,
+        );
+        if (res.code !== 0) {
+          this.$message.error(
+            res.msg ||
+              this.$t('generalAgent.skill.skillWorkBench.git.restoreFailed'),
+          );
+          return;
+        }
+
+        this.$message.success(this.$t('common.message.success'));
+        this.$emit('workspace-restored');
+      } catch (e) {
+        this.$message.error(
+          this.$t('generalAgent.skill.skillWorkBench.git.restoreFailed'),
+        );
+        console.error('restoreGitCommit error', e);
+      } finally {
+        this.restoringCommitHash = '';
       }
     },
     async selectWorkingFile(file, staged) {
@@ -1218,73 +1185,6 @@ export default {
         padding-left: 16px;
       }
     }
-
-    .tree-node-header {
-      display: flex;
-      align-items: center;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 12px;
-      color: #333;
-
-      &:hover {
-        background: #e8e8e8;
-      }
-
-      .node-icon {
-        margin-right: 4px;
-        font-size: 14px;
-        flex-shrink: 0;
-      }
-
-      .node-name {
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .match-count {
-        color: #888;
-        font-size: 11px;
-        margin-right: 4px;
-      }
-
-      .expand-icon {
-        font-size: 12px;
-        color: #666;
-        flex-shrink: 0;
-      }
-    }
-
-    .match-list {
-      background: #fafafa;
-      .match-item {
-        display: flex;
-        align-items: flex-start;
-        padding: 3px 8px 3px 28px;
-        cursor: pointer;
-        font-size: 11px;
-
-        &:hover {
-          background: #e0e0e0;
-        }
-
-        .match-line {
-          color: #5983ff;
-          flex-shrink: 0;
-          margin-right: 4px;
-        }
-
-        .match-content {
-          color: #666;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          flex: 1;
-        }
-      }
-    }
   }
 
   .search-empty,
@@ -1463,7 +1363,9 @@ export default {
   }
 
   .git-commit-item {
+    position: relative;
     padding: 8px 12px;
+    padding-right: 36px;
     cursor: pointer;
     border-bottom: 1px solid #f0f0f0;
 
@@ -1473,6 +1375,30 @@ export default {
     &.active {
       background: rgba(89, 131, 255, 0.08);
       box-shadow: inset 0 0 0 1px rgba(89, 131, 255, 0.16);
+    }
+
+    ::v-deep(.commit-restore-btn) {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      color: #8a8f99 !important;
+      border-radius: 3px;
+      span {
+        color: #8a8f99 !important;
+      }
+
+      &:hover {
+        color: #333 !important;
+        background: #e0e0e0 !important;
+      }
+
+      .restore-icon {
+        width: 14px;
+        height: 14px;
+      }
     }
 
     .commit-message {

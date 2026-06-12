@@ -36,6 +36,7 @@ import Custom from './custom/list';
 import { SKILLBUILTIN, SKILLADDED, SKILLCUSTOM } from '../constants';
 
 export default {
+  name: 'SkillSquare',
   data() {
     return {
       SKILLBUILTIN,

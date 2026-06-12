@@ -32,7 +32,9 @@
           >
             <img
               v-if="tabForm.tabLogo.path"
-              :src="getLogoPath(tabForm.tabLogo.path)"
+              :src="
+                getLogoPath(tabForm.tabLogo.path, tabForm.tabLogo.previewUrl)
+              "
               class="avatar"
             />
             <i
@@ -40,7 +42,9 @@
               class="el-icon-plus avatar-uploader-icon"
             ></i>
             <span style="margin-left: 12px; color: #aaa !important">
-              {{ $t('infoSetting.hint.imgUpload') }}
+              {{ $t('infoSetting.hint.imgUpload') }}，{{
+                $t('infoSetting.hint.logoSizeLimit')
+              }}
             </span>
             <div
               style="
@@ -88,7 +92,12 @@
           >
             <img
               v-if="loginForm.loginBg.path"
-              :src="getLogoPath(loginForm.loginBg.path)"
+              :src="
+                getLogoPath(
+                  loginForm.loginBg.path,
+                  loginForm.loginBg.previewUrl,
+                )
+              "
               class="avatar"
             />
             <i
@@ -96,7 +105,9 @@
               class="el-icon-plus avatar-uploader-icon"
             ></i>
             <span style="margin-left: 12px; color: #aaa !important">
-              {{ $t('infoSetting.hint.imgUpload') }}
+              {{ $t('infoSetting.hint.imgUpload') }}，{{
+                $t('infoSetting.hint.bgSizeLimit')
+              }}
             </span>
             <div
               style="
@@ -125,7 +136,12 @@
           >
             <img
               v-if="loginForm.loginLogo.path"
-              :src="getLogoPath(loginForm.loginLogo.path)"
+              :src="
+                getLogoPath(
+                  loginForm.loginLogo.path,
+                  loginForm.loginLogo.previewUrl,
+                )
+              "
               class="avatar"
             />
             <i
@@ -133,7 +149,9 @@
               class="el-icon-plus avatar-uploader-icon"
             ></i>
             <span style="margin-left: 12px; color: #aaa !important">
-              {{ $t('infoSetting.hint.imgUpload') }}
+              {{ $t('infoSetting.hint.imgUpload') }}，{{
+                $t('infoSetting.hint.logoSizeLimit')
+              }}
             </span>
             <div
               style="
@@ -213,7 +231,7 @@
           >
             <img
               v-if="form.homeLogo.path"
-              :src="getLogoPath(form.homeLogo.path)"
+              :src="getLogoPath(form.homeLogo.path, form.homeLogo.previewUrl)"
               class="avatar"
             />
             <i
@@ -221,7 +239,9 @@
               class="el-icon-plus avatar-uploader-icon"
             ></i>
             <span style="margin-left: 12px; color: #aaa !important">
-              {{ $t('infoSetting.hint.imgUpload') }}
+              {{ $t('infoSetting.hint.imgUpload') }}，{{
+                $t('infoSetting.hint.logoSizeLimit')
+              }}
             </span>
             <div
               style="
@@ -317,7 +337,12 @@
           >
             <img
               v-if="generalAgentForm.generalAgentIcon.path"
-              :src="getLogoPath(generalAgentForm.generalAgentIcon.path)"
+              :src="
+                getLogoPath(
+                  generalAgentForm.generalAgentIcon.path,
+                  generalAgentForm.generalAgentIcon.previewUrl,
+                )
+              "
               class="avatar"
             />
             <i
@@ -325,7 +350,9 @@
               class="el-icon-plus avatar-uploader-icon"
             ></i>
             <span style="margin-left: 12px; color: #aaa !important">
-              {{ $t('infoSetting.hint.imgUpload') }}
+              {{ $t('infoSetting.hint.imgUpload') }}，{{
+                $t('infoSetting.hint.logoSizeLimit')
+              }}
             </span>
             <div
               style="
@@ -374,10 +401,10 @@ export default {
   data() {
     const checkImage = (val, rule, value, callback) => {
       // 判断编辑器值，编辑器默认没输入时是 <p><br></p>
-      if (!val) {
-        callback(new Error(this.$t('infoSetting.form.uploadHint')));
-      } else {
+      if (val) {
         return callback();
+      } else {
+        callback(new Error(this.$t('infoSetting.form.uploadHint')));
       }
     };
     return {
@@ -511,6 +538,19 @@ export default {
   created() {
     this.getCommonInfo();
   },
+  beforeDestroy() {
+    // 释放本地预览的Blob URL，避免内存泄漏
+    const forms = [
+      this.tabForm.tabLogo,
+      this.loginForm.loginBg,
+      this.loginForm.loginLogo,
+      this.form.homeLogo,
+      this.generalAgentForm.generalAgentIcon,
+    ];
+    forms.forEach(item => {
+      if (item && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+    });
+  },
   watch: {
     commonInfo: {
       handler(val) {
@@ -520,6 +560,17 @@ export default {
           login = {},
           generalAgent = {},
         } = val ? val.data || {} : {};
+
+        // 服务端数据刷新时释放旧的本地预览URL
+        [
+          this.tabForm.tabLogo,
+          this.form.homeLogo,
+          this.loginForm.loginBg,
+          this.loginForm.loginLogo,
+          this.generalAgentForm.generalAgentIcon,
+        ].forEach(item => {
+          if (item && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        });
 
         this.tabForm.tabTitle = tab.title;
         this.tabForm.tabLogo = tab.logo || {};
@@ -549,8 +600,9 @@ export default {
   },
   methods: {
     ...mapActions('user', ['getCommonInfo']),
-    getLogoPath(path) {
-      return path ? avatarSrc(path) : '';
+    /** 获取图片显示地址，优先使用本地预览URL以保证清晰度 */
+    getLogoPath(path, previewUrl) {
+      return previewUrl || (path ? avatarSrc(path) : '');
     },
     uploadAvatar(file) {
       const formData = new FormData();
@@ -558,38 +610,65 @@ export default {
       formData.append('avatar', file);
       return uploadAvatar(formData, config);
     },
+    /** 校验文件尺寸，bg类型限制1MB，logo类型限制100KB */
+    checkFileSize(file, type) {
+      const isBg = type === 'bg';
+      const limit = isBg ? 1 * 1024 * 1024 : 100 * 1024;
+      if (file.size > limit) {
+        this.$message.warning(
+          isBg
+            ? this.$t('infoSetting.hint.bgSizeLimit')
+            : this.$t('infoSetting.hint.logoSizeLimit'),
+        );
+        return false;
+      }
+      return true;
+    },
     handleUploadLogo(data) {
       if (data.file) {
+        if (!this.checkFileSize(data.file, 'logo')) return;
+        const previewUrl = URL.createObjectURL(data.file);
         this.uploadAvatar(data.file).then(res => {
-          this.form.homeLogo = res.data || {};
+          this.form.homeLogo = { ...res.data, previewUrl };
         });
       }
     },
     handleUploadLoginBg(data) {
       if (data.file) {
+        if (!this.checkFileSize(data.file, 'bg')) return;
+        const previewUrl = URL.createObjectURL(data.file);
         this.uploadAvatar(data.file).then(res => {
-          this.loginForm.loginBg = res.data || {};
+          this.loginForm.loginBg = { ...res.data, previewUrl };
         });
       }
     },
     handleUploadLoginLogo(data) {
       if (data.file) {
+        if (!this.checkFileSize(data.file, 'logo')) return;
+        const previewUrl = URL.createObjectURL(data.file);
         this.uploadAvatar(data.file).then(res => {
-          this.loginForm.loginLogo = res.data || {};
+          this.loginForm.loginLogo = { ...res.data, previewUrl };
         });
       }
     },
     handleUploadLabelIcon(data) {
       if (data.file) {
+        if (!this.checkFileSize(data.file, 'logo')) return;
+        const previewUrl = URL.createObjectURL(data.file);
         this.uploadAvatar(data.file).then(res => {
-          this.tabForm.tabLogo = res.data || {};
+          this.tabForm.tabLogo = { ...res.data, previewUrl };
         });
       }
     },
     handleUploadGeneralAgentIcon(data) {
       if (data.file) {
+        if (!this.checkFileSize(data.file, 'logo')) return;
+        const previewUrl = URL.createObjectURL(data.file);
         this.uploadAvatar(data.file).then(res => {
-          this.generalAgentForm.generalAgentIcon = res.data || {};
+          this.generalAgentForm.generalAgentIcon = {
+            ...res.data,
+            previewUrl,
+          };
         });
       }
     },
@@ -664,6 +743,7 @@ export default {
   border-radius: 5px;
   object-fit: cover;
   background-color: #f8f8f8;
+  will-change: transform;
 }
 .el-upload {
   width: 100%;

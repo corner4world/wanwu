@@ -116,6 +116,8 @@ export default {
               restAvatar({ avatar: res.data }).then(res => {
                 if (res.code === 0) {
                   this.form.avatar = avatar;
+                  this.$store.dispatch('user/getPermissionInfo');
+                  this.$store.dispatch('user/getCommonInfo');
                   this.$forceUpdate();
                 }
               });

@@ -29,6 +29,7 @@
         @open-git-diff="openGitDiff"
         @close-tabs-by-path="closeTabsByPath"
         @discard-file="handleDiscardFile"
+        @workspace-restored="handleWorkspaceRestored"
       />
       <SkillWorkbench
         ref="workbench"
@@ -112,6 +113,9 @@ export default {
       if (this.$refs.workbench) {
         await this.$refs.workbench.refreshOpenedFileByPath(payload);
       }
+    },
+    async handleWorkspaceRestored() {
+      await this.refreshWorkspace();
     },
     async refreshWorkspace() {
       this.refreshFiles();
