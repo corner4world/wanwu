@@ -129,18 +129,14 @@ export default {
         ...this.ruleForm,
         tableId: this.tableId,
       };
-      editSensitive(data)
-        .then(res => {
-          if (res.code === 0) {
-            this.$message.success(this.$t('common.info.edit'));
-            this.$emit('reloadData');
-            this.clearform();
-            this.dialogVisible = false;
-          }
-        })
-        .catch(error => {
-          this.$message.error(error);
-        });
+      editSensitive(data).then(res => {
+        if (res.code === 0) {
+          this.$message.success(this.$t('common.info.edit'));
+          this.$emit('reloadData');
+          this.clearform();
+          this.dialogVisible = false;
+        }
+      });
     },
     showDialog(row = null) {
       this.dialogVisible = true;
