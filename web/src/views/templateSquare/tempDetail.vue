@@ -134,6 +134,7 @@ import {
 } from '@/api/templateSquare';
 import { WORKFLOW } from './constants';
 import { avatarSrc, directDownload, resDownloadFile } from '@/utils/util';
+import { parseTxtSafe } from '@/utils/sanitize';
 import CreateWorkflow from '@/components/createApp/createWorkflow.vue';
 import MdRender from '@/components/mdRender.vue';
 
@@ -214,14 +215,7 @@ export default {
       );
     },
     // 解析文本，遇到.换行等
-    parseTxt(txt) {
-      if (!txt) return '';
-      const text = txt
-        .replaceAll('\n\t', '<br/>&nbsp;')
-        .replaceAll('\n', '<br/>')
-        .replaceAll('\t', '   &nbsp;');
-      return text;
-    },
+    parseTxt: parseTxtSafe,
     tabClick(status) {
       this.tabActive = status;
     },

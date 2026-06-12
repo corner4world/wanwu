@@ -171,6 +171,7 @@
 
 <script>
 import { parse } from 'pptxtojson';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 export default {
   name: 'PptPreview',
@@ -525,7 +526,7 @@ export default {
       if (!content) return '';
       const scale = this.currentScale || 1;
       // 替换不常见字体为系统字体，并缩放字体大小
-      return content
+      const result = content
         .replaceAll(
           /font-family:\s*["']?Arial Black["']?/gi,
           'font-family: Arial Black, Arial, sans-serif',
@@ -571,6 +572,7 @@ export default {
           const pxSize = Number.parseFloat(size) * 1.333 * scale;
           return `font-size: ${pxSize.toFixed(1)}px`;
         });
+      return sanitizeHtml(result);
     },
 
     // 获取表格单元格内容(处理不同数据结构)

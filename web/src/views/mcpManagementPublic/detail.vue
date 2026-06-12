@@ -231,6 +231,7 @@ import {
   getTools,
 } from '@/api/mcp';
 import { avatarSrc, formatTools } from '@/utils/util';
+import { parseTxtSafe } from '@/utils/sanitize';
 import MdRender from '@/components/mdRender.vue';
 
 export default {
@@ -336,14 +337,7 @@ export default {
       this.$router.push(`/mcp/detail/square?mcpSquareId=${val.mcpSquareId}`);
     },
     // 解析文本，遇到.换行等
-    parseTxt(txt) {
-      if (!txt) return '';
-      const text = txt
-        .replaceAll('\n\t', '<br/>&nbsp;')
-        .replaceAll('\n', '<br/>')
-        .replaceAll('\t', '   &nbsp;');
-      return text;
-    },
+    parseTxt: parseTxtSafe,
     tabClick(status) {
       this.tabActive = status;
     },
