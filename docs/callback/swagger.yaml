@@ -2073,6 +2073,14 @@ definitions:
     - categoryName
     - userId
     type: object
+  request.UnarchiveFileReq:
+    properties:
+      fileUrl:
+        description: 压缩包的MinIO URL
+        type: string
+    required:
+    - fileUrl
+    type: object
   request.UploadFileByBase64Req:
     properties:
       file:
@@ -2615,6 +2623,52 @@ definitions:
           $ref: '#/definitions/protocol.Tool'
         type: array
     type: object
+  response.UnarchiveFileNode:
+    properties:
+      children:
+        description: 子节点（仅目录有）
+        items:
+          $ref: '#/definitions/response.UnarchiveFileNode'
+        type: array
+      downloadUrl:
+        description: 外部下载地址（仅文件有值）
+        type: string
+      minioUrl:
+        description: MinIO内部访问地址（仅文件有值）
+        type: string
+      name:
+        description: 文件或目录名
+        type: string
+      objectPath:
+        description: MinIO对象路径（如 file-upload/file-expire/unarchive/xxx/src/main.go）
+        type: string
+      relativePath:
+        description: 相对路径（如 src/main.go）
+        type: string
+      size:
+        description: 文件大小，字节（目录为0）
+        type: integer
+      type:
+        description: '"directory" 或 "file"'
+        type: string
+    type: object
+  response.UnarchiveFileResp:
+    properties:
+      children:
+        description: 目录树（从解压根目录的子节点开始）
+        items:
+          $ref: '#/definitions/response.UnarchiveFileNode'
+        type: array
+      objectPath:
+        description: MinIO顶层对象路径（如 file-upload/file-expire/unarchive/uuid）
+        type: string
+      totalFiles:
+        description: 总文件数
+        type: integer
+      totalSize:
+        description: 总文件大小（字节）
+        type: integer
+    type: object
   response.UploadFileByBase64Resp:
     properties:
       uri:
@@ -2990,6 +3044,33 @@ paths:
       summary: 根据userId和spaceId获取Chatflow
       tags:
       - callback
+  /file/unarchive:
+    post:
+      consumes:
+      - application/json
+      description: 解压MinIO中的压缩包，将文件上传到MinIO并返回目录结构
+      parameters:
+      - description: 解压压缩包请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UnarchiveFileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.UnarchiveFileResp'
+              type: object
+      summary: 解压压缩包
+      tags:
+      - callback
   /file/upload/base64:
     post:
       consumes:
@@ -3302,6 +3383,42 @@ paths:
           schema:
             $ref: '#/definitions/mp_common.RerankResp'
       summary: Model Rerank
+      tags:
+      - callback
+  /model/{modelId}/trace/{traceId}/span/{spanId}/chat/completions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 模型ID
+        in: path
+        name: modelId
+        required: true
+        type: string
+      - description: Trace ID
+        in: path
+        name: traceId
+        required: true
+        type: string
+      - description: Span ID
+        in: path
+        name: spanId
+        required: true
+        type: string
+      - description: 请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/mp_common.LLMReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/mp_common.LLMResp'
+      summary: Model Chat Completions with Trace
       tags:
       - callback
   /rag/knowledge/stream/search:

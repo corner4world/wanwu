@@ -342,4 +342,3 @@ func (r *GitCommitReq) Check() error {
 	}
 	return nil
 }
-

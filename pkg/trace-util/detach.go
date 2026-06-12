@@ -2,6 +2,7 @@ package trace_util
 
 import (
 	"context"
+
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"go.opentelemetry.io/otel/trace"
 

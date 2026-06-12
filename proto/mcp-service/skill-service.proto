@@ -299,6 +299,15 @@ message GetBuiltinSkillVarsReq {
   Identity identity = 2;
 }
 
+message GetBuiltinSkillsVarsReq {
+  Identity identity = 1;
+  repeated string skillIds = 2;
+}
+
+message GetBuiltinSkillsVarsResp {
+  repeated BuiltinSkillVars skills = 1;
+}
+
 // 单个 skill 下的变量列表；total 与 variables 条数一致（全量、无分页）。
 message BuiltinSkillVars {
   string skillId = 1; // 同上

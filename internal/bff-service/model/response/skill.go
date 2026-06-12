@@ -70,9 +70,9 @@ type SquareSkillInfo struct {
 // SharedSkillInfo 探索广场-共享skill列表项
 type SharedSkillInfo struct {
 	SkillBasicInfo
-	IsShared       bool  `json:"isShared"`
-	DownloadCount  int32 `json:"downloadCount"`
-	AcquiredCount  int32 `json:"acquiredCount"`
+	IsShared      bool  `json:"isShared"`
+	DownloadCount int32 `json:"downloadCount"`
+	AcquiredCount int32 `json:"acquiredCount"`
 }
 
 // SharedSkillDetail 探索广场-共享skill详情

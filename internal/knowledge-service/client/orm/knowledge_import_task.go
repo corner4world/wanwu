@@ -2,7 +2,6 @@ package orm
 
 import (
 	"context"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/client/model"
@@ -11,6 +10,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/db"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"gorm.io/gorm"
 )
 

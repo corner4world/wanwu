@@ -108,6 +108,22 @@ func (c *Client) GetBuiltinSkillVars(ctx context.Context, userId, orgId, skillId
 	return list, int64(len(list)), nil
 }
 
+func (c *Client) GetBuiltinSkillsVars(ctx context.Context, userId, orgId string, skillIds []string) (map[string][]*model.BuiltinSkillVariable, *errs.Status) {
+	var list []*model.BuiltinSkillVariable
+	if err := sqlopt.SQLOptions(
+		sqlopt.WithSkillIDs(skillIds),
+		sqlopt.WithUserID(userId),
+		sqlopt.WithOrgID(orgId),
+	).Apply(c.db).WithContext(ctx).Find(&list).Error; err != nil {
+		return nil, toErrStatus("mcp_builtin_skills_var_list", err.Error())
+	}
+	result := make(map[string][]*model.BuiltinSkillVariable)
+	for _, v := range list {
+		result[v.SkillID] = append(result[v.SkillID], v)
+	}
+	return result, nil
+}
+
 // --- internal ---
 
 func (c *Client) countSkillVarByName(ctx context.Context, tab interface{}, skillID, userID, orgID, name string, excludeID uint32) (int64, error) {

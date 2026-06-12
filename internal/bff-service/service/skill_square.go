@@ -311,7 +311,7 @@ func toSharedSkillDetail(ctx *gin.Context, publish *mcp_service.PublishCustomSki
 			},
 			IsShared:      isAcquired,
 			DownloadCount: skill.GetDownloadCount(),
-			AcquiredCount:  skill.GetAcquiredCount(),
+			AcquiredCount: skill.GetAcquiredCount(),
 		},
 		SkillMarkdown: config.FixFrontMatterFormat(publish.GetMarkdown()),
 	}
@@ -328,7 +328,7 @@ func toSharedSkillInfo(ctx *gin.Context, skill *mcp_service.CustomSkill, isAcqui
 		},
 		IsShared:      isAcquired,
 		DownloadCount: skill.GetDownloadCount(),
-		AcquiredCount:  skill.GetAcquiredCount(),
+		AcquiredCount: skill.GetAcquiredCount(),
 	}
 }
 

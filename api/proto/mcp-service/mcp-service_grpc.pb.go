@@ -81,6 +81,7 @@ const (
 	MCPService_DeleteBuiltinSkillVar_FullMethodName              = "/mcp_service.MCPService/DeleteBuiltinSkillVar"
 	MCPService_GetBuiltinSkillVars_FullMethodName                = "/mcp_service.MCPService/GetBuiltinSkillVars"
 	MCPService_UpdateBuiltinSkillVar_FullMethodName              = "/mcp_service.MCPService/UpdateBuiltinSkillVar"
+	MCPService_GetBuiltinSkillsVars_FullMethodName               = "/mcp_service.MCPService/GetBuiltinSkillsVars"
 	MCPService_CreatePublishCustomSkill_FullMethodName           = "/mcp_service.MCPService/CreatePublishCustomSkill"
 	MCPService_UpdatePublishCustomSkill_FullMethodName           = "/mcp_service.MCPService/UpdatePublishCustomSkill"
 	MCPService_GetPublishCustomSkillHistoryList_FullMethodName   = "/mcp_service.MCPService/GetPublishCustomSkillHistoryList"
@@ -170,6 +171,7 @@ type MCPServiceClient interface {
 	DeleteBuiltinSkillVar(ctx context.Context, in *DeleteBuiltinSkillVarReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetBuiltinSkillVars(ctx context.Context, in *GetBuiltinSkillVarsReq, opts ...grpc.CallOption) (*BuiltinSkillVars, error)
 	UpdateBuiltinSkillVar(ctx context.Context, in *UpdateBuiltinSkillVarReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetBuiltinSkillsVars(ctx context.Context, in *GetBuiltinSkillsVarsReq, opts ...grpc.CallOption) (*GetBuiltinSkillsVarsResp, error)
 	// --- skill publish ---
 	CreatePublishCustomSkill(ctx context.Context, in *PublishCustomSkillReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdatePublishCustomSkill(ctx context.Context, in *UpdatePublishCustomSkillReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -803,6 +805,16 @@ func (c *mCPServiceClient) UpdateBuiltinSkillVar(ctx context.Context, in *Update
 	return out, nil
 }
 
+func (c *mCPServiceClient) GetBuiltinSkillsVars(ctx context.Context, in *GetBuiltinSkillsVarsReq, opts ...grpc.CallOption) (*GetBuiltinSkillsVarsResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBuiltinSkillsVarsResp)
+	err := c.cc.Invoke(ctx, MCPService_GetBuiltinSkillsVars_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mCPServiceClient) CreatePublishCustomSkill(ctx context.Context, in *PublishCustomSkillReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -989,6 +1001,7 @@ type MCPServiceServer interface {
 	DeleteBuiltinSkillVar(context.Context, *DeleteBuiltinSkillVarReq) (*emptypb.Empty, error)
 	GetBuiltinSkillVars(context.Context, *GetBuiltinSkillVarsReq) (*BuiltinSkillVars, error)
 	UpdateBuiltinSkillVar(context.Context, *UpdateBuiltinSkillVarReq) (*emptypb.Empty, error)
+	GetBuiltinSkillsVars(context.Context, *GetBuiltinSkillsVarsReq) (*GetBuiltinSkillsVarsResp, error)
 	// --- skill publish ---
 	CreatePublishCustomSkill(context.Context, *PublishCustomSkillReq) (*emptypb.Empty, error)
 	UpdatePublishCustomSkill(context.Context, *UpdatePublishCustomSkillReq) (*emptypb.Empty, error)
@@ -1194,6 +1207,9 @@ func (UnimplementedMCPServiceServer) GetBuiltinSkillVars(context.Context, *GetBu
 }
 func (UnimplementedMCPServiceServer) UpdateBuiltinSkillVar(context.Context, *UpdateBuiltinSkillVarReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateBuiltinSkillVar not implemented")
+}
+func (UnimplementedMCPServiceServer) GetBuiltinSkillsVars(context.Context, *GetBuiltinSkillsVarsReq) (*GetBuiltinSkillsVarsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBuiltinSkillsVars not implemented")
 }
 func (UnimplementedMCPServiceServer) CreatePublishCustomSkill(context.Context, *PublishCustomSkillReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePublishCustomSkill not implemented")
@@ -2347,6 +2363,24 @@ func _MCPService_UpdateBuiltinSkillVar_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MCPService_GetBuiltinSkillsVars_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBuiltinSkillsVarsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MCPServiceServer).GetBuiltinSkillsVars(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MCPService_GetBuiltinSkillsVars_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MCPServiceServer).GetBuiltinSkillsVars(ctx, req.(*GetBuiltinSkillsVarsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MCPService_CreatePublishCustomSkill_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PublishCustomSkillReq)
 	if err := dec(in); err != nil {
@@ -2795,6 +2829,10 @@ var MCPService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateBuiltinSkillVar",
 			Handler:    _MCPService_UpdateBuiltinSkillVar_Handler,
+		},
+		{
+			MethodName: "GetBuiltinSkillsVars",
+			Handler:    _MCPService_GetBuiltinSkillsVars_Handler,
 		},
 		{
 			MethodName: "CreatePublishCustomSkill",

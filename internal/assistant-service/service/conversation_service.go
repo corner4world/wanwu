@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/UnicomAI/wanwu/pkg/redis"
 	"net/http"
 	"sort"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/assistant-service/service/conversation"
 	"github.com/UnicomAI/wanwu/pkg/es"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	"github.com/UnicomAI/wanwu/pkg/redis"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
 	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 )

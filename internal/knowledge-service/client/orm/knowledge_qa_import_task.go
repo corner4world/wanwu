@@ -2,6 +2,7 @@ package orm
 
 import (
 	"context"
+
 	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/client/model"

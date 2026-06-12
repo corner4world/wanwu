@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"sync"
 
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/client/model"
@@ -13,6 +12,7 @@ import (
 	async_task_pkg "github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/async-task"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/pkg/db"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	async "github.com/gromitlee/go-async"
 	"github.com/gromitlee/go-async/pkg/async/async_task"

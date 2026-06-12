@@ -92,7 +92,7 @@ service MCPService {
   rpc DeleteBuiltinSkillVar(DeleteBuiltinSkillVarReq) returns (google.protobuf.Empty) {}
   rpc GetBuiltinSkillVars(GetBuiltinSkillVarsReq) returns (BuiltinSkillVars) {}
   rpc UpdateBuiltinSkillVar(UpdateBuiltinSkillVarReq) returns (google.protobuf.Empty) {}
-
+  rpc GetBuiltinSkillsVars(GetBuiltinSkillsVarsReq) returns (GetBuiltinSkillsVarsResp) {}
 
   // --- skill publish ---
   rpc CreatePublishCustomSkill(PublishCustomSkillReq) returns (google.protobuf.Empty) {}

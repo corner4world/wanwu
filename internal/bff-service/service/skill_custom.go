@@ -29,7 +29,6 @@ const (
 	customSkillFileType = ".zip"
 )
 
-
 func GetCustomSkill(ctx *gin.Context, userId, orgId, skillId string) (*response.PublishedSkillDetail, error) {
 	publish, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
 		SkillId: skillId,

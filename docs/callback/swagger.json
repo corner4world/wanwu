@@ -546,6 +546,52 @@
                 }
             }
         },
+        "/file/unarchive": {
+            "post": {
+                "description": "解压MinIO中的压缩包，将文件上传到MinIO并返回目录结构",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "callback"
+                ],
+                "summary": "解压压缩包",
+                "parameters": [
+                    {
+                        "description": "解压压缩包请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UnarchiveFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.UnarchiveFileResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/file/upload/base64": {
             "post": {
                 "consumes": [
@@ -1037,6 +1083,60 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/mp_common.RerankResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/model/{modelId}/trace/{traceId}/span/{spanId}/chat/completions": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "callback"
+                ],
+                "summary": "Model Chat Completions with Trace",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "模型ID",
+                        "name": "modelId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Trace ID",
+                        "name": "traceId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Span ID",
+                        "name": "spanId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mp_common.LLMReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/mp_common.LLMResp"
                         }
                     }
                 }
@@ -4509,6 +4609,18 @@
                 }
             }
         },
+        "request.UnarchiveFileReq": {
+            "type": "object",
+            "required": [
+                "fileUrl"
+            ],
+            "properties": {
+                "fileUrl": {
+                    "description": "压缩包的MinIO URL",
+                    "type": "string"
+                }
+            }
+        },
         "request.UploadFileByBase64Req": {
             "type": "object",
             "required": [
@@ -5317,6 +5429,70 @@
                     "items": {
                         "$ref": "#/definitions/protocol.Tool"
                     }
+                }
+            }
+        },
+        "response.UnarchiveFileNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "子节点（仅目录有）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UnarchiveFileNode"
+                    }
+                },
+                "downloadUrl": {
+                    "description": "外部下载地址（仅文件有值）",
+                    "type": "string"
+                },
+                "minioUrl": {
+                    "description": "MinIO内部访问地址（仅文件有值）",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "文件或目录名",
+                    "type": "string"
+                },
+                "objectPath": {
+                    "description": "MinIO对象路径（如 file-upload/file-expire/unarchive/xxx/src/main.go）",
+                    "type": "string"
+                },
+                "relativePath": {
+                    "description": "相对路径（如 src/main.go）",
+                    "type": "string"
+                },
+                "size": {
+                    "description": "文件大小，字节（目录为0）",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "\"directory\" 或 \"file\"",
+                    "type": "string"
+                }
+            }
+        },
+        "response.UnarchiveFileResp": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "description": "目录树（从解压根目录的子节点开始）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.UnarchiveFileNode"
+                    }
+                },
+                "objectPath": {
+                    "description": "MinIO顶层对象路径（如 file-upload/file-expire/unarchive/uuid）",
+                    "type": "string"
+                },
+                "totalFiles": {
+                    "description": "总文件数",
+                    "type": "integer"
+                },
+                "totalSize": {
+                    "description": "总文件大小（字节）",
+                    "type": "integer"
                 }
             }
         },

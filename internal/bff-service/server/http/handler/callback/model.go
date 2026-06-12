@@ -68,11 +68,11 @@ func GetModelById(ctx *gin.Context) {
 //	@Summary	Model Chat Completions with Trace
 //	@Accept		json
 //	@Produce	json
-//	@Param		modelId	 path	string				true	"模型ID"
-//	@Param		traceId	 path	string				true	"Trace ID"
-//	@Param		spanId	 path	string				true	"Span ID"
-//	@Param		data		 body	mp_common.LLMReq{}	true	"请求参数"
-//	@Success	200		     {object} mp_common.LLMResp{}
+//	@Param		modelId	path		string				true	"模型ID"
+//	@Param		traceId	path		string				true	"Trace ID"
+//	@Param		spanId	path		string				true	"Span ID"
+//	@Param		data	body		mp_common.LLMReq{}	true	"请求参数"
+//	@Success	200		{object}	mp_common.LLMResp{}
 //	@Router		/model/{modelId}/trace/{traceId}/span/{spanId}/chat/completions [post]
 func ModelChatCompletionsWithTrace(ctx *gin.Context) {
 	// trace 上下文的提取和 span 父子关系由 TraceFromURLMiddleware + otelgin 完成，

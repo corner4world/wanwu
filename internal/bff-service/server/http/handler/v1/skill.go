@@ -41,7 +41,6 @@ func GetCustomSkillDetail(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
-
 // DeleteCustomSkill
 //
 //	@Tags			resource.skill

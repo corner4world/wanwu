@@ -5352,6 +5352,10 @@ const docTemplate = `{
                 "llmModelId": {
                     "type": "string"
                 },
+                "permissionType": {
+                    "description": "当前用户对该知识库的权限类型 -1:无权限 0:查看 10:编辑 20:授权 30:系统管理授权",
+                    "type": "integer"
+                },
                 "showGraphReport": {
                     "type": "boolean"
                 }

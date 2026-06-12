@@ -465,6 +465,10 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 			opts = append(opts, skillOpts...)
 		}
 	}
+	builtinSkillMessage, err := buildBuiltinSkillMessage(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
 
 	// 校验并构建Knowledge配置选项（追加@提及的Knowledge）
 	knowledgeList := append([]*assistant_service.WgaConfigKnowledge{}, wgaConfig.KnowledgeList...)
@@ -538,6 +542,10 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 	// 追加技能变量提示消息（仅 Skill Preview Agent 模式）
 	if skillMessage != nil {
 		messages = append(messages, skillMessage)
+	}
+	// 追加内置技能提示消息
+	if builtinSkillMessage != nil {
+		messages = append(messages, builtinSkillMessage)
 	}
 	// 追加Ontology提示消息
 	if ontologyMessage != nil {

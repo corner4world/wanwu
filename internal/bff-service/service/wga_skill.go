@@ -17,6 +17,7 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	wga_option "github.com/UnicomAI/wanwu/pkg/wga/wga-option"
+	"github.com/cloudwego/eino/schema"
 	"github.com/gin-gonic/gin"
 )
 
@@ -287,4 +288,58 @@ func buildWgaSkillVariablesMessage(customSkill *mcp_service.CustomSkill, variabl
 	}
 
 	return buf.String()
+}
+
+// buildBuiltinSkillMessage 获取用户所有内置技能的配置变量，构建系统消息
+func buildBuiltinSkillMessage(ctx *gin.Context, userId, orgId string) (*schema.Message, error) {
+	resp, err := mcp.GetBuiltinSkillsVars(ctx.Request.Context(), &mcp_service.GetBuiltinSkillsVarsReq{
+		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Skills) == 0 {
+		return nil, nil
+	}
+
+	skillCfgMap := make(map[string]*config.SkillsConfig)
+	for _, s := range config.Cfg().AgentSkills {
+		skillCfgMap[s.SkillId] = s
+	}
+
+	var buf strings.Builder
+	buf.WriteString("# 内置技能配置变量\n\n")
+	for _, skillVars := range resp.Skills {
+		if skillVars == nil || len(skillVars.Variables) == 0 {
+			continue
+		}
+		if cfg, ok := skillCfgMap[skillVars.SkillId]; ok {
+			if cfg.Name != "" {
+				fmt.Fprintf(&buf, "## %s(%s)\n", cfg.Name, skillVars.SkillId)
+			}
+			if cfg.Desc != "" {
+				fmt.Fprintf(&buf, "%s\n\n", cfg.Desc)
+			}
+		}
+		buf.WriteString("以下变量已为当前技能配置：\n\n")
+		for _, v := range skillVars.Variables {
+			if v == nil {
+				continue
+			}
+			escapedKey := strings.ReplaceAll(v.VariableKey, "`", "\\`")
+			escapedValue := strings.ReplaceAll(v.VariableValue, "`", "\\`")
+			if v.Desc != "" {
+				escapedDesc := strings.ReplaceAll(v.Desc, "`", "\\`")
+				fmt.Fprintf(&buf, "- **%s** (%s): `%s` = `%s`\n", v.Name, escapedDesc, escapedKey, escapedValue)
+			} else {
+				fmt.Fprintf(&buf, "- **%s**: `%s` = `%s`\n", v.Name, escapedKey, escapedValue)
+			}
+		}
+		buf.WriteString("\n")
+	}
+
+	return &schema.Message{
+		Role:    schema.System,
+		Content: buf.String(),
+	}, nil
 }

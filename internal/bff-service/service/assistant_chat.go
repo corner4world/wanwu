@@ -3,8 +3,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/UnicomAI/wanwu/pkg/redis"
-	"github.com/google/uuid"
 	"io"
 	"strings"
 	"time"
@@ -18,10 +16,12 @@ import (
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
+	"github.com/UnicomAI/wanwu/pkg/redis"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
 	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 )
 

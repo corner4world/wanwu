@@ -85,6 +85,7 @@ type IClient interface {
 	UpdateBuiltinSkillVar(ctx context.Context, userId, orgId string, id uint32, variable *model.BuiltinSkillVariable) *errs.Status
 	DeleteBuiltinSkillVar(ctx context.Context, userId, orgId string, id uint32) *errs.Status
 	GetBuiltinSkillVars(ctx context.Context, userId, orgId, skillId string) ([]*model.BuiltinSkillVariable, int64, *errs.Status)
+	GetBuiltinSkillsVars(ctx context.Context, userId, orgId string, skillIds []string) (map[string][]*model.BuiltinSkillVariable, *errs.Status)
 
 	//================SkillStatistic================
 	IncrementCustomSkillDownloadCount(ctx context.Context, skillId string) *errs.Status

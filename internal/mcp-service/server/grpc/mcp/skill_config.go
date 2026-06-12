@@ -220,6 +220,29 @@ func (s *Service) GetBuiltinSkillVars(ctx context.Context, req *mcp_service.GetB
 	}, nil
 }
 
+func (s *Service) GetBuiltinSkillsVars(ctx context.Context, req *mcp_service.GetBuiltinSkillsVarsReq) (*mcp_service.GetBuiltinSkillsVarsResp, error) {
+	if req.GetIdentity() == nil {
+		return nil, errStatus(errs.Code_MCPBuiltinSkillErr, toErrStatus("mcp_builtin_skills_var_list", "identity is empty"))
+	}
+	skills, err := s.cli.GetBuiltinSkillsVars(ctx, req.GetIdentity().GetUserId(), req.GetIdentity().GetOrgId(), req.SkillIds)
+	if err != nil {
+		return nil, errStatus(errs.Code_MCPBuiltinSkillErr, err)
+	}
+	ret := &mcp_service.GetBuiltinSkillsVarsResp{}
+	for skillId, variables := range skills {
+		protoVars := make([]*mcp_service.Variable, 0, len(variables))
+		for _, variable := range variables {
+			protoVars = append(protoVars, toProtoVariableFromBuiltin(variable))
+		}
+		ret.Skills = append(ret.Skills, &mcp_service.BuiltinSkillVars{
+			SkillId:   skillId,
+			Variables: protoVars,
+			Total:     int64(len(variables)),
+		})
+	}
+	return ret, nil
+}
+
 // --- internal ---
 
 func toCustomSkillVariable(skillId string, variable *mcp_service.Variable) *model.CustomSkillVariable {
