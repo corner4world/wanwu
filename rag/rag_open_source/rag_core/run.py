@@ -21,7 +21,6 @@ import utils.knowledge_base_utils as kb_utils
 from utils.constant import CHUNK_SIZE
 import urllib.parse
 import urllib3
-from know_sse import get_query_dict_cache, query_rewrite
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from logging_config import init_logging
 from settings import MONGO_URL, USE_DATA_FLYWHEEL
@@ -29,6 +28,17 @@ from qa import index as qa_index
 from qa import search as qa_search
 from utils.http_util import validate_request
 from model_manager.model_config import get_model_configure
+from utils.otel import init_tracer
+from utils.trace import register_tracing
+from utils.tools import get_query_dict_cache, query_rewrite
+
+# 初始化 OpenTelemetry（必须在 Flask app 创建之前）
+init_tracer("rag-wanwu-core-service")
+
+# 自动 instrument requests 库（出站 HTTP 传播 traceparent）
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+RequestsInstrumentor().instrument()
 
 # 定义路径
 paths = ["./parser_data"]
@@ -45,6 +55,15 @@ for path in paths:
 app = Flask(__name__)
 init_logging()
 logger = logging.getLogger(__name__)
+
+# 自动 instrument Flask（入站 HTTP 提取 traceparent，创建 Span）
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+
+FlaskInstrumentor().instrument_app(app)
+
+# 添加日志记录（含 trace_id/span_id 关联）
+register_tracing(app)
+
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 app.config['JSON_AS_ASCII'] = False

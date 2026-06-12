@@ -18,7 +18,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from utils.constant import MAX_SENTENCE_SIZE
 from utils import minio_utils
 import time
-from openai import OpenAI
+
 from typing import List, Union, Any, Dict
 import re
 logger = logging.getLogger(__name__)

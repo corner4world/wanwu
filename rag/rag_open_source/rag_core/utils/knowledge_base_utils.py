@@ -785,7 +785,7 @@ def _parse_minio_url(url):
 
 def replace_minio_ip(search_list, only_meta=False):
     """将 search_list 中所有 MinIO URL 替换为预签名 URL（原地修改）。
-    相同的原始 URL 只调用一次 craete_download_url，其余复用缓存结果。
+    相同的原始 URL 只调用一次 create_download_url，其余复用缓存结果。
     应在 assemble_search_result 之前调用，使 prompt 中的 URL 也随 snippet 一并处理。
     """
     # 匹配含 /minio/download/api/ 的 URL（内网 IP 或外网地址均可），/* 兼容双斜杠
@@ -799,7 +799,7 @@ def replace_minio_ip(search_list, only_meta=False):
         if not bucket:
             url_presigned_cache[url] = url
             return url
-        new_url = minio_utils.craete_download_url(bucket, obj, expire=timedelta(days=1))
+        new_url = minio_utils.create_download_url(bucket, obj, expire=timedelta(days=1))
         result = new_url if new_url else url
         url_presigned_cache[url] = result
         return result
