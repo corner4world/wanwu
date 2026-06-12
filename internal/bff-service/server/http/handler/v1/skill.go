@@ -2,8 +2,6 @@ package v1
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
@@ -43,25 +41,6 @@ func GetCustomSkillDetail(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
-// CreateCustomSkill
-//
-//	@Tags			resource.skill
-//	@Summary		创建自定义skill
-//	@Description	创建自定义skill
-//	@Security		JWT
-//	@Accept			json
-//	@Produce		json
-//	@Param			data	body		request.CreateCustomSkillReq	true	"自定义skill信息"
-//	@Success		200		{object}	response.Response{data=response.CustomSkillIDResp}
-//	@Router			/agent/skill/custom [post]
-func CreateCustomSkill(ctx *gin.Context) {
-	var req request.CreateCustomSkillReq
-	if !gin_util.Bind(ctx, &req) {
-		return
-	}
-	resp, err := service.CreateCustomSkill(ctx, getUserID(ctx), getOrgID(ctx), req.Avatar.Key, req.ZipUrl)
-	gin_util.Response(ctx, resp, err)
-}
 
 // DeleteCustomSkill
 //
@@ -105,10 +84,7 @@ func DownloadCustomSkillVersion(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
-	ctx.Header("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(fileName))
-	ctx.Header("Content-Type", "application/octet-stream")
-	ctx.Header("Access-Control-Expose-Headers", "Content-Disposition")
-	ctx.Data(http.StatusOK, "application/octet-stream", resp)
+	gin_util.ResponseAttachment(ctx, fileName, resp)
 }
 
 // CreateCustomSkillConfig
@@ -259,10 +235,7 @@ func DownloadBuiltinSkill(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
-	ctx.Header("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(fileName))
-	ctx.Header("Content-Type", "application/octet-stream")
-	ctx.Header("Access-Control-Expose-Headers", "Content-Disposition")
-	ctx.Data(http.StatusOK, "application/octet-stream", resp)
+	gin_util.ResponseAttachment(ctx, fileName, resp)
 }
 
 // CreateBuiltinSkillConfig

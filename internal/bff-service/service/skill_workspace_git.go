@@ -11,12 +11,13 @@ import (
 	git_util "github.com/UnicomAI/wanwu/pkg/git-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	path_util "github.com/UnicomAI/wanwu/pkg/path-util"
 	"github.com/gin-gonic/gin"
 )
 
 // GetSkillWorkspaceGitLog 获取 git commit 历史。
 func GetSkillWorkspaceGitLog(ctx *gin.Context, userId, orgId string, req request.GetSkillWorkspaceGitLogReq) (*response.SkillWorkspaceGitLogResp, error) {
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func GetSkillWorkspaceGitLog(ctx *gin.Context, userId, orgId string, req request
 
 // GetSkillWorkspaceGitDiff 获取两个 commit 之间的 diff。
 func GetSkillWorkspaceGitDiff(ctx *gin.Context, userId, orgId string, req request.GetSkillWorkspaceGitDiffReq) (*response.SkillWorkspaceGitDiffResp, error) {
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +72,8 @@ func GetSkillWorkspaceGitDiff(ctx *gin.Context, userId, orgId string, req reques
 		}
 		log.Infof("[Workspace] GetGitDiff fromCommit=%s failed, trying --root: %v", fromCommit, err)
 		useRoot = true
-		responseFromCommit = "ROOT"
-		diff, err = ws.repo.GetDiff("ROOT", toCommit, generalAgentWorkspaceSkillDirName)
+		responseFromCommit = "" // 空字符串表示从初始提交开始，git-util 中空 fromCommit 触发 git show --root
+		diff, err = ws.repo.GetDiff("", toCommit, generalAgentWorkspaceSkillDirName)
 		if err != nil {
 			log.Errorf("[Workspace] GetGitDiff skill=%s err=%v", req.CustomSkillID, err)
 			return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_get_diff_failed")
@@ -81,7 +82,7 @@ func GetSkillWorkspaceGitDiff(ctx *gin.Context, userId, orgId string, req reques
 
 	var changedFileInfos []git_util.FileChangeInfo
 	if useRoot {
-		changedFileInfos, err = ws.repo.GetChangedFiles("ROOT", toCommit, generalAgentWorkspaceSkillDirName)
+		changedFileInfos, err = ws.repo.GetChangedFiles("", toCommit, generalAgentWorkspaceSkillDirName)
 	} else {
 		changedFileInfos, err = ws.repo.GetChangedFiles(fromCommit, toCommit, generalAgentWorkspaceSkillDirName)
 	}
@@ -113,7 +114,7 @@ func toGitFileChanges(files []git_util.FileChangeInfo) []response.GitFileChange 
 
 // GetSkillWorkspaceGitFile 获取指定 commit 中某文件的内容。
 func GetSkillWorkspaceGitFile(ctx *gin.Context, userId, orgId string, req request.GetSkillWorkspaceGitFileReq) (*response.SkillWorkspaceGitFileResp, error) {
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +148,7 @@ func GetSkillWorkspaceGitFile(ctx *gin.Context, userId, orgId string, req reques
 
 // GetSkillWorkspaceGitFileDiff 获取单个文件在两个 commit 之间的 diff。
 func GetSkillWorkspaceGitFileDiff(ctx *gin.Context, userId, orgId string, req request.GetSkillWorkspaceGitFileDiffReq) (*response.SkillWorkspaceGitDiffResp, error) {
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -176,8 +177,8 @@ func GetSkillWorkspaceGitFileDiff(ctx *gin.Context, userId, orgId string, req re
 			return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_get_file_diff_failed")
 		}
 		log.Infof("[Workspace] GetGitFileDiff fromCommit=%s failed, trying --root: %v", fromCommit, err)
-		responseFromCommit = "ROOT"
-		diff, err = ws.repo.GetFileDiff("ROOT", toCommit, relGitFilePath)
+		responseFromCommit = "" // 空字符串表示从初始提交开始，git-util 中空 fromCommit 触发 git show --root
+		diff, err = ws.repo.GetFileDiff("", toCommit, relGitFilePath)
 		if err != nil {
 			log.Errorf("[Workspace] GetGitFileDiff skill=%s err=%v", req.CustomSkillID, err)
 			return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_get_file_diff_failed")
@@ -196,7 +197,7 @@ func shouldFallbackGitDiffToRoot(defaultedFromCommit bool, fromCommit, toCommit 
 	if defaultedFromCommit {
 		return true
 	}
-	if fromCommit == "" || toCommit == "" || toCommit == "ROOT" {
+	if fromCommit == "" || toCommit == "" {
 		return false
 	}
 	for _, suffix := range []string{"~1", "~", "^1", "^"} {
@@ -209,7 +210,7 @@ func shouldFallbackGitDiffToRoot(defaultedFromCommit bool, fromCommit, toCommit 
 
 // GetGitStatus 获取工作区 git 状态。
 func GetGitStatus(ctx *gin.Context, userId, orgId string, req request.GitStatusReq) (*response.GitStatusResp, error) {
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +236,7 @@ func GetGitStatus(ctx *gin.Context, userId, orgId string, req request.GitStatusR
 // GitAdd 暂存文件。
 func GitAdd(ctx *gin.Context, userId, orgId string, req request.GitAddReq) error {
 	log.Infof("[Workspace] GitAdd user=%s org=%s skill=%s paths=%v", userId, orgId, req.CustomSkillID, req.Paths)
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return err
 	}
@@ -250,7 +251,7 @@ func GitAdd(ctx *gin.Context, userId, orgId string, req request.GitAddReq) error
 // GitReset 取消暂存文件。
 func GitReset(ctx *gin.Context, userId, orgId string, req request.GitResetReq) error {
 	log.Infof("[Workspace] GitReset user=%s org=%s skill=%s paths=%v", userId, orgId, req.CustomSkillID, req.Paths)
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return err
 	}
@@ -265,7 +266,7 @@ func GitReset(ctx *gin.Context, userId, orgId string, req request.GitResetReq) e
 // GitRestore 恢复整个 Skill 工作区到指定 commit。
 func GitRestore(ctx *gin.Context, userId, orgId string, req request.GitRestoreReq) error {
 	log.Infof("[Workspace] GitRestore user=%s org=%s skill=%s commit=%s", userId, orgId, req.CustomSkillID, req.Commit)
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return err
 	}
@@ -280,7 +281,7 @@ func GitRestore(ctx *gin.Context, userId, orgId string, req request.GitRestoreRe
 // GitDiscardWorkingTree 放弃未暂存的工作区变更。
 func GitDiscardWorkingTree(ctx *gin.Context, userId, orgId string, req request.GitDiscardReq) error {
 	log.Infof("[Workspace] GitDiscard user=%s org=%s skill=%s paths=%v", userId, orgId, req.CustomSkillID, req.Paths)
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return err
 	}
@@ -295,7 +296,7 @@ func GitDiscardWorkingTree(ctx *gin.Context, userId, orgId string, req request.G
 // GitCommitAction 提交已暂存的变更。
 func GitCommitAction(ctx *gin.Context, userId, orgId string, req request.GitCommitReq) (string, error) {
 	log.Infof("[Workspace] GitCommit user=%s org=%s skill=%s msgLen=%d", userId, orgId, req.CustomSkillID, len(req.Message))
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return "", err
 	}
@@ -310,7 +311,7 @@ func GitCommitAction(ctx *gin.Context, userId, orgId string, req request.GitComm
 
 // GetGitDiffWorkingTree 获取未暂存的 diff（工作目录 vs 暂存区）。
 func GetGitDiffWorkingTree(ctx *gin.Context, userId, orgId string, req request.GitStatusReq) (*response.SkillWorkspaceGitDiffResp, error) {
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +336,7 @@ func GetGitDiffWorkingTree(ctx *gin.Context, userId, orgId string, req request.G
 
 // GetGitDiffStaged 获取已暂存的 diff（暂存区 vs HEAD）。
 func GetGitDiffStaged(ctx *gin.Context, userId, orgId string, req request.GitStatusReq) (*response.SkillWorkspaceGitDiffResp, error) {
-	ws, err := resolveInitializedSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveInitializedSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +403,7 @@ func readWorkspaceFileContentOrEmpty(ws *skillWorkspaceContext, filePath string)
 	if err != nil {
 		return "", err
 	}
-	if err := ensureNoSymlinkInPath(ws.workspaceDir, fullPath, true); err != nil {
+	if err := path_util.EnsureNoSymlinkInPath(ws.workspaceDir, fullPath, true); err != nil {
 		return "", err
 	}
 	info, err := os.Lstat(fullPath)

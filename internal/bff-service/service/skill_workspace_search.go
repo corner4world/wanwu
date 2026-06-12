@@ -3,19 +3,19 @@ package service
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
+	path_util "github.com/UnicomAI/wanwu/pkg/path-util"
+	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,7 +39,7 @@ func newSearcher(workspaceDir string, req request.SearchSkillWorkspaceReq) (*sea
 		caseSensitive:  req.CaseSensitive,
 		wholeWord:      req.WholeWord,
 		useRegex:       req.UseRegex,
-		compiledRegex:  req.CompiledRegex, // G3: 复用 Check() 中已编译的正则，避免二次编译
+		compiledRegex:  req.CompiledRegex,
 		includePattern: req.IncludePattern,
 		excludePattern: req.ExcludePattern,
 	}
@@ -99,7 +99,7 @@ func (s *searcher) matchLine(line string) bool {
 
 // scanFile 扫描单个文本文件并返回匹配行。
 func (s *searcher) scanFile(path, relPath string) ([]*response.SearchResult, error) {
-	if binary, err := isLikelyBinaryFile(path); err != nil || binary {
+	if binary, err := util.IsLikelyBinaryFile(path); err != nil || binary {
 		return nil, err
 	}
 	file, err := os.Open(path)
@@ -118,7 +118,7 @@ func (s *searcher) scanFile(path, relPath string) ([]*response.SearchResult, err
 		if s.matchLine(line) {
 			content := line
 			if len(content) > maxSearchResultContentLength {
-				content = truncateUTF8(content, maxSearchResultContentLength)
+				content = util.TruncateUTF8(content, maxSearchResultContentLength)
 			}
 			results = append(results, &response.SearchResult{
 				Path:    relPath,
@@ -165,10 +165,10 @@ func (s *searcher) run() (*response.SkillWorkspaceSearchResp, error) {
 		if d.IsDir() {
 			return nil
 		}
-		if s.excludePattern != "" && matchPattern(relPath, s.excludePattern) {
+		if s.excludePattern != "" && util.MatchGlobPatterns(relPath, s.excludePattern) {
 			return nil
 		}
-		if s.includePattern != "" && !matchPattern(relPath, s.includePattern) {
+		if s.includePattern != "" && !util.MatchGlobPatterns(relPath, s.includePattern) {
 			return nil
 		}
 		if info.Size() > maxFileSize {
@@ -201,11 +201,11 @@ func (s *searcher) run() (*response.SkillWorkspaceSearchResp, error) {
 
 // SearchInWorkspace 在 Skill 工作区中搜索关键词。
 func SearchInWorkspace(ctx *gin.Context, userId, orgId string, req request.SearchSkillWorkspaceReq) (*response.SkillWorkspaceSearchResp, error) {
-	ws, err := resolveSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
-	if err := ensureNoSymlinkInPath(ws.workspaceDir, ws.workspaceDir, true); err != nil {
+	if err := path_util.EnsureNoSymlinkInPath(ws.workspaceDir, ws.workspaceDir, true); err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 	if _, err := os.Stat(ws.workspaceDir); os.IsNotExist(err) {
@@ -221,40 +221,4 @@ func SearchInWorkspace(ctx *gin.Context, userId, orgId string, req request.Searc
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_search_failed")
 	}
 	return resp, nil
-}
-
-// isLikelyBinaryFile 通过文件头判断文件是否可能为二进制。
-func isLikelyBinaryFile(path string) (bool, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return false, err
-	}
-	defer func() { _ = file.Close() }()
-
-	buf := make([]byte, 8192)
-	n, err := file.Read(buf)
-	if err != nil && err != io.EOF {
-		return false, err
-	}
-	for _, b := range buf[:n] {
-		if b == 0 {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// truncateUTF8 按字节上限安全截断 UTF-8 字符串。
-func truncateUTF8(s string, maxBytes int) string {
-	if maxBytes <= 0 {
-		return ""
-	}
-	if len(s) <= maxBytes {
-		return s
-	}
-	truncated := s[:maxBytes]
-	for len(truncated) > 0 && !utf8.ValidString(truncated) {
-		truncated = truncated[:len(truncated)-1]
-	}
-	return truncated
 }

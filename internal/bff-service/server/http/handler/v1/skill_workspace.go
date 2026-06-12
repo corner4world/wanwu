@@ -1,9 +1,6 @@
 package v1
 
 import (
-	"net/http"
-	"net/url"
-
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
@@ -76,10 +73,7 @@ func DownloadSkillWorkspace(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
-	ctx.Header("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(fileName))
-	ctx.Header("Content-Type", "application/octet-stream")
-	ctx.Header("Access-Control-Expose-Headers", "Content-Disposition")
-	ctx.Data(http.StatusOK, "application/octet-stream", data)
+	gin_util.ResponseAttachment(ctx, fileName, data)
 }
 
 // UpdateSkillWorkspaceFile 更新 Skill 工作区文件内容。

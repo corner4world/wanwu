@@ -607,55 +607,6 @@ const docTemplate = `{
             }
         },
         "/agent/skill/custom": {
-            "post": {
-                "security": [
-                    {
-                        "JWT": []
-                    }
-                ],
-                "description": "创建自定义skill",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "resource.skill"
-                ],
-                "summary": "创建自定义skill",
-                "parameters": [
-                    {
-                        "description": "自定义skill信息",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.CreateCustomSkillReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.CustomSkillIDResp"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
             "delete": {
                 "security": [
                     {
@@ -22865,20 +22816,6 @@ const docTemplate = `{
                 }
             }
         },
-        "request.CreateCustomSkillReq": {
-            "type": "object",
-            "required": [
-                "zipUrl"
-            ],
-            "properties": {
-                "avatar": {
-                    "$ref": "#/definitions/request.Avatar"
-                },
-                "zipUrl": {
-                    "type": "string"
-                }
-            }
-        },
         "request.CreateDocChildSegmentReq": {
             "type": "object",
             "required": [
@@ -29107,14 +29044,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "response.CustomSkillIDResp": {
-            "type": "object",
-            "properties": {
-                "skillId": {
                     "type": "string"
                 }
             }

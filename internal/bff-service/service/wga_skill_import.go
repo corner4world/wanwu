@@ -133,7 +133,7 @@ func importSkillIntoWorkspace(ctx *gin.Context, zipURL, skillDir string) (*util.
 }
 
 func importSkillDataIntoWorkspace(data []byte, skillDir string) (*util.SkillFrontMatter, error) {
-	if err := recreateDir(skillDir); err != nil {
+	if err := util.RecreateDir(skillDir); err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("prepare skill dir err: %v", err))
 	}
 	if err := unzipSkillDir(data, skillDir); err != nil {
@@ -146,13 +146,6 @@ func importSkillDataIntoWorkspace(data []byte, skillDir string) (*util.SkillFron
 	return fm, nil
 }
 
-func recreateDir(dir string) error {
-	if err := os.RemoveAll(dir); err != nil {
-		return err
-	}
-	return os.MkdirAll(dir, 0755)
-}
-
 func unzipSkillDir(data []byte, destDir string) error {
 	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -162,7 +155,7 @@ func unzipSkillDir(data []byte, destDir string) error {
 	if err != nil {
 		return err
 	}
-	return unzipSkillRoot(reader, skillRoot.zipPath, filepath.Join(destDir, skillRoot.name))
+	return util.UnzipSubDir(reader, skillRoot.zipPath, filepath.Join(destDir, skillRoot.name))
 }
 
 func findSkillRootInZip(reader *zip.Reader) (*importedSkillRoot, error) {
@@ -171,7 +164,7 @@ func findSkillRootInZip(reader *zip.Reader) (*importedSkillRoot, error) {
 		if file.FileInfo().IsDir() {
 			continue
 		}
-		cleanName, err := cleanZipEntryName(file.Name)
+		cleanName, err := util.CleanZipEntryName(file.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -212,107 +205,6 @@ func parseZipSkillFrontMatter(file *zip.File) (*util.SkillFrontMatter, error) {
 		return nil, fmt.Errorf("failed to read SKILL.md file: %v", err)
 	}
 	return util.ParseSkillFrontMatter(string(content))
-}
-
-func unzipSkillRoot(reader *zip.Reader, skillRoot, destDir string) error {
-	cleanDest, err := filepath.Abs(destDir)
-	if err != nil {
-		return err
-	}
-	cleanDestWithSep := cleanDest + string(os.PathSeparator)
-
-	for _, file := range reader.File {
-		cleanName, err := cleanZipEntryName(file.Name)
-		if err != nil {
-			return err
-		}
-		if !isZipEntryInSkillRoot(cleanName, skillRoot) {
-			continue
-		}
-		relativeName := relativeZipEntryName(cleanName, skillRoot)
-		if relativeName == "." {
-			continue
-		}
-		if file.Mode()&os.ModeSymlink != 0 {
-			return fmt.Errorf("zip entry symlink is not supported: %s", file.Name)
-		}
-
-		targetPath := filepath.Join(cleanDest, filepath.FromSlash(relativeName))
-		absTargetPath, err := filepath.Abs(targetPath)
-		if err != nil {
-			return err
-		}
-		if absTargetPath != cleanDest && !strings.HasPrefix(absTargetPath, cleanDestWithSep) {
-			return fmt.Errorf("zip entry escapes target directory: %s", file.Name)
-		}
-
-		if file.FileInfo().IsDir() {
-			perm := file.Mode().Perm()
-			if err := os.MkdirAll(absTargetPath, util.IfElse(perm == 0, os.FileMode(0755), perm)); err != nil {
-				return err
-			}
-			continue
-		}
-		if err := os.MkdirAll(filepath.Dir(absTargetPath), 0755); err != nil {
-			return err
-		}
-		if err := writeZipFile(file, absTargetPath); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func cleanZipEntryName(name string) (string, error) {
-	name = strings.ReplaceAll(name, "\\", "/")
-	for _, part := range strings.Split(name, "/") {
-		if part == "" || part == "." {
-			continue
-		}
-		if part == ".." || strings.Contains(part, ":") {
-			return "", fmt.Errorf("invalid zip entry path: %s", name)
-		}
-	}
-	cleanName := path.Clean(name)
-	if cleanName == "." || path.IsAbs(cleanName) || cleanName == ".." || strings.HasPrefix(cleanName, "../") {
-		return "", fmt.Errorf("invalid zip entry path: %s", name)
-	}
-	return cleanName, nil
-}
-
-func isZipEntryInSkillRoot(cleanName, skillRoot string) bool {
-	if skillRoot == "." {
-		return true
-	}
-	return cleanName == skillRoot || strings.HasPrefix(cleanName, skillRoot+"/")
-}
-
-func relativeZipEntryName(cleanName, skillRoot string) string {
-	if skillRoot == "." {
-		return cleanName
-	}
-	if cleanName == skillRoot {
-		return "."
-	}
-	return strings.TrimPrefix(cleanName, skillRoot+"/")
-}
-
-func writeZipFile(file *zip.File, targetPath string) error {
-	source, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer func() { _ = source.Close() }()
-
-	perm := file.Mode().Perm()
-	target, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, util.IfElse(perm == 0, os.FileMode(0644), perm))
-	if err != nil {
-		return err
-	}
-	defer func() { _ = target.Close() }()
-
-	_, err = io.Copy(target, source)
-	return err
 }
 
 func cleanSkillDirName(name string) (string, error) {

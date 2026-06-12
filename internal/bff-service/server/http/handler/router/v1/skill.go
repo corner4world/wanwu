@@ -13,7 +13,6 @@ func registerAgentSkill(apiV1 *gin.RouterGroup) {
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/list", http.MethodGet, v1.GetCustomSkillList, "获取自定义skill列表")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/detail", http.MethodGet, v1.GetCustomSkillDetail, "获取自定义skill详情")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/check", http.MethodPost, v1.CheckCustomSkill, "校验自定义skill zip包")
-	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom", http.MethodPost, v1.CreateCustomSkill, "创建自定义skill")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom", http.MethodDelete, v1.DeleteCustomSkill, "删除自定义skill")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/config", http.MethodPost, v1.CreateCustomSkillConfig, "新增自定义skill配置")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/custom/config", http.MethodPut, v1.UpdateCustomSkillConfig, "编辑自定义skill配置")
@@ -28,7 +27,7 @@ func registerAgentSkill(apiV1 *gin.RouterGroup) {
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/builtin/config", http.MethodPut, v1.UpdateBuiltinSkillConfig, "编辑内置skill配置")
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/builtin/config", http.MethodDelete, v1.DeleteBuiltinSkillConfig, "删除内置skill配置")
 
-	// 自定义与内建 skill
+	// 内置/我创建/我添加的skill
 	mid.Sub("resource.skill").Reg(apiV1, "/agent/skill/select", http.MethodGet, v1.GetSkillSelect, "智能体skills下拉列表")
 
 	// 资源库 - 我添加的 skill（acquired skill）

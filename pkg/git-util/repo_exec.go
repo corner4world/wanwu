@@ -177,7 +177,7 @@ func ValidateRelPath(p string, allowEmpty bool) (string, error) {
 
 // ValidateCommitRef 校验 commit 引用格式。
 func ValidateCommitRef(ref string) error {
-	if ref == "" || ref == "ROOT" {
+	if ref == "" {
 		return nil
 	}
 	if !commitRefRE.MatchString(ref) {
@@ -535,7 +535,7 @@ func GetDiff(dir, fromCommit, toCommit string, subDir string) (string, error) {
 		pathArg = cleanSub + "/"
 	}
 	var args []string
-	if fromCommit == "" || fromCommit == "ROOT" {
+	if fromCommit == "" {
 		args = []string{"show", "--root", "--format=", toCommit}
 		if pathArg != "" {
 			args = append(args, "--", pathArg)
@@ -646,7 +646,7 @@ func GetChangedFiles(dir, fromCommit, toCommit string, subDir string) ([]FileCha
 		pathArg = cleanSub + "/"
 	}
 	var args []string
-	if fromCommit == "" || fromCommit == "ROOT" {
+	if fromCommit == "" {
 		args = []string{"show", "--root", "--name-status", "--format=", toCommit}
 		if pathArg != "" {
 			args = append(args, "--", pathArg)
@@ -791,7 +791,7 @@ func GetFileDiff(dir, fromCommit, toCommit, filePath string) (string, error) {
 	defer mu.Unlock()
 
 	var args []string
-	if fromCommit == "" || fromCommit == "ROOT" {
+	if fromCommit == "" {
 		args = []string{"show", "--root", "--format=", toCommit, "--", cleanPath}
 	} else {
 		args = []string{"diff", fromCommit, toCommit, "--", cleanPath}

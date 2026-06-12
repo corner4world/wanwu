@@ -98,7 +98,7 @@ func prepareGeneralAgentSkillConvertOutputDir(customSkillID string) (string, err
 		return "", err
 	}
 	outputDir := filepath.Join(GetWgaWorkspaceThreadDir(store), generalAgentWorkspaceSkillDirName)
-	if err := recreateDir(outputDir); err != nil {
+	if err := util.RecreateDir(outputDir); err != nil {
 		return "", grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("prepare skill dir err: %v", err))
 	}
 	return outputDir, nil

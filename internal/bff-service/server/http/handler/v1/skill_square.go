@@ -2,8 +2,6 @@ package v1
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
@@ -114,10 +112,7 @@ func DownloadSquareShareSkill(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, err)
 		return
 	}
-	ctx.Header("Content-Disposition", "attachment; filename*=utf-8''"+url.QueryEscape(fileName))
-	ctx.Header("Content-Type", "application/octet-stream")
-	ctx.Header("Access-Control-Expose-Headers", "Content-Disposition")
-	ctx.Data(http.StatusOK, "application/octet-stream", resp)
+	gin_util.ResponseAttachment(ctx, fileName, resp)
 }
 
 // GetSquareShareSkillVersionList

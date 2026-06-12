@@ -157,12 +157,7 @@ type CallbackSkillDetail struct {
 	ObjectPath string `json:"objectPath"`
 }
 
-// --- 创建/校验 返回值 ---
-
-// CustomSkillIDResp 创建自定义skill返回值
-type CustomSkillIDResp struct {
-	SkillId string `json:"skillId"`
-}
+// --- 校验 返回值 ---
 
 // CustomSkillCheckResp 校验自定义skill包返回值
 type CustomSkillCheckResp struct {

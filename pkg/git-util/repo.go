@@ -1,6 +1,10 @@
 package git_util
 
-import "sync"
+import (
+	"os"
+	"path/filepath"
+	"sync"
+)
 
 // Repo 封装对单个 git 仓库的所有操作。dir 在构造时绑定，方法签名中不再重复传递。
 // 通过 Open(dir) 获取实例；调用方依赖 Repo 接口可在测试中注入 MockRepo。
@@ -164,4 +168,16 @@ func (r *repo) CommitAllInSubDirLocked(subDir, message string) (string, error) {
 // AddLocked 在调用方持锁时暂存路径。
 func (r *repo) AddLocked(paths []string, subDir string) error {
 	return GitAddLocked(r.dir, paths, subDir)
+}
+
+// HasGitMetadata 判断目录下是否存在 .git 文件/目录（不会进入子目录或解析仓库）。
+func HasGitMetadata(dir string) (bool, error) {
+	_, err := os.Lstat(filepath.Join(dir, ".git"))
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }

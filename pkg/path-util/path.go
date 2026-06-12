@@ -124,3 +124,78 @@ func nearestExistingPath(absPath string) (string, error) {
 		current = parent
 	}
 }
+
+// EnsureNoSymlinkInPath 校验 basePath -> targetPath 之间每一段路径都不是 symlink。
+// includeTarget=true 时把 targetPath 本身也纳入检查；
+// 当 basePath 与 targetPath 相等时退化为只检查 basePath 自身。
+func EnsureNoSymlinkInPath(basePath, targetPath string, includeTarget bool) error {
+	absBase, err := filepath.Abs(basePath)
+	if err != nil {
+		return err
+	}
+	if err := EnsureNoSymlinkInAncestors(absBase, true); err != nil {
+		return err
+	}
+	absTarget, err := filepath.Abs(targetPath)
+	if err != nil {
+		return err
+	}
+	rel, err := filepath.Rel(absBase, absTarget)
+	if err != nil {
+		return err
+	}
+	relSlash := filepath.ToSlash(rel)
+	if relSlash == "." {
+		return nil
+	}
+	if relSlash == ".." || strings.HasPrefix(relSlash, "../") || filepath.IsAbs(rel) {
+		return fmt.Errorf("path outside workspace")
+	}
+
+	parts := strings.Split(relSlash, "/")
+	if !includeTarget && len(parts) > 0 {
+		parts = parts[:len(parts)-1]
+	}
+	current := absBase
+	for _, part := range parts {
+		if part == "" || part == "." {
+			continue
+		}
+		current = filepath.Join(current, part)
+		info, err := os.Lstat(current)
+		if err != nil {
+			if os.IsNotExist(err) {
+				break
+			}
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("symlink path not allowed")
+		}
+	}
+	return nil
+}
+
+// EnsureNoSymlinkInAncestors 校验 absPath 的所有祖先目录都不是 symlink。
+// includePath=true 时 absPath 自身也纳入检查。
+func EnsureNoSymlinkInAncestors(absPath string, includePath bool) error {
+	current := absPath
+	if !includePath {
+		current = filepath.Dir(current)
+	}
+	for {
+		info, err := os.Lstat(current)
+		if err == nil {
+			if info.Mode()&os.ModeSymlink != 0 {
+				return fmt.Errorf("symlink path not allowed")
+			}
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return nil
+		}
+		current = parent
+	}
+}

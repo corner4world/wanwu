@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode"
 
+	gitutil "github.com/UnicomAI/wanwu/pkg/git-util"
 	path_util "github.com/UnicomAI/wanwu/pkg/path-util"
 )
 
@@ -187,10 +188,10 @@ func (r *GetSkillWorkspaceGitLogReq) Check() error {
 
 // Check 校验 Git diff 请求参数。
 func (r *GetSkillWorkspaceGitDiffReq) Check() error {
-	if err := validateGitRef(r.FromCommit); err != nil {
+	if err := gitutil.ValidateCommitRef(r.FromCommit); err != nil {
 		return fmt.Errorf("invalid fromCommit: %v", err)
 	}
-	if err := validateGitRef(r.ToCommit); err != nil {
+	if err := gitutil.ValidateCommitRef(r.ToCommit); err != nil {
 		return fmt.Errorf("invalid toCommit: %v", err)
 	}
 	return nil
@@ -204,7 +205,7 @@ func (r *GetSkillWorkspaceGitFileReq) Check() error {
 	if err := checkRelPath(r.FilePath); err != nil {
 		return err
 	}
-	if err := validateGitRef(r.CommitHash); err != nil {
+	if err := gitutil.ValidateCommitRef(r.CommitHash); err != nil {
 		return fmt.Errorf("invalid commitHash: %v", err)
 	}
 	return nil
@@ -218,10 +219,10 @@ func (r *GetSkillWorkspaceGitFileDiffReq) Check() error {
 	if err := checkRelPath(r.FilePath); err != nil {
 		return err
 	}
-	if err := validateGitRef(r.FromCommit); err != nil {
+	if err := gitutil.ValidateCommitRef(r.FromCommit); err != nil {
 		return fmt.Errorf("invalid fromCommit: %v", err)
 	}
-	if err := validateGitRef(r.ToCommit); err != nil {
+	if err := gitutil.ValidateCommitRef(r.ToCommit); err != nil {
 		return fmt.Errorf("invalid toCommit: %v", err)
 	}
 	return nil
@@ -296,7 +297,7 @@ func (r *GitRestoreReq) Check() error {
 	if r.Commit == "" {
 		return fmt.Errorf("commit is required")
 	}
-	if err := validateGitRef(r.Commit); err != nil {
+	if err := gitutil.ValidateCommitRef(r.Commit); err != nil {
 		return fmt.Errorf("invalid commit: %v", err)
 	}
 	return nil
@@ -342,18 +343,3 @@ func (r *GitCommitReq) Check() error {
 	return nil
 }
 
-// validateGitRef 校验 git 引用格式（commit-ish only，不接受分支名/tag 名）。
-// 允许：HEAD、SHA-1（7-40 位）、SHA-256（64 位），后跟可选 ~N / ^N 修饰符。
-func validateGitRef(ref string) error {
-	if ref == "" {
-		return nil // 空值合法，由调用方设置默认值
-	}
-	if strings.ContainsAny(ref, "/ \t\n\r:") {
-		return fmt.Errorf("invalid git ref format: %s", ref)
-	}
-	matched, _ := regexp.MatchString(`^(HEAD|[0-9a-fA-F]{7,40}|[0-9a-fA-F]{64})([~^][0-9]*)*$`, ref)
-	if matched {
-		return nil
-	}
-	return fmt.Errorf("invalid git ref format: %s", ref)
-}

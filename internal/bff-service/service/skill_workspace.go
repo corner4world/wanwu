@@ -2,16 +2,13 @@ package service
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	git_util "github.com/UnicomAI/wanwu/pkg/git-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	path_util "github.com/UnicomAI/wanwu/pkg/path-util"
-	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -32,7 +29,7 @@ type skillWorkspaceContext struct {
 }
 
 // resolveSkillWorkspace 校验归属并解析 Skill 工作区上下文。
-func resolveSkillWorkspace(ctx *gin.Context, userId, orgId, customSkillID string) (*skillWorkspaceContext, error) {
+func resolveSkillWorkspace(customSkillID string) (*skillWorkspaceContext, error) {
 	skillDir, err := getSkillDir(customSkillID)
 	if err != nil {
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_get_dir_failed")
@@ -49,8 +46,8 @@ func resolveSkillWorkspace(ctx *gin.Context, userId, orgId, customSkillID string
 }
 
 // resolveInitializedSkillWorkspace 解析并确保工作区已初始化 Git 仓库。
-func resolveInitializedSkillWorkspace(ctx *gin.Context, userId, orgId, customSkillID string) (*skillWorkspaceContext, error) {
-	ws, err := resolveSkillWorkspace(ctx, userId, orgId, customSkillID)
+func resolveInitializedSkillWorkspace(customSkillID string) (*skillWorkspaceContext, error) {
+	ws, err := resolveSkillWorkspace(customSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,76 +108,4 @@ func ensureGitInitializedAt(customSkillID, skillDir string) (bool, error) {
 // workspaceFilePath 解析工作区内文件路径并返回绝对路径与清理后的相对路径。
 func workspaceFilePath(basePath, relativePath string) (string, string, error) {
 	return path_util.JoinWithinBase(basePath, relativePath, false)
-}
-
-// ensureNoSymlinkInPath 校验目标路径链路中不包含符号链接。
-func ensureNoSymlinkInPath(basePath, targetPath string, includeTarget bool) error {
-	absBase, err := filepath.Abs(basePath)
-	if err != nil {
-		return err
-	}
-	if err := ensureNoSymlinkInAncestors(absBase, true); err != nil {
-		return err
-	}
-	absTarget, err := filepath.Abs(targetPath)
-	if err != nil {
-		return err
-	}
-	rel, err := filepath.Rel(absBase, absTarget)
-	if err != nil {
-		return err
-	}
-	relSlash := filepath.ToSlash(rel)
-	if relSlash == "." {
-		return nil
-	}
-	if relSlash == ".." || strings.HasPrefix(relSlash, "../") || filepath.IsAbs(rel) {
-		return fmt.Errorf("path outside workspace")
-	}
-
-	parts := strings.Split(relSlash, "/")
-	if !includeTarget && len(parts) > 0 {
-		parts = parts[:len(parts)-1]
-	}
-	current := absBase
-	for _, part := range parts {
-		if part == "" || part == "." {
-			continue
-		}
-		current = filepath.Join(current, part)
-		info, err := os.Lstat(current)
-		if err != nil {
-			if os.IsNotExist(err) {
-				break
-			}
-			return err
-		}
-		if info.Mode()&os.ModeSymlink != 0 {
-			return fmt.Errorf("symlink path not allowed")
-		}
-	}
-	return nil
-}
-
-// ensureNoSymlinkInAncestors 校验指定路径及其父级不包含符号链接。
-func ensureNoSymlinkInAncestors(absPath string, includePath bool) error {
-	current := absPath
-	if !includePath {
-		current = filepath.Dir(current)
-	}
-	for {
-		info, err := os.Lstat(current)
-		if err == nil {
-			if info.Mode()&os.ModeSymlink != 0 {
-				return fmt.Errorf("symlink path not allowed")
-			}
-		} else if !os.IsNotExist(err) {
-			return err
-		}
-		parent := filepath.Dir(current)
-		if parent == current {
-			return nil
-		}
-		current = parent
-	}
 }

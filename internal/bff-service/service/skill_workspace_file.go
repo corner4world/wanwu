@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	path_util "github.com/UnicomAI/wanwu/pkg/path-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
@@ -76,11 +76,11 @@ func buildFileTree(basePath, currentPath string, depth int, count *int) ([]*resp
 func GetSkillWorkspaceFiles(ctx *gin.Context, userId, orgId string, req request.GetSkillWorkspaceFilesReq) (*response.SkillWorkspaceFilesResp, error) {
 	log.Infof("[Workspace] GetSkillWorkspaceFiles customSkillID: %v", req.CustomSkillID)
 
-	ws, err := resolveSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
-	if err := ensureNoSymlinkInPath(ws.workspaceDir, ws.workspaceDir, true); err != nil {
+	if err := path_util.EnsureNoSymlinkInPath(ws.workspaceDir, ws.workspaceDir, true); err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 	if info, err := os.Stat(ws.workspaceDir); err != nil {
@@ -103,7 +103,7 @@ func GetSkillWorkspaceFiles(ctx *gin.Context, userId, orgId string, req request.
 
 // GetSkillWorkspaceFile 读取工作区文件内容。
 func GetSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req request.GetSkillWorkspaceFileReq) (*response.SkillWorkspaceFileResp, error) {
-	ws, err := resolveSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func GetSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req request.G
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 
-	if err := ensureNoSymlinkInPath(ws.workspaceDir, fullPath, true); err != nil {
+	if err := path_util.EnsureNoSymlinkInPath(ws.workspaceDir, fullPath, true); err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 	info, err := os.Lstat(fullPath)
@@ -148,7 +148,7 @@ func GetSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req request.G
 
 // DownloadSkillWorkspace 下载工作区文件或目录。
 func DownloadSkillWorkspace(ctx *gin.Context, userId, orgId string, req request.DownloadSkillWorkspaceReq) (string, []byte, error) {
-	ws, err := resolveSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return "", nil, err
 	}
@@ -157,7 +157,7 @@ func DownloadSkillWorkspace(ctx *gin.Context, userId, orgId string, req request.
 	if err != nil {
 		return "", nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
-	if err := ensureNoSymlinkInPath(ws.workspaceDir, fullPath, true); err != nil {
+	if err := path_util.EnsureNoSymlinkInPath(ws.workspaceDir, fullPath, true); err != nil {
 		return "", nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 
@@ -192,7 +192,7 @@ func DownloadSkillWorkspace(ctx *gin.Context, userId, orgId string, req request.
 // DeleteSkillWorkspaceFile 删除工作区文件或目录。
 func DeleteSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req request.DeleteSkillWorkspaceFileReq) error {
 	log.Infof("[Workspace] DeleteFile user=%s org=%s skill=%s path=%s", userId, orgId, req.CustomSkillID, req.Path)
-	ws, err := resolveSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func DeleteSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req reques
 	if err != nil {
 		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
-	if err := ensureNoSymlinkInPath(ws.workspaceDir, fullPath, true); err != nil {
+	if err := path_util.EnsureNoSymlinkInPath(ws.workspaceDir, fullPath, true); err != nil {
 		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 
@@ -234,7 +234,7 @@ func DeleteSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req reques
 // UpdateSkillWorkspaceFile 更新工作区文件内容。
 func UpdateSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req request.UpdateSkillWorkspaceFileReq) (*response.UpdateSkillWorkspaceFileResp, error) {
 	log.Infof("[Workspace] UpdateFile user=%s org=%s skill=%s path=%s size=%d", userId, orgId, req.CustomSkillID, req.Path, len(req.Content))
-	ws, err := resolveSkillWorkspace(ctx, userId, orgId, req.CustomSkillID)
+	ws, err := resolveSkillWorkspace(req.CustomSkillID)
 	if err != nil {
 		return nil, err
 	}
@@ -244,14 +244,14 @@ func UpdateSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req reques
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 
-	if err := ensureNoSymlinkInPath(ws.workspaceDir, ws.workspaceDir, true); err != nil {
+	if err := path_util.EnsureNoSymlinkInPath(ws.workspaceDir, ws.workspaceDir, true); err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 	if err := os.MkdirAll(ws.workspaceDir, 0755); err != nil {
 		log.Errorf("[Workspace] UpdateFile mkdir workspace %s err: %v", ws.workspaceDir, err)
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_create_dir_failed")
 	}
-	if err := ensureNoSymlinkInPath(ws.workspaceDir, filepath.Dir(fullPath), true); err != nil {
+	if err := path_util.EnsureNoSymlinkInPath(ws.workspaceDir, filepath.Dir(fullPath), true); err != nil {
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
 	}
 	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
@@ -266,61 +266,10 @@ func UpdateSkillWorkspaceFile(ctx *gin.Context, userId, orgId string, req reques
 			return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_path_is_directory")
 		}
 	}
-	if err := writeFileAtomic(fullPath, []byte(req.Content)); err != nil {
+	if err := util.WriteFileAtomic(fullPath, []byte(req.Content)); err != nil {
 		log.Errorf("[Workspace] UpdateFile write %s err: %v", fullPath, err)
 		return nil, grpc_util.ErrorStatusWithKey(errs.Code_BFFGeneral, "bff_skill_workspace_write_file_failed")
 	}
 
 	return &response.UpdateSkillWorkspaceFileResp{}, nil
-}
-
-// matchPattern 检查路径是否匹配 glob 模式（逗号分隔多模式）。
-func matchPattern(relPath, pattern string) bool {
-	if pattern == "" {
-		return true
-	}
-	for _, p := range strings.Split(pattern, ",") {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-		if matched, err := path.Match(p, filepath.Base(relPath)); err == nil && matched {
-			return true
-		}
-		if matched, err := path.Match(p, relPath); err == nil && matched {
-			return true
-		}
-	}
-	return false
-}
-
-// writeFileAtomic 通过临时文件和重命名原子写入文件内容。
-func writeFileAtomic(filePath string, data []byte) error {
-	dir := filepath.Dir(filePath)
-	tmp, err := os.CreateTemp(dir, ".tmp-*")
-	if err != nil {
-		return err
-	}
-	tmpName := tmp.Name()
-	defer func() { _ = os.Remove(tmpName) }()
-
-	if _, err := tmp.Write(data); err != nil {
-		_ = tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Chmod(tmpName, 0644); err != nil {
-		return err
-	}
-	if err := os.Rename(tmpName, filePath); err != nil {
-		if removeErr := os.Remove(filePath); removeErr != nil && !os.IsNotExist(removeErr) {
-			return err
-		}
-		if renameErr := os.Rename(tmpName, filePath); renameErr != nil {
-			return err
-		}
-	}
-	return nil
 }

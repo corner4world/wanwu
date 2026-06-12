@@ -2017,15 +2017,6 @@ definitions:
     required:
     - name
     type: object
-  request.CreateCustomSkillReq:
-    properties:
-      avatar:
-        $ref: '#/definitions/request.Avatar'
-      zipUrl:
-        type: string
-    required:
-    - zipUrl
-    type: object
   request.CreateDocChildSegmentReq:
     properties:
       content:
@@ -6224,11 +6215,6 @@ definitions:
       name:
         type: string
     type: object
-  response.CustomSkillIDResp:
-    properties:
-      skillId:
-        type: string
-    type: object
   response.CustomTab:
     properties:
       logo:
@@ -9952,34 +9938,6 @@ paths:
       security:
       - JWT: []
       summary: 删除自定义skill
-      tags:
-      - resource.skill
-    post:
-      consumes:
-      - application/json
-      description: 创建自定义skill
-      parameters:
-      - description: 自定义skill信息
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.CreateCustomSkillReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.CustomSkillIDResp'
-              type: object
-      security:
-      - JWT: []
-      summary: 创建自定义skill
       tags:
       - resource.skill
   /agent/skill/custom/check:

@@ -29,45 +29,6 @@ const (
 	customSkillFileType = ".zip"
 )
 
-func CreateCustomSkill(ctx *gin.Context, userId, orgId string, avatarKey, zipUrl string) (*response.CustomSkillIDResp, error) {
-	var skillName, skillDesc string
-
-	if zipUrl != "" {
-		// 下载文件
-		data, err := minio_util.DownloadFileDirect(ctx.Request.Context(), zipUrl)
-		if err != nil {
-			return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("download skill zip err: %v", err))
-		}
-
-		// 解压并查找SKILL.md文件，提取name和description
-		_, fm, err := util.ExtractSkillMarkdownFromZip(data)
-		if err != nil {
-			return nil, grpc_util.ErrorStatus(errs.Code_BFFSkillParse, err.Error())
-		}
-
-		// 如果从markdown中提取到了name和desc，使用这些值
-		skillName = fm.Name
-		skillDesc = fm.Description
-
-		_, _, err = minio.UploadFileCommon(ctx.Request.Context(), bytes.NewReader(data), customSkillFileType, -1, true)
-		if err != nil {
-			return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, err.Error())
-		}
-	}
-
-	createResp, err := mcp.CustomSkillCreate(ctx.Request.Context(), &mcp_service.CustomSkillCreateReq{
-		Name:     skillName,
-		Avatar:   avatarKey,
-		Author:   getUserNameById(ctx, userId),
-		Desc:     skillDesc,
-		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &response.CustomSkillIDResp{SkillId: createResp.SkillId}, nil
-}
 
 func GetCustomSkill(ctx *gin.Context, userId, orgId, skillId string) (*response.PublishedSkillDetail, error) {
 	publish, err := mcp.CustomSkillGet(ctx.Request.Context(), &mcp_service.CustomSkillGetReq{
@@ -254,7 +215,7 @@ func replaceCustomSkillDirWithGitGuard(skillRoot, skillDir, stagingDir string) e
 	}
 
 	if gitInitialized {
-		if ok, err := pathHasGitMetadata(skillRoot); err != nil {
+		if ok, err := git_util.HasGitMetadata(skillRoot); err != nil {
 			return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("skill workspace git metadata missing after rollback: %v", err))
 		} else if !ok {
 			return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("%s not found", filepath.Join(skillRoot, ".git")))
@@ -265,7 +226,7 @@ func replaceCustomSkillDirWithGitGuard(skillRoot, skillDir, stagingDir string) e
 
 // replaceCustomSkillDir 使用备份目录替换当前 skill 目录。
 func replaceCustomSkillDir(skillDir, stagingDir string) error {
-	if ok, err := pathHasGitMetadata(skillDir); err != nil {
+	if ok, err := git_util.HasGitMetadata(skillDir); err != nil {
 		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("check skill workspace git metadata err: %v", err))
 	} else if ok {
 		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("refuse to replace git repository directory: %s", skillDir))
@@ -291,18 +252,6 @@ func replaceCustomSkillDir(skillDir, stagingDir string) error {
 		return grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("replace skill workspace err: %v", err))
 	}
 	return nil
-}
-
-// pathHasGitMetadata 判断目录下是否存在 Git 元数据。
-func pathHasGitMetadata(dir string) (bool, error) {
-	_, err := os.Lstat(filepath.Join(dir, ".git"))
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
 }
 
 func downloadCustomSkillZip(ctx *gin.Context, zipURL string) ([]byte, error) {
@@ -484,7 +433,7 @@ func uniqueSkillIDs(skillIdList []string) []string {
 // buildCustomSkillPublishPackage 从 HEAD:skill 打包发布 zip。
 // 只有包校验和上传都成功后，才创建发布版本 tag。
 func buildCustomSkillPublishPackage(ctx *gin.Context, userId, orgId, skillId, version string) (string, string, func(), error) {
-	ws, err := resolveSkillWorkspace(ctx, userId, orgId, skillId)
+	ws, err := resolveSkillWorkspace(skillId)
 	if err != nil {
 		return "", "", nil, err
 	}
