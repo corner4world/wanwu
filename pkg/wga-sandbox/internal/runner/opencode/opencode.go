@@ -1,7 +1,33 @@
 // Package opencode 提供 opencode 智能体的运行器实现（基于 HTTP API）。
 //
-// 基于 opencode = v1.15.13 的 SSE 事件格式实现。
+// 基于 opencode >= v1.4.11 的 SSE 事件格式实现，兼容 v1.14.51、v1.15.13、v1.16.2。
+//
+// 版本基线说明：
+//   v1.1.65 仅支持 BusEvent 单格式 SSE（src/server/routes/global.ts 仅使用
+//   BusEvent.payloads()）。v1.4.11 引入 BusEvent/SyncEvent 双格式（参见 e8f0faee），
+//   SSE schema 变为 z.union([BusEvent.payloads(), SyncEvent.payloads()])，奠定了
+//   当前 SSE 事件解析的架构基础。后续版本增量添加事件和字段，线上格式始终向后兼容：
+//   - v1.14.51：BusEvent payload 新增 id 字段（上升标识符），GlobalBus 新增 project 字段，
+//     引入 session.next.* 细粒度事件（实验性标志，默认关闭）
+//   - v1.15.13：引入 EventV2 核心系统（packages/core/src/event.ts），EventV2Bridge
+//     通过 legacy Bus/SyncEvent 间接输出，线上格式不变
+//   - v1.16.2：EventV2Bridge 直接输出至 GlobalBus，session.next.* 事件默认开启，
+//     线上 BusEvent/SyncEvent 格式仍不变
+//
 // 通过 SSE 连接接收 opencode 事件流，转换为统一的 JSON 格式输出。
+//
+// v1.16.2 兼容性说明：
+//   - v1.16.2 将内部事件系统从 BusEvent 迁移至 EventV2，但 EventV2Bridge 保持了
+//     向后兼容的 SSE 输出格式：BusEvent 格式 {id, type, properties} 和 SyncEvent
+//     格式 {type:"sync", syncEvent:{id, type, seq, aggregateID, data}} 均未变。
+//   - HTTP API 端点（/session, /session/{id}/prompt_async, /question/{id}/reply 等）
+//     路径和请求/响应格式未变。
+//   - Part 类型（text, reasoning, tool, step-start, step-finish 等）字段结构未变。
+//   - session.idle 事件仍向后兼容发送（同时发送 session.status）。
+//   - 新增 SSE 字段（如 payload.project, payload.workspace）被 Go json.Unmarshal
+//     自动忽略，无需代码修改。
+//   - 新增 session.next.* 系列细粒度事件（SyncEvent），当前未处理，不影响现有逻辑。
+//   - 注意：未来版本可能移除 BusEvent 兼容层，届时需适配 EventV2 直出格式。
 package opencode
 
 import (
