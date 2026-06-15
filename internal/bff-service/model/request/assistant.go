@@ -1,6 +1,9 @@
 package request
 
-import "github.com/UnicomAI/wanwu/pkg/util"
+import (
+	"fmt"
+	"github.com/UnicomAI/wanwu/pkg/util"
+)
 
 type AssistantUpdateReq struct {
 	AssistantId string `json:"assistantId"  validate:"required"`
@@ -182,6 +185,37 @@ type ConversionStreamRequest struct {
 	Prompt         string                 `json:"prompt" form:"prompt"  validate:"required"`
 	SystemPrompt   string                 `json:"systemPrompt" form:"systemPrompt"`
 	IsCompare      bool                   `json:"isCompare" form:"isCompare"`
+	SseHold        bool                   `json:"sseHold" form:"sseHold"`
+}
+
+type PendingConversionRequest struct {
+	AssistantId    string `json:"assistantId" form:"assistantId"  validate:"required"`
+	Draft          bool   `json:"draft" form:"draft"`                 //是否草稿态
+	ConversationId string `json:"conversationId" form:"conversionId"` //当非草稿时，conversationId必填
+}
+
+func (p *PendingConversionRequest) Check() error {
+	if !p.Draft && p.ConversationId == "" {
+		return fmt.Errorf("conversationId is required")
+	}
+	return nil
+}
+
+type ConversionStreamConnectRequest struct {
+	AssistantId    string `json:"assistantId" form:"assistantId"  validate:"required"`
+	ConversationId string `json:"conversationId" form:"conversionId"  validate:"required"`
+	CommonCheck
+}
+
+type ConversionStreamCancelRequest struct {
+	PendingConversionRequest
+}
+
+func (p *ConversionStreamCancelRequest) Check() error {
+	if !p.Draft && p.ConversationId == "" {
+		return fmt.Errorf("conversationId is required")
+	}
+	return nil
 }
 
 func (c *ConversionStreamRequest) Check() error {

@@ -530,7 +530,7 @@ func GetConversationDetailList(ctx *gin.Context) {
 //	@Success		200		{object}	response.Response
 //	@Router			/assistant/stream/draft [post]
 func DraftAssistantConversionStream(ctx *gin.Context) {
-	userId, orgId := getUserID(ctx), getOrgID(ctx)
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
 	var req request.ConversionStreamRequest
 	if !gin_util.Bind(ctx, &req) {
 		return
@@ -555,9 +555,84 @@ func DraftAssistantConversionStream(ctx *gin.Context) {
 		}
 	}
 
-	if err := service.AssistantConversionStream(ctx, userId, orgId, req, false, constant.AppStatisticSourceDraft); err != nil {
+	//启用链接保持
+	req.SseHold = true
+
+	if err := service.AssistantConversionStream(ctx, userId, orgId, clientId, req, false, constant.AppStatisticSourceDraft); err != nil {
 		gin_util.Response(ctx, nil, err)
 	}
+}
+
+// GetAssistantPendingConversion
+//
+//	@Tags			agent
+//	@Summary		获取智能体运行中会话
+//	@Description	获取智能体运行中会话
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.PendingConversionRequest	true	"获取智能体运行中会话请求参数"
+//	@Success		200		{object}	response.Response{data=response.PendingConversationResp}
+//	@Router			/assistant/pending/conversation [post]
+func GetAssistantPendingConversion(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.PendingConversionRequest
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	conversation, err := service.GetPendingConversation(ctx, userId, orgId, clientId, req)
+	if err != nil {
+		gin_util.Response(ctx, nil, err)
+	}
+	gin_util.Response(ctx, conversation, err)
+}
+
+// AssistantConversionStreamConnect
+//
+//	@Tags			agent
+//	@Summary		草稿智能体流式问答断开后重连
+//	@Description	草稿智能体流式问答断开后重连
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.ConversionStreamConnectRequest	true	"智能体流式问答参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/assistant/stream/connect [post]
+func AssistantConversionStreamConnect(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.ConversionStreamConnectRequest
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+
+	if err := service.AssistantConversionStreamConnect(ctx, userId, orgId, clientId, req); err != nil {
+		gin_util.Response(ctx, nil, err)
+	}
+}
+
+// AssistantConversionStreamCancel
+//
+//	@Tags			agent
+//	@Summary		智能体流式问答手动停止
+//	@Description	智能体流式问答手动停止
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.ConversionStreamCancelRequest	true	"智能体流式问答手动停止参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/assistant/stream/cancel [post]
+func AssistantConversionStreamCancel(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.ConversionStreamCancelRequest
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+
+	if err := service.AssistantConversionStreamCancel(ctx, userId, orgId, clientId, req); err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+	gin_util.Response(ctx, nil, nil)
 }
 
 // DraftAssistantConversationDetailList
@@ -631,12 +706,14 @@ func DraftAssistantConversationDelete(ctx *gin.Context) {
 //	@Success		200		{object}	response.Response
 //	@Router			/assistant/stream [post]
 func PublishedAssistantConversionStream(ctx *gin.Context) {
-	userId, orgId := getUserID(ctx), getOrgID(ctx)
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
 	var req request.ConversionStreamRequest
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	if err := service.AssistantConversionStream(ctx, userId, orgId, req, true, constant.AppStatisticSourceWeb); err != nil {
+	//启用链接保持
+	req.SseHold = true
+	if err := service.AssistantConversionStream(ctx, userId, orgId, clientId, req, true, constant.AppStatisticSourceWeb); err != nil {
 		gin_util.Response(ctx, nil, err)
 	}
 }

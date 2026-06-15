@@ -150,11 +150,12 @@ func AppUrlConversionStream(ctx *gin.Context, req request.UrlConversionStreamReq
 		}()
 	}()
 
-	chatCh, err := CallAssistantConversationStream(ctx, xCid, appUrlInfo.OrgId, request.ConversionStreamRequest{
+	chatCh, err := CallAssistantConversationStream(ctx, xCid, appUrlInfo.OrgId, xCid, request.ConversionStreamRequest{
 		AssistantId:    appUrlInfo.AppId,
 		ConversationId: req.ConversationId,
 		FileInfo:       req.FileInfo,
 		Prompt:         req.Prompt,
+		SseHold:        true,
 	}, true)
 	if err != nil {
 		streamParams.hasErr = true
@@ -164,6 +165,42 @@ func AppUrlConversionStream(ctx *gin.Context, req request.UrlConversionStreamReq
 	_ = sse_util.NewSSEWriter(ctx, fmt.Sprintf("[Agent] %v conversation %v recv", appUrlInfo.AppId, req.ConversationId), sse_util.DONE_MSG).
 		WriteStream(chatCh, streamParams, buildAgentChatRespLineProcessor(), nil)
 	return nil
+}
+
+func AppUrlGetPendingConversation(ctx *gin.Context, req request.UrlPendingConversionRequest, xCid, suffix string) (*response.PendingConversationResp, error) {
+	appUrlInfo, err := getAppUrlInfoAndCheck(ctx, suffix)
+	if err != nil {
+		return nil, err
+	}
+	return GetPendingConversation(ctx, appUrlInfo.UserId, appUrlInfo.OrgId, xCid, request.PendingConversionRequest{
+		ConversationId: req.ConversationId,
+		Draft:          false,
+		AssistantId:    appUrlInfo.AppId,
+	})
+}
+
+func AppUrlConversionStreamConnect(ctx *gin.Context, req request.UrlConversionStreamConnectRequest, xCid, suffix string) error {
+	appUrlInfo, err := getAppUrlInfoAndCheck(ctx, suffix)
+	if err != nil {
+		return err
+	}
+	return AssistantConversionStreamConnect(ctx, appUrlInfo.UserId, appUrlInfo.OrgId, xCid, request.ConversionStreamConnectRequest{
+		AssistantId:    appUrlInfo.AppId,
+		ConversationId: req.ConversationId,
+	})
+}
+
+func AppUrlConversionStreamCancel(ctx *gin.Context, req request.UrlConversionStreamCancelRequest, xCid, suffix string) error {
+	appUrlInfo, err := getAppUrlInfoAndCheck(ctx, suffix)
+	if err != nil {
+		return err
+	}
+	return AssistantConversionStreamCancel(ctx, appUrlInfo.UserId, appUrlInfo.OrgId, xCid, request.ConversionStreamCancelRequest{
+		PendingConversionRequest: request.PendingConversionRequest{
+			AssistantId:    appUrlInfo.AppId,
+			ConversationId: req.ConversationId,
+		},
+	})
 }
 
 func getAppUrlInfoAndCheck(ctx *gin.Context, suffix string) (*app_service.AppUrlInfo, error) {

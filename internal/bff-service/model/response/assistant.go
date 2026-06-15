@@ -150,6 +150,13 @@ type AssistantCreateResp struct {
 	AssistantId string `json:"assistantId"`
 }
 
+type PendingConversationResp struct {
+	ConversationId         string                 `json:"conversationId"`         // 会话id
+	HasPendingConversation bool                   `json:"hasPendingConversation"` // 是否有进行中会话
+	Prompt                 string                 `json:"prompt"`
+	RequestFiles           []AssistantRequestFile `json:"requestFiles"`
+}
+
 // --- conversation sse ---
 
 type ConversationSSEData struct {

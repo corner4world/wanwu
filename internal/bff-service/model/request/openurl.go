@@ -23,6 +23,19 @@ func (c *UrlConversionStreamRequest) Check() error {
 	return nil
 }
 
+type UrlPendingConversionRequest struct {
+	ConversationId string `json:"conversationId" form:"conversationId"  validate:"required"`
+	CommonCheck
+}
+
+type UrlConversionStreamConnectRequest struct {
+	UrlPendingConversionRequest
+}
+
+type UrlConversionStreamCancelRequest struct {
+	UrlPendingConversionRequest
+}
+
 type UrlQuestionRecommendRequest struct {
 	ConversationId string `json:"conversationId" form:"conversionId"`
 	Query          string `json:"query" form:"query"  validate:"required"`

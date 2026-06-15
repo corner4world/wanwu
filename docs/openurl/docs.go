@@ -16,6 +16,135 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/agent/:suffix/pending/conversation": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取智能体运行中会话",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl"
+                ],
+                "summary": "获取智能体运行中会话",
+                "parameters": [
+                    {
+                        "description": "获取智能体运行中会话请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UrlPendingConversionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.PendingConversationResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/:suffix/stream/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "智能体流式问答手动停止",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl"
+                ],
+                "summary": "智能体流式问答手动停止",
+                "parameters": [
+                    {
+                        "description": "智能体流式问答手动停止参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UrlConversionStreamCancelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/agent/:suffix/stream/connect": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "草稿智能体流式问答断开后重连",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openurl"
+                ],
+                "summary": "草稿智能体流式问答断开后重连",
+                "parameters": [
+                    {
+                        "description": "草稿智能体流式问答断开后重连参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UrlConversionStreamConnectRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/agent/{suffix}": {
             "get": {
                 "security": [
@@ -1191,6 +1320,28 @@ const docTemplate = `{
                 }
             }
         },
+        "request.UrlConversionStreamCancelRequest": {
+            "type": "object",
+            "required": [
+                "conversationId"
+            ],
+            "properties": {
+                "conversationId": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UrlConversionStreamConnectRequest": {
+            "type": "object",
+            "required": [
+                "conversationId"
+            ],
+            "properties": {
+                "conversationId": {
+                    "type": "string"
+                }
+            }
+        },
         "request.UrlConversionStreamRequest": {
             "type": "object",
             "required": [
@@ -1207,6 +1358,17 @@ const docTemplate = `{
                     }
                 },
                 "prompt": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UrlPendingConversionRequest": {
+            "type": "object",
+            "required": [
+                "conversationId"
+            ],
+            "properties": {
+                "conversationId": {
                     "type": "string"
                 }
             }
@@ -1828,6 +1990,28 @@ const docTemplate = `{
                 "originalFileName": {
                     "description": "原始文件名",
                     "type": "string"
+                }
+            }
+        },
+        "response.PendingConversationResp": {
+            "type": "object",
+            "properties": {
+                "conversationId": {
+                    "description": "会话id",
+                    "type": "string"
+                },
+                "hasPendingConversation": {
+                    "description": "是否有进行中会话",
+                    "type": "boolean"
+                },
+                "prompt": {
+                    "type": "string"
+                },
+                "requestFiles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AssistantRequestFile"
+                    }
                 }
             }
         },

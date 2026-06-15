@@ -349,6 +349,20 @@ definitions:
     required:
     - conversationId
     type: object
+  request.UrlConversionStreamCancelRequest:
+    properties:
+      conversationId:
+        type: string
+    required:
+    - conversationId
+    type: object
+  request.UrlConversionStreamConnectRequest:
+    properties:
+      conversationId:
+        type: string
+    required:
+    - conversationId
+    type: object
   request.UrlConversionStreamRequest:
     properties:
       conversationId:
@@ -361,6 +375,13 @@ definitions:
         type: string
     required:
     - prompt
+    type: object
+  request.UrlPendingConversionRequest:
+    properties:
+      conversationId:
+        type: string
+    required:
+    - conversationId
     type: object
   request.UrlQuestionRecommendRequest:
     properties:
@@ -769,6 +790,21 @@ definitions:
         description: 原始文件名
         type: string
     type: object
+  response.PendingConversationResp:
+    properties:
+      conversationId:
+        description: 会话id
+        type: string
+      hasPendingConversation:
+        description: 是否有进行中会话
+        type: boolean
+      prompt:
+        type: string
+      requestFiles:
+        items:
+          $ref: '#/definitions/response.AssistantRequestFile'
+        type: array
+    type: object
   response.RecommendConfig:
     properties:
       maxHistory:
@@ -848,6 +884,83 @@ info:
   title: AI Agent Productivity Platform - OpenUrl
   version: v0.0.1
 paths:
+  /agent/:suffix/pending/conversation:
+    get:
+      consumes:
+      - application/json
+      description: 获取智能体运行中会话
+      parameters:
+      - description: 获取智能体运行中会话请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UrlPendingConversionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.PendingConversationResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取智能体运行中会话
+      tags:
+      - openurl
+  /agent/:suffix/stream/cancel:
+    post:
+      consumes:
+      - application/json
+      description: 智能体流式问答手动停止
+      parameters:
+      - description: 智能体流式问答手动停止参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UrlConversionStreamCancelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 智能体流式问答手动停止
+      tags:
+      - openurl
+  /agent/:suffix/stream/connect:
+    post:
+      consumes:
+      - application/json
+      description: 草稿智能体流式问答断开后重连
+      parameters:
+      - description: 草稿智能体流式问答断开后重连参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UrlConversionStreamConnectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 草稿智能体流式问答断开后重连
+      tags:
+      - openurl
   /agent/{suffix}:
     get:
       consumes:

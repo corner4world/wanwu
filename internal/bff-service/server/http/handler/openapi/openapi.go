@@ -109,6 +109,7 @@ func ChatAgent(ctx *gin.Context) {
 	}
 	userID := getUserID(ctx)
 	orgID := getOrgID(ctx)
+	clientID := getClientID(ctx)
 	appID, err := service.GetAssistantIdByUuid(ctx, req.UUID)
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
@@ -120,7 +121,7 @@ func ChatAgent(ctx *gin.Context) {
 	}
 	// 流式
 	if req.Stream {
-		if err := service.AssistantConversionStream(ctx, userID, orgID, request.ConversionStreamRequest{
+		if err := service.AssistantConversionStream(ctx, userID, orgID, clientID, request.ConversionStreamRequest{
 			AssistantId:    appID,
 			ConversationId: req.ConversationID,
 			Prompt:         req.Query,
@@ -132,7 +133,7 @@ func ChatAgent(ctx *gin.Context) {
 	}
 	// 非流式
 	startTime := time.Now()
-	chatCh, err := service.CallAssistantConversationStream(ctx, userID, orgID, request.ConversionStreamRequest{
+	chatCh, err := service.CallAssistantConversationStream(ctx, userID, orgID, clientID, request.ConversionStreamRequest{
 		AssistantId:    appID,
 		ConversationId: req.ConversationID,
 		Prompt:         req.Query,
@@ -264,6 +265,7 @@ func DraftChatAgent(ctx *gin.Context) {
 	}
 	userID := getUserID(ctx)
 	orgID := getOrgID(ctx)
+	clientID := getClientID(ctx)
 	appID, err := service.GetAssistantIdByUuid(ctx, req.UUID)
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
@@ -313,7 +315,7 @@ func DraftChatAgent(ctx *gin.Context) {
 		}
 	}
 
-	if err := service.AssistantConversionStream(ctx, userID, orgID, request.ConversionStreamRequest{
+	if err := service.AssistantConversionStream(ctx, userID, orgID, clientID, request.ConversionStreamRequest{
 		AssistantId:    appID,
 		ConversationId: req.ConversationID,
 		Prompt:         req.Query,
@@ -544,4 +546,9 @@ func getOrgID(ctx *gin.Context) string {
 // 获取当前appID
 func getAppID(ctx *gin.Context) string {
 	return ctx.GetString(gin_util.APP_ID)
+}
+
+// 获取当前clientID
+func getClientID(ctx *gin.Context) string {
+	return ctx.GetString(gin_util.X_CLIENT_ID)
 }

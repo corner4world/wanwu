@@ -157,6 +157,75 @@ func AssistantUrlConversionStream(ctx *gin.Context) {
 	}
 }
 
+// GetAssistantPendingConversion
+//
+//	@Tags			openurl
+//	@Summary		获取智能体运行中会话
+//	@Description	获取智能体运行中会话
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.UrlPendingConversionRequest	true	"获取智能体运行中会话请求参数"
+//	@Success		200		{object}	response.Response{data=response.PendingConversationResp}
+//	@Router			/agent/:suffix/pending/conversation [get]
+func GetAssistantPendingConversion(ctx *gin.Context) {
+	var req request.UrlPendingConversionRequest
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	conversation, err := service.AppUrlGetPendingConversation(ctx, req, ctx.GetHeader("X-Client-ID"), ctx.Param("suffix"))
+	if err != nil {
+		gin_util.Response(ctx, nil, err)
+	}
+	gin_util.Response(ctx, conversation, err)
+}
+
+// AssistantConversionStreamConnect
+//
+//	@Tags			openurl
+//	@Summary		草稿智能体流式问答断开后重连
+//	@Description	草稿智能体流式问答断开后重连
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.UrlConversionStreamConnectRequest	true	"草稿智能体流式问答断开后重连参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/agent/:suffix/stream/connect [post]
+func AssistantConversionStreamConnect(ctx *gin.Context) {
+	var req request.UrlConversionStreamConnectRequest
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+
+	if err := service.AppUrlConversionStreamConnect(ctx, req, ctx.GetHeader("X-Client-ID"), ctx.Param("suffix")); err != nil {
+		gin_util.Response(ctx, nil, err)
+	}
+}
+
+// AssistantConversionStreamCancel
+//
+//	@Tags			openurl
+//	@Summary		智能体流式问答手动停止
+//	@Description	智能体流式问答手动停止
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.UrlConversionStreamCancelRequest	true	"智能体流式问答手动停止参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/agent/:suffix/stream/cancel [post]
+func AssistantConversionStreamCancel(ctx *gin.Context) {
+	var req request.UrlConversionStreamCancelRequest
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+
+	if err := service.AppUrlConversionStreamCancel(ctx, req, ctx.GetHeader("X-Client-ID"), ctx.Param("suffix")); err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+	gin_util.Response(ctx, nil, nil)
+}
+
 // AssistantUrlQuestionRecommend
 //
 //	@Tags			openurl

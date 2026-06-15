@@ -113,8 +113,10 @@ func agentChatRespLineProcessor() func(sse_util.SSEWriterClient[string], string,
 			return errorText, false, nil
 		}
 		if strings.HasPrefix(lineText, "data:") {
-			return lineText + "\n", false, nil
+			//return lineText + "\n", false, nil
+			return lineText, false, nil
 		}
-		return lineText + "\n", false, nil
+		//return lineText + "\n", false, nil
+		return lineText, false, nil
 	}
 }

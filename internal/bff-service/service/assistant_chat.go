@@ -3,6 +3,12 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
+	"github.com/UnicomAI/wanwu/pkg/redis"
+	sse_connector "github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector"
+	sse_model "github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector/model"
+	"github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector/store"
+	"github.com/google/uuid"
 	"io"
 	"strings"
 	"time"
@@ -16,12 +22,10 @@ import (
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	mp_common "github.com/UnicomAI/wanwu/pkg/model-provider/mp-common"
-	"github.com/UnicomAI/wanwu/pkg/redis"
 	sse_util "github.com/UnicomAI/wanwu/pkg/sse-util"
 	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -37,7 +41,7 @@ type agentChatStreamParams struct {
 	hasErr            bool
 }
 
-func AssistantConversionStream(ctx *gin.Context, userId, orgId string, req request.ConversionStreamRequest, needLatestPublished bool, source string) (err error) {
+func AssistantConversionStream(ctx *gin.Context, userId, orgId, clientID string, req request.ConversionStreamRequest, needLatestPublished bool, source string) (err error) {
 	// 1. CallAssistantConversationStream
 	streamParams := &agentChatStreamParams{ctx: ctx, startTime: time.Now()}
 	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
@@ -50,7 +54,7 @@ func AssistantConversionStream(ctx *gin.Context, userId, orgId string, req reque
 		}
 	}()
 
-	chatCh, err := CallAssistantConversationStream(ctx, userId, orgId, req, needLatestPublished)
+	chatCh, err := CallAssistantConversationStream(ctx, userId, orgId, clientID, req, needLatestPublished)
 	if err != nil {
 		streamParams.hasErr = true
 		return err
@@ -61,7 +65,103 @@ func AssistantConversionStream(ctx *gin.Context, userId, orgId string, req reque
 	return nil
 }
 
-func CallAssistantConversationStream(ctx *gin.Context, userId, orgId string, req request.ConversionStreamRequest, needLatestPublished bool) (<-chan string, error) {
+func GetPendingConversation(ctx *gin.Context, userId, orgId, clientID string, req request.PendingConversionRequest) (*response.PendingConversationResp, error) {
+	conversationID, err := getConversationID(ctx, userId, orgId, req)
+	if err != nil {
+		return nil, err
+	}
+	session := sse_connector.GetSession(&sse_model.Session{ConversationID: conversationID, ClientID: clientID})
+	if session == nil {
+		return &response.PendingConversationResp{
+			ConversationId:         conversationID,
+			HasPendingConversation: false,
+		}, nil
+	}
+	ext := session.GetExt()
+	var prompt string
+	promptData := ext["prompt"]
+	if promptData != nil {
+		prompt1, ok := promptData.(string)
+		if ok {
+			prompt = prompt1
+		}
+	}
+	fileInfoData := ext["fileInfo"]
+	var requestFiles []response.AssistantRequestFile
+	if fileInfoData != nil {
+		files, ok := fileInfoData.([]request.ConversionStreamFile)
+		if ok {
+			if len(files) > 0 {
+				for _, file := range files {
+					requestFiles = append(requestFiles, response.AssistantRequestFile{
+						FileName: file.FileName,
+						FileSize: file.FileSize,
+						FileUrl:  file.FileUrl,
+					})
+				}
+			}
+		}
+	}
+
+	return &response.PendingConversationResp{
+		ConversationId:         conversationID,
+		HasPendingConversation: true,
+		Prompt:                 prompt,
+		RequestFiles:           requestFiles,
+	}, nil
+}
+
+func getConversationID(ctx *gin.Context, userId, orgId string, req request.PendingConversionRequest) (string, error) {
+	var conversationID = req.ConversationId
+	if req.Draft {
+		// 获取 conversation_id
+		conversationIdResp, err := assistant.GetConversationIdByAssistantId(ctx.Request.Context(), &assistant_service.GetConversationIdByAssistantIdReq{
+			AssistantId:      req.AssistantId,
+			ConversationType: constant.ConversationTypeDraft,
+			Identity: &assistant_service.Identity{
+				UserId: userId,
+				OrgId:  orgId,
+			},
+		})
+
+		if err != nil {
+			// 草稿对话尚未创建：删除请求幂等成功，不向调用方抛 5xx。其它错误原样上抛。
+			if isRecordNotFoundErr(err) {
+				return "", nil
+			}
+			return "", err
+		}
+		if conversationIdResp == nil {
+			return "", nil
+		}
+		conversationID = conversationIdResp.ConversationId
+	}
+	return conversationID, nil
+}
+func AssistantConversionStreamConnect(ctx *gin.Context, userId, orgId, clientID string, req request.ConversionStreamConnectRequest) error {
+	// 1. CallAssistantConversationStream
+	streamParams := &agentChatStreamParams{ctx: ctx, startTime: time.Now()}
+	chatCh, err := sse_connector.Connect[string](ctx, &sse_model.Session{ConversationID: req.ConversationId, ClientID: clientID}, func(data *sse_model.Message) string {
+		return data.Data.(string)
+	})
+	if err != nil {
+		return err
+	}
+	// 2. 流式返回结果
+	_ = sse_util.NewSSEWriter(ctx, fmt.Sprintf("[Agent] %v conversation %v user %v org %v recv", req.AssistantId, req.ConversationId, userId, orgId), sse_util.DONE_MSG).
+		WriteStream(chatCh, streamParams, buildAgentChatRespLineProcessor(), nil)
+	return nil
+}
+
+func AssistantConversionStreamCancel(ctx *gin.Context, userId, orgId, clientID string, req request.ConversionStreamCancelRequest) error {
+	conversationID, err := getConversationID(ctx, userId, orgId, req.PendingConversionRequest)
+	if err != nil {
+		return err
+	}
+	return sse_connector.Close(&sse_model.Session{ConversationID: conversationID, ClientID: clientID})
+}
+
+func CallAssistantConversationStream(ctx *gin.Context, userId, orgId, clientId string, req request.ConversionStreamRequest, needLatestPublished bool) (<-chan string, error) {
 	// 根据agentID获取敏感词配置
 	agentInfo, err := searchAssistantInfo(ctx, userId, orgId, req.AssistantId, needLatestPublished)
 	if err != nil {
@@ -102,11 +202,19 @@ func CallAssistantConversationStream(ctx *gin.Context, userId, orgId string, req
 		},
 		Draft: !needLatestPublished,
 	}
+	//初始化sse 链接保持器
+	session := &sse_model.Session{ConversationID: req.ConversationId, ClientID: clientId}
+	sseSessionManager := sse_connector.NewSSESession(ctx, session, store.NewMemoryStore())
+	bgCtx := sseSessionManager.GetBgContext()
+	//对于openapi 不需要链接保持，但是又不想打断整体流程，所以手动置为invalid
+	if !req.SseHold {
+		sseSessionManager.InvalidManager()
+	}
 	var stream grpc.ServerStreamingClient[assistant_service.AssistantConversionStreamResp]
 	if agentInfo.Category == constant.AgentCategoryMulti {
-		stream, err = assistant.MultiAssistantConversionStream(ctx.Request.Context(), buildMultiAssistantConversionStreamReq(agentReq))
+		stream, err = assistant.MultiAssistantConversionStream(bgCtx, buildMultiAssistantConversionStreamReq(agentReq))
 	} else {
-		stream, err = assistant.AssistantConversionStream(ctx.Request.Context(), agentReq)
+		stream, err = assistant.AssistantConversionStream(bgCtx, agentReq)
 	}
 	if err != nil {
 		return nil, err
@@ -116,6 +224,16 @@ func CallAssistantConversationStream(ctx *gin.Context, userId, orgId string, req
 	go func() {
 		defer util.PrintPanicStack()
 		defer close(rawCh)
+		defer func() {
+			log.Infof("[Agent] %v conversation %v user %v org %v session finish", req.AssistantId, req.ConversationId, userId, orgId)
+			if err1 := sse_connector.Close(session); err1 != nil {
+				log.Errorf("[Agent] %v conversation %v user %v org %v session finish err: %v", req.AssistantId, req.ConversationId, userId, orgId, err1)
+			}
+		}()
+
+		// 添加扩展信息
+		sseSessionManager.AddExt(map[string]interface{}{"prompt": req.Prompt, "fileInfo": req.FileInfo})
+
 		log.Infof("[Agent] %v conversation %v user %v org %v start, query: %s", req.AssistantId, req.ConversationId, userId, orgId, req.Prompt)
 		for {
 			s, err := stream.Recv()
@@ -127,13 +245,20 @@ func CallAssistantConversationStream(ctx *gin.Context, userId, orgId string, req
 				log.Errorf("[Agent] %v conversation %v user %v org %v recv err: %v", req.AssistantId, req.ConversationId, userId, orgId, err)
 				break
 			}
-			rawCh <- s.Content
+			_ = sseSessionManager.Publish(&sse_model.Message{Data: s.Content}, sseCompactProcessor())
+			select {
+			case rawCh <- s.Content:
+			default:
+				//log.Debugf("[Agent] %v conversation %v user %v org %v recv chan full", req.AssistantId, req.ConversationId, userId, orgId)
+			}
 		}
 	}()
 	// 敏感词过滤(必须过滤，全局敏感词)
 	outputCh := ProcessSensitiveWordsWithCallback(ctx, rawCh, matchDicts, &agentSensitiveService{}, func(messageId string, sensitiveMsg string) {
 		//敏感词存入redis
 		redis.StoreSensitiveConversation(agentReq.ConversationId, agentReq.DetailId, sensitiveMsg)
+		//触发sse cancel
+		_ = sseSessionManager.Cancel()
 	})
 	return outputCh, nil
 }
@@ -410,4 +535,49 @@ func buildMultiAssistantConversionStreamReq(req *assistant_service.AssistantConv
 		Draft:          req.Draft,
 		DetailId:       req.DetailId,
 	}
+}
+
+// sseCompactProcessor 构造sse消息合并处理器
+func sseCompactProcessor() func(currentMsg *sse_model.Message, lastMsg *sse_model.Message) (bool, *sse_model.Message) {
+	return func(currentMsg *sse_model.Message, lastMsg *sse_model.Message) (bool, *sse_model.Message) {
+		// 判断是否需要合并
+		noneProcess, lastMsgData, currentMsgData := noneCompactMessage(currentMsg, lastMsg)
+		if noneProcess {
+			return true, currentMsg
+		}
+		//开始合并
+		compact := lastMsgData.Compact(currentMsgData)
+		if compact != nil { //合并成功
+			resp, err := response.MarshalAgentResp(compact)
+			if err != nil {
+				log.Errorf("marshal agent resp error %v", err)
+				return true, currentMsg
+			}
+			lastMsg.Data = resp
+			return false, lastMsg
+		}
+		return true, currentMsg
+	}
+}
+
+// noneCompactMessage 判断是否需要合并
+func noneCompactMessage(currentMsg *sse_model.Message, lastMsg *sse_model.Message) (bool, *response.AgentChatResp, *response.AgentChatResp) {
+	lastMsgData, err1 := response.UnmarshalAgentResp(lastMsg.Data.(string))
+	if err1 != nil {
+		log.Errorf("unmarshal agent resp %s error %v", lastMsg.Data.(string), err1)
+		return true, nil, nil
+	}
+	currentMsgData, err2 := response.UnmarshalAgentResp(currentMsg.Data.(string))
+	if err2 != nil {
+		log.Errorf("unmarshal agent resp %s error %v", currentMsg.Data.(string), err2)
+		return true, nil, nil
+	}
+	// 非成功状态码直接返回
+	if currentMsgData.Code != 0 {
+		return true, nil, nil
+	}
+	if currentMsgData.Finish != 0 {
+		return true, nil, nil
+	}
+	return false, lastMsgData, currentMsgData
 }
