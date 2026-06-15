@@ -3,6 +3,7 @@ import { menuList } from '@/views/layout/menu';
 import { checkPerm } from '@/router/permission';
 import { i18n } from '@/lang';
 import { Message } from 'element-ui';
+import { isSafeImageUrl, escapeHtml as sanitizeEscapeHtml } from './sanitize';
 import { basePath } from '@/utils/config';
 import { store } from '@/store';
 
@@ -475,12 +476,19 @@ export function Md2Img(markdownText, escapeHtml = true) {
     // 添加匹配前的文本内容
     result += markdownText.substring(lastIndex, match.index);
 
-    // 构造图片HTML
     const alt = match[1] || '';
     const src = match[2];
-    const title = match[3] ? ` title="${match[3]}"` : '';
+    const title = match[3] ? ` title="${sanitizeEscapeHtml(match[3])}"` : '';
 
-    result += `<img src="${src}" alt="${alt}"${title}>`;
+    // 校验 URL scheme，阻止 javascript: 等危险协议
+    if (isSafeImageUrl(src)) {
+      const safeSrc = src.replaceAll('"', '&quot;');
+      const safeAlt = alt.replaceAll('"', '&quot;');
+      result += `<img src="${safeSrc}" alt="${safeAlt}"${title}>`;
+    } else {
+      // 不安全的 URL：渲染为纯文本而非图片标签
+      result += `![${alt}](${src})`;
+    }
 
     // 更新lastIndex到匹配结束位置
     lastIndex = match.index + match[0].length;

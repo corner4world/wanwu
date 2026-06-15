@@ -136,6 +136,7 @@
 </template>
 <script>
 import { md } from '@/mixins/markdown-it';
+import { parseTxtSafe } from '@/utils/sanitize';
 import { getRecommendsList, getToolDetail, changeApiKey } from '@/api/mcp';
 import { avatarSrc, formatTools } from '@/utils/util';
 
@@ -200,14 +201,7 @@ export default {
       this.$router.push(`/mcp/detail/square?mcpSquareId=${val.mcpSquareId}`);
     },
     // 解析文本，遇到.换行等
-    parseTxt(txt) {
-      if (!txt) return '';
-      const text = txt
-        .replaceAll('\n\t', '<br/>&nbsp;')
-        .replaceAll('\n', '<br/>')
-        .replaceAll('\t', '   &nbsp;');
-      return text;
-    },
+    parseTxt: parseTxtSafe,
     tabClick(status) {
       this.tabActive = status;
     },

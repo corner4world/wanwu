@@ -3,22 +3,11 @@ import mk from '@ruanyf/markdown-it-katex';
 import { i18n } from '@/lang';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
+import { sanitizeHtml, escapeHtml } from '@/utils/sanitize';
 
 hljs.configure({
   lineNumbers: true,
 });
-
-/**
- * 转义 HTML 特殊字符
- */
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 /**
  * 生成 Mac Shell 风格代码块 HTML
@@ -29,7 +18,7 @@ function escapeHtml(str) {
 export function highlightCode(code, lang) {
   let preCode = '';
   try {
-    if (lang && hljs && hljs.getLanguage(lang)) {
+    if (lang && hljs?.getLanguage(lang)) {
       preCode = hljs.highlight(code, { language: lang }).value;
     } else if (hljs) {
       preCode = hljs.highlightAuto(code).value;
@@ -41,7 +30,7 @@ export function highlightCode(code, lang) {
   }
 
   const lines = preCode.split(/\n/);
-  if (lines[lines.length - 1] === '') lines.pop();
+  if (lines.at(-1) === '') lines.pop();
 
   let html = lines
     .map((item, index) => {
@@ -94,3 +83,10 @@ md.linkify.set({ fuzzyLink: false });
 md.use(mk, { throwOnError: false, errorColor: '#000000', output: 'mathml' });
 
 md.disable('code');
+
+// 对 md.render 输出进行 DOMPurify 净化，防止 XSS 攻击
+// html:true 允许原始 HTML 标签通过，需在输出层统一过滤恶意内容
+const _originalRender = md.render.bind(md);
+md.render = function (text) {
+  return sanitizeHtml(_originalRender(text));
+};

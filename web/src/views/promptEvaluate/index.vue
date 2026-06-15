@@ -166,18 +166,14 @@ export default {
   },
   methods: {
     getModellist(type = '') {
-      selectModelList()
-        .then(res => {
-          if (res.code === 0) {
-            this.options = res.data.list || [];
-            if (res.data.list.length > 0 && type === '') {
-              this.modelId = res.data.list[0].modelId;
-            }
+      selectModelList().then(res => {
+        if (res.code === 0) {
+          this.options = res.data.list || [];
+          if (res.data.list.length > 0 && type === '') {
+            this.modelId = res.data.list[0].modelId;
           }
-        })
-        .catch(err => {
-          this.$message.error(err);
-        });
+        }
+      });
     },
     visibleChange(val) {
       if (val) {
