@@ -37,8 +37,8 @@ func (k *HistoryProcess) Prepare(agent *AgentInfo, prepareParams *AgentPreparePa
 
 	fieldConditions := map[string]interface{}{
 		"conversationId": userQueryParams.ConversationId,
-		"userId":         userQueryParams.QueryUserId,
-		"orgId":          userQueryParams.QueryOrgId,
+		"userId.keyword": userQueryParams.QueryUserId,
+		"orgId.keyword":  userQueryParams.QueryOrgId,
 	}
 
 	documents, _, err := es.Assistant().SearchByFields(userQueryParams.Ctx, esHistoryIndexPattern, fieldConditions, 0, maxHistory, "desc")
