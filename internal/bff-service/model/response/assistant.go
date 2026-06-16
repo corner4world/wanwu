@@ -42,36 +42,39 @@ type AssistantWorkFlowInfo struct {
 }
 
 type AssistantMCPInfo struct {
-	UniqueId   string         `json:"uniqueId"`
-	MCPId      string         `json:"mcpId"`
-	MCPType    string         `json:"mcpType" validate:"required,oneof=mcp mcpserver"`
-	MCPName    string         `json:"mcpName"`
-	ActionName string         `json:"actionName"`
-	Enable     bool           `json:"enable"`
-	Valid      bool           `json:"valid"`
-	Avatar     request.Avatar `json:"avatar"`
+	UniqueId    string         `json:"uniqueId"`
+	MCPId       string         `json:"mcpId"`
+	MCPType     string         `json:"mcpType" validate:"required,oneof=mcp mcpserver"`
+	MCPName     string         `json:"mcpName"`
+	ActionName  string         `json:"actionName"`
+	Enable      bool           `json:"enable"`
+	Valid       bool           `json:"valid"`
+	Avatar      request.Avatar `json:"avatar"`
+	Description string         `json:"description"`
 }
 
 type AssistantToolInfo struct {
-	UniqueId   string                      `json:"uniqueId"`
-	ToolId     string                      `json:"toolId"`
-	ToolType   string                      `json:"toolType" validate:"required,oneof=builtin custom"`
-	ToolName   string                      `json:"toolName"`
-	ActionName string                      `json:"actionName"`
-	Enable     bool                        `json:"enable"`
-	Valid      bool                        `json:"valid"`
-	ToolConfig request.AssistantToolConfig `json:"toolConfig"`
-	Avatar     request.Avatar              `json:"avatar"`
+	UniqueId    string                      `json:"uniqueId"`
+	ToolId      string                      `json:"toolId"`
+	ToolType    string                      `json:"toolType" validate:"required,oneof=builtin custom"`
+	ToolName    string                      `json:"toolName"`
+	ActionName  string                      `json:"actionName"`
+	Enable      bool                        `json:"enable"`
+	Valid       bool                        `json:"valid"`
+	ToolConfig  request.AssistantToolConfig `json:"toolConfig"`
+	Avatar      request.Avatar              `json:"avatar"`
+	Description string                      `json:"description"`
 }
 
 type AssistantSkillInfo struct {
-	SkillId   string         `json:"skillId"`
-	SkillType string         `json:"skillType" validate:"required,oneof=builtin custom acquired"`
-	SkillName string         `json:"skillName"`
-	Author    string         `json:"author"`
-	Enable    bool           `json:"enable"`
-	Valid     bool           `json:"valid"`
-	Avatar    request.Avatar `json:"avatar"`
+	SkillId     string         `json:"skillId"`
+	SkillType   string         `json:"skillType" validate:"required,oneof=builtin custom acquired"`
+	SkillName   string         `json:"skillName"`
+	Author      string         `json:"author"`
+	Enable      bool           `json:"enable"`
+	Valid       bool           `json:"valid"`
+	Avatar      request.Avatar `json:"avatar"`
+	Description string         `json:"description"`
 }
 
 type AssistantAgentInfo struct {
