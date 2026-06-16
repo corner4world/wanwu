@@ -112,6 +112,7 @@ export default {
     about: '关于',
     helpDoc: '帮助文档',
     back: '返回',
+    openSource: '开源仓库',
     skillSquare: 'Skill广场',
   },
   header: {
