@@ -576,6 +576,7 @@ func assistantMCPConvert(ctx *gin.Context, assistantMCPInfos []*assistant_servic
 		var exists bool
 		var mcpName string
 		var avatar request.Avatar
+		var desc string
 
 		switch info.McpType {
 		case constant.MCPTypeMCP:
@@ -583,25 +584,28 @@ func assistantMCPConvert(ctx *gin.Context, assistantMCPInfos []*assistant_servic
 				exists = true
 				mcpName = item.Info.Name
 				avatar = cacheMCPAvatar(ctx, item.Info.AvatarPath, item.AvatarPath)
+				desc = item.GetInfo().GetDesc()
 			}
 		case constant.MCPTypeMCPServer:
 			if item, ok := mcpserverDetailMap[info.McpId]; ok {
 				exists = true
 				mcpName = item.Name
 				avatar = cacheMCPServerAvatar(ctx, item.AvatarPath)
+				desc = item.GetDesc()
 			}
 		}
 
 		if exists {
 			retMCPInfos = append(retMCPInfos, &response.AssistantMCPInfo{
-				UniqueId:   bff_util.ConcatAssistantToolUniqueId(info.McpType, info.McpId),
-				MCPId:      info.McpId,
-				MCPType:    info.McpType,
-				MCPName:    mcpName,
-				ActionName: info.ActionName,
-				Enable:     info.Enable,
-				Valid:      true,
-				Avatar:     avatar,
+				UniqueId:    bff_util.ConcatAssistantToolUniqueId(info.McpType, info.McpId),
+				MCPId:       info.McpId,
+				MCPType:     info.McpType,
+				MCPName:     mcpName,
+				ActionName:  info.ActionName,
+				Enable:      info.Enable,
+				Valid:       true,
+				Avatar:      avatar,
+				Description: desc,
 			})
 		}
 	}
@@ -652,6 +656,7 @@ func assistantToolsConvert(ctx *gin.Context, assistantToolInfos []*assistant_ser
 		var exists bool
 		var toolName string
 		var avatar request.Avatar
+		var desc string
 
 		switch info.ToolType {
 		case constant.ToolTypeCustom:
@@ -659,12 +664,14 @@ func assistantToolsConvert(ctx *gin.Context, assistantToolInfos []*assistant_ser
 				exists = true
 				toolName = item.Name
 				avatar = cacheToolAvatar(ctx, constant.ToolTypeCustom, item.AvatarPath)
+				desc = item.GetDescription()
 			}
 		case constant.ToolTypeBuiltIn:
 			if item, ok := builtinToolMap[info.ToolId]; ok {
 				exists = true
 				toolName = item.Name
 				avatar = cacheToolAvatar(ctx, constant.ToolTypeBuiltIn, item.AvatarPath)
+				desc = item.GetDesc()
 			}
 		}
 
@@ -676,15 +683,16 @@ func assistantToolsConvert(ctx *gin.Context, assistantToolInfos []*assistant_ser
 				}
 			}
 			retToolInfos = append(retToolInfos, &response.AssistantToolInfo{
-				UniqueId:   bff_util.ConcatAssistantToolUniqueId(info.ToolType, info.ToolId),
-				ToolId:     info.ToolId,
-				ToolType:   info.ToolType,
-				ToolName:   toolName,
-				ActionName: info.ActionName,
-				Enable:     info.Enable,
-				Valid:      true,
-				ToolConfig: toolConfig,
-				Avatar:     avatar,
+				UniqueId:    bff_util.ConcatAssistantToolUniqueId(info.ToolType, info.ToolId),
+				ToolId:      info.ToolId,
+				ToolType:    info.ToolType,
+				ToolName:    toolName,
+				ActionName:  info.ActionName,
+				Enable:      info.Enable,
+				Valid:       true,
+				ToolConfig:  toolConfig,
+				Avatar:      avatar,
+				Description: desc,
 			})
 		}
 	}
@@ -757,6 +765,7 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 		var exists bool
 		var skillName, author string
 		var avatar request.Avatar
+		var desc string
 
 		switch info.SkillType {
 		case constant.SkillTypeCustom:
@@ -771,6 +780,7 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 					skillName = customSkill.GetName()
 					author = customSkill.GetAuthor()
 					avatar = cacheSkillAvatar(ctx, customSkill.GetAvatar())
+					desc = customSkill.GetDesc()
 				}
 			}
 		case constant.SkillTypeAcquired:
@@ -785,6 +795,7 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 					skillName = customSkill.GetName()
 					author = customSkill.GetAuthor()
 					avatar = cacheSkillAvatar(ctx, customSkill.GetAvatar())
+					desc = customSkill.GetDesc()
 				}
 			}
 		case constant.SkillTypeBuiltIn:
@@ -794,18 +805,20 @@ func assistantSkillConvert(ctx *gin.Context, assistantSkillInfos []*assistant_se
 				skillName = skillDetail.Name
 				author = skillDetail.Author
 				avatar = skillDetail.Avatar
+				desc = skillDetail.Desc
 			}
 		}
 
 		if exists {
 			retSkillInfos = append(retSkillInfos, &response.AssistantSkillInfo{
-				SkillId:   info.SkillId,
-				SkillType: info.SkillType,
-				SkillName: skillName,
-				Author:    author,
-				Enable:    info.Enable,
-				Valid:     true,
-				Avatar:    avatar,
+				SkillId:     info.SkillId,
+				SkillType:   info.SkillType,
+				SkillName:   skillName,
+				Author:      author,
+				Enable:      info.Enable,
+				Valid:       true,
+				Avatar:      avatar,
+				Description: desc,
 			})
 		}
 	}
@@ -1423,6 +1436,7 @@ func buildKnowledgeBases(ctx *gin.Context, kbInfoList *knowledgeBase_service.Kno
 				OrgName:              orgName,
 				MetaDataFilterParams: params,
 				Avatar:               cacheKnowledgeAvatar(ctx, info.AvatarPath, info.Category),
+				Description:          info.Description,
 			})
 		}
 	} else {
@@ -1432,8 +1446,9 @@ func buildKnowledgeBases(ctx *gin.Context, kbInfoList *knowledgeBase_service.Kno
 				continue
 			}
 			knowledgeBases = append(knowledgeBases, request.AppKnowledgeBase{
-				ID:   kbId,
-				Name: info.Name,
+				ID:          kbId,
+				Name:        info.Name,
+				Description: info.Description,
 			})
 		}
 	}

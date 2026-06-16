@@ -289,6 +289,7 @@ message AppKnowledgeBase {
   int32 graphSwitch = 3; // 知识图谱开关
   MetaDataFilterParams metaDataFilterParams = 4;
   int32 category = 5; // 知识库分类 0-知识库，1-问答库，2-多模态知识库
+  string description = 6; // 知识库描述
 }
 
 message MetaDataFilterParams {
@@ -379,6 +380,7 @@ message AssistantMCPInfos{
   string mcpType = 3;
   string actionName = 4;
   bool enable = 5;
+  string description = 6; // MCP描述
 }
 
 message AssistantToolInfos{
@@ -388,6 +390,7 @@ message AssistantToolInfos{
   string actionName = 4;
   bool enable = 5;
   string toolConfig = 6;
+  string description = 7; // 工具描述
 }
 
 message AssistantSkillInfo {
@@ -395,6 +398,7 @@ message AssistantSkillInfo {
   string skillId = 2;
   string skillType = 3;
   bool enable = 4;
+  string description = 5; // 技能描述
 }
 
 message GetAssistantInfoReq {
