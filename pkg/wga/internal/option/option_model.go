@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	http_client "github.com/UnicomAI/wanwu/pkg/http-client"
 	deepseek "github.com/cloudwego/eino-ext/components/model/deepseek"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
@@ -38,9 +39,10 @@ func (options *Options) ToChatModel(ctx context.Context) (model.ToolCallingChatM
 
 func newOpenAIChatModel(ctx context.Context, m ModelConfig) (model.ToolCallingChatModel, error) {
 	cfg := &openai.ChatModelConfig{
-		Model:   m.Model,
-		APIKey:  m.APIKey,
-		BaseURL: m.BaseURL,
+		Model:      m.Model,
+		APIKey:     m.APIKey,
+		BaseURL:    m.BaseURL,
+		HTTPClient: http_client.Default().Client,
 	}
 	if m.Params != nil {
 		if m.Params.TemperatureEnable {
@@ -65,9 +67,10 @@ func newOpenAIChatModel(ctx context.Context, m ModelConfig) (model.ToolCallingCh
 
 func newDeepSeekChatModel(ctx context.Context, m ModelConfig) (model.ToolCallingChatModel, error) {
 	cfg := &deepseek.ChatModelConfig{
-		APIKey:  m.APIKey,
-		BaseURL: m.BaseURL,
-		Model:   m.Model,
+		APIKey:     m.APIKey,
+		BaseURL:    m.BaseURL,
+		Model:      m.Model,
+		HTTPClient: http_client.Default().Client,
 	}
 	if m.Params != nil {
 		if m.Params.TemperatureEnable {
