@@ -258,7 +258,25 @@ UniClaw 下載位址：https://maas.ai-yuanjing.com/app/uniclaw/uniclaw-official
     WANWU_BFF_JWT_SIGNING_KEY=
     ```
 
-    1.4 創建docker運行網絡
+    1.4 拷貝【本體智能體】環境變量文件
+    ```bash
+    cp .env.ontology.example .env.ontology
+    ```
+
+    1.5（可選）生成【本體智能體】自訂 RSA 密鑰
+    > 不執行本步則使用鏡像內建的預設密鑰；如需在生產環境使用獨立密鑰，依下列步驟生成
+
+    - 1.5.1 生成 RSA 密鑰對
+      ```bash
+      ./configs/microservice/ontology/vega-server/generate-keys.sh configs/microservice/ontology/vega-server
+      ```
+
+    - 1.5.2 生成前端公鑰配置（跨平台，需要 Node 環境）
+      ```bash
+      node configs/microservice/ontology/vega-server/generate-public-key-js.js
+      ```
+    
+    1.6 創建docker運行網絡
     ```
     docker network create wanwu-net
     ```
@@ -266,9 +284,9 @@ UniClaw 下載位址：https://maas.ai-yuanjing.com/app/uniclaw/uniclaw-official
 2. 啟動服務（首次運行會自動從Docker Hub拉取鏡像）
     ```bash
     # amd64系統執行:
-    docker compose --env-file .env --env-file .env.image.amd64 up -d
+    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.amd64 up -d
     # arm64系統執行:
-    docker compose --env-file .env --env-file .env.image.arm64 up -d
+    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.arm64 up -d
     ```
 
 3. 登錄系統：http://localhost:8081
@@ -280,9 +298,9 @@ UniClaw 下載位址：https://maas.ai-yuanjing.com/app/uniclaw/uniclaw-official
 4. 關閉服務
     ```bash
     # amd64系統執行:
-    docker compose --env-file .env --env-file .env.image.amd64 down
+    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.amd64 down
     # arm64系統執行:
-    docker compose --env-file .env --env-file .env.image.arm64 down
+    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.arm64 down
     ```
 
 5. 拉取中介軟體等鏡像遇到困難？我們在網盤準備了一份鏡像備份，請依照其中的README操作：[萬悟鏡像備份](https://pan.baidu.com/e/1cupIcEP2RBwi_hOr4xQnFQ?pwd=ae86)
@@ -335,59 +353,15 @@ UniClaw 下載位址：https://maas.ai-yuanjing.com/app/uniclaw/uniclaw-official
     cp .env.example .env
     ```
 
-3. 基於上述Docker安裝步驟，將系統服務完整啟動
-
-------
-
-### 🧬 啟動本體智能體平台
-
-1. 基於上述Docker安裝步驟，將系統服務完整啟動
-
-2. （可選）首次運行前生成自訂 RSA 密鑰
-
-    > 不執行本步則使用鏡像內建的預設密鑰；如需在生產環境使用獨立密鑰，依下列步驟生成並注入到 `docker-compose.ontology.yaml`。
-
-    2.1 生成 RSA 密鑰對
+    2.3 拷貝【本體智能體】環境變量文件（如果有環境變量修改，請自行重新修改）
     ```bash
-    ./configs/microservice/ontology/vega-server/generate-keys.sh configs/microservice/ontology/vega-server
-    ```
-
-    2.2 生成前端公鑰配置（跨平台，需要 Node 環境）
-    ```bash
-    node configs/microservice/ontology/vega-server/generate-public-key-js.js
-    ```
-
-3. 拷貝環境變量文件（首次運行前或系統升級後）
-
-    ```bash
-    # 備份當前.env.ontology文件（如果存在）
+    # 備份當前.env.ontology文件
     cp .env.ontology .env.ontology.old
     # 拷貝.env.ontology文件
     cp .env.ontology.example .env.ontology
     ```
 
-4. 啟動服務
-
-    4.1 確認.env文件中已開啟本體功能
-    ```
-    WANWU_BFF_ONTOLOGY_ENABLE=1
-    ```
-
-    4.2 啟動本體智能體服務
-    ```bash
-    # amd64系統執行:
-    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.amd64 -f docker-compose.ontology.yaml up -d
-    # arm64系統執行:
-    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.arm64 -f docker-compose.ontology.yaml up -d
-    ```
-
-5. 關閉服務
-    ```bash
-    # amd64系統執行:
-    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.amd64 -f docker-compose.ontology.yaml down
-    # arm64系統執行:
-    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.arm64 -f docker-compose.ontology.yaml down
-    ```
+3. 基於上述Docker安裝步驟，將系統服務完整啟動
 
 ------
 

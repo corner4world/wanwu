@@ -257,7 +257,25 @@ The platform has been successfully applied in multiple industries such as **fina
     WANWU_BFF_JWT_SIGNING_KEY=
     ```
 
-    1.4 Create a Docker running network
+    1.4 Copy environment variable file (Ontology Agent)
+    ```bash
+    cp .env.ontology.example .env.ontology
+    ```
+
+    1.5 (Optional) Generate custom RSA keys before the first run (Ontology Agent)
+    > Skip this step to use the default keys baked into the images. To use independent keys in production, generate them as follows.
+
+    - 1.5.1 Generate RSA key pair
+      ```bash
+      ./configs/microservice/ontology/vega-server/generate-keys.sh configs/microservice/ontology/vega-server
+      ```
+
+    - 1.5.2 Generate frontend public key configuration (cross-platform, requires Node environment)
+      ```bash
+      node configs/microservice/ontology/vega-server/generate-public-key-js.js
+      ```
+
+    1.6 Create a Docker running network
     ```
     docker network create wanwu-net
     ```
@@ -266,9 +284,9 @@ The platform has been successfully applied in multiple industries such as **fina
 
     ```bash
     # For amd64 system:
-    docker compose --env-file .env --env-file .env.image.amd64 up -d
+    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.amd64 up -d
     # For arm64 system:
-    docker compose --env-file .env --env-file .env.image.arm64 up -d
+    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.arm64 up -d
     ```
 
 3. Log in to the system: http://localhost:8081
@@ -282,9 +300,9 @@ The platform has been successfully applied in multiple industries such as **fina
 
     ```bash
     # For amd64 system:
-    docker compose --env-file .env --env-file .env.image.amd64 down
+    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.amd64 down
     # For arm64 system:
-    docker compose --env-file .env --env-file .env.image.arm64 down
+    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.arm64 down
     ```
 
 5. Having trouble pulling middleware or other Docker images? We've prepared a backup of the images on Netdisk. Please follow the instructions in its README file: [Wanwu Docker Image Backup](https://pan.baidu.com/e/1cupIcEP2RBwi_hOr4xQnFQ?pwd=ae86)
@@ -329,7 +347,7 @@ The platform has been successfully applied in multiple industries such as **fina
     git pull
     ```
 
-    2.2 Recopy the environment variable file (if there are changes to the environment variables, please modify them again)
+    2.2 Recopy environment variable file (if there are changes to the environment variables, please modify them again)
     ```bash
     # Backup the current .env file
     cp .env .env.old
@@ -337,59 +355,15 @@ The platform has been successfully applied in multiple industries such as **fina
     cp .env.example .env
     ```
 
-3. Based on the above Docker installation steps, completely start the system service
-
-------
-
-### 🧬 Start Ontology Agent Platform
-
-1. Based on the above Docker installation steps, completely start the system service
-
-2. (Optional) Generate custom RSA keys before the first run
-
-    > Skip this step to use the default keys baked into the images. To use independent keys in production, generate them and inject the mounts into `docker-compose.ontology.yaml` as follows.
-
-    2.1 Generate RSA key pair
+    2.3 Recopy environment variable file (if there are changes to the environment variables, please modify them again)
     ```bash
-    ./configs/microservice/ontology/vega-server/generate-keys.sh configs/microservice/ontology/vega-server
-    ```
-
-    2.2 Generate frontend public key configuration (cross-platform, requires Node environment)
-    ```bash
-    node configs/microservice/ontology/vega-server/generate-public-key-js.js
-    ```
-
-3. Copy environment variable file (before first run or after system upgrade)
-
-    ```bash
-    # Backup current .env.ontology file (if exists)
+    # Backup current .env.ontology file
     cp .env.ontology .env.ontology.old
     # Copy .env.ontology file
     cp .env.ontology.example .env.ontology
     ```
 
-4. Start the service
-
-    4.1 Confirm ontology feature is enabled in .env file
-    ```
-    WANWU_BFF_ONTOLOGY_ENABLE=1
-    ```
-
-    4.2 Start ontology agent service
-    ```bash
-    # For amd64 system:
-    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.amd64 -f docker-compose.ontology.yaml up -d
-    # For arm64 system:
-    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.arm64 -f docker-compose.ontology.yaml up -d
-    ```
-
-5. Stop the service
-    ```bash
-    # For amd64 system:
-    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.amd64 -f docker-compose.ontology.yaml down
-    # For arm64 system:
-    docker compose --env-file .env --env-file .env.ontology --env-file .env.image.arm64 -f docker-compose.ontology.yaml down
-    ```
+3. Based on the above Docker installation steps, completely start the system service
 
 ------
 
