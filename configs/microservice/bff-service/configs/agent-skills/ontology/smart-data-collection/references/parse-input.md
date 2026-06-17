@@ -9,14 +9,14 @@
 | 项 | 值 |
 |---|---|
 | 支持扩展名 | `.jpg` / `.jpeg` / `.png` / `.bmp` 等常见格式 |
-| 调用方式 | 通过 Skill 工具显式调用 `yj-ocr` skill |
-| 契约参考 | [skills/yj-ocr/SKILL.md](../../yj-ocr/SKILL.md) |
-| 必需环境变量 | `YJ_OCR_API_KEY`（由 yj-ocr 自己校验） |
+| 调用方式 | 通过 Skill 工具显式调用 `yj-ocr-parser` skill |
+| 契约参考 | [skills/yj-ocr-parser/SKILL.md](../../yj-ocr-parser/SKILL.md) |
+| 必需环境变量 | `MaaS_model_token`（由 yj-ocr-parser 自己校验） |
 
 ### 流程
 
-1. 判断输入是 URL 还是本地路径；URL 先下载到本地临时文件（yj-ocr 内部已处理）。
-2. 调用 `yj-ocr`，拿到 `data[]`（含 `page_num` / `text` / `type` / `length`）。
+1. 判断输入是 URL 还是本地路径；URL 先下载到本地临时文件（yj-ocr-parser 内部已处理）。
+2. 调用 `yj-ocr-parser`，拿到 `data[]`（含 `page_num` / `text` / `type` / `length`）。
 3. 把 `data[]` 还原为 Markdown：
    - 检测到"表格类"片段（行内有规则分隔、列对齐）时，输出 Markdown 表格 `| col1 | col2 | ... |`；
    - 其余文字片段保持自然段。

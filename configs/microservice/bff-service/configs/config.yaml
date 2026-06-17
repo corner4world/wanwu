@@ -455,7 +455,7 @@ ontology:
     - "ontology/smart-data-analysis"
     - "ontology/smart-search-tables"
     - "ontology/smart-data-collection"
-    - "ontology/yj-ocr"
+    - "ontology/yj-ocr-parser"
   smart_data_skills:
     - name: ontology-core
       desc: "操作知识网络（BKN）—构建知识网络、查询Schema/实例、语义搜索、执行Action。操作数据源与数据视图—数据源连接与查询、原子/自定义视图浏览与SQL查询。操作Vega可观测平台—查询Catalog/资源/连接器类型、健康巡检。当用户提到\"知识网络\"、\"知识图谱\"、\"查询对象类\"、\"执行Action\"、\"数据源\"、\"数据视图\"、\"原子视图\"、\"Catalog\"、\"Vega\"、\"健康检查\"、\"巡检\"等意图时自动使用。"
@@ -472,6 +472,6 @@ ontology:
     - name: smart-data-collection
       desc: "智能数据采集技能，用于从图片或文档（PDF、Word、Excel）中提取结构化数据，基于知识网络完成字段映射，生成SQL并写入数据库。当用户提到\"数据采集\"、\"从文档提取数据\"、\"图片转数据\"、\"数据导入\"、\"文档数据入库\"、\"批量数据提取\"或需要从非结构化文件中提取结构化数据并存储时，自动使用此技能。"
       skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/smart-data-collection
-    - name: yj-ocr
-      desc: "元景OCR图片文字识别服务。当用户需要从图片中提取文字、识别图片内容、OCR识别、图片转文字、扫描文档识别等场景时使用。支持图片 URL 与本地文件输入,统一先下载到本地再以文件形式上传解析。即使只提到\"识别图片\"或\"提取文字\"而未明确说OCR,也应考虑使用此技能。"
-      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/yj-ocr
+    - name: yj-ocr-parser
+      desc: "文档解析技能，用于解析PDF文档和图片（jpg/png/jpeg）并将其转换为Markdown格式输出。支持标题层级、表格（HTML格式）、公式（LaTeX格式）、图片（链接形式）等复杂内容的解析。当用户提到\"解析PDF\"、\"文档解析\"、\"PDF转Markdown\"、\"提取PDF内容\"、\"解析文档\"、\"文档内容提取\"、\"PDF内容识别\"、\"图片解析\"、\"图片转文字\"、\"识别图片内容\"等场景时使用此技能。即使用户只是要求读取或查看PDF/图片文件内容，也应考虑使用此技能。"
+      skillPath: configs/microservice/bff-service/configs/agent-skills/ontology/yj-ocr-parser
