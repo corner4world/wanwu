@@ -248,6 +248,9 @@ func toPermissions(isAdmin, isSystem bool, perms []*iam_service.Perm) []response
 				if r.Tag == "ontology" {
 					continue
 				}
+				if r.Tag == "ontology.digital_employee" {
+					continue
+				}
 				if r.Tag == "ontology.knowledge_network" {
 					continue
 				}
@@ -274,6 +277,9 @@ func toPermissions(isAdmin, isSystem bool, perms []*iam_service.Perm) []response
 		}
 		if config.Cfg().Ontology.Enable == 0 {
 			if r.Tag == "ontology" {
+				continue
+			}
+			if r.Tag == "ontology.digital_employee" {
 				continue
 			}
 			if r.Tag == "ontology.knowledge_network" {
