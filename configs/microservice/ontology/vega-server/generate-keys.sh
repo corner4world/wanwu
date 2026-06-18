@@ -3,9 +3,17 @@
 # RSA Key Generation Script for Vega Services
 # Usage: ./generate-keys.sh [output_dir]
 # Default output directory: current directory
-# Skips key generation if target files are non-empty (delete or clear to regenerate).
-# Forward-compatible: copies from data-connection/ if old pem files exist there.
-# Also derives state.json from the public key.
+#
+# Canonical key store lives under data-connection/ (gitignored & untracked),
+# so it survives a `git checkout` that resets the tracked vega-server placeholders.
+# This script ensures the canonical key pair, then syncs derived copies into the
+# vega-server output dir (private_key.pem, public_key.pem) and rebuilds state.json.
+#
+# Key-pair rules (in data-connection/):
+#   - both present        -> reuse as-is
+#   - both missing        -> generate a fresh pair
+#   - only private present -> derive the public key from the private key
+#   - only public present  -> ERROR: private key cannot be recovered from a public key
 
 set -e
 
@@ -15,76 +23,66 @@ echo "=== RSA Key Generation Script ==="
 echo "Output directory: $OUTPUT_DIR"
 echo ""
 
-PRIV="$OUTPUT_DIR/private_key.pem"
-PUB="$OUTPUT_DIR/public_key.pem"
-STATE_JSON="$OUTPUT_DIR/state.json"
+# Canonical (persistent) key store
+DC_DIR="$OUTPUT_DIR/data-connection"
+SRC_PRIV="$DC_DIR/private_key.pem"
+SRC_PUB="$DC_DIR/public_key.pem"
 
-# Forward-compat: old paths under data-connection/
-OLD_PRIV="$OUTPUT_DIR/data-connection/private_key.pem"
-OLD_PUB="$OUTPUT_DIR/data-connection/public_key.pem"
+# Derived copies / outputs in the vega-server dir
+DEST_PRIV="$OUTPUT_DIR/private_key.pem"
+DEST_PUB="$OUTPUT_DIR/public_key.pem"
+STATE_JSON="$OUTPUT_DIR/state.json"
 
 # Helper: check if a file exists and is non-empty
 is_non_empty() { [ -s "$1" ]; }
 
-# Helper: refuse to regenerate if file is non-empty
-refuse_if_non_empty() {
-  if is_non_empty "$1"; then
-    echo "Existing non-empty file detected, refusing to overwrite: $1"
-    echo "Delete or clear this file first if you want to regenerate."
-    return 0  # true = refused
-  fi
-  return 1  # false = ok to proceed
-}
+mkdir -p "$DC_DIR"
 
-# --- Private key ---
-if refuse_if_non_empty "$PRIV"; then
-  echo "  Using existing: $PRIV"
-elif is_non_empty "$OLD_PRIV"; then
-  echo "Found existing key in old path, copying: $OLD_PRIV -> $PRIV"
-  cp "$OLD_PRIV" "$PRIV"
+# --- Ensure the canonical key pair under data-connection/ ---
+if is_non_empty "$SRC_PRIV" && is_non_empty "$SRC_PUB"; then
+  echo "Found existing canonical key pair, reusing:"
+  echo "  $SRC_PRIV"
+  echo "  $SRC_PUB"
+elif ! is_non_empty "$SRC_PRIV" && ! is_non_empty "$SRC_PUB"; then
+  echo "No canonical keys found, generating a fresh pair..."
+  openssl genrsa -out "$SRC_PRIV" 2048 2>/dev/null
+  echo "  Created: $SRC_PRIV"
+  openssl rsa -in "$SRC_PRIV" -pubout -out "$SRC_PUB" 2>/dev/null
+  echo "  Created: $SRC_PUB"
+elif is_non_empty "$SRC_PRIV"; then
+  # Only the private key exists -> derive the public key from it.
+  echo "Public key missing, deriving it from the existing private key..."
+  openssl rsa -in "$SRC_PRIV" -pubout -out "$SRC_PUB" 2>/dev/null
+  echo "  Created: $SRC_PUB"
 else
-  echo "Generating RSA private key..."
-  openssl genrsa -out "$PRIV" 2048 2>/dev/null
-  echo "  Created: $PRIV"
-fi
-
-# --- Public key ---
-if refuse_if_non_empty "$PUB"; then
-  echo "  Using existing: $PUB"
-elif is_non_empty "$OLD_PUB"; then
-  echo "Found existing key in old path, copying: $OLD_PUB -> $PUB"
-  cp "$OLD_PUB" "$PUB"
-elif is_non_empty "$PRIV"; then
-  echo "Deriving RSA public key from private key..."
-  openssl rsa -in "$PRIV" -pubout -out "$PUB" 2>/dev/null
-  echo "  Created: $PUB"
-else
-  echo "ERROR: No private key available to derive public key, and no existing public key found." >&2
+  # Only the public key exists -> the private key is unrecoverable.
+  echo "ERROR: private key missing in data-connection (only public_key.pem found)." >&2
+  echo "A private key cannot be recovered from a public key." >&2
+  echo "Delete $SRC_PUB and re-run this script to generate a fresh key pair." >&2
   exit 1
 fi
 
-# --- Permissions ---
-if [ -f "$PRIV" ]; then chmod 644 "$PRIV"; fi
-if [ -f "$PUB" ]; then chmod 644 "$PUB"; fi
+# --- Sync derived copies into the vega-server dir (overwrite; reproducible) ---
+echo ""
+echo "Syncing derived copies into $OUTPUT_DIR ..."
+cp "$SRC_PRIV" "$DEST_PRIV"
+cp "$SRC_PUB" "$DEST_PUB"
+chmod 644 "$DEST_PRIV" "$DEST_PUB"
+echo "  $DEST_PRIV"
+echo "  $DEST_PUB"
 
 echo ""
 echo "=== RSA Key Generation Complete ==="
 
-# --- state.json ---
-if refuse_if_non_empty "$STATE_JSON"; then
-  echo "  Using existing: $STATE_JSON"
-elif is_non_empty "$PUB"; then
-  echo "Generating state.json from public key..."
-  PEM_ESCAPED=$(awk 'BEGIN { ORS="" } { sub(/\r$/, ""); if (NR>1) printf "\\n"; printf "%s", $0 }' "$PUB")
-  cat > "$STATE_JSON" << EOF
+# --- state.json (derived from the public key) ---
+echo "Generating state.json from public key..."
+PEM_ESCAPED=$(awk 'BEGIN { ORS="" } { sub(/\r$/, ""); if (NR>1) printf "\\n"; printf "%s", $0 }' "$SRC_PUB")
+cat > "$STATE_JSON" << EOF
 {
   "publicKey": "${PEM_ESCAPED}"
 }
 EOF
-  echo "  Created: $STATE_JSON"
-else
-  echo "Public key not found or empty ($PUB), skipping state.json generation."
-fi
+echo "  Created: $STATE_JSON"
 
 echo ""
 echo "IMPORTANT: Do NOT commit generated key/state files to version control!"
