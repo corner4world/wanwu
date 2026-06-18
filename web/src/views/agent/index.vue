@@ -16,7 +16,6 @@
       :isButton="true"
       :asideWidth="asideWidth"
       @handleBtnClick="handleBtnClick"
-      :isBtnDisabled="sessionStatus === 0"
       :class="[chatType === 'webChat' ? 'chatBg' : '']"
       :showAside="showAside"
     >
@@ -26,11 +25,7 @@
             <div
               v-for="(n, i) in historyList"
               class="appList"
-              :class="[
-                'appList',
-                { disabled: sessionStatus === 0 },
-                { active: n.active },
-              ]"
+              :class="['appList', { active: n.active }]"
               @click="historyClick(n)"
               @touchstart="historyClick(n)"
               @mouseenter="mouseEnter(n)"
@@ -55,6 +50,7 @@
           <Chat
             :chatType="'chat'"
             :editForm="editForm"
+            :assistantId="assistantId"
             :appUrlInfo="appUrlInfo"
             :type="chatType"
             ref="agentChat"
@@ -79,6 +75,7 @@ import {
 import { getApiKeyRoot } from '@/api/appspace';
 import sseMethod from '@/mixins/sseMethod';
 import { MULTIPLE_AGENT, SINGLE_AGENT } from '@/views/agent/constants';
+import { guid, getXClientId } from '@/utils/util';
 export default {
   name: 'ExploreAgent',
   components: { CommonLayout, Chat },
@@ -138,8 +135,7 @@ export default {
         agentChat_converstionList: getConversationlist,
         webChat_converstionList: OpenurlConverList,
       },
-      uuid: '',
-      STORAGE_KEY: 'chatUUID',
+      xClientId: '',
       isMobile: false,
       showMobileMenu: false,
     };
@@ -155,7 +151,7 @@ export default {
     }
     if (this.$route.path.includes('/webChat')) {
       this.chatType = 'webChat';
-      this.initUUID();
+      this.initXClientId();
     } else {
       this.chatType = 'agentChat';
     }
@@ -163,16 +159,11 @@ export default {
     this.getList();
   },
   mounted() {
-    if (!localStorage.getItem(this.STORAGE_KEY)) {
-      localStorage.setItem(this.STORAGE_KEY, '');
-    }
-    window.addEventListener('storage', this.handleStorageEvent);
     //检查是否是移动端
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
   },
   beforeDestroy() {
-    window.removeEventListener('storage', this.handleStorageEvent);
     this.clearMaxPicNum();
     window.removeEventListener('resize', this.checkMobile);
   },
@@ -195,40 +186,21 @@ export default {
       this.showMobileMenu = false;
       this.showAside = false;
     },
-    initUUID() {
-      const storedUUID = localStorage.getItem('chatUUID');
-      // UUID v4 格式验证
-      const isValidUUID =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-          storedUUID,
-        );
-      if (storedUUID && isValidUUID) {
-        this.uuid = storedUUID;
-      } else {
-        // 无效或不存在，重新生成
-        this.uuid = this.$guid();
-        localStorage.setItem('chatUUID', this.uuid);
+    initXClientId() {
+      let xClientId = getXClientId();
+      if (!xClientId) {
+        xClientId = guid();
+        localStorage.setItem('xClientId', xClientId);
       }
-    },
-    handleStorageEvent(event) {
-      if (event.key === this.STORAGE_KEY && !event.newValue) {
-        this.clearUUID();
-      }
-    },
-    clearUUID() {
-      localStorage.removeItem('chatUUID');
-      this.uuid = this.$guid();
-      localStorage.setItem('chatUUID', this.uuid);
+      this.xClientId = xClientId;
+      return xClientId;
     },
     reloadList(val) {
       this.getList(val);
     },
     headerConfig() {
-      if (!this.uuid) {
-        return { headers: { 'X-Client-ID': '' } };
-      }
       const config = {
-        headers: { 'X-Client-ID': this.uuid },
+        headers: { 'X-Client-ID': this.initXClientId() },
       };
       return config;
     },

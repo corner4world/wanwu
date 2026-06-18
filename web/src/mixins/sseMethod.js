@@ -9,6 +9,7 @@ import {
 import { mapActions, mapGetters } from 'vuex';
 import { i18n } from '@/lang';
 import StreamProcessor from '@/utils/streamProcessor.js';
+import { guid, getXClientId } from '@/utils/util';
 
 var originalFetch = window.fetch;
 
@@ -17,8 +18,10 @@ import $ from './jquery.min.js';
 import { OPENURL_API, USER_API } from '@/utils/requestConstants';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
 import { processToolResultBlocks } from '@/utils/toolResultProcessor.js';
+import { cancelAgentStream, cancelOpenurlAgentStream } from '@/api/agent';
 
 const AGENT_API_URL = `${USER_API}/assistant/stream`;
+const AGENT_CONNECT_API_URL = `${USER_API}/assistant/stream/connect`;
 const RAG_API_URL = `${USER_API}/rag/chat`;
 const EXPRIENCE_API_URL = `${USER_API}/model/experience/llm`;
 
@@ -53,6 +56,11 @@ export default {
       fileInfoList: [], // 上传后的文件信息（fileId, fileName, fileUrl等）
       instanceSessionStatus: -1,
       sessionComRef: null,
+      activeAgentStreamParams: {
+        assistantId: '',
+        conversationId: '',
+        draft: false,
+      },
       _subConversionsMap: null, // 子会话存储 Map
       _subConversionProcessors: null, // 子会话处理器 Map
       _subMainProcessorsMap: null, // 子会话内部正文片段处理器 Map (Key: subId_order)
@@ -1131,13 +1139,90 @@ export default {
       );
     },
 
+    getAgentStreamHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + this.token,
+        'x-user-id': this.userInfo.uid,
+        'x-org-id': this.userInfo.orgId,
+        'X-Client-ID': getXClientId(),
+      };
+    },
+    setActiveAgentStreamParams(params = {}) {
+      const assistantId =
+        params.assistantId || this.activeAgentStreamParams.assistantId || '';
+      const conversationId =
+        params.conversationId ||
+        this.activeAgentStreamParams.conversationId ||
+        '';
+      const draft =
+        params.draft !== undefined
+          ? params.draft
+          : this.activeAgentStreamParams.draft || false;
+
+      this.activeAgentStreamParams = {
+        assistantId,
+        conversationId,
+        draft,
+      };
+    },
+    clearActiveAgentStreamParams() {
+      this.activeAgentStreamParams = {
+        assistantId: '',
+        conversationId: '',
+        draft: false,
+      };
+    },
+    async cancelCurrentAgentStream() {
+      if (!['agentChat', 'webChat'].includes(this.type)) return;
+
+      const { assistantId, conversationId, draft } =
+        this.activeAgentStreamParams;
+
+      if (!assistantId || (!draft && !conversationId)) return;
+
+      const params = {
+        assistantId,
+      };
+
+      if (draft) {
+        params.draft = true;
+      }
+
+      if (conversationId) {
+        params.conversationId = conversationId;
+      }
+
+      const config =
+        this.type === 'webChat'
+          ? {
+              headers: {
+                'X-Client-ID': getXClientId(),
+              },
+              isOpenUrl: true,
+            }
+          : {};
+      try {
+        this.type === 'webChat'
+          ? await cancelOpenurlAgentStream(
+              params.assistantId,
+              {
+                conversationId: params.conversationId,
+              },
+              config,
+            )
+          : await cancelAgentStream(params, config);
+      } catch (error) {
+        console.error(error);
+      }
+    },
     doSend(params) {
       this.stopBtShow = true;
       this.isStoped = false;
       let _history = this.$refs['session-com'].getList();
       this.sendEventSource(this.inputVal, '', _history.length);
     },
-    sendEventSource(prompt, msgStr, lastIndex) {
+    sendEventSource(prompt, msgStr, lastIndex, options = {}) {
       console.log('####  sendEventSource', new Date().getTime());
       let sessionCom = this.sessionComRef || this.$refs['session-com'];
       if (!sessionCom) {
@@ -1151,9 +1236,11 @@ export default {
 
       this.sseResponse = {};
       this.setStoreSessionStatus(0);
-      this.clearInput();
+      if (options.clearInput !== false) {
+        this.clearInput();
+      }
 
-      let params = {
+      let params = options.pushHistoryData || {
         query: prompt,
         pending: true,
         responseLoading: true,
@@ -1161,7 +1248,9 @@ export default {
         fileList: this.fileList,
         pendingResponse: '',
       };
-      sessionCom.pushHistory(params);
+      if (!options.skipPushHistory) {
+        sessionCom.pushHistory(params);
+      }
 
       this._print = new Print({
         onPrintEnd: () => {
@@ -1172,7 +1261,11 @@ export default {
       let data = null;
       let headers = null;
       //判断是是不是openurl对话
-      if (this.type === 'agentChat') {
+      if (options.streamApi && options.streamData) {
+        this.sseApi = options.streamApi;
+        data = options.streamData;
+        headers = options.headers || this.getAgentStreamHeaders();
+      } else if (this.type === 'agentChat') {
         if (!this.isExplorePage()) {
           this.sseApi = `${AGENT_API_URL}/draft`;
         } else {
@@ -1183,12 +1276,7 @@ export default {
           prompt,
           systemPrompt: this.sseParams.systemPrompt, //提示词对比参数
         };
-        headers = {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + this.token,
-          'x-user-id': this.userInfo.uid,
-          'x-org-id': this.userInfo.orgId,
-        };
+        headers = this.getAgentStreamHeaders();
       } else {
         this.sseApi = `${OPENURL_API}/agent/${this.sseParams.assistantId}/stream`;
         data = {
@@ -1197,7 +1285,7 @@ export default {
           prompt,
         };
         headers = {
-          'X-Client-ID': this.getHeaderConfig().headers['X-Client-ID'],
+          'X-Client-ID': getXClientId(),
         };
       }
 
@@ -1206,9 +1294,25 @@ export default {
       this._subMainProcessorsMap = new Map(); // 子会话内部正文片段处理器 (Key: subId_order)
       this._mainProcessors = new Map(); // 每个 order 的主处理器
 
+      if (['agentChat', 'webChat'].includes(this.type)) {
+        const isDraftStream =
+          this.type === 'agentChat' &&
+          (this.chatType === 'test' ||
+            this.sseApi === `${AGENT_API_URL}/draft`);
+
+        this.setActiveAgentStreamParams({
+          assistantId: data.assistantId || this.sseParams.assistantId,
+          conversationId: data.conversationId || this.sseParams.conversationId,
+          draft: isDraftStream,
+        });
+      }
+
+      let hasStreamMessage = false;
+
       this.eventSource = this.fetchEventSource(this.sseApi, data, {
         headers,
-        ...(this.type === 'webChat' && { isOpenUrl: true }),
+        ...(this.type === 'webChat' &&
+          !options.streamApi && { isOpenUrl: true }),
         onopen: async e => {
           console.log('已建立SSE连接~', new Date().getTime());
           if (e.status !== 200) {
@@ -1237,12 +1341,24 @@ export default {
           if (e && e.data) {
             let data = JSON.parse(e.data);
             console.log('===>', new Date().getTime(), data);
+            hasStreamMessage = true;
             this.sseResponse = data;
+            if (
+              ['agentChat', 'webChat'].includes(this.type) &&
+              data.conversationId
+            ) {
+              this.setActiveAgentStreamParams({
+                assistantId:
+                  this.type === 'webChat' ? undefined : data.assistantId,
+                conversationId: data.conversationId,
+              });
+            }
+            const currentQuery = prompt || data.prompt || data.query || '';
             //待替换的数据，需要前端组装
             let commonData = {
               ...data,
               ...this.sseParams,
-              query: prompt,
+              query: currentQuery,
               fileList: this.fileList,
               response: '',
               filepath: data.file_url || '',
@@ -1644,6 +1760,19 @@ export default {
             this.setStoreSessionStatus(-1);
             const history = sessionCom.getSessionData()['history'] || [];
             const lastItem = history[lastIndex];
+            if (
+              options.removeEmptyOnClose &&
+              !hasStreamMessage &&
+              history.length - 1 === lastIndex
+            ) {
+              sessionCom.removeLastHistory();
+              this.echo = !(sessionCom.getSessionData()['history'] || [])
+                .length;
+              this.stopBtShow = false;
+              this.sseOnCloseCallBack && this.sseOnCloseCallBack();
+              this.clearActiveAgentStreamParams();
+              return;
+            }
             if (lastItem && lastItem.responseLoading) {
               sessionCom.replaceLastData(lastIndex, {
                 ...lastItem,
@@ -1651,6 +1780,7 @@ export default {
               });
             }
             this.sseOnCloseCallBack && this.sseOnCloseCallBack();
+            this.clearActiveAgentStreamParams();
           };
           // 打字机还在跑（printStatus===1）或队列未排空时，挂载 onPrintEnd 延迟执行
           if (
@@ -1670,6 +1800,64 @@ export default {
       });
     },
     // 更新子会话的用户操作状态
+    connectEventSource({
+      assistantId,
+      conversationId,
+      query = '',
+      lastIndex,
+      fileList = [],
+      headers = null,
+    } = {}) {
+      if (!assistantId || !conversationId) return;
+      const sessionCom = this.sessionComRef || this.$refs['session-com'];
+      if (!sessionCom) {
+        console.warn('[sseMethod] session-com ref missing');
+        return;
+      }
+
+      this.stopBtShow = true;
+      this.isStoped = false;
+      this.echo = false;
+      this.fileList = fileList || [];
+      this.queryFilePath = '';
+      this.setSseParams({
+        assistantId,
+        conversationId,
+      });
+
+      const history = sessionCom.getSessionData()['history'] || [];
+      const targetIndex =
+        typeof lastIndex === 'number' ? lastIndex : history.length;
+      const shouldPushHistory = typeof lastIndex !== 'number';
+      const connectApi =
+        this.type === 'webChat'
+          ? `${OPENURL_API}/agent/${assistantId}/stream/connect`
+          : AGENT_CONNECT_API_URL;
+
+      this.sendEventSource(query, '', targetIndex, {
+        streamApi: connectApi,
+        streamData: {
+          assistantId,
+          conversationId,
+        },
+        clearInput: false,
+        headers,
+        skipPushHistory: !shouldPushHistory,
+        removeEmptyOnClose: shouldPushHistory,
+        pushHistoryData: shouldPushHistory
+          ? {
+              query,
+              pending: true,
+              responseLoading: true,
+              requestFileUrls: [],
+              fileList: fileList || [],
+              pendingResponse: '',
+              subConversions: [],
+              messageSequence: [],
+            }
+          : null,
+      });
+    },
     setSubConversionUserToggle(id, isOpen) {
       if (this._subConversionsMap) {
         let subConversion = this._subConversionsMap.get(id);
@@ -1958,6 +2146,7 @@ export default {
     preStop() {
       // 立即置 -1：隐藏停止按钮，避免重复点击触发多次 abort
       this.setStoreSessionStatus(-1);
+      this.cancelCurrentAgentStream();
       // 立刻同步断流 + 停掉两个打字机，不等 sseOnCloseCallBack 的异步链路。
       // 这样"点一次停止，字立刻停"：在 reasoning 阶段也不会被残余帧拉回。
       this.ctrlAbort && this.ctrlAbort.abort();
@@ -2005,6 +2194,7 @@ export default {
       }
       //获取已经拿到的全部回答,一次性回显出来
       this.sseOnCloseCallBack(true);
+      this.clearActiveAgentStreamParams();
     },
     sseOnCloseCallBack(isStoped) {
       this.stopEventSource();

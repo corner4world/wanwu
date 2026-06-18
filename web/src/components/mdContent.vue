@@ -3,7 +3,7 @@
     <div
       class="markdown-body"
       ref="markdownBody"
-      v-html="marked(content || $t('common.noData'))"
+      v-html="safeMarked(content || $t('common.noData'))"
     ></div>
   </div>
 </template>
@@ -11,6 +11,7 @@
 const highlight = require('highlight.js');
 import 'highlight.js/styles/github.css';
 import { marked } from 'marked';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 marked.setOptions({
   renderer: new marked.Renderer(),
@@ -32,6 +33,9 @@ export default {
   },
   methods: {
     marked,
+    safeMarked(text) {
+      return sanitizeHtml(marked(text));
+    },
     addHeadingIds() {
       if (!this.$refs.markdownBody) return;
       const headings = this.$refs.markdownBody.querySelectorAll(

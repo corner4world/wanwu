@@ -20,6 +20,8 @@
       v-loading="loading"
       ref="timeScroll"
       @click="handleGlobalClick"
+      @mouseover="handleCitationHover"
+      @mouseout="handleCitationLeave"
       :style="{ 'max-height': historyBoxHeight }"
     >
       <div v-for="(n, i) in session_data.history" :key="`${i}sdhs`">
@@ -551,8 +553,6 @@
                   <div
                     class="answer-content no-order-chunk-answer"
                     :class="{ 'rag-answer': chatType === 'rag' }"
-                    @mouseover="onRagAnswerHover($event)"
-                    @mouseout="onRagAnswerLeave($event)"
                     @click="$refs.imagePreview.handleImageClick($event)"
                   >
                     <div
@@ -582,8 +582,6 @@
                     hideDs: !n.isOpen,
                     'rag-answer': chatType === 'rag',
                   }"
-                  @mouseover="onRagAnswerHover($event)"
-                  @mouseout="onRagAnswerLeave($event)"
                   @click="$refs.imagePreview.handleImageClick($event)"
                 >
                   <div
@@ -857,6 +855,7 @@
         :style="{
           left: ragCitationTip.x + 'px',
           top: ragCitationTip.y + 'px',
+          '--citation-arrow-offset': ragCitationTip.arrowOffset + 'px',
         }"
       >
         <div class="rag-citation-popover-head">
@@ -964,7 +963,7 @@ export default {
       // 复制提示计时器map
       copyTimerMap: new Map(),
       historyBoxHeight: '', // 动态历史会话容器高度
-      // RAG 答案区：citation hover 气泡
+      // 引用角标 hover 气泡（RAG / Agent 复用）
       ragCitationTip: {
         visible: false,
         x: 0,
@@ -973,6 +972,7 @@ export default {
         title: '',
         snippet: '',
         number: '',
+        arrowOffset: 0,
       },
       // RAG 引用片段展开状态：key = `${messageIdx}-${sourceIdx}`，对齐模板里的 ragSnippet_ ref 命名
       // ragSnippetOverflow 一次性检测后缓存，不再重算——snippet 到达后不再变化，且可避免展开态反作用于检测逻辑
@@ -1017,7 +1017,7 @@ export default {
     smoothscroll.polyfill();
     document.addEventListener('click', this.handleCitationClick);
     addEventListener('resize', this.handleWindowResize);
-    // 兜底：外层 wheel / resize 时立即隐藏 RAG 引用气泡（避免 fixed 定位错位）
+    // 兜底：外层 wheel / resize 时立即隐藏引用气泡（避免 fixed 定位错位）
     addEventListener('wheel', this.onWindowWheelHideTip, {
       passive: true,
     });
@@ -1052,7 +1052,7 @@ export default {
       clearTimeout(timerId);
     });
     this.copyTimerMap.clear();
-    // 清除 RAG 引用角标 hover tooltip 的延迟隐藏计时器
+    // 清除引用角标 hover tooltip 的延迟隐藏计时器
     if (this._ragCitationTipHideTimer) {
       clearTimeout(this._ragCitationTipHideTimer);
       this._ragCitationTipHideTimer = null;
@@ -1365,7 +1365,7 @@ export default {
       container.addEventListener('scroll', this.handleScroll);
     },
     handleScroll(e) {
-      // 滚动时立即隐藏 RAG 引用气泡：popover 用 fixed 定位 + viewport 坐标，
+      // 滚动时立即隐藏引用气泡：popover 用 fixed 定位 + viewport 坐标，
       // 滚动时 citation 已经移位，气泡停在原地会严重错位。
       this.hideRagCitationTip();
       const container = document.getElementById(this.scrollContainerId);
@@ -1838,32 +1838,230 @@ export default {
       });
     },
     /**
-     * RAG 回答区鼠标悬停：命中 .citation → 弹 hover 气泡（标题 + snippet + 跳转提示）
+     * 引用角标悬浮入口。
+     * 通过历史容器的事件委托命中 .citation，再按 chatType 从 Vue 状态中解析对应来源，
+     * 避免把标题和片段内容重复塞入 data-* 属性。
+     *
+     * @param {MouseEvent} e - 容器 mouseover 事件
      */
-    onRagAnswerHover(e) {
+    handleCitationHover(e) {
+      if (!['agent', 'rag'].includes(this.chatType)) return;
       const target =
         e.target && e.target.closest ? e.target.closest('.citation') : null;
       if (!target) return;
+
+      const tipData = this.resolveCitationTipData(target);
+      if (!tipData) {
+        this.hideRagCitationTip();
+        return;
+      }
+
+      this.showCitationTip(target, tipData);
+    },
+    /**
+     * 引用角标移出入口。
+     * 鼠标在多个引用角标之间移动时不立即隐藏，交给下一个 hover 覆盖；
+     * 真正离开引用角标后隐藏当前气泡。
+     *
+     * @param {MouseEvent} e - 容器 mouseout 事件
+     */
+    handleCitationLeave(e) {
+      if (!['agent', 'rag'].includes(this.chatType)) return;
+      const target =
+        e.target && e.target.closest ? e.target.closest('.citation') : null;
+      if (!target) return;
+
+      const related = e.relatedTarget;
+      if (related && related.closest && related.closest('.citation')) {
+        return;
+      }
+      this.hideRagCitationTip();
+    },
+    /**
+     * 按当前会话类型分发引用 tooltip 数据解析逻辑。
+     *
+     * @param {HTMLElement} citationTarget - 被悬浮的 .citation 元素
+     * @returns {{number: string, title: string, snippet: string} | null}
+     */
+    resolveCitationTipData(citationTarget) {
+      if (this.chatType === 'rag') {
+        return this.resolveRagCitationTipData(citationTarget);
+      }
+      if (this.chatType === 'agent') {
+        return this.resolveAgentCitationTipData(citationTarget);
+      }
+      return null;
+    },
+    /**
+     * 根据 RAG 引用角标解析 tooltip 展示数据。
+     * RAG 角标只保留消息索引和引用序号，标题/片段从当前 historyItem.searchList 中按序号读取。
+     *
+     * @param {HTMLElement} citationTarget - 被悬浮的 .citation 元素
+     * @returns {{number: string, title: string, snippet: string} | null}
+     */
+    resolveRagCitationTipData(citationTarget) {
+      const parentsIndex = Number(citationTarget.dataset.parentsIndex);
+      const citationIndex = Number(citationTarget.textContent.trim());
+      if (
+        !Number.isInteger(parentsIndex) ||
+        !citationIndex ||
+        citationIndex < 1
+      ) {
+        return null;
+      }
+
+      const historyItem = this.session_data.history[parentsIndex];
+      const source =
+        historyItem &&
+        historyItem.searchList &&
+        historyItem.searchList[citationIndex - 1];
+      if (!source) return null;
+
+      return {
+        number: citationTarget.textContent.trim(),
+        title: this.cleanCitationTipText(
+          source.title ||
+            source.file_name ||
+            source.fileName ||
+            source.user_kb_name ||
+            source.link ||
+            '',
+          80,
+        ),
+        snippet: this.cleanCitationTipText(
+          source.snippet || source.content || '',
+          160,
+        ),
+      };
+    },
+    /**
+     * 根据智能体引用角标解析 tooltip 展示数据。
+     *
+     * 查找优先级：
+     * 1. 子会话引用：通过 data-pid + 引用序号复用 resolveCitationSourceConversion；
+     * 2. 主回答引用：优先查 agentKnowledge 子会话的 searchList；
+     * 3. 兜底查当前 historyItem.searchList。
+     *
+     * @param {HTMLElement} citationTarget - 被悬浮的 .citation 元素
+     * @returns {{number: string, title: string, snippet: string} | null}
+     */
+    resolveAgentCitationTipData(citationTarget) {
+      const parentsIndex = Number(citationTarget.dataset.parentsIndex);
+      const citationIndex = Number(citationTarget.textContent.trim());
+      if (
+        !Number.isInteger(parentsIndex) ||
+        !citationIndex ||
+        citationIndex < 1
+      ) {
+        return null;
+      }
+
+      const historyItem = this.session_data.history[parentsIndex];
+      if (!historyItem) return null;
+
+      let source = null;
+      const pid = citationTarget.dataset.pid;
+
+      if (pid) {
+        const citationContext = this.resolveCitationSourceConversion(
+          historyItem,
+          pid,
+          citationIndex,
+        );
+        source =
+          citationContext &&
+          citationContext.dataOwner &&
+          citationContext.dataOwner.searchList &&
+          citationContext.dataOwner.searchList[citationIndex - 1];
+      } else if (this.hasNewAgentKnowledge(historyItem)) {
+        const knowledgeSub = historyItem.subConversions.find(
+          sub =>
+            sub.conversationType ===
+            AGENT_MESSAGE_CONFIG.AGENT_KNOWLEDGE.CONVERSATION_TYPE,
+        );
+        source =
+          knowledgeSub &&
+          knowledgeSub.searchList &&
+          knowledgeSub.searchList[citationIndex - 1];
+      }
+
+      if (!source && historyItem.searchList) {
+        source = historyItem.searchList[citationIndex - 1];
+      }
+      if (!source) return null;
+
+      return {
+        number: citationTarget.textContent.trim(),
+        title: this.cleanCitationTipText(
+          source.title ||
+            source.file_name ||
+            source.fileName ||
+            source.user_kb_name ||
+            source.link ||
+            '',
+          80,
+        ),
+        snippet: this.cleanCitationTipText(
+          source.snippet ||
+            source.content ||
+            [source.question, source.answer].filter(Boolean).join('\n\n') ||
+            '',
+          160,
+        ),
+      };
+    },
+    /**
+     * 清洗并截断引用 tooltip 文本。
+     * 用于把来源中的 Markdown/HTML 片段转为适合气泡展示的纯文本摘要。
+     *
+     * @param {string} value - 原始标题或片段内容
+     * @param {number} maxLength - 最大展示字符数
+     * @returns {string}
+     */
+    cleanCitationTipText(value, maxLength = 160) {
+      const raw = String(value || '')
+        .replaceAll(/!\[[^\]]*\]\([^)]+\)/g, '')
+        .replaceAll(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replaceAll(/<\/?[a-zA-Z][^>]*>/g, '')
+        .replaceAll(/\s+/g, ' ')
+        .trim();
+      if (!raw) return '';
+
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = raw;
+      const decoded = textarea.value.replaceAll(/\s+/g, ' ').trim();
+      return decoded.length > maxLength
+        ? decoded.slice(0, maxLength) + '…'
+        : decoded;
+    },
+    /**
+     * 在指定引用角标附近展示引用 tooltip。
+     * 复用现有 ragCitationTip 状态和气泡样式，只负责定位与赋值。
+     *
+     * @param {HTMLElement} target - 被悬浮的引用角标
+     * @param {{title?: string, snippet?: string, number?: string}} tipData
+     */
+    showCitationTip(target, { title = '', snippet = '', number = '' } = {}) {
       if (this._ragCitationTipHideTimer) {
         clearTimeout(this._ragCitationTipHideTimer);
         this._ragCitationTipHideTimer = null;
       }
-      const title = target.dataset.title || '';
-      const snippet = target.dataset.snippet || '';
-      const number = target.textContent.trim();
+
       const rect = target.getBoundingClientRect();
-      // 用 viewport 坐标 + position:fixed，规避 overflow 父节点的裁切
       const TIP_HEIGHT = 140;
-      const TIP_HALF_WIDTH = 160; // popover max-width 320 / 2
       const MARGIN = 8;
+      const TIP_WIDTH = Math.min(320, innerWidth - MARGIN * 2);
+      const TIP_HALF_WIDTH = TIP_WIDTH / 2;
       const placement = rect.top < TIP_HEIGHT + MARGIN ? 'bottom' : 'top';
-      // x 居中于 citation，再 clamp 到 viewport 左右边界内
-      let x = rect.left + rect.width / 2;
+      const rawX = rect.left + rect.width / 2;
+      let x = rawX;
       x = Math.min(
         Math.max(x, TIP_HALF_WIDTH + MARGIN),
         innerWidth - TIP_HALF_WIDTH - MARGIN,
       );
       const y = placement === 'top' ? rect.top - MARGIN : rect.bottom + MARGIN;
+      const arrowOffset = rawX - x;
+
       this.ragCitationTip = {
         visible: true,
         x,
@@ -1872,21 +2070,11 @@ export default {
         title,
         snippet,
         number,
+        arrowOffset,
       };
     },
-    onRagAnswerLeave(e) {
-      // 设计决定：popover 纯跟随 citation hover，鼠标不在角标上立即隐藏。
-      // 不再允许"从 citation 滑到 popover 上继续悬停"——因为那会让滚动时
-      // popover 留在原地（fixed 定位 + 原 citation 已滚出视口），体验割裂。
-      const related = e.relatedTarget;
-      if (related && related.closest && related.closest('.citation')) {
-        // 在两个 citation 之间滑动：交给下一个 citation 的 mouseover 覆盖
-        return;
-      }
-      this.hideRagCitationTip();
-    },
     /**
-     * 立即隐藏 RAG 引用气泡并清掉未触发的定时器。
+     * 立即隐藏引用气泡并清掉未触发的定时器。
      * 在 mouseleave / 容器滚动 / 窗口 resize / 整页 wheel 等时机都被调用。
      */
     onWindowWheelHideTip() {
@@ -3046,8 +3234,9 @@ img.failed::after {
   position: fixed;
   z-index: 2050;
   transform: translate(-50%, -100%);
-  max-width: 320px;
-  min-width: 220px;
+  width: 320px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
   padding: 10px 12px;
   background: #ffffff;
   border: 1px solid rgba(99, 102, 241, 0.2);
@@ -3067,7 +3256,7 @@ img.failed::after {
   &::after {
     content: '';
     position: absolute;
-    left: 50%;
+    left: calc(50% + var(--citation-arrow-offset, 0px));
     width: 10px;
     height: 10px;
     background: #ffffff;

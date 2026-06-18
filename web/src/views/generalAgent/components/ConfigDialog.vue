@@ -132,14 +132,13 @@
                   {{ item.desc }}
                 </div>
               </div>
-              <el-radio
+              <el-checkbox
                 v-if="currentListConfig.type === 'ontology'"
-                :label="item.id"
-                :value="selectedResources[currentListConfig.type]?.[0]?.id"
-                @click.native.stop="handleToggleItem(item)"
-              >
-                {{ '' }}
-              </el-radio>
+                :value="isItemSelected(item.id)"
+                class="circle-checkbox"
+                @change="handleToggleItem(item)"
+                @click.native.stop
+              />
               <el-checkbox
                 v-else
                 :value="isItemSelected(item.id)"
@@ -862,10 +861,14 @@ export default {
 
     .el-checkbox {
       margin-left: 8px;
-    }
 
-    .el-radio {
-      margin-left: 8px;
+      &.circle-checkbox {
+        .el-checkbox__input {
+          .el-checkbox__inner {
+            border-radius: 50%;
+          }
+        }
+      }
     }
   }
 }

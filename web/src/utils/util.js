@@ -3,6 +3,7 @@ import { menuList } from '@/views/layout/menu';
 import { checkPerm } from '@/router/permission';
 import { i18n } from '@/lang';
 import { Message } from 'element-ui';
+import { isSafeImageUrl, escapeHtml as sanitizeEscapeHtml } from './sanitize';
 import { basePath } from '@/utils/config';
 import { store } from '@/store';
 
@@ -196,38 +197,14 @@ export function isSub(data) {
   return /【(\d{0,2})\^】/.test(data);
 }
 
-export function parseSub(data, index, searchList) {
+export function parseSub(data, index) {
   // 标点吸附：汉字与引用之间、引用与中文/英文标点之间的空白全部压掉，
   // 避免出现 "水平 【1^】 。它..." 这种被空格割裂的阅读节奏
   data = data
     .replaceAll(/([\u4e00-\u9fa5A-Za-z0-9])\s+(?=【\d{0,2}\^】)/g, '$1')
     .replaceAll(/【(\d{0,2})\^】\s+(?=[，。！？；：、）】》」"'])/g, '【$1^】');
-  const escape = s =>
-    String(s || '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;');
   return data.replaceAll(/【(\d{0,2})\^】/g, item => {
     const num = item.match(/【(\d{0,2})\^】/)[1];
-    // 如提供 searchList，则附上 title / snippet 供前端 hover 气泡读取
-    if (Array.isArray(searchList) && searchList.length) {
-      const src = searchList[Number(num) - 1];
-      if (src) {
-        const title = escape(src.title || src.file_name || '');
-        const rawSnippet = String(src.snippet || src.content || '');
-        // 去掉原文里的 markdown 图片/链接 + HTML 标签，气泡里只展示纯文本
-        const cleaned = rawSnippet
-          .replaceAll(/!\[[^\]]*\]\([^)]+\)/g, '')
-          .replaceAll(/<\/?[a-zA-Z][^>]*>/g, '')
-          .replaceAll(/\s+/g, ' ')
-          .trim();
-        const snippet = escape(
-          cleaned.length > 120 ? cleaned.slice(0, 120) + '…' : cleaned,
-        );
-        return `<sup class='citation' data-parents-index='${index}' data-title="${title}" data-snippet="${snippet}">${num}</sup>`;
-      }
-    }
     return `<sup class='citation' data-parents-index='${index}'>${num}</sup>`;
   });
 }
@@ -475,12 +452,19 @@ export function Md2Img(markdownText, escapeHtml = true) {
     // 添加匹配前的文本内容
     result += markdownText.substring(lastIndex, match.index);
 
-    // 构造图片HTML
     const alt = match[1] || '';
     const src = match[2];
-    const title = match[3] ? ` title="${match[3]}"` : '';
+    const title = match[3] ? ` title="${sanitizeEscapeHtml(match[3])}"` : '';
 
-    result += `<img src="${src}" alt="${alt}"${title}>`;
+    // 校验 URL scheme，阻止 javascript: 等危险协议
+    if (isSafeImageUrl(src)) {
+      const safeSrc = src.replaceAll('"', '&quot;');
+      const safeAlt = alt.replaceAll('"', '&quot;');
+      result += `<img src="${safeSrc}" alt="${safeAlt}"${title}>`;
+    } else {
+      // 不安全的 URL：渲染为纯文本而非图片标签
+      result += `![${alt}](${src})`;
+    }
 
     // 更新lastIndex到匹配结束位置
     lastIndex = match.index + match[0].length;

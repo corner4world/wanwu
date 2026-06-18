@@ -189,35 +189,75 @@
                 v-if="checkPerm(item.perm)"
                 v-for="item in it"
                 :key="item.name"
-                class="menu--popover-item"
-                @click="menuClick(item)"
               >
-                <img class="menu--popover-item-img" :src="item.img" alt="" />
-                <el-tooltip
-                  v-if="item.isTip"
-                  effect="dark"
-                  :content="item.tipContent"
-                  placement="top-start"
+                <!-- 有子菜单的项 -->
+                <el-popover
+                  v-if="item.children && item.children.length"
+                  placement="right"
+                  width="140"
+                  trigger="click"
+                  :popper-class="'menu-submenu-popover'"
                 >
-                  <span
-                    style="display: inline-block; width: 150px"
-                    class="menu--popover-item-name"
+                  <div
+                    v-for="child in item.children"
+                    :key="child.name"
+                    class="menu--popover-item"
+                    style="padding-left: 4px"
+                    @click="menuClick(child)"
                   >
+                    <img
+                      class="menu--popover-item-img"
+                      :src="child.img"
+                      alt=""
+                    />
+                    <span class="menu--popover-item-name">
+                      {{ child.name }}
+                    </span>
+                  </div>
+                  <div slot="reference" class="menu--popover-item">
+                    <img
+                      class="menu--popover-item-img"
+                      :src="item.img"
+                      alt=""
+                    />
+                    <span class="menu--popover-item-name">{{ item.name }}</span>
+                    <img
+                      v-if="item.icon"
+                      class="menu--popover-item-icon"
+                      :src="item.icon"
+                      alt=""
+                    />
+                  </div>
+                </el-popover>
+                <!-- 无子菜单的普通项 -->
+                <div v-else class="menu--popover-item" @click="menuClick(item)">
+                  <img class="menu--popover-item-img" :src="item.img" alt="" />
+                  <el-tooltip
+                    v-if="item.isTip"
+                    effect="dark"
+                    :content="item.tipContent"
+                    placement="top-start"
+                  >
+                    <span
+                      style="display: inline-block; width: 150px"
+                      class="menu--popover-item-name"
+                    >
+                      {{ item.name }}
+                    </span>
+                  </el-tooltip>
+                  <span v-if="!item.isTip" class="menu--popover-item-name">
                     {{ item.name }}
                   </span>
-                </el-tooltip>
-                <span v-if="!item.isTip" class="menu--popover-item-name">
-                  {{ item.name }}
-                </span>
-                <img
-                  v-if="item.icon"
-                  class="menu--popover-item-icon"
-                  :src="item.icon"
-                  alt=""
-                />
-                <span v-if="item.version" class="menu--popover-item-version">
-                  {{ version || '' }}
-                </span>
+                  <img
+                    v-if="item.icon"
+                    class="menu--popover-item-icon"
+                    :src="item.icon"
+                    alt=""
+                  />
+                  <span v-if="item.version" class="menu--popover-item-version">
+                    {{ version || '' }}
+                  </span>
+                </div>
               </div>
             </div>
             <div
@@ -342,12 +382,25 @@ export default {
             },
           },
           {
-            name: 'Github',
-            img: require('@/assets/imgs/github_icon.svg'),
+            name: this.$t('menu.openSource'),
+            img: require('@/assets/imgs/openSource.svg'),
             icon: require('@/assets/imgs/link_icon.png'),
-            redirect: () => {
-              window.open('https://github.com/UnicomAI/wanwu');
-            },
+            children: [
+              {
+                name: 'Github',
+                img: require('@/assets/imgs/github_icon.svg'),
+                redirect: () => {
+                  window.open('https://github.com/UnicomAI/wanwu');
+                },
+              },
+              {
+                name: 'Gitee',
+                img: require('@/assets/imgs/gitee_icon.svg'),
+                redirect: () => {
+                  window.open('https://gitee.com/UnicomAI/wanwu');
+                },
+              },
+            ],
           },
           {
             name: this.$t('menu.about'),

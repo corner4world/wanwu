@@ -58,7 +58,7 @@ import {
   updateSkillWorkspaceFile,
 } from '@/api/skillResource/skillWorkSpace';
 import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import { sanitizeHtml } from '@/utils/sanitize';
 import { getLanguageByPath } from './workspaceConstants';
 
 export default {
@@ -111,7 +111,7 @@ export default {
     },
     renderedMarkdown() {
       if (!this.currentContent) return '';
-      return DOMPurify.sanitize(marked(this.currentContent, { breaks: true }));
+      return sanitizeHtml(marked(this.currentContent, { breaks: true }));
     },
   },
   watch: {

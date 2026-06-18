@@ -388,12 +388,17 @@
                     <el-tooltip
                       class="item"
                       effect="dark"
-                      :content="n.mcpName || n.toolName"
+                      :content="convertTooltipContent(n)"
                       placement="top-start"
                     >
                       <span
                         class="el-icon-info desc-info"
-                        v-if="n.mcpName || n.toolName"
+                        v-if="
+                          n.mcpName ||
+                          n.toolName ||
+                          n.description ||
+                          n.workFlowDesc
+                        "
                       ></span>
                     </el-tooltip>
                     <span class="tag">{{ n.typeName }}</span>
@@ -1659,6 +1664,13 @@ export default {
       keys.forEach(key => {
         config[key] = source[key] ?? '';
       });
+    },
+    // 转换工具提示内容
+    convertTooltipContent(toolInfo) {
+      const title = toolInfo.mcpName || toolInfo.toolName || '';
+      let description = toolInfo.description || toolInfo.workFlowDesc || '';
+      description = description ? description.replace(/\n/g, '<br/>') : '';
+      return [title, description].filter(Boolean).join('---');
     },
   },
 };

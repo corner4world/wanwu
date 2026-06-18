@@ -825,19 +825,15 @@ export default {
         this.tabActive === EXTERNAL
           ? createExternal(data)
           : createKnowledgeItem(data);
-      request
-        .then(res => {
-          if (res.code === 0) {
-            this.$message.success(
-              this.$t('knowledgeManage.create.createSuccess'),
-            );
-            this.$emit('reloadData');
-            this.dialogVisible = false;
-          }
-        })
-        .catch(error => {
-          this.$message.error(error);
-        });
+      request.then(res => {
+        if (res.code === 0) {
+          this.$message.success(
+            this.$t('knowledgeManage.create.createSuccess'),
+          );
+          this.$emit('reloadData');
+          this.dialogVisible = false;
+        }
+      });
     },
     editKnowledge() {
       const data = {
@@ -848,20 +844,14 @@ export default {
         this.tabActive === EXTERNAL
           ? editExternal(data)
           : editKnowledgeItem(data);
-      request
-        .then(res => {
-          if (res.code === 0) {
-            this.$message.success(
-              this.$t('knowledgeManage.create.editSuccess'),
-            );
-            this.$emit('reloadData');
-            this.clearform();
-            this.dialogVisible = false;
-          }
-        })
-        .catch(error => {
-          this.$message.error(error);
-        });
+      request.then(res => {
+        if (res.code === 0) {
+          this.$message.success(this.$t('knowledgeManage.create.editSuccess'));
+          this.$emit('reloadData');
+          this.clearform();
+          this.dialogVisible = false;
+        }
+      });
     },
     showDialog(row) {
       this.dialogVisible = true;

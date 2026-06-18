@@ -45,7 +45,7 @@
           class="action-item"
         >
           <div
-            class="name"
+            class="action-item-info"
             @click="handleKnowledgeLink(item.category, item.id)"
           >
             <img
@@ -57,10 +57,23 @@
                 )
               "
             />
-            <div>
-              <span>
+            <div class="action-item-info-content">
+              <span class="action-item-info-name">
                 {{ item.name }}
               </span>
+              <el-tooltip
+                effect="dark"
+                :content="item.description"
+                placement="top"
+              >
+                <p
+                  v-if="item.description"
+                  class="ellipsis action-item-info-desc"
+                >
+                  {{ item.description }}
+                </p>
+              </el-tooltip>
+
               <div class="knowledge-meta">
                 <span class="meta-text">
                   {{
@@ -349,7 +362,7 @@ export default {
         padding: 10px 20px;
         box-sizing: border-box;
 
-        .name {
+        .action-item-info {
           flex: 1;
           display: flex;
           align-items: center;
@@ -357,9 +370,19 @@ export default {
           color: #333;
           font-size: 14px;
           cursor: pointer;
+          overflow: hidden;
 
-          &:hover {
+          .action-item-info-content {
+            overflow: hidden;
+          }
+
+          .action-item-info-name:hover {
             color: $color;
+          }
+
+          .action-item-info-desc {
+            color: #999;
+            font-size: 12px;
           }
 
           img {

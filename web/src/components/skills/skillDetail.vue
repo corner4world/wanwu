@@ -180,6 +180,7 @@
 <script>
 // 这里不导入任何 API 文件，仅仅作为一个单纯的展示组件 (Dump Component)
 import { avatarSrc } from '@/utils/util';
+import { parseTxtSafe } from '@/utils/sanitize';
 import MdRender from '@/components/mdRender.vue';
 import ApiKeyTable from '@/components/skills/ApiKeyTable.vue';
 
@@ -254,14 +255,7 @@ export default {
   methods: {
     avatarSrc,
     // 解析文本，遇到.换行等
-    parseTxt(txt) {
-      if (!txt) return '';
-      const text = txt
-        .replaceAll('\n\t', '<br/>&nbsp;')
-        .replaceAll('\n', '<br/>')
-        .replaceAll('\t', '   &nbsp;');
-      return text;
-    },
+    parseTxt: parseTxtSafe,
     tabClick(status) {
       this.tabActive = status;
     },

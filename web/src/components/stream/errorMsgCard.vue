@@ -3,7 +3,7 @@
     <div class="session-error-icon">
       <el-tooltip effect="dark" placement="top">
         <template #content>
-          <div style="white-space: pre-wrap; width: 20vw">
+          <div style="white-space: pre-wrap">
             {{ trimmedDesc }}
           </div>
         </template>

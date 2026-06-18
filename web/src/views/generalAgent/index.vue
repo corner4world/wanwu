@@ -24,7 +24,7 @@
 
         <div class="sidebar-divider"></div>
 
-        <div class="conversation-list">
+        <div class="conversation-list" @scroll="handleConversationListScroll">
           <div
             v-for="item in conversationList"
             :key="item.threadId"
@@ -40,6 +40,19 @@
               class="el-icon-delete conversation-delete"
               @click.stop="handleDeleteConversation(item)"
             ></i>
+          </div>
+          <!-- 加载更多 -->
+          <div
+            v-if="isLoadingMoreConversations"
+            class="conversation-loading-more"
+          >
+            <i class="el-icon-loading"></i>
+          </div>
+          <div
+            v-else-if="!hasMoreConversations && conversationList.length > 0"
+            class="conversation-no-more"
+          >
+            {{ $t('generalAgent.sidebar.noMore') }}
           </div>
         </div>
       </div>
@@ -505,6 +518,8 @@ export default {
       currentThreadId: '',
       pageNo: 1,
       pageSize: 50,
+      hasMoreConversations: true,
+      isLoadingMoreConversations: false,
       isLoadingHistory: false,
 
       inputMessage: '',
@@ -1081,13 +1096,51 @@ export default {
       }
     },
 
-    async fetchConversationList() {
-      const res = await getGeneralAgentConversationList({
-        pageNo: this.pageNo,
-        pageSize: this.pageSize,
-      });
-      if (res.code === 0) {
-        this.conversationList = res.data?.list || [];
+    async fetchConversationList(loadMore = false) {
+      if (this.isLoadingMoreConversations) return;
+
+      if (loadMore) {
+        if (!this.hasMoreConversations) return;
+        this.pageNo += 1;
+      } else {
+        this.pageNo = 1;
+        this.hasMoreConversations = true;
+      }
+
+      this.isLoadingMoreConversations = true;
+      try {
+        const res = await getGeneralAgentConversationList({
+          pageNo: this.pageNo,
+          pageSize: this.pageSize,
+        });
+        if (res.code === 0) {
+          const list = res.data?.list || [];
+          if (loadMore) {
+            this.conversationList = [...this.conversationList, ...list];
+          } else {
+            this.conversationList = list;
+          }
+          // 返回数量不足一页，说明已到底
+          if (list.length < this.pageSize) {
+            this.hasMoreConversations = false;
+          }
+        } else if (loadMore) this.pageNo -= 1; // 请求失败时回退页码
+      } catch {
+        if (loadMore) this.pageNo -= 1;
+      } finally {
+        this.isLoadingMoreConversations = false;
+      }
+    },
+
+    /** 侧边栏会话列表滚动加载 */
+    handleConversationListScroll(e) {
+      const el = e.target;
+      if (!el) return;
+      // 距离底部 100vh 时触发加载
+      const threshold = window.innerHeight;
+      const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (distanceToBottom < threshold) {
+        this.fetchConversationList(true);
       }
     },
 
@@ -1942,6 +1995,18 @@ export default {
     &::-webkit-scrollbar-thumb {
       background: #d1d5db;
       border-radius: 2px;
+    }
+
+    .conversation-loading-more,
+    .conversation-no-more {
+      text-align: center;
+      padding: 12px 0;
+      color: $wga-text-muted;
+      font-size: 12px;
+    }
+
+    .conversation-loading-more i {
+      font-size: 18px;
     }
   }
 

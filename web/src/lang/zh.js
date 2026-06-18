@@ -112,6 +112,7 @@ export default {
     about: '关于',
     helpDoc: '帮助文档',
     back: '返回',
+    openSource: '开源仓库',
     skillSquare: 'Skill广场',
   },
   header: {
@@ -2252,6 +2253,7 @@ export default {
     sidebar: {
       newChat: '新建对话',
       loading: '加载中...',
+      noMore: '没有更多了',
     },
     header: {
       welcomeTitle: '你好，我是万悟',

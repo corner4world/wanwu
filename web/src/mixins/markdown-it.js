@@ -1,6 +1,7 @@
 import MarkdownIt from 'markdown-it';
 import mk from '@ruanyf/markdown-it-katex';
 import { i18n } from '@/lang';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 let hljs = require('highlight.js');
 hljs.configure({
@@ -58,3 +59,10 @@ md.use(mk, { throwOnError: false, errorColor: '#000000', output: 'mathml' });
 // 禁用缩进代码块（Indented Code Block）规则
 // 解决流式输出中因格式化产生的行首空格导致 Markdown 语法（如加粗、标题等）失效的问题
 md.disable('code');
+
+// 对 md.render 输出进行 DOMPurify 净化，防止 XSS 攻击
+// html:true 允许原始 HTML 标签通过，需在输出层统一过滤恶意内容
+const _originalRender = md.render.bind(md);
+md.render = function (text) {
+  return sanitizeHtml(_originalRender(text));
+};

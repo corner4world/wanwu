@@ -133,15 +133,11 @@ export default {
     },
     getExplorationList(appType, searchType) {
       const data = { name: this.searchValue, appType, searchType };
-      getExplorationList(data)
-        .then(res => {
-          if (res.code === 0) {
-            this.listData = res.data.list || [];
-          }
-        })
-        .catch(err => {
-          this.$message.error(err);
-        });
+      getExplorationList(data).then(res => {
+        if (res.code === 0) {
+          this.listData = res.data.list || [];
+        }
+      });
     },
   },
 };
