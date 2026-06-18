@@ -31,7 +31,7 @@ from pymongo import MongoClient
 from utils import redis_utils
 from utils.constant import CHUNK_SIZE
 from utils.otel import init_tracer
-from utils.trace_asgi import TraceLoggingMiddleware
+from utils.trace_asgi import TraceLoggingMiddleware, FirstChunkSpanMiddleware
 from utils.tools import get_query_dict_cache, query_rewrite
 
 # 初始化 OpenTelemetry（必须在 FastAPI app 创建之前）
@@ -50,10 +50,15 @@ logger = logging.getLogger(__name__)
 # 自动 instrument FastAPI（入站 HTTP 提取 traceparent，创建 Span）
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-FastAPIInstrumentor.instrument_app(app)
+# exclude_spans 关闭按 ASGI send/receive 事件建子 span：流式响应每个分片都会触发一次
+# send，否则一条 trace 会产生成百上千个 "http send" span。首分片的 span 由
+# FirstChunkSpanMiddleware 单独补回。
+FastAPIInstrumentor.instrument_app(app, exclude_spans=["send", "receive"])
 
 # 添加日志记录（含 trace_id/span_id 关联）
 app.add_middleware(TraceLoggingMiddleware)
+# 流式响应只为首个分片建一个 span（首 token 耗时），其余分片不建 span
+app.add_middleware(FirstChunkSpanMiddleware)
 # 解决跨域问题
 app.add_middleware(
     CORSMiddleware,
