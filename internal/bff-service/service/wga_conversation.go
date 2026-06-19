@@ -552,7 +552,7 @@ func CheckGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string,
 }
 
 // GeneralAgentConversationChat 通用智能体对话接口
-func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req request.GeneralAgentConversationChatReq) error {
+func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId, clientId string, req request.GeneralAgentConversationChatReq) error {
 	// 获取 threadId 的 ModelConfig
 	configResp, err := assistant.GetWgaConversationConfig(ctx.Request.Context(), &assistant_service.GetWgaConversationConfigReq{
 		ThreadId: req.ThreadID,
@@ -591,6 +591,7 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 		AgentID:            agentID,
 		ThreadID:           req.ThreadID,
 		Messages:           req.Messages,
+		ClientID:           clientId,
 		ModelConfig:        modelConfig,
 		WorkspaceStore:     workspaceStore,
 		SendWorkspaceEvent: true,
@@ -599,7 +600,7 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId string, req re
 
 // GeneralAgentSkillConversationChat Skill对话接口
 // 根据 mode 选择对应 Skill Agent，workspace 使用 overwrite 模式
-func GeneralAgentSkillConversationChat(ctx *gin.Context, userId, orgId string, req request.GeneralAgentSkillConversationChatReq) error {
+func GeneralAgentSkillConversationChat(ctx *gin.Context, userId, orgId, clientId string, req request.GeneralAgentSkillConversationChatReq) error {
 	mode := strings.TrimSpace(strings.ToLower(req.Mode))
 	chatThreadID := req.ThreadID
 	if mode == generalAgentSkillChatModePreview {
@@ -654,6 +655,7 @@ func GeneralAgentSkillConversationChat(ctx *gin.Context, userId, orgId string, r
 		AgentID:           agentID,
 		ThreadID:          chatThreadID,
 		Messages:          req.Messages,
+		ClientID:          clientId,
 		ModelConfig:       modelConfig,
 		WorkspaceStore:    workspaceStore,
 		WorkspaceReadOnly: mode == generalAgentSkillChatModePreview,

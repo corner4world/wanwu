@@ -43,6 +43,9 @@ func registerWGA(apiV1 *gin.RouterGroup) {
 
 	// 通用智能体对话相关接口
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/conversation/chat", http.MethodPost, v1.GeneralAgentConversationChat, "通用智能体流式问答")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/conversation/pending", http.MethodGet, v1.GeneralAgentConversationPending, "通用智能体运行中会话查询")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/conversation/connect", http.MethodPost, v1.GeneralAgentConversationConnect, "通用智能体流式问答断线重连")
+	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/conversation/cancel", http.MethodPost, v1.GeneralAgentConversationCancel, "通用智能体流式问答手动停止")
 
 	// Skill对话相关接口
 	mid.Sub("wga.wanwu_bot").Reg(apiV1, "/general/agent/skill/conversation", http.MethodPost, v1.CreateGeneralAgentSkillConversation, "(Skill专用)创建对话")

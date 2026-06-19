@@ -167,3 +167,8 @@ type GeneralAgentResourceSelectList struct {
 	ListType string                            `json:"listType"` // 列表类型: mcp, workflow, skill, assistant, knowledge, ontology
 	List     []*GeneralAgentResourceSelectItem `json:"list"`     // 列表项
 }
+
+type WgaConversationPendingResp struct {
+	ThreadID               string `json:"threadId"`               // 对话ID
+	HasPendingConversation bool   `json:"hasPendingConversation"` // 是否有运行中的会话
+}

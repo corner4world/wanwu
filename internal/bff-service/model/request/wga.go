@@ -236,3 +236,24 @@ type GeneralAgentRejectQuestionReq struct {
 }
 
 func (c *GeneralAgentRejectQuestionReq) Check() error { return nil }
+
+// WgaConversationPendingReq 查询WGA运行中会话请求
+type WgaConversationPendingReq struct {
+	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
+}
+
+func (c *WgaConversationPendingReq) Check() error { return nil }
+
+// WgaConversationConnectReq WGA流式问答断线重连请求
+type WgaConversationConnectReq struct {
+	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
+}
+
+func (c *WgaConversationConnectReq) Check() error { return nil }
+
+// WgaConversationCancelReq WGA流式问答手动停止请求
+type WgaConversationCancelReq struct {
+	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
+}
+
+func (c *WgaConversationCancelReq) Check() error { return nil }
