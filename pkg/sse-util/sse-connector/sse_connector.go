@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/UnicomAI/wanwu/pkg/log"
@@ -13,16 +14,31 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector/store"
 )
 
-const (
-	SessionMaxTime = 30 * time.Minute
-)
-
 type SSEConnector struct {
+	mu         sync.RWMutex
 	sessionMgr map[string]*session.Manager
 }
 
 var Connector = &SSEConnector{
 	sessionMgr: make(map[string]*session.Manager),
+}
+
+func (c *SSEConnector) set(sessionID string, mgr *session.Manager) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.sessionMgr[sessionID] = mgr
+}
+
+func (c *SSEConnector) get(sessionID string) *session.Manager {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.sessionMgr[sessionID]
+}
+
+func (c *SSEConnector) delete(sessionID string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.sessionMgr, sessionID)
 }
 
 func NewSSESession(ctx context.Context, userSession *model.Session, s store.MessageStore) *session.Manager {
@@ -37,15 +53,15 @@ func NewSSESession(ctx context.Context, userSession *model.Session, s store.Mess
 		log.Errorf("session already exists session: %s", userSession.SessionID())
 	}
 	manager := session.NewManager(ctx, s, userSession, func(sessionId string) {
-		delete(Connector.sessionMgr, sessionId)
+		Connector.delete(sessionId)
 	})
-	Connector.sessionMgr[userSession.SessionID()] = manager
-	go DelayClose(userSession, SessionMaxTime)
+	Connector.set(userSession.SessionID(), manager)
+	go DelayClose(userSession, session.SessionMaxTime)
 	return manager
 }
 
 func GetSession(userSession *model.Session) *session.Manager {
-	manager := Connector.sessionMgr[userSession.SessionID()]
+	manager := Connector.get(userSession.SessionID())
 	if manager == nil || manager.Invalid {
 		return nil
 	}
@@ -57,7 +73,7 @@ func Connect[T any](ctx context.Context, userSession *model.Session,
 	if lineBuilder == nil {
 		return nil, errors.New("line builder is nil")
 	}
-	manager := Connector.sessionMgr[userSession.SessionID()]
+	manager := Connector.get(userSession.SessionID())
 	if manager == nil {
 		return nil, errors.New("session not found")
 	}
@@ -109,7 +125,7 @@ func Connect[T any](ctx context.Context, userSession *model.Session,
 }
 
 func Close(userSession *model.Session) error {
-	manager := Connector.sessionMgr[userSession.SessionID()]
+	manager := Connector.get(userSession.SessionID())
 	if manager == nil {
 		return nil
 	}
