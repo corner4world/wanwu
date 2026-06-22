@@ -449,9 +449,11 @@ import SkillDialog from './components/skills/SkillDialog.vue';
 import ModelSelect from '@/components/modelSelect.vue';
 import GAFileUpload from './components/GAFileUpload.vue';
 import {
+  cancelGeneralAgentConversation,
   chatGeneralAgentConversation,
   chatGeneralAgentSkillConversation,
   checkGeneralAgentConversationConfig,
+  connectGeneralAgentConversation,
   createGeneralAgentConversation,
   createGeneralAgentSkillConversation,
   deleteGeneralAgentConversation,
@@ -459,6 +461,7 @@ import {
   getGeneralAgentConversationConfig,
   getGeneralAgentConversationDetail,
   getGeneralAgentConversationList,
+  getGeneralAgentConversationPending,
   getGeneralAgentWorkspace,
   importGeneralAgentSkillConversation,
   previewGeneralAgentWorkspace,
@@ -1338,9 +1341,79 @@ export default {
           this.isLoadingHistory = false;
         }
         this.loadConfig();
+
+        // detail 加载完成后，检查是否有运行中的对话需要重连 connect
+        if (!this.isSkillType) {
+          await this.checkAndResumePending(this.currentThreadId);
+        }
       } finally {
         this.isLoadingHistory = false;
       }
+    },
+
+    // 检查会话是否有运行中的对话，有则走 connect 重连恢复实时流。
+    async checkAndResumePending(threadId) {
+      if (!threadId) return;
+
+      // 已在流式中则不再重连
+      const streaming = this.streamingMap[threadId];
+      if (streaming && streaming.isStreaming) return;
+
+      let hasPending = false;
+      try {
+        const res = await getGeneralAgentConversationPending({ threadId });
+        hasPending =
+          res.code === 0 && res.data?.hasPendingConversation === true;
+      } catch (error) {
+        console.error('check pending conversation failed:', error);
+        return;
+      }
+
+      if (!hasPending) return;
+
+      // 初始化流式状态，承载进行中那一轮的助手消息
+      const { abortController, assistantMessage } =
+        this.initStreamState(threadId);
+      this.addAssistantMessage(threadId, assistantMessage);
+      this.currentStage = 'understanding';
+      this.resetScrollState();
+
+      const parser = new SSEEventParser();
+      let isUserAborted = false;
+
+      try {
+        await connectGeneralAgentConversation({
+          threadId,
+          onMessage: event => {
+            this.handleSSEEvent(event, assistantMessage, parser, threadId);
+          },
+          onError: error => {
+            console.error('Reconnect SSE Error:', error);
+            if (this.currentThreadId === threadId) {
+              this.$message.error(
+                this.$t('generalAgent.error.chatRequestFailed'),
+              );
+            }
+            this.cleanupStreamState(threadId);
+            assistantMessage.isStreaming = false;
+            this.setFragmentsNotStreaming(assistantMessage.fragments);
+          },
+          signal: abortController.signal,
+        });
+      } catch (error) {
+        console.error('Reconnect stream error:', error);
+        isUserAborted = error.name === 'AbortError';
+        if (!isUserAborted && this.currentThreadId === threadId) {
+          this.$message.error(
+            this.$t('generalAgent.error.sendMessageFailed') +
+              (error.message || error),
+          );
+        }
+      } finally {
+        this.finalizeStream(threadId, assistantMessage, isUserAborted);
+      }
+
+      return true;
     },
 
     async loadConfig() {
@@ -1600,22 +1673,14 @@ export default {
         if (this.isSkillType) {
           this.skillChatMode = 'normal';
         }
-        // 只有非用户主动中止时才清理状态（用户中止由 stopStreaming 处理）
-        if (!isUserAborted) {
-          // 使用 mixin 的方法来清理状态，确保全局状态也被更新
-          this.cleanupStreamState(streamingThreadId);
-          assistantMessage.isStreaming = false;
-
-          // 清理所有 fragments 的 isStreaming 状态
-          this.setFragmentsNotStreaming(assistantMessage.fragments);
-          this.currentStage = '';
-          if (this.currentThreadId === streamingThreadId) {
-            this.resetScrollState();
-            this.$nextTick(() => this.scrollToBottom(true));
-          }
-          if (this.isSkillType && this.currentThreadId === streamingThreadId) {
-            this.requestSkillWorkspaceRefresh();
-          }
+        // 统一清理（非用户主动中止）；用户中止由 stopStreaming 处理
+        this.finalizeStream(streamingThreadId, assistantMessage, isUserAborted);
+        if (
+          !isUserAborted &&
+          this.isSkillType &&
+          this.currentThreadId === streamingThreadId
+        ) {
+          this.requestSkillWorkspaceRefresh();
         }
       }
     },
@@ -1790,7 +1855,20 @@ export default {
 
     // 处理停止按钮点击
     handleStopClick() {
-      this.stopStreaming(this.currentThreadId);
+      this.stopGeneralConversation(this.currentThreadId);
+    },
+
+    // 停止主对话：先通知服务端 cancel，再本地中断 SSE。
+    async stopGeneralConversation(threadId) {
+      if (threadId) {
+        try {
+          await cancelGeneralAgentConversation({ threadId });
+        } catch (error) {
+          // 取消失败不阻塞本地清理
+          console.error('cancel conversation failed:', error);
+        }
+      }
+      this.stopStreaming(threadId);
     },
 
     // 打开skill导入弹框

@@ -19,11 +19,14 @@ pnpm-debug.log*
 # Editor directories and files
 .idea
 .vscode
-.lingma
-CLAUDE.md
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 jsconfig.json
+
+# Agent files
+.lingma
+.learnings
+CLAUDE.md

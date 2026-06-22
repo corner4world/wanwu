@@ -1,6 +1,7 @@
 import service from '@/utils/request';
 import { SERVICE_API } from '@/utils/requestConstants';
 import { store } from '@/store';
+import { getXClientId } from '@/utils/util';
 
 // 基础路径
 const BASE_URL = `${SERVICE_API}/general/agent`;
@@ -216,20 +217,18 @@ export const updateGeneralAgentConversationConfig = data => {
 // ==================== SSE 对话 ====================
 
 /**
- * SSE 流式对话
- * @param {string} threadId - 对话ID（必填）
- * @param {string} agentId - 模式ID（选填）
- * @param {Array} messages - 消息列表 [{ id, role, content }]（必填）
+ * SSE 请求的公共逻辑：发起 fetch、合并超时/外部 signal、读取并解析 SSE 流。
+ * @param {string} url - 完整请求地址
+ * @param {Object} body - 请求体
  * @param {function} onMessage - 消息回调
  * @param {function} onError - 错误回调
  * @param {function} onOpen - 连接建立回调
  * @param {AbortSignal} signal - 取消信号
  * @param {number} timeout - 超时时间（毫秒），默认 5 分钟
  */
-export const chatGeneralAgentConversation = async ({
-  threadId,
-  agentId,
-  messages,
+const streamSSE = async ({
+  url,
+  body,
   onMessage,
   onError,
   onOpen,
@@ -238,7 +237,6 @@ export const chatGeneralAgentConversation = async ({
 }) => {
   const token = store.getters['user/token'] || '';
   const user = store.getters['user/userInfo'] || {};
-  const url = `${location.origin}${BASE_URL}/conversation/chat`;
 
   // 创建超时控制器
   const timeoutController = new AbortController();
@@ -262,8 +260,9 @@ export const chatGeneralAgentConversation = async ({
         Authorization: `Bearer ${token}`,
         'x-user-id': user.uid || '',
         'x-org-id': user.orgId || '',
+        'X-Client-ID': getXClientId(),
       },
-      body: JSON.stringify({ threadId, agentId, messages }),
+      body: JSON.stringify(body),
       signal: combinedSignal,
     });
   } catch (error) {
@@ -272,8 +271,6 @@ export const chatGeneralAgentConversation = async ({
       // 判断是超时还是用户取消
       if (timeoutController.signal.aborted) {
         onError?.(new Error('请求超时，请重试'));
-      } else {
-        // 用户主动取消，不报错
       }
     } else {
       onError?.(error);
@@ -338,6 +335,94 @@ export const chatGeneralAgentConversation = async ({
       onError?.(error);
     }
   }
+};
+
+/**
+ * SSE 流式对话
+ * chat 支持断线保持：连接中断后服务端仍继续运行。
+ * @param {string} threadId - 对话ID（必填）
+ * @param {string} agentId - 模式ID（选填）
+ * @param {Array} messages - 消息列表 [{ id, role, content }]（必填）
+ * @param {function} onMessage - 消息回调
+ * @param {function} onError - 错误回调
+ * @param {function} onOpen - 连接建立回调
+ * @param {AbortSignal} signal - 取消信号
+ * @param {number} timeout - 超时时间（毫秒），默认 5 分钟
+ */
+export const chatGeneralAgentConversation = async ({
+  threadId,
+  agentId,
+  messages,
+  onMessage,
+  onError,
+  onOpen,
+  signal,
+  timeout,
+}) => {
+  return streamSSE({
+    url: `${location.origin}${BASE_URL}/conversation/chat`,
+    body: { threadId, agentId, messages },
+    onMessage,
+    onError,
+    onOpen,
+    signal,
+    timeout,
+  });
+};
+
+/**
+ * 重连对话流（断线保持）
+ * chat 支持断线保持：连接中断后服务端仍继续运行，通过本接口重连恢复实时流。
+ * 入参与 chat 的 threadId 一致，返参 SSE 事件流同 chat，需要先detail。
+ * @param {string} threadId - 对话ID（必填）
+ * @param {function} onMessage - 消息回调
+ * @param {function} onError - 错误回调
+ * @param {function} onOpen - 连接建立回调
+ * @param {AbortSignal} signal - 取消信号
+ * @param {number} timeout - 超时时间（毫秒），默认 5 分钟
+ */
+export const connectGeneralAgentConversation = async ({
+  threadId,
+  onMessage,
+  onError,
+  onOpen,
+  signal,
+  timeout,
+}) => {
+  return streamSSE({
+    url: `${location.origin}${BASE_URL}/conversation/connect`,
+    body: { threadId },
+    onMessage,
+    onError,
+    onOpen,
+    signal,
+    timeout,
+  });
+};
+
+/**
+ * 手动中断对话（断线保持场景下停止服务端运行）
+ * @param {string} threadId - 对话ID（必填）
+ */
+export const cancelGeneralAgentConversation = data => {
+  return service({
+    url: `${BASE_URL}/conversation/cancel`,
+    method: 'post',
+    data,
+  });
+};
+
+/**
+ * 查询会话是否有运行中的对话（断线保持）
+ * @param {string} threadId - 对话ID（必填）
+ * @returns {Promise} data.hasPendingConversation 为 true 时需调用 connect 重连
+ */
+export const getGeneralAgentConversationPending = params => {
+  return service({
+    url: `${BASE_URL}/conversation/pending`,
+    method: 'get',
+    params,
+  });
 };
 
 // ==================== Workspace ====================
@@ -478,109 +563,17 @@ export const chatGeneralAgentSkillConversation = async ({
   onError,
   onOpen,
   signal,
-  timeout = 5 * 60 * 1000,
+  timeout,
 }) => {
-  const token = store.getters['user/token'] || '';
-  const user = store.getters['user/userInfo'] || {};
-  const url = `${location.origin}${BASE_URL}/skill/conversation/chat`;
-
-  const timeoutController = new AbortController();
-  const timeoutId = setTimeout(() => {
-    timeoutController.abort();
-  }, timeout);
-
-  const combinedSignal = signal
-    ? AbortSignal.any
-      ? AbortSignal.any([signal, timeoutController.signal])
-      : timeoutController.signal
-    : timeoutController.signal;
-
-  let response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        'x-user-id': user.uid || '',
-        'x-org-id': user.orgId || '',
-      },
-      body: JSON.stringify({
-        customSkillId,
-        threadId,
-        mode,
-        previewId,
-        messages,
-      }),
-      signal: combinedSignal,
-    });
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      if (timeoutController.signal.aborted) {
-        onError?.(new Error('请求超时，请重试'));
-      }
-    } else {
-      onError?.(error);
-    }
-    return;
-  }
-
-  clearTimeout(timeoutId);
-
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-    try {
-      const text = await response.text();
-      try {
-        const json = JSON.parse(text);
-        errorMessage = json.msg || json.message || json.error || text;
-      } catch {
-        if (text) {
-          errorMessage = text;
-        }
-      }
-    } catch (e) {
-      // 无法读取响应内容
-    }
-    onError?.(new Error(errorMessage));
-    return;
-  }
-
-  onOpen?.();
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data.trim()) {
-            try {
-              const event = JSON.parse(data);
-              onMessage?.(event);
-            } catch (e) {
-              console.warn('Failed to parse SSE event:', data);
-            }
-          }
-        }
-      }
-    }
-  } catch (error) {
-    if (error.name !== 'AbortError') {
-      onError?.(error);
-    }
-  }
+  return streamSSE({
+    url: `${location.origin}${BASE_URL}/skill/conversation/chat`,
+    body: { customSkillId, threadId, mode, previewId, messages },
+    onMessage,
+    onError,
+    onOpen,
+    signal,
+    timeout,
+  });
 };
 
 /**

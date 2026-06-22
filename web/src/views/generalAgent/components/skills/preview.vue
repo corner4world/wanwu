@@ -351,15 +351,8 @@ export default {
           );
         }
       } finally {
-        if (!isUserAborted) {
-          // 使用 mixin 的方法来清理状态
-          this.cleanupStreamState(streamingThreadId);
-          assistantMessage.isStreaming = false;
-          this.setFragmentsNotStreaming(assistantMessage.fragments);
-          this.currentStage = '';
-          this.resetScrollState();
-          this.$nextTick(() => this.scrollToBottom(true));
-        }
+        // 统一清理（非用户主动中止）；用户中止由 stopStreaming 处理
+        this.finalizeStream(streamingThreadId, assistantMessage, isUserAborted);
       }
     },
 
