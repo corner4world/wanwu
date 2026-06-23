@@ -3507,6 +3507,10 @@ const docTemplate = `{
                     "description": "知识库类别 0-知识库，1-问答库，2-多模态知识库",
                     "type": "integer"
                 },
+                "description": {
+                    "description": "知识库描述",
+                    "type": "string"
+                },
                 "external": {
                     "description": "外部数据库标识",
                     "type": "integer"
@@ -4925,6 +4929,9 @@ const docTemplate = `{
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "enable": {
                     "type": "boolean"
                 },
@@ -4975,6 +4982,9 @@ const docTemplate = `{
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "enable": {
                     "type": "boolean"
                 },
@@ -5008,6 +5018,9 @@ const docTemplate = `{
                 },
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
+                },
+                "description": {
+                    "type": "string"
                 },
                 "enable": {
                     "type": "boolean"

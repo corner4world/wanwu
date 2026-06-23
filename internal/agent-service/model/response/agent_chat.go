@@ -203,7 +203,7 @@ func buildSubAgentSearchList(subAgentEventData *SubEventData, req *request.Agent
 }
 
 func buildSearchList(req *request.AgentChatContext) []interface{} {
-	if req.KnowledgeHitData == nil {
+	if req.KnowledgeHitData == nil || !req.KnowledgeHitData.AutoCitation {
 		return []interface{}{}
 	}
 	list := req.KnowledgeHitData.SearchList

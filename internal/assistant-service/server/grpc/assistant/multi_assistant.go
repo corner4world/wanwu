@@ -34,7 +34,7 @@ func (s *Service) GetMultiAssistantById(ctx context.Context, req *assistant_serv
 	}
 	var subParamsList []*assistant_service.AgentDetail
 	for _, subAgent := range subAgents {
-		params, err := buildSubAgentParams(ctx, s.cli, subAgent)
+		params, err := buildSubAgentParams(ctx, s.cli, agentSnapshot, subAgent)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func buildMultiAgentParams(ctx context.Context, cli client.IClient, agent *model
 }
 
 // buildSubAgentParams 构建子智能体参数，由于子智能体只能选发布后的智能体所以结构体是snapshot
-func buildSubAgentParams(ctx context.Context, cli client.IClient, agentSnapshot *model.AssistantSnapshot) (*assistant_service.AgentDetail, error) {
+func buildSubAgentParams(ctx context.Context, cli client.IClient, multiAgentSnapshot *model.AssistantSnapshot, agentSnapshot *model.AssistantSnapshot) (*assistant_service.AgentDetail, error) {
 	clientInfo := &params_process.ClientInfo{
 		Cli:       cli,
 		Knowledge: Knowledge,
@@ -93,6 +93,10 @@ func buildSubAgentParams(ctx context.Context, cli client.IClient, agentSnapshot 
 	if err := jsonToStruct(agentSnapshot.AssistantInfo, assistant); err != nil {
 		log.Errorf("转换智能体信息失败，assistantId: %d, error: %v", agentSnapshot.AssistantID, err)
 		return nil, errors.New("build agent info err")
+	}
+	//兼容多智能体,知识库状态隐藏功能
+	if multiAgentSnapshot != nil && multiAgentSnapshot.SnapshotExtra != "" {
+		agentSnapshot.SnapshotExtra = multiAgentSnapshot.SnapshotExtra
 	}
 	return service.NewAgentChatParamsBuilder(&params_process.AgentInfo{
 		Assistant:         assistant,

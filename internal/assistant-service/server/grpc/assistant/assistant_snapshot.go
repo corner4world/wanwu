@@ -50,13 +50,18 @@ func (s *Service) AssistantSnapshotCreate(ctx context.Context, req *assistant_se
 		return nil, errStatus(errs.Code_AssistantErr, status)
 	}
 
+	//反序列化一遍，只识别对应配置字段，方式客户端乱传
+	extra := &model.AssistantSnapshotExtra{}
+	_ = jsonToStruct(req.Extra, &extra)
+
 	// 构造快照
 	assistantSnapshot := model.AssistantSnapshot{
 		// 基本信息
-		AssistantID:  assistantId,
-		Version:      req.Version,
-		SnapshotDesc: req.Desc,
-		Category:     assistant.Category,
+		AssistantID:   assistantId,
+		Version:       req.Version,
+		SnapshotDesc:  req.Desc,
+		SnapshotExtra: structToJson(extra),
+		Category:      assistant.Category,
 		// 智能体基本信息
 		AssistantInfo: structToJson(assistant),
 		// 智能体附表信息
@@ -96,7 +101,7 @@ func (s *Service) AssistantSnapshotCreate(ctx context.Context, req *assistant_se
 func (s *Service) AssistantSnapshotUpdate(ctx context.Context, req *assistant_service.AssistantSnapshotUpdateReq) (*emptypb.Empty, error) {
 	assistantId, _ := util.U32(req.AssistantId)
 
-	status := s.cli.UpdateAssistantSnapshot(ctx, assistantId, req.Desc, req.Identity.UserId, req.Identity.OrgId)
+	status := s.cli.UpdateAssistantSnapshot(ctx, assistantId, req.Desc, req.Extra, req.Identity.UserId, req.Identity.OrgId)
 	if status != nil {
 		log.Errorf("UpdateAssistantSnapshot failed: %v", status)
 		return nil, errStatus(errs.Code_AssistantErr, status)
@@ -143,6 +148,7 @@ func (s *Service) AssistantSnapshotLatest(ctx context.Context, req *assistant_se
 		AssistantId: util.Int2Str(snapshotInfo.AssistantID),
 		Version:     snapshotInfo.Version,
 		Desc:        snapshotInfo.SnapshotDesc,
+		Extra:       snapshotInfo.SnapshotExtra,
 		CreateAt:    snapshotInfo.CreatedAt,
 		Category:    int32(snapshotInfo.Category),
 	}, nil

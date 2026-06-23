@@ -171,6 +171,7 @@ message AssistantSnapshotReq {
   string version = 2;
   string desc = 3;
   Identity identity = 4;
+  string extra = 5;
 }
 
 message AssistantSnapshotResp {
@@ -179,6 +180,7 @@ message AssistantSnapshotResp {
 
 message AssistantSnapshotUpdateReq {
   string assistantId = 1;
+  string extra = 2;
   string desc = 3;
   Identity identity = 4;
 }
@@ -195,6 +197,7 @@ message AssistantSnapshot {
   string desc = 4;
   int64 createAt = 5;
   int32 category = 6;
+  string extra = 7;
 }
 
 message AssistantSnapshotListResp {

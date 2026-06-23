@@ -29,6 +29,7 @@ const (
 
 	contentLimitSize = 20 * 1024
 	contentLimitText = "\n... (因篇幅过长，后续内容已省略)"
+	noCitationText   = "已搜索知识库"
 )
 
 type ToolMessageContent struct {
@@ -331,7 +332,11 @@ func buildKnowledgeContentByStep(req *request.AgentChatContext, agentTool *respo
 	case response.ToolNameStep, response.ToolParamStartStep, response.ToolParamStep, response.ToolParamFinishStep:
 		break
 	case response.ToolResultFinishStep:
-		req.KnowledgeHitData = buildKnowledgeContent(chatMessage.Content)
+		knowledgeContent := buildKnowledgeContent(chatMessage.Content)
+		req.KnowledgeHitData = knowledgeContent
+		if knowledgeContent != nil && !knowledgeContent.AutoCitation {
+			contentList = append(contentList, noCitationText)
+		}
 		subEventData = response.BuildEndTool(agentTool)
 		subEventData.ParentId = req.AgentId()
 	}

@@ -21596,6 +21596,10 @@ const docTemplate = `{
                     "description": "知识库类别 0-知识库，1-问答库，2-多模态知识库",
                     "type": "integer"
                 },
+                "description": {
+                    "description": "知识库描述",
+                    "type": "string"
+                },
                 "external": {
                     "description": "外部数据库标识",
                     "type": "integer"
@@ -21750,6 +21754,10 @@ const docTemplate = `{
                 "category": {
                     "description": "知识库类别 0-知识库，1-问答库，2-多模态知识库",
                     "type": "integer"
+                },
+                "description": {
+                    "description": "描述",
+                    "type": "string"
                 },
                 "id": {
                     "description": "知识库id",
@@ -22912,6 +22920,9 @@ const docTemplate = `{
                 },
                 "prompt": {
                     "type": "string"
+                },
+                "sseHold": {
+                    "type": "boolean"
                 },
                 "systemPrompt": {
                     "type": "string"
@@ -25930,6 +25941,10 @@ const docTemplate = `{
                     "description": "描述",
                     "type": "string"
                 },
+                "extra": {
+                    "description": "扩展信息，具体字段格式各个业务自己定义",
+                    "type": "string"
+                },
                 "publishType": {
                     "description": "发布类型(public:系统公开发布,organization:组织公开发布,private:私密发布)",
                     "type": "string"
@@ -26562,6 +26577,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "desc": {
+                    "description": "描述",
+                    "type": "string"
+                },
+                "extra": {
                     "description": "描述",
                     "type": "string"
                 },
@@ -27812,6 +27831,9 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "extra": {
+                    "type": "string"
+                },
                 "publishType": {
                     "type": "string"
                 },
@@ -28021,6 +28043,9 @@ const docTemplate = `{
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "enable": {
                     "type": "boolean"
                 },
@@ -28070,6 +28095,9 @@ const docTemplate = `{
                 },
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
+                },
+                "description": {
+                    "type": "string"
                 },
                 "enable": {
                     "type": "boolean"
@@ -28171,6 +28199,9 @@ const docTemplate = `{
                 },
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
+                },
+                "description": {
+                    "type": "string"
                 },
                 "enable": {
                     "type": "boolean"

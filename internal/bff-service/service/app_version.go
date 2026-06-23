@@ -95,7 +95,7 @@ func GetAppVersionList(ctx *gin.Context, userID, orgID, appType, appID string) (
 	}, nil
 }
 
-func UpdateAppVersion(ctx *gin.Context, userID, orgID, appType, appID, description, publishType string) error {
+func UpdateAppVersion(ctx *gin.Context, userID, orgID, appType, appID, description, publishType, extra string) error {
 	switch appType {
 	case constant.AppTypeWorkflow, constant.AppTypeChatflow:
 		if err := UpdateWorkflowVersionDesc(ctx, appID, description); err != nil {
@@ -105,6 +105,7 @@ func UpdateAppVersion(ctx *gin.Context, userID, orgID, appType, appID, descripti
 		_, err := assistant.AssistantSnapshotUpdate(ctx.Request.Context(), &assistant_service.AssistantSnapshotUpdateReq{
 			AssistantId: appID,
 			Desc:        description,
+			Extra:       extra,
 			Identity: &assistant_service.Identity{
 				UserId: userID,
 				OrgId:  orgID,
@@ -200,6 +201,7 @@ func GetAppLatestVersion(ctx *gin.Context, userID, orgID, appType, appID string)
 		}
 		ret.Version = resp.Version
 		ret.Desc = resp.Desc
+		ret.Extra = resp.Extra
 
 	case constant.AppTypeRag:
 		resp, err := rag.GetPublishRagDesc(ctx.Request.Context(), &rag_service.GetPublishRagDescReq{

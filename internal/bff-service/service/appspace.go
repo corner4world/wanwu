@@ -153,6 +153,7 @@ func PublishApp(ctx *gin.Context, userId, orgId string, req request.PublishAppRe
 			AssistantId: req.AppId,
 			Version:     req.Version,
 			Desc:        req.Desc,
+			Extra:       req.Extra,
 			Identity: &assistant_service.Identity{
 				UserId: userId,
 				OrgId:  orgId,

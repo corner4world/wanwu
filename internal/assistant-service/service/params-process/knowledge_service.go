@@ -143,6 +143,8 @@ func (k *KnowledgeProcess) Build(assistant *AgentInfo, prepareParams *AgentPrepa
 		if err != nil {
 			return err
 		}
+
+		var autoCitation = buildAutoCitation(assistant.AssistantSnapshot)
 		knowledgeParams := &KnowledgeParams{
 			UserId:               assistant.Assistant.UserId,
 			KnowledgeIdList:      knowledgeBaseConfig.KnowledgeBaseIds,
@@ -159,7 +161,7 @@ func (k *KnowledgeProcess) Build(assistant *AgentInfo, prepareParams *AgentPrepa
 			MetaFilter:           len(params) > 0,
 			MetaFilterConditions: params,
 			UseGraph:             knowledgeBaseConfig.UseGraph,
-			AutoCitation:         true,
+			AutoCitation:         autoCitation,
 		}
 		marshal, err := json.Marshal(knowledgeParams)
 		if err != nil {
@@ -217,6 +219,18 @@ func buildRerank(knowledgeBaseConfig *RAGKnowledgeBaseConfig, assistant *model.A
 	return rerankEndpoint, nil
 }
 
+// buildAutoCitation 构造自动引文
+func buildAutoCitation(assistant *model.AssistantSnapshot) bool {
+	var autoCitation = true
+	if assistant != nil && assistant.SnapshotExtra != "" {
+		var snapshotExtra = model.AssistantSnapshotExtra{}
+		if err := json.Unmarshal([]byte(assistant.SnapshotExtra), &snapshotExtra); err != nil {
+			log.Errorf("Assistant buildMetaDataFilterParams, err: %v", err)
+		}
+		autoCitation = snapshotExtra.HideKnowledge != 1
+	}
+	return autoCitation
+}
 func buildMetadataFilterItem(metaFilterParams []*MetaFilterParams) ([]*config.MetadataFilterItem, error) {
 	var ragMetaDataFilterItem []*config.MetadataFilterItem
 	for _, k := range metaFilterParams {
