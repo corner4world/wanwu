@@ -19,10 +19,25 @@ func Login(ctx *gin.Context, login *request.Login, language string) (*response.L
 	if config.Cfg().CustomInfo.LoginByEmail != 0 {
 		return nil, grpc_util.ErrorStatus(err_code.Code_BFFSingleLoginDisable)
 	}
-	password, err := decryptPD(login.Password)
-	if err != nil {
-		return nil, fmt.Errorf("decrypt password err: %v", err)
+
+	// 优先使用RSA解密（新方式），如果keyID为空则降级使用AES解密（兼容旧版本）
+	var password string
+	var err error
+
+	if login.KeyID != "" {
+		// RSA解密方式
+		password, err = decryptPasswordRSA(login.Password, login.KeyID, login.Timestamp)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt password with RSA err: %v", err)
+		}
+	} else {
+		// AES解密方式（兼容旧版本，后续可移除）
+		password, err = decryptPD(login.Password)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt password with AES err: %v", err)
+		}
 	}
+
 	resp, err := iam.Login(ctx.Request.Context(), &iam_service.LoginReq{
 		UserName: login.Username,
 		Password: password,
@@ -40,10 +55,25 @@ func LoginByEmail(ctx *gin.Context, login *request.Login) (*response.LoginByEmai
 	if config.Cfg().CustomInfo.LoginByEmail == 0 {
 		return nil, grpc_util.ErrorStatus(err_code.Code_BFFLoginDisable)
 	}
-	password, err := decryptPD(login.Password)
-	if err != nil {
-		return nil, fmt.Errorf("decrypt password err: %v", err)
+
+	// 优先使用RSA解密（新方式），如果keyID为空则降级使用AES解密（兼容旧版本）
+	var password string
+	var err error
+
+	if login.KeyID != "" {
+		// RSA解密方式
+		password, err = decryptPasswordRSA(login.Password, login.KeyID, login.Timestamp)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt password with RSA err: %v", err)
+		}
+	} else {
+		// AES解密方式（兼容旧版本，后续可移除）
+		password, err = decryptPD(login.Password)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt password with AES err: %v", err)
+		}
 	}
+
 	resp, err := iam.LoginByEmail(ctx.Request.Context(), &iam_service.LoginByEmailReq{
 		UserName: login.Username,
 		Password: password,

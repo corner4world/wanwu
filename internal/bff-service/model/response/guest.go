@@ -2,6 +2,13 @@ package response
 
 import "github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 
+// RSAPublicKey RSA公钥响应
+type RSAPublicKey struct {
+	KeyID     string `json:"key_id"`     // 密钥ID
+	PublicKey string `json:"public_key"` // PEM格式的公钥
+	ExpiresIn int64  `json:"expires_in"` // 建议缓存时间(秒)
+}
+
 type Login struct {
 	UID              string            `json:"uid"`
 	Username         string            `json:"username"`
@@ -27,17 +34,18 @@ type Captcha struct {
 }
 
 type LogoCustomInfo struct {
-	Login             CustomLogin         `json:"login"`             // 登录页标题信息
-	Home              CustomHome          `json:"home"`              // 首页标题信息
-	Tab               CustomTab           `json:"tab"`               // 标签页信息
-	About             CustomAbout         `json:"about"`             // 关于信息
-	LinkList          map[string]string   `json:"linkList"`          // 跳转链接列表,key为链接名称,value为URL
-	Register          CustomRegister      `json:"register"`          // 注册信息
-	ResetPassword     CustomResetPassword `json:"resetPassword"`     // 重置密码信息
-	LoginEmail        CustomLoginEmail    `json:"loginEmail"`        // 邮箱登录信息
-	DefaultIcon       CustomDefaultIcon   `json:"defaultIcon"`       // 应用默认图片
-	UserPhoneRequired bool                `json:"userPhoneRequired"` // 是否需要手机号
-	GeneralAgent      CustomGeneralAgent  `json:"generalAgent"`      // 通用智能体配置
+	Login              CustomLogin         `json:"login"`              // 登录页标题信息
+	Home               CustomHome          `json:"home"`               // 首页标题信息
+	Tab                CustomTab           `json:"tab"`                // 标签页信息
+	About              CustomAbout         `json:"about"`              // 关于信息
+	LinkList           map[string]string   `json:"linkList"`           // 跳转链接列表,key为链接名称,value为URL
+	Register           CustomRegister      `json:"register"`           // 注册信息
+	ResetPassword      CustomResetPassword `json:"resetPassword"`      // 重置密码信息
+	LoginEmail         CustomLoginEmail    `json:"loginEmail"`         // 邮箱登录信息
+	DefaultIcon        CustomDefaultIcon   `json:"defaultIcon"`        // 应用默认图片
+	UserPhoneRequired  bool                `json:"userPhoneRequired"`  // 是否需要手机号
+	GeneralAgent       CustomGeneralAgent  `json:"generalAgent"`       // 通用智能体配置
+	PasswordRSAEncrypt bool                `json:"passwordRSAEncrypt"` // 是否启用密码RSA加密
 }
 
 type CustomLogin struct {

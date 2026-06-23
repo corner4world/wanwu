@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
+	"time"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
@@ -14,6 +15,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
+	rsautil "github.com/UnicomAI/wanwu/pkg/rsa-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
@@ -534,4 +536,30 @@ func decryptPD(encryptStr string) (string, error) {
 	}
 
 	return string(decryptAes), nil
+}
+
+// decryptPasswordRSA 使用RSA解密密码
+// 参数:
+//   - encryptedBase64: RSA加密后的Base64编码密码
+//   - keyID: 密钥ID
+//   - timestamp: 时间戳(毫秒)，用于防重放攻击
+//
+// 返回解密后的明文密码
+func decryptPasswordRSA(encryptedBase64 string, keyID string, timestamp int64) (string, error) {
+	// 1. 验证时间戳，防重放攻击（5分钟有效期）
+	now := time.Now().UnixMilli()
+	if now-timestamp > 5*60*1000 {
+		return "", fmt.Errorf("request expired, timestamp is too old")
+	}
+	if timestamp > now+60*1000 {
+		return "", fmt.Errorf("invalid timestamp, cannot be in the future")
+	}
+
+	// 2. 使用RSA解密
+	plaintext, err := rsautil.GetManager().Decrypt(keyID, encryptedBase64)
+	if err != nil {
+		return "", fmt.Errorf("RSA decrypt failed: %w", err)
+	}
+
+	return string(plaintext), nil
 }

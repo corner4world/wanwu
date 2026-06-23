@@ -36,6 +36,11 @@ decrypt-passwd:
   iv: "sdf4ddfsFD86Vdf2"
   key: "f5Su3GhNMM1rndyp"
 
+rsa-key:
+  private_key_path: ./project/wanwu_rsa_private.pem
+  public_key_path: ./project/wanwu_rsa_public.pem
+  key_rotation_days: 90
+
 i18n:
   type: jsonl
   xlsxPath: configs/microservice/bff-service/configs/wanwu-i18n.xlsx
@@ -88,6 +93,7 @@ custom-info:
   reset_password_by_email: 0
   login_by_email: 0
   user_phone_required: 0
+  password_rsa_encrypt: 0  # 密码RSA加密开关 0-关闭(使用AES) 1-开启(使用RSA)
 
 default-icon:
   user: "/v1/static/icon/user-default-icon.png"

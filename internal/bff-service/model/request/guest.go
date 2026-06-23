@@ -2,10 +2,12 @@ package request
 
 // Login 登录请求的参数
 type Login struct {
-	Username string `json:"username" validate:"required"` // 用户名
-	Password string `json:"password" validate:"required"` // 密码
-	Key      string `json:"key" validate:"required"`      // 客户端key
-	Code     string `json:"code" validate:"required"`     // 验证码
+	Username  string `json:"username" validate:"required"`  // 用户名
+	Password  string `json:"password" validate:"required"`  // 密码(RSA加密后的Base64字符串)
+	KeyID     string `json:"key_id" validate:"required"`    // RSA公钥ID
+	Timestamp int64  `json:"timestamp" validate:"required"` // 时间戳(毫秒)，防重放攻击
+	Key       string `json:"key" validate:"required"`       // 客户端key
+	Code      string `json:"code" validate:"required"`      // 验证码
 }
 
 type RegisterByEmail struct {

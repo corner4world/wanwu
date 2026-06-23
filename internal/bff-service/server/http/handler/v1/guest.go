@@ -7,8 +7,10 @@ import (
 
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
+	rsautil "github.com/UnicomAI/wanwu/pkg/rsa-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
@@ -98,6 +100,29 @@ func GetLogoCustomInfo(ctx *gin.Context) {
 func GetLanguageSelect(ctx *gin.Context) {
 	resp := service.GetLanguageSelect()
 	gin_util.Response(ctx, resp, nil)
+}
+
+// GetRSAPublicKey
+//
+//	@Tags		guest
+//	@Summary	获取RSA公钥
+//	@Description	获取用于密码加密的RSA公钥，前端应缓存此公钥（建议5分钟）
+//	@Accept		json
+//	@Produce	json
+//	@Success	200	{object}	response.Response{data=response.RSAPublicKey}
+//	@Router		/base/rsa/public-key [get]
+func GetRSAPublicKey(ctx *gin.Context) {
+	keyID, publicKey, expiresIn, err := rsautil.GetManager().GetPublicKey()
+	if err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+
+	gin_util.Response(ctx, &response.RSAPublicKey{
+		KeyID:     keyID,
+		PublicKey: publicKey,
+		ExpiresIn: expiresIn,
+	}, nil)
 }
 
 // RegisterByEmail
