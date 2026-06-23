@@ -12,6 +12,10 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/util"
 )
 
+const (
+	SessionMaxTime = 2 * time.Hour
+)
+
 // Subscriber 订阅者，代表一个 SSE 连接
 type Subscriber struct {
 	Chan chan *model.Message
@@ -19,15 +23,17 @@ type Subscriber struct {
 
 // Manager 会话管理器
 type Manager struct {
-	Ctx         context.Context
-	cancel      context.CancelFunc
-	Invalid     bool //会话失效，目前是clientID 或者 conversationID 为空,为了简化接入流程，所以参数不符合预期目前不报错，只设置invalid为true
-	store       store.MessageStore
-	mu          sync.RWMutex
-	subscriber  *Subscriber
+	Ctx     context.Context
+	cancel  context.CancelFunc
+	Invalid bool //会话失效，目前是clientID 或者 conversationID 为空,为了简化接入流程，所以参数不符合预期目前不报错，只设置invalid为true
+
 	userSession *model.Session
-	writeDone   bool //是否已写完
+	store       store.MessageStore
 	callback    func(sessionId string)
+
+	mu         sync.RWMutex
+	subscriber *Subscriber
+	writeDone  bool //是否已写完
 }
 
 func NewManager(ctx context.Context, s store.MessageStore, userSession *model.Session, callback func(sessionId string)) *Manager {
@@ -62,6 +68,16 @@ func (m *Manager) GetExt() map[string]interface{} {
 	return m.store.GetExtMessage(m.userSession)
 }
 
+// GetHistory 获取历史消息
+func (m *Manager) GetHistory() ([]*model.Message, error) {
+	if m.Invalid {
+		return make([]*model.Message, 0), nil
+	}
+	return m.store.GetMessages(m.userSession)
+}
+
+// InvalidManager 将会话标记为无效，使 Publish/Subscribe 等方法成为 no-op。
+// 仅可在 NewSSESession 返回前调用（构造阶段），调用后 Invalid 字段不再修改，因此无需加锁。
 func (m *Manager) InvalidManager() {
 	m.Invalid = true
 }
@@ -71,17 +87,15 @@ func (m *Manager) Subscribe() *Subscriber {
 	if m.Invalid {
 		return nil
 	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.writeDone {
 		return nil
 	}
 	sub := &Subscriber{Chan: make(chan *model.Message, 128)}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
 	m.subscriber = sub
 
-	//防止用户误操作的情况，内存占用死掉了，15min强制取消订阅
-	go m.DelayUnsubscribe(15 * time.Minute)
+	go m.DelayUnsubscribe(SessionMaxTime)
 	return sub
 }
 
@@ -159,34 +173,34 @@ func (m *Manager) Publish(msg *model.Message, compactProcessor func(currentMsg *
 	return nil
 }
 
-// Cancel 写入消息取消
+// Cancel 终止会话：取消后端执行、关闭订阅者 channel、清理会话状态。
 func (m *Manager) Cancel() error {
+	if m.Invalid {
+		return nil
+	}
 	if m.cancel != nil {
 		m.cancel()
 	}
-	return m.Finish()
+	m.Unsubscribe()
+	return m.finish()
 }
 
-// Finish 写入消息完成
-func (m *Manager) Finish() error {
+// finish 清理会话状态：标记写入完成、删除存储、从注册表移除。writeDone防重入。
+func (m *Manager) finish() error {
 	if m.Invalid {
-		log.Errorf("session %s is invalid", m.userSession.SessionID())
+		return nil
 	}
-	m.mu.RLock()
-	defer func() {
-		m.mu.RUnlock()
-		if m.callback != nil {
-			m.callback(m.userSession.SessionID())
-		}
-	}()
+
+	m.mu.Lock()
+	if m.writeDone {
+		m.mu.Unlock()
+		return nil
+	}
 	m.writeDone = true
-	return m.store.DeleteSession(m.userSession)
-}
+	m.mu.Unlock()
 
-// GetHistory 获取历史消息
-func (m *Manager) GetHistory() ([]*model.Message, error) {
-	if m.Invalid {
-		return make([]*model.Message, 0), nil
+	if m.callback != nil {
+		m.callback(m.userSession.SessionID())
 	}
-	return m.store.GetMessages(m.userSession)
+	return m.store.DeleteSession(m.userSession)
 }
