@@ -374,9 +374,9 @@ export default {
             img: require('@/assets/imgs/helpDoc_icon.svg'),
             icon: require('@/assets/imgs/link_icon.png'),
             redirect: () => {
-              // window.open('https://github.com/UnicomAI/wanwu/tree/main/docs/manual')
-              window.open(
-                window.location.origin +
+              // open('https://github.com/UnicomAI/wanwu/tree/main/docs/manual')
+              open(
+                location.origin +
                   `${this.$basePath}/aibase/docCenter/pages/${DOC_FIRST_KEY}`,
               );
             },
@@ -390,14 +390,14 @@ export default {
                 name: 'Github',
                 img: require('@/assets/imgs/github_icon.svg'),
                 redirect: () => {
-                  window.open('https://github.com/UnicomAI/wanwu');
+                  open('https://github.com/UnicomAI/wanwu');
                 },
               },
               {
                 name: 'Gitee',
                 img: require('@/assets/imgs/gitee_icon.svg'),
                 redirect: () => {
-                  window.open('https://gitee.com/UnicomAI/wanwu');
+                  open('https://gitee.com/UnicomAI/wanwu');
                 },
               },
             ],
@@ -518,9 +518,8 @@ export default {
     ...mapActions('user', ['LoginOut', 'getPermissionInfo', 'getCommonInfo']),
     checkPerm,
     logout() {
-      window.localStorage.removeItem('access_cert');
-      window.location.href =
-        window.location.origin + this.$basePath + '/aibase/login';
+      localStorage.removeItem('access_cert');
+      location.href = location.origin + this.$basePath + '/aibase/login';
     },
     setLocalMenuCollapse() {
       this.isCollapse = localStorage.getItem('menu_collapse') === 'true';
@@ -533,9 +532,7 @@ export default {
       }
     },
     getCurrentOrgName() {
-      const currentOrg =
-        this.orgList.filter(item => item.id === this.org.orgId)[0] || {};
-      return currentOrg.name;
+      return this.orgList.find(item => item.id === this.org.orgId)?.name;
     },
     redirectUserInfo() {
       redirectUserInfoPage(this.permission.isUpdatePassword, () => {
@@ -576,9 +573,7 @@ export default {
         if (item.redirect) {
           item.redirect();
           this.changeMenuIndex(item.index);
-        } else {
-          if (item.path) this.$router.push({ path: item.path });
-        }
+        } else if (item.path) this.$router.push({ path: item.path });
       });
     },
     getCurrentMenu() {
@@ -616,6 +611,10 @@ export default {
       const { path } = fetchPermFirPath();
       // 如果当前页面 path 与第一个有权限的 path 相同，需要刷新页面以确保数据为新切换组织的
       if (path === this.$route.path) {
+        // 切换组织后需清除 query，避免旧会话参数残留
+        if (Object.keys(this.$route.query).length) {
+          await this.$router.replace({ path });
+        }
         location.reload();
         return;
       }
