@@ -92,6 +92,11 @@ func (m *Manager) Subscribe() *Subscriber {
 	if m.writeDone {
 		return nil
 	}
+	// 关闭已有 subscriber，避免已有连接停止输出但未关闭（新赶旧策略，保证断线重连不失败）
+	if m.subscriber != nil && m.subscriber.Chan != nil {
+		close(m.subscriber.Chan)
+		m.subscriber = nil
+	}
 	sub := &Subscriber{Chan: make(chan *model.Message, 128)}
 	m.subscriber = sub
 

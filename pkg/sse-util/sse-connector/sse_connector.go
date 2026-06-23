@@ -85,7 +85,6 @@ func Connect[T any](ctx context.Context, userSession *model.Session,
 	rawCh := make(chan T, 128)
 
 	safe_go_util.SafeGo(func() {
-		defer manager.Unsubscribe()
 		defer func() {
 			close(rawCh)
 		}()
