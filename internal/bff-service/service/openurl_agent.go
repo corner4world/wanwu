@@ -229,11 +229,11 @@ func AppUrlQuestionRecommend(ctx *gin.Context, req request.UrlQuestionRecommendR
 	if err != nil {
 		return err
 	}
-	err = AssistantQuestionRecommend(ctx, xCid, appUrlInfo.OrgId, &request.QuestionRecommendRequest{
+	AssistantQuestionRecommend(ctx, xCid, appUrlInfo.OrgId, &request.QuestionRecommendRequest{
 		Query:          req.Query,
 		AssistantId:    appUrlInfo.AppId,
 		ConversationId: req.ConversationId,
 		Trial:          false,
 	})
-	return err
+	return nil
 }

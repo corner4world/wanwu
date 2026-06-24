@@ -1,6 +1,7 @@
 package request
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/UnicomAI/wanwu/pkg/util"
@@ -298,10 +299,13 @@ type MultiAgentConfigUpdateReq struct {
 type QuestionRecommendRequest struct {
 	Query          string `json:"query" form:"query"  validate:"required"`             //用户问题
 	AssistantId    string `json:"assistantId" form:"assistantId"  validate:"required"` //智能体id
-	ConversationId string `json:"conversationId" form:"conversionId"`                  //会话id，如果非试用则不可为空
+	ConversationId string `json:"conversationId" form:"conversationId"`                //会话id，如果非试用则不可为空
 	Trial          bool   `json:"trial" form:"trial"`
 }
 
 func (c *QuestionRecommendRequest) Check() error {
+	if !c.Trial && c.ConversationId == "" {
+		return errors.New("conversationId can not be empty")
+	}
 	return nil
 }

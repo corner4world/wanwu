@@ -1351,6 +1351,10 @@ func assistantRecommendConvert(ctx *gin.Context, resp *assistant_service.Assista
 			Prompt:          resp.RecommendConfig.SystemPrompt,
 			PromptEnable:    resp.RecommendConfig.PromptEnable,
 		}
+		// prompt 为空时回填默认提示词
+		if recommendConfig.Prompt == "" {
+			recommendConfig.Prompt = systemPrompt
+		}
 	}
 	return recommendConfig, nil
 }

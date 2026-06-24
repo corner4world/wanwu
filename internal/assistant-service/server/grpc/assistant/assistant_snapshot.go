@@ -362,6 +362,10 @@ func (s *Service) AssistantSnapshotInfo(ctx context.Context, req *assistant_serv
 				Args:    []string{err.Error()},
 			})
 		}
+	} else {
+		recommendConfig = &assistant_service.AssistantRecommendConfig{
+			MaxHistory: config.DefaultRecommendMaxHistory,
+		}
 	}
 
 	// 构建多智能体信息

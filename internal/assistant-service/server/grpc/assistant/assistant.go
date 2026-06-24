@@ -443,6 +443,10 @@ func (s *Service) GetAssistantInfo(ctx context.Context, req *assistant_service.G
 				Args:    []string{err.Error()},
 			})
 		}
+	} else {
+		recommendConfig = &assistant_service.AssistantRecommendConfig{
+			MaxHistory: config.DefaultRecommendMaxHistory,
+		}
 	}
 
 	// 构建多智能体信息

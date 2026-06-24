@@ -844,7 +844,5 @@ func AssistantQuestionRecommend(ctx *gin.Context) {
 			return
 		}
 	}
-	if err := service.AssistantQuestionRecommend(ctx, userId, orgId, &req); err != nil {
-		gin_util.Response(ctx, nil, err)
-	}
+	service.AssistantQuestionRecommend(ctx, userId, orgId, &req)
 }

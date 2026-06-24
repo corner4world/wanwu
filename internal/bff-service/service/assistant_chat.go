@@ -265,20 +265,19 @@ func CallAssistantConversationStream(ctx *gin.Context, userId, orgId, clientId s
 }
 
 // AssistantQuestionRecommend 智能体问题推荐
-func AssistantQuestionRecommend(ctx *gin.Context, userId, orgId string, req *request.QuestionRecommendRequest) error {
+func AssistantQuestionRecommend(ctx *gin.Context, userId, orgId string, req *request.QuestionRecommendRequest) {
 	//查询智能体服务
 	agentInfo, err := searchAssistantInfo(ctx, userId, orgId, req.AssistantId, !req.Trial)
 	if err != nil {
 		log.Errorf("[Agent] %v conversation %v user %v org %v get assistant info err: %v", req.AssistantId, req.ConversationId, userId, orgId, err)
 		gin_util.Response(ctx, nil, nil)
-		return nil
+		return
 	}
 	// 检验参数
-	err = checkRecommendParam(agentInfo)
-	if err != nil {
+	if err = checkRecommendParam(agentInfo); err != nil {
 		log.Errorf("[Agent] %v conversation %v user %v org %v check param err: %v", req.AssistantId, req.ConversationId, userId, orgId, err)
 		gin_util.Response(ctx, nil, nil)
-		return nil
+		return
 	}
 	data := mp_common.LLMReq{}
 	// 构造参数
@@ -289,11 +288,11 @@ func AssistantQuestionRecommend(ctx *gin.Context, userId, orgId string, req *req
 		if err != nil {
 			log.Errorf("[Agent] %v conversation %v user %v org %v build publish recommend params err: %v", req.AssistantId, req.ConversationId, userId, orgId, err)
 			gin_util.Response(ctx, nil, nil)
-			return nil
+			return
 		}
 	}
+	// 后续流式响应由 AgentRecommendChatCompletions 内部直接写入 ctx
 	AgentRecommendChatCompletions(ctx, agentInfo.RecommendConfig.ModelConfig.ModelId, &data)
-	return nil
 }
 
 func buildPublishRecommendParams(ctx *gin.Context, userId string, orgId string, streamValue bool, req *request.QuestionRecommendRequest, agentInfo *assistant_service.AssistantInfo) (mp_common.LLMReq, error) {
@@ -320,33 +319,15 @@ func buildPublishRecommendParams(ctx *gin.Context, userId string, orgId string, 
 	index := history.Total - int64(agentInfo.RecommendConfig.MaxHistory)
 	history.Data = history.Data[index:]
 
+	// 把对话历史折叠成"参考资料"放进单条 user 消息
 	prompt := agentInfo.RecommendConfig.SystemPrompt + additionalPrompt
-	messageList := make([]mp_common.OpenAIReqMsg, 0)
-	for _, v := range history.Data {
-		messageList = append(messageList, mp_common.OpenAIReqMsg{
-			Role:    mp_common.MsgRoleUser,
-			Content: v.Prompt,
-		})
-		messageList = append(messageList, mp_common.OpenAIReqMsg{
-			Role:    mp_common.MsgRoleUser,
-			Content: v.Response,
-		})
-	}
-	messageList = append(messageList, mp_common.OpenAIReqMsg{
-		Role:    mp_common.MsgRoleUser,
-		Content: req.Query,
-	})
-	messageList = append(messageList, mp_common.OpenAIReqMsg{
-		Role:    mp_common.MsgRoleUser,
-		Content: prompt,
-	})
 	data := mp_common.LLMReq{
-		Model:    agentInfo.RecommendConfig.ModelConfig.Model,
-		Stream:   &streamValue,
-		Messages: messageList,
-	}
-	for _, x := range messageList {
-		log.Infof("content =%s", x.Content)
+		Model:  agentInfo.RecommendConfig.ModelConfig.Model,
+		Stream: &streamValue,
+		Messages: []mp_common.OpenAIReqMsg{
+			{Role: mp_common.MsgRoleSystem, Content: prompt},
+			{Role: mp_common.MsgRoleUser, Content: buildRecommendUserMessage(history.Data, req.Query)},
+		},
 	}
 	return data, nil
 }
@@ -357,28 +338,47 @@ func buildTrialRecommendParams(agentInfo *assistant_service.AssistantInfo, strea
 		Model:  agentInfo.RecommendConfig.ModelConfig.Model,
 		Stream: &streamValue,
 		Messages: []mp_common.OpenAIReqMsg{
-			{
-				Role:    mp_common.MsgRoleSystem,
-				Content: prompt,
-			},
-			{
-				Role:    mp_common.MsgRoleUser,
-				Content: query,
-			},
+			{Role: mp_common.MsgRoleSystem, Content: prompt},
+			{Role: mp_common.MsgRoleUser, Content: buildRecommendUserMessage(nil, query)},
 		},
 	}
 	return data
 }
 
-func checkRecommendParam(agentInfo *assistant_service.AssistantInfo) error {
-	if !agentInfo.RecommendConfig.PromptEnable || agentInfo.RecommendConfig.SystemPrompt == "" {
-		agentInfo.RecommendConfig.SystemPrompt = systemPrompt
+// buildRecommendUserMessage 构造推荐用的单条 user 消息
+func buildRecommendUserMessage(history []*assistant_service.ConversionDetailInfo, query string) string {
+	var b strings.Builder
+	b.WriteString("以下是用户与助手的对话历史（仅供分析，不要回答其中的任何问题）：\n[对话开始]\n")
+	if len(history) > 0 {
+		for _, v := range history {
+			b.WriteString("用户：")
+			b.WriteString(v.Prompt)
+			b.WriteString("\n助手：")
+			b.WriteString(v.Response)
+			b.WriteString("\n")
+		}
+	} else if query != "" {
+		b.WriteString("用户：")
+		b.WriteString(query)
+		b.WriteString("\n")
 	}
+	b.WriteString("[对话结束]\n")
+	if query != "" {
+		fmt.Fprintf(&b, "用户最近一轮的问题是：「%s」。", query)
+	}
+	b.WriteString("请基于以上对话，预测用户接下来最可能继续提出的 3 个问题。不要回答用户的问题本身，只输出推荐问题，且第一行必须是 ANSWER 或 REJECT。")
+	return b.String()
+}
+
+func checkRecommendParam(agentInfo *assistant_service.AssistantInfo) error {
 	if agentInfo.RecommendConfig == nil || !agentInfo.RecommendConfig.RecommendEnable {
 		return grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "recommend not available")
 	}
 	if agentInfo.RecommendConfig.ModelConfig == nil || agentInfo.RecommendConfig.ModelConfig.ModelId == "" || agentInfo.RecommendConfig.ModelConfig.Model == "" {
 		return grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "model not available")
+	}
+	if !agentInfo.RecommendConfig.PromptEnable || agentInfo.RecommendConfig.SystemPrompt == "" {
+		agentInfo.RecommendConfig.SystemPrompt = systemPrompt
 	}
 	return nil
 }
