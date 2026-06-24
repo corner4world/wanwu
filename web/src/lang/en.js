@@ -1717,6 +1717,7 @@ export default {
       publishType: '私密发布为应用：仅自己可见',
       publishType1: '公开发布为应用：组织内可见',
       publishType2: '公开发布为应用：全局可见',
+      hideKnowledge: '隐藏知识库出处',
       systemPrompt: '系统提示词',
       submitToPrompt: '提交至提示词',
       promptTips:

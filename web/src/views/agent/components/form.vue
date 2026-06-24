@@ -113,6 +113,14 @@
                 :placeholder="$t('list.version.descPlaceholder')"
               ></el-input>
             </el-form-item>
+            <el-form-item :label="$t('agent.form.hideKnowledge')">
+              <el-switch
+                v-model="publishForm.extra.hideKnowledge"
+                :active-value="1"
+                :inactive-value="0"
+                active-color="var(--color)"
+              ></el-switch>
+            </el-form-item>
             <el-form-item
               :label="$t('list.version.publishType')"
               prop="publishType"
@@ -135,6 +143,7 @@
                 </div>
               </el-radio-group>
             </el-form-item>
+
             <div class="saveBtn">
               <el-button size="mini" type="primary" @click="savePublish">
                 {{ $t('common.button.save') }}
@@ -839,6 +848,9 @@ export default {
         publishType: 'private',
         version: '',
         desc: '',
+        extra: {
+          hideKnowledge: 0,
+        },
       },
       publishRules: {
         version: [
@@ -1282,6 +1294,10 @@ export default {
             publishType: this.publishForm.publishType,
             desc: this.publishForm.desc,
             version: this.publishForm.version,
+            extra: JSON.stringify({
+              ...(this.publishForm.extra || {}),
+              hideKnowledge: this.publishForm.extra.hideKnowledge ? 1 : 0,
+            }),
           };
           appPublish(data).then(res => {
             if (res.code === 0) {

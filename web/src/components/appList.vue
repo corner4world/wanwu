@@ -157,7 +157,10 @@
                     </el-dropdown-item>
                     <el-dropdown-item
                       command="convertToSkill"
-                      v-if="[agent, rag, workflow].includes(n.appType)"
+                      v-if="
+                        [agent, rag, workflow].includes(n.appType) &&
+                        n.publishType
+                      "
                     >
                       {{ $t('common.button.convertToSkill') }}
                     </el-dropdown-item>

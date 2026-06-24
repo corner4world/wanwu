@@ -14,6 +14,17 @@
             ></el-input>
           </el-form-item>
           <el-form-item
+            v-if="appType === AGENT"
+            :label="$t('agent.form.hideKnowledge')"
+          >
+            <el-switch
+              v-model="publishForm.extra.hideKnowledge"
+              :active-value="1"
+              :inactive-value="0"
+              active-color="var(--color)"
+            ></el-switch>
+          </el-form-item>
+          <el-form-item
             :label="$t('list.version.publishType')"
             prop="publishType"
           >
@@ -60,6 +71,7 @@
 <script>
 import VersionTimeLine from '@/components/versionTimeLine.vue';
 import { getAppLatestVersion, updateAppVersion } from '@/api/appspace';
+import { AGENT } from '@/utils/commonSet';
 
 export default {
   props: {
@@ -77,10 +89,14 @@ export default {
   },
   data() {
     return {
+      AGENT,
       publishForm: {
         publishType: 'private',
         version: '',
         desc: '',
+        extra: {
+          hideKnowledge: 0,
+        },
       },
       publishRules: {
         version: [
@@ -117,19 +133,48 @@ export default {
       appId: this.appId,
       appType: this.appType,
     }).then(res => {
-      this.publishForm = res.data;
+      const rawExtra = res.data && res.data.extra;
+      let responseExtra = {};
+      if (typeof rawExtra === 'string') {
+        try {
+          responseExtra = JSON.parse(rawExtra || '{}');
+        } catch (e) {
+          responseExtra = {};
+        }
+      } else {
+        responseExtra = rawExtra || {};
+      }
+      const extra = {
+        ...this.publishForm.extra,
+        ...responseExtra,
+      };
+      this.publishForm = {
+        ...this.publishForm,
+        ...res.data,
+        extra: {
+          ...extra,
+          hideKnowledge: Number(extra.hideKnowledge) === 1 ? 1 : 0,
+        },
+      };
     });
   },
   methods: {
     savePublish() {
       this.$refs.publishForm.validate(valid => {
         if (valid) {
-          updateAppVersion({
+          const data = {
             appId: this.appId,
             appType: this.appType,
             desc: this.publishForm.desc,
             publishType: this.publishForm.publishType,
-          }).then(res => {
+          };
+          if (this.appType === AGENT) {
+            data.extra = JSON.stringify({
+              ...(this.publishForm.extra || {}),
+              hideKnowledge: this.publishForm.extra.hideKnowledge ? 1 : 0,
+            });
+          }
+          updateAppVersion(data).then(res => {
             if (res.code === 0) {
               this.$message.success(this.$t('common.info.save'));
               this.$refs.versionTimeline.getAppVersionList();
