@@ -149,6 +149,9 @@ export default {
       fileSizeLimit: '文件大小不能超过10MB',
       fileFormatError: '文件格式错误',
       fileFormatLimit: '文件格式支持',
+      uploadLimit: '最多上传{limit}个文件',
+      uploadLimitTip: '最多上传{limit}个文件，支持图片、文档混合上传',
+      continueAddFile: '可继续添加文件',
     },
     datePicker: {
       placeholder: '选择日期时间',

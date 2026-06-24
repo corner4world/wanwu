@@ -142,6 +142,9 @@ export default {
       typeFileTip1: '按照插件要求，支持',
       imgUploading: '图片上传中',
       clickUploadImg: '点击上传图片',
+      uploadLimit: '最多上传{limit}个文件',
+      uploadLimitTip: '最多上传{limit}个文件，支持图片、文档混合上传',
+      continueAddFile: '可继续添加文件',
     },
     datePicker: {
       placeholder: '选择日期时间',

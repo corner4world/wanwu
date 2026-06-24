@@ -26,8 +26,9 @@
             :accept="tipsArr"
             :auto-upload="false"
             :file-list="fileList"
-            :limit="10"
+            :limit="MAX_FILE_LIMIT"
             :on-change="uploadOnChange"
+            :on-exceed="uploadOnExceed"
             :show-file-list="false"
             action=""
             class="upload-box"
@@ -111,11 +112,15 @@
               </div>
               <div class="tips">
                 <p>
-                  最多上传10个文件，支持图片、文档混合上传
+                  {{
+                    $t('common.fileUpload.uploadLimitTip', {
+                      limit: MAX_FILE_LIMIT,
+                    })
+                  }}
                   <span style="color: var(--color)">
                     {{ $t('common.fileUpload.click') }}
                   </span>
-                  可继续添加文件
+                  {{ $t('common.fileUpload.continueAddFile') }}
                 </p>
               </div>
             </div>
@@ -171,6 +176,7 @@ export default {
     return {
       canScroll: false,
       fileList: [],
+      MAX_FILE_LIMIT: 10,
       loading: false,
       dialogVisible: false,
       tipsArr: '',
@@ -283,6 +289,14 @@ export default {
       this.checkScrollable();
     },
 
+    uploadOnExceed() {
+      this.$message.warning(
+        this.$t('common.fileUpload.uploadLimit', {
+          limit: this.MAX_FILE_LIMIT,
+        }),
+      );
+    },
+
     uploadOnChange(file, fileList) {
       const filename = file.name;
 
@@ -299,15 +313,6 @@ export default {
             this.tipsArr +
             this.$t('common.fileUpload.typeFileTip'),
         );
-        const index = fileList.indexOf(file);
-        if (index > -1) {
-          fileList.splice(index, 1);
-        }
-        return;
-      }
-
-      if (fileList.length > 10) {
-        this.$message.warning('最多上传10个文件');
         const index = fileList.indexOf(file);
         if (index > -1) {
           fileList.splice(index, 1);
