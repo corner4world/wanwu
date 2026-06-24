@@ -157,7 +157,10 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 	if params.ClientID == "" {
 		sseSessionManager.InvalidManager()
 	}
-	sseSessionManager.AddExt(map[string]interface{}{"runId": runID})
+	sseSessionManager.AddExt(map[string]interface{}{
+		"runId":    runID,
+		"messages": params.Messages,
+	})
 	bgCtx := sseSessionManager.GetBgContext()
 
 	// 运行 WGA（使用 bgCtx，不随客户端断连中断）
@@ -819,9 +822,17 @@ func WgaConversationPending(ctx *gin.Context, userId, orgId, clientId string, re
 			HasPendingConversation: false,
 		}, nil
 	}
+	var messages []request.GeneralAgentConversationMessage
+	if ext := mgr.GetExt(); ext != nil {
+		msgs, _ := ext["messages"].([]request.GeneralAgentConversationMessage)
+		for _, msg := range msgs {
+			messages = append(messages, msg.WithMinioUrlReplaced())
+		}
+	}
 	return &response.WgaConversationPendingResp{
 		ThreadID:               req.ThreadID,
 		HasPendingConversation: true,
+		Messages:               messages,
 	}, nil
 }
 
@@ -831,7 +842,7 @@ func WgaConversationConnect(ctx *gin.Context, userId, orgId, clientId string, re
 		ConversationID: req.ThreadID,
 		ClientID:       clientId,
 	}
-	chatCh, err := sse_connector.Connect[string](ctx, session, func(data *sse_model.Message) string {
+	chatCh, err := sse_connector.Connect[string](ctx.Request.Context(), session, func(data *sse_model.Message) string {
 		return data.Data.(string)
 	})
 	if err != nil {

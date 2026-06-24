@@ -1,8 +1,11 @@
 package request
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 )
 
 // UpdateGeneralAgentConfigReq 更新通用智能体配置请求
@@ -198,6 +201,49 @@ func (m *GeneralAgentConversationMessage) GetTextContent() string {
 	}
 	return text
 }
+
+func (m *GeneralAgentConversationMessage) WithMinioUrlReplaced() GeneralAgentConversationMessage {
+	var cp GeneralAgentConversationMessage
+	b, _ := json.Marshal(m)
+	_ = json.Unmarshal(b, &cp)
+
+	minioEndpoint := config.Cfg().Minio.Endpoint
+	downloadURL := config.Cfg().Minio.DownloadURL
+	if minioEndpoint == "" || downloadURL == "" {
+		return cp
+	}
+
+	if v, ok := cp.Content.([]interface{}); ok {
+		for _, item := range v {
+			if m, ok := item.(map[string]interface{}); ok {
+				if typ, _ := m["type"].(string); typ == "binary" {
+					if urlStr, _ := m["url"].(string); urlStr != "" {
+						m["url"] = strings.ReplaceAll(urlStr, "http://"+minioEndpoint, downloadURL)
+					}
+				}
+			}
+		}
+	}
+	return cp
+}
+
+type GeneralAgentSkillConversationPendingReq struct {
+	ThreadID  string `json:"threadId" form:"threadId"`   // 对话ID
+	PreviewID string `json:"previewId" form:"previewId"` // preview模式对话ID，用于历史记录隔离
+}
+
+func (c *GeneralAgentSkillConversationPendingReq) Check() error { return nil }
+
+func (c *GeneralAgentSkillConversationPendingReq) ChatThreadID() string {
+	if strings.TrimSpace(c.PreviewID) != "" {
+		return c.PreviewID
+	}
+	return c.ThreadID
+}
+
+type GeneralAgentSkillConversationConnectReq = GeneralAgentSkillConversationPendingReq
+
+type GeneralAgentSkillConversationCancelReq = GeneralAgentSkillConversationPendingReq
 
 type GeneralAgentWorkspaceDownloadReq struct {
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID

@@ -169,6 +169,7 @@ type GeneralAgentResourceSelectList struct {
 }
 
 type WgaConversationPendingResp struct {
-	ThreadID               string `json:"threadId"`               // 对话ID
-	HasPendingConversation bool   `json:"hasPendingConversation"` // 是否有运行中的会话
+	ThreadID               string                                    `json:"threadId"`               // 对话ID
+	HasPendingConversation bool                                      `json:"hasPendingConversation"` // 是否有运行中的会话
+	Messages               []request.GeneralAgentConversationMessage `json:"messages"`               // 运行中会话的用户消息
 }
