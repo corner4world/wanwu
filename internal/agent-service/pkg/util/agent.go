@@ -9,6 +9,7 @@ import (
 const (
 	AgentSearchKnowledgeName = "智能体知识库检索"
 	AgentSkillPrefix         = "skill-"
+	AgentSkillWgaStop        = "skill_wga_stop" //沙箱输出结束，但未完全输出停止，因为硬编码了结束事件
 	AgentStartLabel          = "transfer_to_agent"
 	MainAgentExitLabel       = "exit"
 )
@@ -21,6 +22,11 @@ var stopFinishReason = map[string]bool{
 // StopMessage 判断是否是停止消息
 func StopMessage(chatMessage *schema.Message) bool {
 	return chatMessage.ResponseMeta != nil && stopFinishReason[chatMessage.ResponseMeta.FinishReason]
+}
+
+// WgaStopMessage 判断是否是沙箱停止消息
+func WgaStopMessage(chatMessage *schema.Message) bool {
+	return chatMessage.ResponseMeta != nil && AgentSkillWgaStop == chatMessage.ResponseMeta.FinishReason
 }
 
 func BuildAssistantMessage(content string, extra map[string]any) string {

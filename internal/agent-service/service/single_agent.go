@@ -187,12 +187,12 @@ func createAgent(ctx *gin.Context, req *request.AgentChatParams, chatModel model
 	////配置全局追踪
 	//trace_util.EnioGlobalTracing()
 	agent, err := adk.NewChatModelAgent(ctx, &adk.ChatModelAgentConfig{
-		Model:       chatModel,
-		Name:        baseParams.Name,
-		Description: baseParams.Description,
-		//Instruction: baseParams.Instruction,
-		ToolsConfig: toolsConfig,
-		Exit:        exit,
+		Model:        chatModel,
+		Name:         baseParams.Name,
+		Description:  baseParams.Description,
+		ToolsConfig:  toolsConfig,
+		Exit:         exit,
+		Middlewares:  []adk.AgentMiddleware{agent_tool.NewToolResultFilterMiddleware()},
 	})
 	return agent, toolMap, err
 }

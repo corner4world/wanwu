@@ -246,7 +246,7 @@ func (s *SkillExecutor) runStream(runnerType wga_sandbox_option.RunnerType) (*sc
 					for _, message := range contentList {
 						if message.ResponseMeta != nil && message.ResponseMeta.FinishReason == "stop" {
 							//自己手动添加结束，不需要沙箱的结束
-							message.ResponseMeta = nil
+							message.ResponseMeta.FinishReason = agent_util.AgentSkillWgaStop
 						}
 						marshal, err2 := json.Marshal(message)
 						if err2 != nil {
