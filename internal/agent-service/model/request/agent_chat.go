@@ -75,6 +75,7 @@ type AgentChatParams struct {
 	UploadFile       []string        `json:"uploadFile"`
 	Stream           bool            `json:"stream"`
 	MultiAgent       bool            //是否多智能体
+	MultiSubAgent    bool            //是否多子智能体
 	SubAgentInfoList []*SubAgentInfo //子智能体
 	AgentChatBaseParams
 }
