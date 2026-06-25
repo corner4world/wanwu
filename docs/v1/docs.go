@@ -7521,6 +7521,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/general/agent/conversation/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "通用智能体流式问答手动停止，区分网络断开和主动取消",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "通用智能体流式问答手动停止",
+                "parameters": [
+                    {
+                        "description": "手动停止请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.WgaConversationCancelReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/general/agent/conversation/chat": {
             "post": {
                 "security": [
@@ -7697,6 +7736,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/general/agent/conversation/connect": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "通用智能体流式问答断线重连，续接之前未完成的SSE流",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "通用智能体流式问答断线重连",
+                "parameters": [
+                    {
+                        "description": "断线重连请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.WgaConversationConnectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE流式返回",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/general/agent/conversation/detail": {
             "get": {
                 "security": [
@@ -7818,6 +7896,55 @@ const docTemplate = `{
                                                     }
                                                 }
                                             ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/conversation/pending": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "查询通用智能体是否有运行中的会话，用于断线重连判断",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "查询通用智能体运行中会话",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "对话ID",
+                        "name": "threadId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.WgaConversationPendingResp"
                                         }
                                     }
                                 }
@@ -8336,6 +8463,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/general/agent/skill/conversation/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "通用智能体(Skill)流式问答手动停止，区分网络断开和主动取消",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "通用智能体(Skill)流式问答手动停止",
+                "parameters": [
+                    {
+                        "description": "Skill对话请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GeneralAgentSkillConversationCancelReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/general/agent/skill/conversation/chat": {
             "post": {
                 "security": [
@@ -8370,6 +8536,96 @@ const docTemplate = `{
                         "description": "SSE流式返回",
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/conversation/connect": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "通用智能体(Skill)流式问答断线重连，续接之前未完成的SSE流",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "通用智能体(Skill)流式问答断线重连",
+                "parameters": [
+                    {
+                        "description": "Skill对话请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GeneralAgentSkillConversationConnectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSE流式返回",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/general/agent/skill/conversation/pending": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "查询通用智能体(Skill)是否有运行中的会话，用于断线重连判断",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wga"
+                ],
+                "summary": "查询通用智能体(Skill)运行中会话",
+                "parameters": [
+                    {
+                        "description": "Skill对话请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.GeneralAgentSkillConversationPendingReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.WgaConversationPendingResp"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -24423,6 +24679,19 @@ const docTemplate = `{
                 }
             }
         },
+        "request.GeneralAgentSkillConversationCancelReq": {
+            "type": "object",
+            "properties": {
+                "previewId": {
+                    "description": "preview模式对话ID，用于历史记录隔离",
+                    "type": "string"
+                },
+                "threadId": {
+                    "description": "对话ID",
+                    "type": "string"
+                }
+            }
+        },
         "request.GeneralAgentSkillConversationChatReq": {
             "type": "object",
             "required": [
@@ -24446,6 +24715,32 @@ const docTemplate = `{
                     "description": "模式：normal/import/convert/preview，默认 normal",
                     "type": "string"
                 },
+                "previewId": {
+                    "description": "preview模式对话ID，用于历史记录隔离",
+                    "type": "string"
+                },
+                "threadId": {
+                    "description": "对话ID",
+                    "type": "string"
+                }
+            }
+        },
+        "request.GeneralAgentSkillConversationConnectReq": {
+            "type": "object",
+            "properties": {
+                "previewId": {
+                    "description": "preview模式对话ID，用于历史记录隔离",
+                    "type": "string"
+                },
+                "threadId": {
+                    "description": "对话ID",
+                    "type": "string"
+                }
+            }
+        },
+        "request.GeneralAgentSkillConversationPendingReq": {
+            "type": "object",
+            "properties": {
                 "previewId": {
                     "description": "preview模式对话ID，用于历史记录隔离",
                     "type": "string"
@@ -27285,6 +27580,30 @@ const docTemplate = `{
                 "picNum": {
                     "description": "视觉配置图片数量",
                     "type": "integer"
+                }
+            }
+        },
+        "request.WgaConversationCancelReq": {
+            "type": "object",
+            "required": [
+                "threadId"
+            ],
+            "properties": {
+                "threadId": {
+                    "description": "对话ID",
+                    "type": "string"
+                }
+            }
+        },
+        "request.WgaConversationConnectReq": {
+            "type": "object",
+            "required": [
+                "threadId"
+            ],
+            "properties": {
+                "threadId": {
+                    "description": "对话ID",
+                    "type": "string"
                 }
             }
         },
@@ -34089,6 +34408,26 @@ const docTemplate = `{
                 }
             }
         },
+        "response.WgaConversationPendingResp": {
+            "type": "object",
+            "properties": {
+                "hasPendingConversation": {
+                    "description": "是否有运行中的会话",
+                    "type": "boolean"
+                },
+                "messages": {
+                    "description": "运行中会话的用户消息",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.GeneralAgentConversationMessage"
+                    }
+                },
+                "threadId": {
+                    "description": "对话ID",
+                    "type": "string"
+                }
+            }
+        },
         "response.WorkflowTemplateDetail": {
             "type": "object",
             "properties": {
@@ -34242,7 +34581,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/v1",
 	Schemes:          []string{},
 	Title:            "AI Agent Productivity Platform API",
-	Description:      "## HTTP Header\r\n| Header        | 说明      |\r\n| ------------- | --------- |\r\n| Authorization | JWT token |\r\n| X-Language    | 语言Code  |\r\n| X-Org-Id      | 组织ID    |\r\n| X-Client-Id   | 客户端标识|\r\n\r\n## HTTP Status\r\n| HTTP Status             | 说明                   |\r\n| ----------------------- | ---------------------- |\r\n| 200, StatusOK           | 请求返回成功           |\r\n| 400, StatusBadRequest   | 请求返回失败，用于业务 |\r\n| 401, StatusUnauthorized | JWT认证失败            |\r\n| 403, StatusForbidden    | 没有权限               |\r\n\r\n## 权限-菜单对应表\r\n| 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\r\n|-------------|-------|------|------|------|------|\r\n| guest       |       |      | 【访客】 |      |      |\r\n| common      |       |      | 【通用】 |      |      |\r\n| permission  |       |      | 权限管理 |      |      |\r\n| permission  | user  |      | 权限管理 | 用户管理 |      |\r\n| permission  | org   |      | 权限管理 | 组织管理 |      |\r\n| permission  | role  |      | 权限管理 | 角色管理 |      |\r\n\r\n## `/v1/user/permission`返回用例\r\n```json\r\n{\r\n  \"code\": 0,\r\n  \"data\": {\r\n    \"orgPermission\": {\r\n      \"org\": {\"id\": \"test-org-id\", \"name\": \"test-org-name\"},\r\n      \"permissions\": [\r\n        {\"perm\": \"permission\"},\r\n        {\"perm\": \"permission.user\"},\r\n        {\"perm\": \"permission.org\"},\r\n        {\"perm\": \"permission.role\"}\r\n      ]\r\n    }\r\n  },\r\n  \"msg\": \"操作成功\"\r\n}\r\n```",
+	Description:      "## HTTP Header\n| Header        | 说明      |\n| ------------- | --------- |\n| Authorization | JWT token |\n| X-Language    | 语言Code  |\n| X-Org-Id      | 组织ID    |\n| X-Client-Id   | 客户端标识|\n\n## HTTP Status\n| HTTP Status             | 说明                   |\n| ----------------------- | ---------------------- |\n| 200, StatusOK           | 请求返回成功           |\n| 400, StatusBadRequest   | 请求返回失败，用于业务 |\n| 401, StatusUnauthorized | JWT认证失败            |\n| 403, StatusForbidden    | 没有权限               |\n\n## 权限-菜单对应表\n| 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\n|-------------|-------|------|------|------|------|\n| guest       |       |      | 【访客】 |      |      |\n| common      |       |      | 【通用】 |      |      |\n| permission  |       |      | 权限管理 |      |      |\n| permission  | user  |      | 权限管理 | 用户管理 |      |\n| permission  | org   |      | 权限管理 | 组织管理 |      |\n| permission  | role  |      | 权限管理 | 角色管理 |      |\n\n## `/v1/user/permission`返回用例\n```json\n{\n  \"code\": 0,\n  \"data\": {\n    \"orgPermission\": {\n      \"org\": {\"id\": \"test-org-id\", \"name\": \"test-org-name\"},\n      \"permissions\": [\n        {\"perm\": \"permission\"},\n        {\"perm\": \"permission.user\"},\n        {\"perm\": \"permission.org\"},\n        {\"perm\": \"permission.role\"}\n      ]\n    }\n  },\n  \"msg\": \"操作成功\"\n}\n```",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

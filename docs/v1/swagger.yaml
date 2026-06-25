@@ -3018,6 +3018,15 @@ definitions:
     - questionId
     - runId
     type: object
+  request.GeneralAgentSkillConversationCancelReq:
+    properties:
+      previewId:
+        description: preview模式对话ID，用于历史记录隔离
+        type: string
+      threadId:
+        description: 对话ID
+        type: string
+    type: object
   request.GeneralAgentSkillConversationChatReq:
     properties:
       customSkillId:
@@ -3041,6 +3050,24 @@ definitions:
     - customSkillId
     - messages
     - threadId
+    type: object
+  request.GeneralAgentSkillConversationConnectReq:
+    properties:
+      previewId:
+        description: preview模式对话ID，用于历史记录隔离
+        type: string
+      threadId:
+        description: 对话ID
+        type: string
+    type: object
+  request.GeneralAgentSkillConversationPendingReq:
+    properties:
+      previewId:
+        description: preview模式对话ID，用于历史记录隔离
+        type: string
+      threadId:
+        description: 对话ID
+        type: string
     type: object
   request.GetModelRequest:
     properties:
@@ -4982,6 +5009,22 @@ definitions:
       picNum:
         description: 视觉配置图片数量
         type: integer
+    type: object
+  request.WgaConversationCancelReq:
+    properties:
+      threadId:
+        description: 对话ID
+        type: string
+    required:
+    - threadId
+    type: object
+  request.WgaConversationConnectReq:
+    properties:
+      threadId:
+        description: 对话ID
+        type: string
+    required:
+    - threadId
     type: object
   request.WorkflowConvertReq:
     properties:
@@ -9504,6 +9547,20 @@ definitions:
         description: 视觉配置图片数量
         type: integer
     type: object
+  response.WgaConversationPendingResp:
+    properties:
+      hasPendingConversation:
+        description: 是否有运行中的会话
+        type: boolean
+      messages:
+        description: 运行中会话的用户消息
+        items:
+          $ref: '#/definitions/request.GeneralAgentConversationMessage'
+        type: array
+      threadId:
+        description: 对话ID
+        type: string
+    type: object
   response.WorkflowTemplateDetail:
     properties:
       author:
@@ -9601,24 +9658,51 @@ definitions:
     type: object
 info:
   contact: {}
-  description: "## HTTP Header\r\n| Header        | 说明      |\r\n| ------------- |
-    --------- |\r\n| Authorization | JWT token |\r\n| X-Language    | 语言Code  |\r\n|
-    X-Org-Id      | 组织ID    |\r\n| X-Client-Id   | 客户端标识|\r\n\r\n## HTTP Status\r\n|
-    HTTP Status             | 说明                   |\r\n| -----------------------
-    | ---------------------- |\r\n| 200, StatusOK           | 请求返回成功           |\r\n|
-    400, StatusBadRequest   | 请求返回失败，用于业务 |\r\n| 401, StatusUnauthorized | JWT认证失败
-    \           |\r\n| 403, StatusForbidden    | 没有权限               |\r\n\r\n## 权限-菜单对应表\r\n|
-    一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\r\n|-------------|-------|------|------|------|------|\r\n|
-    guest       |       |      | 【访客】 |      |      |\r\n| common      |       |      |
-    【通用】 |      |      |\r\n| permission  |       |      | 权限管理 |      |      |\r\n|
-    permission  | user  |      | 权限管理 | 用户管理 |      |\r\n| permission  | org   |      |
-    权限管理 | 组织管理 |      |\r\n| permission  | role  |      | 权限管理 | 角色管理 |      |\r\n\r\n##
-    `/v1/user/permission`返回用例\r\n```json\r\n{\r\n  \"code\": 0,\r\n  \"data\": {\r\n
-    \   \"orgPermission\": {\r\n      \"org\": {\"id\": \"test-org-id\", \"name\":
-    \"test-org-name\"},\r\n      \"permissions\": [\r\n        {\"perm\": \"permission\"},\r\n
-    \       {\"perm\": \"permission.user\"},\r\n        {\"perm\": \"permission.org\"},\r\n
-    \       {\"perm\": \"permission.role\"}\r\n      ]\r\n    }\r\n  },\r\n  \"msg\":
-    \"操作成功\"\r\n}\r\n```"
+  description: |-
+    ## HTTP Header
+    | Header        | 说明      |
+    | ------------- | --------- |
+    | Authorization | JWT token |
+    | X-Language    | 语言Code  |
+    | X-Org-Id      | 组织ID    |
+    | X-Client-Id   | 客户端标识|
+
+    ## HTTP Status
+    | HTTP Status             | 说明                   |
+    | ----------------------- | ---------------------- |
+    | 200, StatusOK           | 请求返回成功           |
+    | 400, StatusBadRequest   | 请求返回失败，用于业务 |
+    | 401, StatusUnauthorized | JWT认证失败            |
+    | 403, StatusForbidden    | 没有权限               |
+
+    ## 权限-菜单对应表
+    | 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |
+    |-------------|-------|------|------|------|------|
+    | guest       |       |      | 【访客】 |      |      |
+    | common      |       |      | 【通用】 |      |      |
+    | permission  |       |      | 权限管理 |      |      |
+    | permission  | user  |      | 权限管理 | 用户管理 |      |
+    | permission  | org   |      | 权限管理 | 组织管理 |      |
+    | permission  | role  |      | 权限管理 | 角色管理 |      |
+
+    ## `/v1/user/permission`返回用例
+    ```json
+    {
+      "code": 0,
+      "data": {
+        "orgPermission": {
+          "org": {"id": "test-org-id", "name": "test-org-name"},
+          "permissions": [
+            {"perm": "permission"},
+            {"perm": "permission.user"},
+            {"perm": "permission.org"},
+            {"perm": "permission.role"}
+          ]
+        }
+      },
+      "msg": "操作成功"
+    }
+    ```
   title: AI Agent Productivity Platform API
   version: v0.0.1
 paths:
@@ -14045,6 +14129,30 @@ paths:
       summary: 创建通用智能体对话
       tags:
       - wga
+  /general/agent/conversation/cancel:
+    post:
+      consumes:
+      - application/json
+      description: 通用智能体流式问答手动停止，区分网络断开和主动取消
+      parameters:
+      - description: 手动停止请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.WgaConversationCancelReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 通用智能体流式问答手动停止
+      tags:
+      - wga
   /general/agent/conversation/chat:
     post:
       consumes:
@@ -14149,6 +14257,30 @@ paths:
       summary: 通用智能体配置检查接口
       tags:
       - wga
+  /general/agent/conversation/connect:
+    post:
+      consumes:
+      - application/json
+      description: 通用智能体流式问答断线重连，续接之前未完成的SSE流
+      parameters:
+      - description: 断线重连请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.WgaConversationConnectReq'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE流式返回
+          schema:
+            type: string
+      security:
+      - JWT: []
+      summary: 通用智能体流式问答断线重连
+      tags:
+      - wga
   /general/agent/conversation/detail:
     get:
       description: 获取指定会话的对话详情，包括对话标题、创建时间等信息
@@ -14218,6 +14350,34 @@ paths:
       security:
       - JWT: []
       summary: 通用智能体对话列表
+      tags:
+      - wga
+  /general/agent/conversation/pending:
+    get:
+      consumes:
+      - application/json
+      description: 查询通用智能体是否有运行中的会话，用于断线重连判断
+      parameters:
+      - description: 对话ID
+        in: query
+        name: threadId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.WgaConversationPendingResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 查询通用智能体运行中会话
       tags:
       - wga
   /general/agent/conversation/workspace:
@@ -14520,6 +14680,30 @@ paths:
       summary: Create skill conversation
       tags:
       - wga
+  /general/agent/skill/conversation/cancel:
+    post:
+      consumes:
+      - application/json
+      description: 通用智能体(Skill)流式问答手动停止，区分网络断开和主动取消
+      parameters:
+      - description: Skill对话请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GeneralAgentSkillConversationCancelReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 通用智能体(Skill)流式问答手动停止
+      tags:
+      - wga
   /general/agent/skill/conversation/chat:
     post:
       consumes:
@@ -14542,6 +14726,59 @@ paths:
       security:
       - JWT: []
       summary: Skill对话流
+      tags:
+      - wga
+  /general/agent/skill/conversation/connect:
+    post:
+      consumes:
+      - application/json
+      description: 通用智能体(Skill)流式问答断线重连，续接之前未完成的SSE流
+      parameters:
+      - description: Skill对话请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GeneralAgentSkillConversationConnectReq'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE流式返回
+          schema:
+            type: string
+      security:
+      - JWT: []
+      summary: 通用智能体(Skill)流式问答断线重连
+      tags:
+      - wga
+  /general/agent/skill/conversation/pending:
+    get:
+      consumes:
+      - application/json
+      description: 查询通用智能体(Skill)是否有运行中的会话，用于断线重连判断
+      parameters:
+      - description: Skill对话请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GeneralAgentSkillConversationPendingReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.WgaConversationPendingResp'
+              type: object
+      security:
+      - JWT: []
+      summary: 查询通用智能体(Skill)运行中会话
       tags:
       - wga
   /general/agent/skill/convert/conversation:

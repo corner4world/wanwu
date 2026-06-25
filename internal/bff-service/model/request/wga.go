@@ -1,8 +1,11 @@
 package request
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 )
 
 // UpdateGeneralAgentConfigReq 更新通用智能体配置请求
@@ -199,6 +202,49 @@ func (m *GeneralAgentConversationMessage) GetTextContent() string {
 	return text
 }
 
+func (m *GeneralAgentConversationMessage) WithMinioUrlReplaced() GeneralAgentConversationMessage {
+	var cp GeneralAgentConversationMessage
+	b, _ := json.Marshal(m)
+	_ = json.Unmarshal(b, &cp)
+
+	minioEndpoint := config.Cfg().Minio.Endpoint
+	downloadURL := config.Cfg().Minio.DownloadURL
+	if minioEndpoint == "" || downloadURL == "" {
+		return cp
+	}
+
+	if v, ok := cp.Content.([]interface{}); ok {
+		for _, item := range v {
+			if m, ok := item.(map[string]interface{}); ok {
+				if typ, _ := m["type"].(string); typ == "binary" {
+					if urlStr, _ := m["url"].(string); urlStr != "" {
+						m["url"] = strings.ReplaceAll(urlStr, "http://"+minioEndpoint, downloadURL)
+					}
+				}
+			}
+		}
+	}
+	return cp
+}
+
+type GeneralAgentSkillConversationPendingReq struct {
+	ThreadID  string `json:"threadId" form:"threadId"`   // 对话ID
+	PreviewID string `json:"previewId" form:"previewId"` // preview模式对话ID，用于历史记录隔离
+}
+
+func (c *GeneralAgentSkillConversationPendingReq) Check() error { return nil }
+
+func (c *GeneralAgentSkillConversationPendingReq) ChatThreadID() string {
+	if strings.TrimSpace(c.PreviewID) != "" {
+		return c.PreviewID
+	}
+	return c.ThreadID
+}
+
+type GeneralAgentSkillConversationConnectReq = GeneralAgentSkillConversationPendingReq
+
+type GeneralAgentSkillConversationCancelReq = GeneralAgentSkillConversationPendingReq
+
 type GeneralAgentWorkspaceDownloadReq struct {
 	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
 	RunID    string `json:"runId" form:"runId"`                           // 运行ID
@@ -236,3 +282,24 @@ type GeneralAgentRejectQuestionReq struct {
 }
 
 func (c *GeneralAgentRejectQuestionReq) Check() error { return nil }
+
+// WgaConversationPendingReq 查询WGA运行中会话请求
+type WgaConversationPendingReq struct {
+	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
+}
+
+func (c *WgaConversationPendingReq) Check() error { return nil }
+
+// WgaConversationConnectReq WGA流式问答断线重连请求
+type WgaConversationConnectReq struct {
+	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
+}
+
+func (c *WgaConversationConnectReq) Check() error { return nil }
+
+// WgaConversationCancelReq WGA流式问答手动停止请求
+type WgaConversationCancelReq struct {
+	ThreadID string `json:"threadId" form:"threadId" validate:"required"` // 对话ID
+}
+
+func (c *WgaConversationCancelReq) Check() error { return nil }

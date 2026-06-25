@@ -14,9 +14,13 @@ import (
 	mcp_service "github.com/UnicomAI/wanwu/api/proto/mcp-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	ag_ui_util "github.com/UnicomAI/wanwu/pkg/ag-ui-util"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
+	sse_connector "github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector"
+	sse_model "github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector/model"
+	"github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector/store"
 	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/wga"
@@ -42,6 +46,10 @@ type WgaChatParams struct {
 	AgentID  string
 	ThreadID string
 	Messages []request.GeneralAgentConversationMessage
+
+	// ClientID - 客户端标识，用于 SSE 断线重连的 session 隔离
+	// 非空时启用断线重连能力，为空时行为与改造前完全一致（断连即停止后端执行）
+	ClientID string
 
 	// ModelConfig - 模型配置（可选）
 	// 由调用方从自己的配置系统获取，或传 nil 使用默认配置
@@ -139,15 +147,32 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 		return err
 	}
 
-	// 运行 WGA
-	_, iter, err := wga.Run(ctx.Request.Context(), params.AgentID, opts...)
+	// 初始化 SSE 链接保持器
+	// ClientID 非空时启用断线重连能力，为空时 InvalidManager 使 Publish/Subscribe 成为 no-op，行为与改造前一致
+	sseSession := &sse_model.Session{
+		ConversationID: params.ThreadID,
+		ClientID:       params.ClientID,
+	}
+	sseSessionManager := sse_connector.NewSSESession(ctx.Request.Context(), sseSession, store.NewMemoryStore())
+	if params.ClientID == "" {
+		sseSessionManager.InvalidManager()
+	}
+	sseSessionManager.AddExt(map[string]interface{}{
+		"runId":    runID,
+		"messages": params.Messages,
+	})
+	bgCtx := sseSessionManager.GetBgContext()
+
+	// 运行 WGA（使用 bgCtx，不随客户端断连中断）
+	_, iter, err := wga.Run(bgCtx, params.AgentID, opts...)
 	if err != nil {
+		_ = sse_connector.Close(sseSession)
 		return err
 	}
 
 	// 转换为 AG-UI 事件流
 	tr := ag_ui_util.NewEinoTranslator(params.ThreadID, runID)
-	eventCh := tr.TranslateStream(ctx.Request.Context(), iter)
+	eventCh := tr.TranslateStream(bgCtx, iter)
 
 	// AG-UI 事件流处理器
 	processorConfig := &ag_ui_util.ProcessorConfig{
@@ -174,7 +199,7 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 	}
 
 	processor := ag_ui_util.NewStreamProcessor(processorConfig)
-	processedEventCh, historyEventCh := processor.Process(ctx.Request.Context(), eventCh, map[string]interface{}{
+	processedEventCh, historyEventCh := processor.Process(bgCtx, eventCh, map[string]interface{}{
 		"threadId":       params.ThreadID,
 		"runId":          runID,
 		"messages":       []interface{}{userInputMessage},
@@ -190,32 +215,62 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 		eventWorkspaceStore = params.WorkspaceStore
 	}
 
-	// 异步保存智能体返回的消息
-	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
-	go saveWgaChatHistoryEvent(detachedCtx, historyEventCh, params.UserID, params.OrgID, params.ThreadID, runID,
+	// 异步保存智能体返回的消息（detached context，即使 ClientID 为空，客户端断连也不影响 ES 写入）
+	go saveWgaChatHistoryEvent(trace_util.DetachContext(bgCtx), historyEventCh, params.UserID, params.OrgID, params.ThreadID, runID,
 		eventWorkspaceStore,
 		lastWorkspaceTotalSize,
 		lastWorkspaceFileCount,
 	)
 
-	// SSE 响应
-	outputCh := processWgaEvent2OutputCh(
-		ctx.Request.Context(),
-		processedEventCh,
-		params.ThreadID,
-		runID,
-		eventWorkspaceStore,
-		lastWorkspaceTotalSize,
-		lastWorkspaceFileCount,
-	)
+	// 事件分发：同时写入 SSE 客户端输出和 sse-connector store
+	// fan-out goroutine 从 processedEventCh 读取，publish 到 store（不阻塞），非阻塞写入 SSE 输出 channel
+	// workspace event 在 RunFinished 时注入（先于 RunFinished 本身），确保 store 和 SSE 输出中顺序一致
+	outCh := make(chan string, 1024)
+	go func() {
+		defer util.PrintPanicStack()
+		defer close(outCh)
+		defer func() { _ = sse_connector.Close(sseSession) }()
+		for evt := range processedEventCh {
+			// inject workspace activity event when run finished, to trigger AG-UI to fetch workspace info and update workspace activity card
+			if eventWorkspaceStore != nil && evt.Type() == aguievents.EventTypeRunFinished {
+				if wsEvent, _ := BuildWgaWorkspaceEvent(eventWorkspaceStore, &WgaWorkspaceEventConfig{
+					ThreadID:           params.ThreadID,
+					RunID:              runID,
+					LastWorkspaceSize:  lastWorkspaceTotalSize,
+					LastWorkspaceCount: lastWorkspaceFileCount,
+				}); wsEvent != nil {
+					if wsData, wsErr := json.Marshal(wsEvent); wsErr == nil {
+						_ = sseSessionManager.Publish(&sse_model.Message{Data: string(wsData)}, nil)
+						select {
+						case outCh <- string(wsData):
+						default:
+							// SSE 输出 channel 已满（客户端断连或处理慢），丢弃事件（store 已保存，可重连恢复）
+						}
+					}
+				}
+			}
+			data, err := json.Marshal(evt)
+			if err != nil {
+				log.Warnf("[WgaConversationChat] threadId=%s, runId=%s, marshal sse event error: %v", params.ThreadID, runID, err)
+			} else {
+				_ = sseSessionManager.Publish(&sse_model.Message{Data: string(data)}, nil)
+				select {
+				case outCh <- string(data):
+				default:
+					// SSE 输出 channel 已满（客户端断连或处理慢），丢弃事件（store 已保存，可重连恢复）
+				}
+			}
+		}
+	}()
 
+	// SSE 响应输出（使用 ctx.Request.Context，客户端断连时停止写入）
 	ctx.Header("Content-Type", "text/event-stream")
 	ctx.Header("Cache-Control", "no-cache")
 	ctx.Header("Connection", "keep-alive")
 
 	ctx.Stream(func(w io.Writer) bool {
 		select {
-		case line, ok := <-outputCh:
+		case line, ok := <-outCh:
 			if !ok {
 				log.Infof("[WgaConversationChat] threadId=%s, runId=%s, outputCh closed", params.ThreadID, runID)
 				return false
@@ -633,59 +688,6 @@ func saveWgaChatHistoryEvent(
 	}
 }
 
-func processWgaEvent2OutputCh(
-	ctx context.Context,
-	eventCh <-chan aguievents.Event,
-	threadID, runID string,
-	workspaceStore *wga_persistent.Store,
-	lastWorkspaceTotalSize int64,
-	lastWorkspaceFileCount int,
-) <-chan string {
-	out := make(chan string, 1024)
-
-	go func() {
-		defer util.PrintPanicStack()
-		defer close(out)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case evt, ok := <-eventCh:
-				if !ok {
-					return
-				}
-
-				// inject workspace activity event when run finished, to trigger AG-UI to fetch workspace info and update workspace activity card
-				if workspaceStore != nil && evt.Type() == aguievents.EventTypeRunFinished {
-					if wsEvent, _ := BuildWgaWorkspaceEvent(workspaceStore, &WgaWorkspaceEventConfig{
-						ThreadID:           threadID,
-						RunID:              runID,
-						LastWorkspaceSize:  lastWorkspaceTotalSize,
-						LastWorkspaceCount: lastWorkspaceFileCount,
-					}); wsEvent != nil {
-						if data, err := json.Marshal(wsEvent); err == nil {
-							select {
-							case out <- string(data):
-							case <-ctx.Done():
-								return
-							}
-						}
-					}
-				}
-
-				if data, err := json.Marshal(evt); err == nil {
-					select {
-					case out <- string(data):
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
-		}
-	}()
-	return out
-}
-
 // buildWgaMentionResourcesMessage 构建 @ 资源提示消息
 func buildWgaMentionResourcesMessage(resources *wgaMentionResources) *schema.Message {
 	var lines []string
@@ -801,4 +803,76 @@ func convertWgaMessageInputPart(m map[string]interface{}) schema.MessageInputPar
 		}
 	}
 	return part
+}
+
+// ============================================================================
+// WGA 断线重连 - Service 层
+// ============================================================================
+
+// WgaConversationPending 查询是否有运行中的 WGA 会话
+func WgaConversationPending(ctx *gin.Context, userId, orgId, clientId string, req request.WgaConversationPendingReq) (*response.WgaConversationPendingResp, error) {
+	session := &sse_model.Session{
+		ConversationID: req.ThreadID,
+		ClientID:       clientId,
+	}
+	mgr := sse_connector.GetSession(session)
+	if mgr == nil {
+		return &response.WgaConversationPendingResp{
+			ThreadID:               req.ThreadID,
+			HasPendingConversation: false,
+		}, nil
+	}
+	var messages []request.GeneralAgentConversationMessage
+	if ext := mgr.GetExt(); ext != nil {
+		msgs, _ := ext["messages"].([]request.GeneralAgentConversationMessage)
+		for _, msg := range msgs {
+			messages = append(messages, msg.WithMinioUrlReplaced())
+		}
+	}
+	return &response.WgaConversationPendingResp{
+		ThreadID:               req.ThreadID,
+		HasPendingConversation: true,
+		Messages:               messages,
+	}, nil
+}
+
+// WgaConversationConnect WGA 流式问答断线重连
+func WgaConversationConnect(ctx *gin.Context, userId, orgId, clientId string, req request.WgaConversationConnectReq) error {
+	session := &sse_model.Session{
+		ConversationID: req.ThreadID,
+		ClientID:       clientId,
+	}
+	chatCh, err := sse_connector.Connect[string](ctx.Request.Context(), session, func(data *sse_model.Message) string {
+		return data.Data.(string)
+	})
+	if err != nil {
+		return err
+	}
+
+	ctx.Header("Content-Type", "text/event-stream")
+	ctx.Header("Cache-Control", "no-cache")
+	ctx.Header("Connection", "keep-alive")
+
+	ctx.Stream(func(w io.Writer) bool {
+		select {
+		case line, ok := <-chatCh:
+			if !ok {
+				return false
+			}
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", line)
+			return true
+		case <-ctx.Request.Context().Done():
+			return false
+		}
+	})
+	return nil
+}
+
+// WgaConversationCancel WGA 流式问答手动停止
+func WgaConversationCancel(ctx *gin.Context, userId, orgId, clientId string, req request.WgaConversationCancelReq) error {
+	session := &sse_model.Session{
+		ConversationID: req.ThreadID,
+		ClientID:       clientId,
+	}
+	return sse_connector.Close(session)
 }

@@ -550,7 +550,7 @@ func GeneralAgentConversationChat(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.GeneralAgentConversationChat(ctx, getUserID(ctx), getOrgID(ctx), req)
+	err := service.GeneralAgentConversationChat(ctx, getUserID(ctx), getOrgID(ctx), getClientID(ctx), req)
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 	}
@@ -572,10 +572,138 @@ func GeneralAgentSkillConversationChat(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.GeneralAgentSkillConversationChat(ctx, getUserID(ctx), getOrgID(ctx), req)
+	err := service.GeneralAgentSkillConversationChat(ctx, getUserID(ctx), getOrgID(ctx), getClientID(ctx), req)
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 	}
+}
+
+// GeneralAgentConversationPending
+//
+//	@Tags			wga
+//	@Summary		查询通用智能体运行中会话
+//	@Description	查询通用智能体是否有运行中的会话，用于断线重连判断
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			threadId	query		string	true	"对话ID"
+//	@Success		200			{object}	response.Response{data=response.WgaConversationPendingResp}
+//	@Router			/general/agent/conversation/pending [get]
+func GeneralAgentConversationPending(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.WgaConversationPendingReq
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.WgaConversationPending(ctx, userId, orgId, clientId, req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// GeneralAgentSkillConversationPending
+//
+//	@Tags			wga
+//	@Summary		查询通用智能体(Skill)运行中会话
+//	@Description	查询通用智能体(Skill)是否有运行中的会话，用于断线重连判断
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.GeneralAgentSkillConversationPendingReq	true	"Skill对话请求参数"
+//	@Success		200		{object}	response.Response{data=response.WgaConversationPendingResp}
+//	@Router			/general/agent/skill/conversation/pending [get]
+func GeneralAgentSkillConversationPending(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.GeneralAgentSkillConversationPendingReq
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.WgaConversationPending(ctx, userId, orgId, clientId, request.WgaConversationPendingReq{ThreadID: req.ChatThreadID()})
+	gin_util.Response(ctx, resp, err)
+}
+
+// GeneralAgentConversationConnect
+//
+//	@Tags			wga
+//	@Summary		通用智能体流式问答断线重连
+//	@Description	通用智能体流式问答断线重连，续接之前未完成的SSE流
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		text/event-stream
+//	@Param			data	body		request.WgaConversationConnectReq	true	"断线重连请求参数"
+//	@Success		200		{object}	string								"SSE流式返回"
+//	@Router			/general/agent/conversation/connect [post]
+func GeneralAgentConversationConnect(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.WgaConversationConnectReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	if err := service.WgaConversationConnect(ctx, userId, orgId, clientId, req); err != nil {
+		gin_util.Response(ctx, nil, err)
+	}
+}
+
+// GeneralAgentSkillConversationConnect
+//
+//	@Tags			wga
+//	@Summary		通用智能体(Skill)流式问答断线重连
+//	@Description	通用智能体(Skill)流式问答断线重连，续接之前未完成的SSE流
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		text/event-stream
+//	@Param			data	body		request.GeneralAgentSkillConversationConnectReq	true	"Skill对话请求参数"
+//	@Success		200		{object}	string											"SSE流式返回"
+//	@Router			/general/agent/skill/conversation/connect [post]
+func GeneralAgentSkillConversationConnect(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.GeneralAgentSkillConversationConnectReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	if err := service.WgaConversationConnect(ctx, userId, orgId, clientId, request.WgaConversationConnectReq{ThreadID: req.ChatThreadID()}); err != nil {
+		gin_util.Response(ctx, nil, err)
+	}
+}
+
+// GeneralAgentConversationCancel
+//
+//	@Tags			wga
+//	@Summary		通用智能体流式问答手动停止
+//	@Description	通用智能体流式问答手动停止，区分网络断开和主动取消
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.WgaConversationCancelReq	true	"手动停止请求参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/general/agent/conversation/cancel [post]
+func GeneralAgentConversationCancel(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.WgaConversationCancelReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.WgaConversationCancel(ctx, userId, orgId, clientId, req)
+	gin_util.Response(ctx, nil, err)
+}
+
+// GeneralAgentSkillConversationCancel
+//
+//	@Tags			wga
+//	@Summary		通用智能体(Skill)流式问答手动停止
+//	@Description	通用智能体(Skill)流式问答手动停止，区分网络断开和主动取消
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			data	body		request.GeneralAgentSkillConversationCancelReq	true	"Skill对话请求参数"
+//	@Success		200		{object}	response.Response
+//	@Router			/general/agent/skill/conversation/cancel [post]
+func GeneralAgentSkillConversationCancel(ctx *gin.Context) {
+	userId, orgId, clientId := getUserID(ctx), getOrgID(ctx), getClientID(ctx)
+	var req request.GeneralAgentSkillConversationCancelReq
+	if !gin_util.Bind(ctx, &req) {
+		return
+	}
+	err := service.WgaConversationCancel(ctx, userId, orgId, clientId, request.WgaConversationCancelReq{ThreadID: req.ChatThreadID()})
+	gin_util.Response(ctx, nil, err)
 }
 
 // GeneralAgentReplyQuestion
