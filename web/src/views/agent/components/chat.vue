@@ -1114,9 +1114,6 @@ export default {
         this._getConversationDraftHistory();
       }, 1000);
     }
-    setTimeout(() => {
-      console.log(this.getHeaderConfig);
-    }, 5000);
   },
   beforeDestroy() {
     this.stopEventSource();

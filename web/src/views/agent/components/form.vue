@@ -539,14 +539,14 @@
                     class="el-icon-s-help recommend-prompt-icon"
                     @click="
                       showPromptOptimize(
-                        editForm.recommendConfig.prompt,
+                        recommendPromptDraft,
                         'recommendPrompt',
                       )
                     "
                   ></span>
                 </el-tooltip>
                 <el-input
-                  v-model="editForm.recommendConfig.prompt"
+                  v-model="recommendPromptDraft"
                   type="textarea"
                   :rows="5"
                   :placeholder="
@@ -555,6 +555,36 @@
                   maxlength="5000"
                   show-word-limit
                 ></el-input>
+                <div class="recommend-prompt-actions">
+                  <el-tooltip
+                    effect="dark"
+                    :content="$t('common.button.confirm')"
+                    placement="top"
+                  >
+                    <el-button
+                      type="text"
+                      icon="el-icon-check"
+                      class="recommend-prompt-action recommend-prompt-confirm"
+                      :class="{ 'is-disabled': !isRecommendPromptChanged }"
+                      :aria-label="$t('common.button.confirm')"
+                      @click="confirmRecommendPrompt"
+                    ></el-button>
+                  </el-tooltip>
+                  <el-tooltip
+                    effect="dark"
+                    :content="$t('common.button.cancel')"
+                    placement="top"
+                  >
+                    <el-button
+                      type="text"
+                      icon="el-icon-close"
+                      class="recommend-prompt-action recommend-prompt-cancel"
+                      :class="{ 'is-disabled': !isRecommendPromptChanged }"
+                      :aria-label="$t('common.button.cancel')"
+                      @click="cancelRecommendPrompt"
+                    ></el-button>
+                  </el-tooltip>
+                </div>
               </div>
               <div class="block-title recommend-history-wrapper">
                 <span class="common-set-label">
@@ -672,7 +702,6 @@ import { AGENT } from '@/utils/commonSet';
 import {
   MULTIPLE_AGENT,
   SINGLE_AGENT,
-  AGENT_CONFIG_RECOMMEND_CONFIG_DEFAULT_PROMPT,
   AGENT_CONFIG_RECOMMEND_CONFIG_MODEL_CONFIG_DEFAULT_CONFIG,
   AGENT_TOOL_TYPE,
 } from '@/views/agent/constants';
@@ -798,6 +827,12 @@ export default {
     },
     useToolNum() {
       return this.allTools.filter(item => item.enable).length;
+    },
+    isRecommendPromptChanged() {
+      return (
+        this.recommendPromptDraft !==
+        (this.editForm.recommendConfig.prompt || '')
+      );
     },
     getCategory() {
       const knowledgebases = this.editForm.knowledgeBaseConfig.knowledgebases;
@@ -972,6 +1007,7 @@ export default {
       allTools: [], //所有的工具
       modelOptions: [],
       optimizeTarget: 'instructions',
+      recommendPromptDraft: '',
       imageUrl: '',
       defaultLogo: require('@/assets/imgs/bg-logo.png'),
       debounceTimer: null, //防抖计时器
@@ -1091,10 +1127,18 @@ export default {
     promptSubmit(prompt) {
       if (this.optimizeTarget === 'instructions') {
         this.editForm.instructions = prompt;
+        this.updateInfo();
       } else if (this.optimizeTarget === 'recommendPrompt') {
-        this.editForm.recommendConfig.prompt = prompt;
+        this.recommendPromptDraft = prompt;
       }
-      this.updateInfo();
+    },
+    confirmRecommendPrompt() {
+      if (!this.isRecommendPromptChanged) return;
+      this.editForm.recommendConfig.prompt = this.recommendPromptDraft;
+    },
+    cancelRecommendPrompt() {
+      if (!this.isRecommendPromptChanged) return;
+      this.recommendPromptDraft = this.editForm.recommendConfig.prompt || '';
     },
     getPrompt(prompt) {
       this.editForm.instructions = prompt;
@@ -1545,6 +1589,7 @@ export default {
           recommendConfig:
             data.recommendConfig ?? this.editForm.recommendConfig,
         };
+        this.recommendPromptDraft = this.editForm.recommendConfig.prompt || '';
 
         this.editForm.knowledgeBaseConfig.config.rerankModelId =
           data.rerankConfig.modelId;
@@ -1648,8 +1693,6 @@ export default {
       this.editForm.recommendConfig.modelConfig.config = this.$deepClone(
         AGENT_CONFIG_RECOMMEND_CONFIG_MODEL_CONFIG_DEFAULT_CONFIG,
       );
-      this.editForm.recommendConfig.prompt =
-        AGENT_CONFIG_RECOMMEND_CONFIG_DEFAULT_PROMPT;
       if (!val) return;
       let modelId = '';
       const modelParams = this.editForm.modelParams;
@@ -1970,6 +2013,57 @@ $gap-scale: (
       margin-left: auto;
       font-size: 16px;
       cursor: pointer;
+    }
+
+    .recommend-prompt-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    ::v-deep(.recommend-prompt-action) {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 28px;
+      transition: color 0.2s ease;
+
+      i {
+        font-size: 16px;
+      }
+
+      &.recommend-prompt-confirm {
+        i {
+          color: #18a058;
+        }
+      }
+
+      &.recommend-prompt-cancel {
+        i {
+          color: #d92d20;
+        }
+      }
+
+      &:hover,
+      &:focus {
+        background: transparent;
+        outline: none;
+      }
+
+      &.is-disabled,
+      &.is-disabled:hover,
+      &.is-disabled:focus {
+        i {
+          color: #c0c4cc;
+        }
+        cursor: not-allowed;
+        background: transparent;
+      }
     }
   }
   .recommend-history-wrapper {
