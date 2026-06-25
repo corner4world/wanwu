@@ -545,3 +545,32 @@ func buildWgaModelOption(ctx *gin.Context, modelConfig *common.AppModelConfig) (
 		Params:       modelParams,
 	}), nil
 }
+
+// ResolveModelConfigByUuid 通过模型 UUID 解析为 AppModelConfig。
+// 用于 OpenAPI 的创建对话和 chat 接口，统一通过 modelUuid 指定模型。
+func ResolveModelConfigByUuid(ctx *gin.Context, modelUuid string) (*request.AppModelConfig, error) {
+	modelInfo, err := model.GetModelByUuid(ctx.Request.Context(), &model_service.GetModelByUuidReq{Uuid: modelUuid})
+	if err != nil {
+		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("model not found by uuid: %s", modelUuid))
+	}
+	return &request.AppModelConfig{
+		Provider: modelInfo.Provider,
+		Model:    modelInfo.Model,
+		ModelId:  modelInfo.ModelId,
+		ModelType: modelInfo.ModelType,
+	}, nil
+}
+
+// UpdateConversationModelByUuid 通过模型 UUID 更新对话的模型配置。
+// 用于 chat 接口传入 modelUuid 参数时，在对话开始前切换模型。
+func UpdateConversationModelByUuid(ctx *gin.Context, userId, orgId, threadId, modelUuid string) error {
+	modelConfig, err := ResolveModelConfigByUuid(ctx, modelUuid)
+	if err != nil {
+		return err
+	}
+	req := request.UpdateGeneralAgentConversationConfigReq{
+		ThreadID:    threadId,
+		ModelConfig: modelConfig,
+	}
+	return UpdateGeneralAgentConversationConfig(ctx, userId, orgId, req)
+}

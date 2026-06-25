@@ -956,6 +956,14 @@ definitions:
     - docIdList
     - knowledgeId
     type: object
+  request.DeleteGeneralAgentConversationReq:
+    properties:
+      threadId:
+        description: 对话ID
+        type: string
+    required:
+    - threadId
+    type: object
   request.DeleteKnowledge:
     properties:
       knowledgeId:
@@ -1186,6 +1194,34 @@ definitions:
         type: string
     required:
     - modelId
+    type: object
+  request.GeneralAgentConfigItem:
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+    type: object
+  request.GeneralAgentConfigToolItem:
+    properties:
+      toolId:
+        type: string
+      toolType:
+        type: string
+    type: object
+  request.GeneralAgentConversationMessage:
+    properties:
+      content:
+        description: 内容 string 或者 [{"type":"text","text":"这张图片是什么？"},{"type":"binary","mimeType":"image/png","url":"https://..."}]
+      id:
+        description: 消息id
+        type: string
+      role:
+        description: 角色 user
+        type: string
+    required:
+    - content
+    - role
     type: object
   request.History:
     properties:
@@ -1532,6 +1568,38 @@ definitions:
     - assistantUuid
     - name
     type: object
+  request.OpenAPIWgaConversationChatReq:
+    properties:
+      agentId:
+        description: 智能体ID，可选，为空时使用默认Supervisor
+        type: string
+      messages:
+        description: 消息列表
+        items:
+          $ref: '#/definitions/request.GeneralAgentConversationMessage'
+        type: array
+      modelUuid:
+        description: 模型UUID，可选
+        type: string
+      threadId:
+        description: 对话ID
+        type: string
+    required:
+    - messages
+    - threadId
+    type: object
+  request.OpenAPIWgaCreateConversationReq:
+    properties:
+      modelUuid:
+        description: 模型UUID，必填
+        type: string
+      title:
+        description: 标题
+        type: string
+    required:
+    - modelUuid
+    - title
+    type: object
   request.OpenAPIWorkflowRunReq:
     properties:
       parameters:
@@ -1587,6 +1655,52 @@ definitions:
     required:
     - contentStatus
     - docId
+    type: object
+  request.UpdateGeneralAgentConfigReq:
+    properties:
+      assistant:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        type: array
+      knowledge:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        type: array
+      mcp:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        type: array
+      ontology:
+        description: 目前限制只能选一个知识网络
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        maxItems: 1
+        type: array
+      skill:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        type: array
+      tool:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigToolItem'
+        type: array
+      workflow:
+        items:
+          $ref: '#/definitions/request.GeneralAgentConfigItem'
+        type: array
+    type: object
+  request.UpdateGeneralAgentConversationConfigReq:
+    properties:
+      modelConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppModelConfig'
+        description: 模型
+      threadId:
+        description: 对话ID
+        type: string
+    required:
+    - modelConfig
+    - threadId
     type: object
   request.UpdateKnowledgeReq:
     properties:
@@ -1968,10 +2082,38 @@ definitions:
       response:
         type: string
     type: object
+  response.CreateGeneralAgentConversationResp:
+    properties:
+      threadId:
+        description: 对话ID
+        type: string
+    type: object
   response.CreateKnowledgeResp:
     properties:
       knowledgeId:
         type: string
+    type: object
+  response.DirectUploadFileInfo:
+    properties:
+      fileId:
+        description: 上传文件名
+        type: string
+      fileName:
+        description: 原始文件名
+        type: string
+      filePath:
+        description: minio文件的完整路径
+        type: string
+      fileSize:
+        description: 文件大小
+        type: integer
+    type: object
+  response.DirectUploadFilesResp:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/response.DirectUploadFileInfo'
+        type: array
     type: object
   response.DocAnalyzerTextInfo:
     properties:
@@ -2172,6 +2314,117 @@ definitions:
   response.EmbeddingModelInfo:
     properties:
       modelId:
+        type: string
+    type: object
+  response.GeneralAgentConversationDetailInfo:
+    properties:
+      createdAt:
+        type: integer
+      events:
+        items: {}
+        type: array
+      runId:
+        type: string
+      threadId:
+        type: string
+    type: object
+  response.GeneralAgentConversationInfo:
+    properties:
+      createdAt:
+        description: 创建时间
+        type: string
+      isSkillConversation:
+        description: 是否为skill对话
+        type: boolean
+      previewId:
+        description: skill preview conversation ID
+        type: string
+      skillId:
+        description: custom skill ID
+        type: string
+      threadId:
+        description: 对话ID
+        type: string
+      title:
+        description: 对话标题
+        type: string
+    type: object
+  response.GeneralAgentFileNode:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/response.GeneralAgentFileNode'
+        type: array
+      mimeType:
+        type: string
+      name:
+        type: string
+      size:
+        type: integer
+      type:
+        description: '"file" or "directory"'
+        type: string
+    type: object
+  response.GeneralAgentResourceSelectItem:
+    properties:
+      author:
+        description: 作者
+        type: string
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 头像
+      desc:
+        description: 描述
+        type: string
+      id:
+        description: ID
+        type: string
+      name:
+        description: 名称
+        type: string
+      type:
+        description: 类型
+        type: string
+    type: object
+  response.GeneralAgentResourceSelectList:
+    properties:
+      list:
+        description: 列表项
+        items:
+          $ref: '#/definitions/response.GeneralAgentResourceSelectItem'
+        type: array
+      listType:
+        description: '列表类型: mcp, workflow, skill, assistant, knowledge, ontology'
+        type: string
+    type: object
+  response.GeneralAgentWorkspaceResp:
+    properties:
+      fileCount:
+        type: integer
+      files:
+        items:
+          $ref: '#/definitions/response.GeneralAgentFileNode'
+        type: array
+      isDisplay:
+        type: boolean
+      path:
+        type: string
+      runId:
+        type: string
+      threadId:
+        type: string
+      totalSize:
+        type: integer
+    type: object
+  response.GetGeneralAgentConversationConfigResp:
+    properties:
+      modelConfig:
+        allOf:
+        - $ref: '#/definitions/request.AppModelConfig'
+        description: 模型
+      threadId:
+        description: 对话ID
         type: string
     type: object
   response.KeywordsInfo:
@@ -4280,6 +4533,347 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: 文本问答OpenAPI
+      tags:
+      - openapi
+  /wga/config:
+    put:
+      consumes:
+      - application/json
+      description: 更新通用智能体工具配置
+      parameters:
+      - description: 更新WGA配置请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateGeneralAgentConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - OpenAPIKey: []
+      summary: 更新WGA资源配置
+      tags:
+      - openapi
+  /wga/conversation:
+    delete:
+      consumes:
+      - application/json
+      description: 删除通用智能体对话
+      parameters:
+      - description: 删除对话请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.DeleteGeneralAgentConversationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - OpenAPIKey: []
+      summary: 删除WGA对话
+      tags:
+      - openapi
+    post:
+      consumes:
+      - application/json
+      description: 创建通用智能体对话（通过 modelUuid 指定模型）
+      parameters:
+      - description: 创建对话请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.OpenAPIWgaCreateConversationReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.CreateGeneralAgentConversationResp'
+              type: object
+      security:
+      - OpenAPIKey: []
+      summary: 创建WGA对话
+      tags:
+      - openapi
+  /wga/conversation/chat:
+    post:
+      consumes:
+      - application/json
+      description: 发送消息并接收AG-UI SSE事件流（modelUuid 必填）
+      parameters:
+      - description: 对话流请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.OpenAPIWgaConversationChatReq'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE流式返回
+          schema:
+            type: string
+      security:
+      - OpenAPIKey: []
+      summary: WGA对话流
+      tags:
+      - openapi
+  /wga/conversation/config:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定会话的模型配置信息
+      parameters:
+      - description: 对话ID
+        in: query
+        name: threadId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GetGeneralAgentConversationConfigResp'
+              type: object
+      security:
+      - OpenAPIKey: []
+      summary: 获取WGA对话配置
+      tags:
+      - openapi
+    put:
+      consumes:
+      - application/json
+      description: 更新指定会话的模型配置
+      parameters:
+      - description: 更新对话配置请求参数
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateGeneralAgentConversationConfigReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - OpenAPIKey: []
+      summary: 更新WGA对话配置
+      tags:
+      - openapi
+  /wga/conversation/detail:
+    get:
+      description: 获取指定会话的对话详情，包含AG-UI事件流历史
+      parameters:
+      - description: 对话ID
+        in: query
+        name: threadId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.GeneralAgentConversationDetailInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - OpenAPIKey: []
+      summary: WGA对话详情
+      tags:
+      - openapi
+  /wga/conversation/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取通用智能体对话历史列表
+      parameters:
+      - description: 页码，从1开始
+        in: query
+        name: pageNo
+        required: true
+        type: integer
+      - description: 每页条数
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.GeneralAgentConversationInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - OpenAPIKey: []
+      summary: WGA对话列表
+      tags:
+      - openapi
+  /wga/conversation/workspace:
+    get:
+      consumes:
+      - application/json
+      description: 获取工作区目录结构和文件列表
+      parameters:
+      - description: 对话ID
+        in: query
+        name: threadId
+        required: true
+        type: string
+      - description: 运行ID
+        in: query
+        name: runId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneralAgentWorkspaceResp'
+              type: object
+      security:
+      - OpenAPIKey: []
+      summary: WGA工作区目录树
+      tags:
+      - openapi
+  /wga/conversation/workspace/download:
+    get:
+      consumes:
+      - application/json
+      description: 下载工作区中的文件
+      parameters:
+      - description: 对话ID
+        in: query
+        name: threadId
+        required: true
+        type: string
+      - description: 运行ID
+        in: query
+        name: runId
+        type: string
+      - description: 文件路径
+        in: query
+        name: path
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - OpenAPIKey: []
+      summary: WGA工作区文件下载
+      tags:
+      - openapi
+  /wga/file/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传文件（图片/文档等），获取URL用于聊天消息中引用
+      parameters:
+      - description: 上传文件
+        in: formData
+        name: files
+        required: true
+        type: file
+      - description: 是否过期删除
+        in: formData
+        name: isExpired
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.DirectUploadFilesResp'
+              type: object
+      security:
+      - OpenAPIKey: []
+      summary: WGA文件上传
+      tags:
+      - openapi
+  /wga/resource/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有可选资源（MCP、工作流、技能、助手、知识库、知识网络）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.GeneralAgentResourceSelectList'
+              type: object
+      security:
+      - OpenAPIKey: []
+      summary: 获取WGA可选资源列表
       tags:
       - openapi
   /workflow/file/upload:

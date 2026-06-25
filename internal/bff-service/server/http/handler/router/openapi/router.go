@@ -80,4 +80,22 @@ func Register(openAPI *gin.RouterGroup) {
 	mid.Sub("openapi").Reg(openAPI, "/.well-known/openid-configuration", http.MethodGet, openapi.OAuthConfig, "返回Endpoint配置")
 	// oauth user
 	mid.Sub("openapi").Reg(openAPI, "/oauth/userinfo", http.MethodGet, openapi.OAuthGetUserInfo, "OAuth获取用户信息", middleware.JWTOAuthAccess)
+
+	// wga — 通用智能体
+	// 配置与资源
+	// mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/config", http.MethodPut, openapi.UpdateWGAConfig, "更新WGA配置", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	// mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/resource/select", http.MethodGet, openapi.GetWGAResourceSelect, "获取WGA可选资源", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	// 对话管理
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/conversation", http.MethodPost, openapi.CreateWGAConversation, "创建WGA对话", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.AuthModelByUuid([]string{"modelUuid"}), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/conversation", http.MethodDelete, openapi.DeleteWGAConversation, "删除WGA对话", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/conversation/list", http.MethodGet, openapi.GetWGAConversationList, "WGA对话列表", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/conversation/detail", http.MethodGet, openapi.GetWGAConversationDetail, "WGA对话详情", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	// 聊天交互
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/conversation/chat", http.MethodPost, openapi.WGAConversationChat, "WGA对话流", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.AuthModelByUuid([]string{"modelUuid"}), middleware.APIKeyRecord(middleware.RecordStreamType))
+	// 人工介入
+	// mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/question/reply", http.MethodPost, openapi.WGAReplyQuestion, "WGA回复提问", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	// mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/question/reject", http.MethodPost, openapi.WGARejectQuestion, "WGA拒绝提问", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	// 工作区文件
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/conversation/workspace", http.MethodGet, openapi.GetWGAWorkspace, "WGA工作区目录树", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
+	mid.Sub("openapi").RegWithAPIType(openAPI, "/wga/conversation/workspace/download", http.MethodGet, openapi.WGAWorkspaceDownload, "WGA工作区文件下载", constant.OpenAPITypeWGA, middleware.AuthOpenAPIKey(), middleware.APIKeyRecord(middleware.RecordNonStreamType))
 }

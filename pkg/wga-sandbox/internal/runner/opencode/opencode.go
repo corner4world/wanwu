@@ -67,7 +67,8 @@ const (
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     "*": "allow"{{if .EnableHumanInTheLoop}},
-    "question": "ask"{{end}}
+    "question": "ask"{{else}},
+    "question": "deny"{{end}}
   },
   "agent": {
     "title": { "disable": true }

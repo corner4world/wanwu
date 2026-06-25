@@ -550,7 +550,7 @@ func GeneralAgentConversationChat(ctx *gin.Context) {
 	if !gin_util.Bind(ctx, &req) {
 		return
 	}
-	err := service.GeneralAgentConversationChat(ctx, getUserID(ctx), getOrgID(ctx), getClientID(ctx), req)
+	err := service.GeneralAgentConversationChat(ctx, getUserID(ctx), getOrgID(ctx), getClientID(ctx), req, true)
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 	}

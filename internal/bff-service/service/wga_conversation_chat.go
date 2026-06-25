@@ -74,6 +74,11 @@ type WgaChatParams struct {
 	// - false: 不发送 workspace activity event（默认）
 	// - 仅当 WorkspaceStore 不为 nil 时生效
 	SendWorkspaceEvent bool
+
+	// EnableHumanInTheLoop - 是否启用人机交互（HITL）
+	// - true: 启用（默认）
+	// - false: 禁用（如 OpenAPI 场景）
+	EnableHumanInTheLoop bool
 }
 
 const (
@@ -142,7 +147,7 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 	runID := uuid.NewString()
 
 	// 构建 WGA 选项
-	opts, err := buildWgaRunOptions(ctx, params.UserID, params.OrgID, params.AgentID, params.ThreadID, runID, userInputMessage, params.ModelConfig, params.WorkspaceStore, params.WorkspaceReadOnly)
+	opts, err := buildWgaRunOptions(ctx, params.UserID, params.OrgID, params.AgentID, params.ThreadID, runID, userInputMessage, params.ModelConfig, params.WorkspaceStore, params.WorkspaceReadOnly, params.EnableHumanInTheLoop)
 	if err != nil {
 		return err
 	}
@@ -360,7 +365,7 @@ func filterWgaHistoryMessages(ctx *gin.Context, userId, orgId, threadId string) 
 	return messages, nil
 }
 
-func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runID string, userInputMessage *request.GeneralAgentConversationMessage, modelConfig *common.AppModelConfig, workspaceStore *wga_persistent.Store, workspaceReadOnly bool) ([]wga_option.Option, error) {
+func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runID string, userInputMessage *request.GeneralAgentConversationMessage, modelConfig *common.AppModelConfig, workspaceStore *wga_persistent.Store, workspaceReadOnly, enableHumanInTheLoop bool) ([]wga_option.Option, error) {
 	// 获取 WGA 配置
 	wgaConfigResp, err := assistant.GetWgaConfig(ctx.Request.Context(), &assistant_service.GetWgaConfigReq{
 		Identity: &assistant_service.Identity{
@@ -388,10 +393,9 @@ func buildWgaRunOptions(ctx *gin.Context, userID, orgID, agentID, threadID, runI
 			ThreadID: threadID,
 			RunID:    runID,
 		}),
-		wga_option.WithEnableHumanInTheLoop(config.WgaCfg().HumanInTheLoop, true),
+		wga_option.WithEnableHumanInTheLoop(config.WgaCfg().HumanInTheLoop && enableHumanInTheLoop, true),
 		wga_option.WithSystemMessageStrategy(wga_option.SystemMessageStrategyMerge),
 	}
-
 	// 校验并构建模型配置选项（由调用方提供 ModelConfig）
 	if modelConfig != nil && modelConfig.ModelId != "" {
 		if err := checkModelConfigFromProto(ctx, modelConfig); err != nil {

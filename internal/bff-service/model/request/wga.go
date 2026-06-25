@@ -46,6 +46,14 @@ type CreateGeneralAgentConversationReq struct {
 
 func (c *CreateGeneralAgentConversationReq) Check() error { return nil }
 
+// OpenAPIWgaCreateConversationReq OpenAPI WGA 创建对话请求（与 v1 handler 分离，不传 ModelConfig 而使用 modelUuid）
+type OpenAPIWgaCreateConversationReq struct {
+	Title     string `json:"title" validate:"required"`     // 标题
+	ModelUuid string `json:"modelUuid" validate:"required"` // 模型UUID，必填
+}
+
+func (c *OpenAPIWgaCreateConversationReq) Check() error { return nil }
+
 type CreateGeneralAgentSkillConversationReq CreateGeneralAgentConversationReq
 
 func (c *CreateGeneralAgentSkillConversationReq) Check() error {
@@ -135,6 +143,16 @@ type GeneralAgentConversationChatReq struct {
 }
 
 func (c *GeneralAgentConversationChatReq) Check() error { return nil }
+
+// OpenAPIWgaConversationChatReq OpenAPI WGA 对话流请求（与 v1 handler 分离，modelUuid 必填）
+type OpenAPIWgaConversationChatReq struct {
+	AgentID   string                            `json:"agentId"`                      // 智能体ID，可选，为空时使用默认Supervisor
+	ThreadID  string                            `json:"threadId" validate:"required"` // 对话ID
+	Messages  []GeneralAgentConversationMessage `json:"messages" validate:"required"` // 消息列表
+	ModelUuid string                            `json:"modelUuid"`                    // 模型UUID，可选
+}
+
+func (c *OpenAPIWgaConversationChatReq) Check() error { return nil }
 
 // GeneralAgentSkillConversationChatReq Skill对话请求
 type GeneralAgentSkillConversationChatReq struct {

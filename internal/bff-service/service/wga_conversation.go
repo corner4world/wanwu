@@ -552,7 +552,7 @@ func CheckGeneralAgentConversationConfig(ctx *gin.Context, userId, orgId string,
 }
 
 // GeneralAgentConversationChat 通用智能体对话接口
-func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId, clientId string, req request.GeneralAgentConversationChatReq) error {
+func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId, clientId string, req request.GeneralAgentConversationChatReq, enableHumanInTheLoop bool) error {
 	// 获取 threadId 的 ModelConfig
 	configResp, err := assistant.GetWgaConversationConfig(ctx.Request.Context(), &assistant_service.GetWgaConversationConfigReq{
 		ThreadId: req.ThreadID,
@@ -586,15 +586,16 @@ func GeneralAgentConversationChat(ctx *gin.Context, userId, orgId, clientId stri
 	}
 
 	return WgaConversationChat(ctx, &WgaChatParams{
-		UserID:             userId,
-		OrgID:              orgId,
-		AgentID:            agentID,
-		ThreadID:           req.ThreadID,
-		Messages:           req.Messages,
-		ClientID:           clientId,
-		ModelConfig:        modelConfig,
-		WorkspaceStore:     workspaceStore,
-		SendWorkspaceEvent: true,
+		UserID:               userId,
+		OrgID:                orgId,
+		AgentID:              agentID,
+		ThreadID:             req.ThreadID,
+		Messages:             req.Messages,
+		ClientID:             clientId,
+		ModelConfig:          modelConfig,
+		WorkspaceStore:       workspaceStore,
+		SendWorkspaceEvent:   true,
+		EnableHumanInTheLoop: enableHumanInTheLoop,
 	})
 }
 
@@ -650,15 +651,16 @@ func GeneralAgentSkillConversationChat(ctx *gin.Context, userId, orgId, clientId
 	}
 
 	if err := WgaConversationChat(ctx, &WgaChatParams{
-		UserID:            userId,
-		OrgID:             orgId,
-		AgentID:           agentID,
-		ThreadID:          chatThreadID,
-		Messages:          req.Messages,
-		ClientID:          clientId,
-		ModelConfig:       modelConfig,
-		WorkspaceStore:    workspaceStore,
-		WorkspaceReadOnly: mode == generalAgentSkillChatModePreview,
+		UserID:               userId,
+		OrgID:                orgId,
+		AgentID:              agentID,
+		ThreadID:             chatThreadID,
+		Messages:             req.Messages,
+		ClientID:             clientId,
+		ModelConfig:          modelConfig,
+		WorkspaceStore:       workspaceStore,
+		WorkspaceReadOnly:    mode == generalAgentSkillChatModePreview,
+		EnableHumanInTheLoop: true,
 	}); err != nil {
 		return err
 	}

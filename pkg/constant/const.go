@@ -8,6 +8,7 @@ const (
 	OpenAPITypeRag       = "rag"       // 文本问答
 	OpenAPITypeKnowledge = "knowledge" // 知识库
 	OpenAPITypeModel     = "model"     // 可用模型列表查询
+	OpenAPITypeWGA       = "wga"       // 通用智能体
 )
 
 // app type
