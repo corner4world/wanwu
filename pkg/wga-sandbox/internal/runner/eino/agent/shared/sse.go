@@ -65,11 +65,13 @@ func eventRole(event *adk.AgentEvent) string {
 // 返回 sentFinal 表示已经写出一条 Role=Assistant + FinishReason=stop 的兜底/正常收尾消息，
 // 调用方据此决定是否还需要补发兜底，避免重复。
 //
-// 任何 iter.Err 或 forwardMessageEvent 失败（通常是 MessageVariant.GetMessage
-// 物化流式消息时出错）都会：
-//  1. 先写出原始诊断 event（保留 Err 字段供日志/审计）；
-//  2. 紧接着写一条 BuildFinalAgentEvent 兜底 assistant+stop 消息；
-//  3. 直接 return，结束事件循环。
+// sentFinal=true 的三种来源：
+//  1. forwardMessageEvent 转发的消息已经是 assistant+stop（包括 length 被改写后的 stop）；
+//  2. 迭代器自然结束时由本函数补发一条 BuildFinalAgentEvent；
+//  3. 任何错误路径（event.Err / forwardMessageEvent 物化失败 / iter.Err 等价的 ctx 错）
+//     都先写出诊断 event，再补一条 BuildFinalAgentEvent。
+//
+// 不变量：函数返回时 sentFinal 一定为 true，下游 handler 不需要再补 stop 帧。
 func ProcessEvents(ctx context.Context, iter *adk.AsyncIterator[*adk.AgentEvent], w SSEWriter) (eventCount int, sentFinal bool) {
 	writeFinal := func(err error) {
 		w.WriteAgentEvent(BuildFinalAgentEvent(FinalErrorSourceAgent, err))
@@ -79,10 +81,16 @@ func ProcessEvents(ctx context.Context, iter *adk.AsyncIterator[*adk.AgentEvent]
 	for {
 		event, ok := iter.Next()
 		if !ok {
-			log.Printf("[Events] iterator closed, total=%d", eventCount)
-			if !sentFinal && ctx != nil && ctx.Err() != nil {
-				// 迭代器自然结束但 ctx 已 cancel/timeout：补一条兜底，便于上游识别。
-				writeFinal(ctx.Err())
+			log.Printf("[Events] iterator closed, total=%d sentFinal=%v", eventCount, sentFinal)
+			if !sentFinal {
+				// 迭代器自然结束：无论 ctx 是否 cancel，都补一条 stop 兜底。
+				// ctx.Err() 可能为 nil —— BuildFinalAssistantMessage 会用
+				// StreamEndedWithoutFinishMsg 给一个有意义的非空 content。
+				var ctxErr error
+				if ctx != nil {
+					ctxErr = ctx.Err()
+				}
+				writeFinal(ctxErr)
 			}
 			return
 		}
@@ -103,8 +111,15 @@ func ProcessEvents(ctx context.Context, iter *adk.AsyncIterator[*adk.AgentEvent]
 			continue
 		}
 
-		if err := forwardMessageEvent(event, w, eventCount); err != nil {
+		isFinal, err := forwardMessageEvent(event, w, eventCount)
+		if err != nil {
 			writeFinal(err)
+			return
+		}
+		if isFinal {
+			// 这条已经满足 assistant+stop（含 length 改写后的 stop）：
+			// 直接收尾，由 caller 的 sentFinal=true 通路跳过 handler defer 的二次补发。
+			sentFinal = true
 			return
 		}
 	}
@@ -113,25 +128,34 @@ func ProcessEvents(ctx context.Context, iter *adk.AsyncIterator[*adk.AgentEvent]
 // forwardMessageEvent 把一个带 MessageOutput 的 event 物化为非流式后转发。
 // 流式与非流式共用同一条转发路径：MessageVariant.GetMessage() 内部已经处理
 // schema.ConcatMessageStream，无需我们手动 Recv 循环。
-func forwardMessageEvent(event *adk.AgentEvent, w SSEWriter, eventNum int) error {
+//
+// 返回 isFinal 表示写出的这条消息已是 assistant+stop（含 length 被原地改写为 stop
+// 的情况），ProcessEvents 据此置 sentFinal 以避免 handler defer 二次补发。
+func forwardMessageEvent(event *adk.AgentEvent, w SSEWriter, eventNum int) (isFinal bool, err error) {
 	mv := event.Output.MessageOutput
 	msg, err := mv.GetMessage()
 	if err != nil {
 		log.Printf("[Events] event #%d get message failed: agent=%s role=%s tool=%s err=%v",
 			eventNum, event.AgentName, string(mv.Role), mv.ToolName, err)
 		w.WriteAgentEvent(buildDiagnosticEvent(event, fmt.Errorf("failed to materialize message: %w", err)))
-		return err
+		return false, err
 	}
 	if msg == nil {
 		log.Printf("[Events] event #%d materialized message is nil: agent=%s role=%s tool=%s",
 			eventNum, event.AgentName, string(mv.Role), mv.ToolName)
 		err := fmt.Errorf("materialized message is nil")
 		w.WriteAgentEvent(buildDiagnosticEvent(event, err))
-		return err
+		return false, err
 	}
 
-	log.Printf("[Events] event #%d role=%s tool=%s streaming=%v content=%d tool_calls=%d",
-		eventNum, string(mv.Role), mv.ToolName, mv.IsStreaming, len(msg.Content), len(msg.ToolCalls))
+	NormalizeFinishReason(msg)
+
+	var finish string
+	if msg.ResponseMeta != nil {
+		finish = msg.ResponseMeta.FinishReason
+	}
+	log.Printf("[Events] event #%d role=%s tool=%s streaming=%v content=%d tool_calls=%d finish=%s",
+		eventNum, string(mv.Role), mv.ToolName, mv.IsStreaming, len(msg.Content), len(msg.ToolCalls), finish)
 
 	w.WriteAgentEvent(&adk.AgentEvent{
 		AgentName: event.AgentName,
@@ -146,7 +170,7 @@ func forwardMessageEvent(event *adk.AgentEvent, w SSEWriter, eventNum int) error
 		},
 		Action: event.Action,
 	})
-	return nil
+	return IsFinalStopMessage(msg), nil
 }
 
 func buildDiagnosticEvent(src *adk.AgentEvent, err error) *adk.AgentEvent {
