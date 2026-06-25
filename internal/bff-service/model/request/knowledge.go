@@ -342,6 +342,9 @@ func (c *CreateKnowledgeReq) Check() error {
 	if err := util.ValidateDesc(&c.Description, util.SubjectKnowledge); err != nil {
 		return err
 	}
+	if c.Category != CategoryKnowledge && c.Category != CategoryQA && c.Category != CategoryMultimodalKnowledge {
+		return errors.New("invalid category")
+	}
 	if c.Category == CategoryKnowledge {
 		if c.KnowledgeGraph == nil {
 			return errors.New("knowledge graph can not be nil")

@@ -128,6 +128,13 @@ func ChatAgent(ctx *gin.Context) {
 			FileInfo:       req.FileInfo,
 		}, true, constant.AppStatisticSourceOpenAPI); err != nil {
 			gin_util.Response(ctx, nil, err)
+			return
+		}
+		if qs := service.GenAgentRecommendQuestions(ctx, userID, orgID, appID, req.ConversationID, req.Query, true); len(qs) > 0 {
+			if b, err := json.Marshal(map[string][]string{"recommend_questions": qs}); err == nil {
+				_, _ = fmt.Fprintf(ctx.Writer, "data: %s\n\n", string(b))
+				ctx.Writer.Flush()
+			}
 		}
 		return
 	}
@@ -163,6 +170,7 @@ func ChatAgent(ctx *gin.Context) {
 		output += curr.Response
 	}
 	resp.Response = output
+	resp.RecommendQuestions = service.GenAgentRecommendQuestions(ctx, userID, orgID, appID, req.ConversationID, req.Query, true)
 	costs := time.Since(startTime).Milliseconds()
 	go func() {
 		defer util.PrintPanicStack()
@@ -322,6 +330,13 @@ func DraftChatAgent(ctx *gin.Context) {
 		FileInfo:       req.FileInfo,
 	}, false, constant.AppStatisticSourceDraft); err != nil {
 		gin_util.Response(ctx, nil, err)
+		return
+	}
+	if qs := service.GenAgentRecommendQuestions(ctx, userID, orgID, appID, req.ConversationID, req.Query, false); len(qs) > 0 {
+		if b, err := json.Marshal(map[string][]string{"recommend_questions": qs}); err == nil {
+			_, _ = fmt.Fprintf(ctx.Writer, "data: %s\n\n", string(b))
+			ctx.Writer.Flush()
+		}
 	}
 }
 

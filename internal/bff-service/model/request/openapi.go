@@ -63,6 +63,10 @@ type OpenAPICreateAgentRequest struct {
 }
 
 func (req *OpenAPICreateAgentRequest) Check() error {
+	// category：0 默认单智能体，1 单智能体，2 多智能体；负数/越界非法
+	if req.Category < 0 || req.Category > 2 {
+		return fmt.Errorf("invalid category %d, expected 1 (single) or 2 (multi)", req.Category)
+	}
 	return util.ValidateBriefCreate(&req.Name, &req.Desc, util.SubjectAssistant)
 }
 
@@ -147,7 +151,7 @@ type OpenAPIAgentConfigUpdateRequest struct {
 }
 
 func (req *OpenAPIAgentConfigUpdateRequest) Check() error {
-	return nil
+	return validateAgentConfigUpdate(req)
 }
 
 type OpenAPIGetAgentInfoRequest struct {

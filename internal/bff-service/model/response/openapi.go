@@ -29,14 +29,15 @@ type OpenAPIAgentCreateConversationResponse struct {
 }
 
 type OpenAPIAgentChatResponse struct {
-	Code           int                    `json:"code"`
-	Message        string                 `json:"message"`
-	Response       string                 `json:"response"`
-	GenFileUrlList []OpenAPIAgentChatFile `json:"gen_file_url_list"`
-	SearchList     []OpenAIChatSearch     `json:"search_list"`
-	History        []OpenAIChatHistory    `json:"history"`
-	Usage          OpenAPIAgentChatUsage  `json:"usage"`
-	Finish         int                    `json:"finish"`
+	Code               int                    `json:"code"`
+	Message            string                 `json:"message"`
+	Response           string                 `json:"response"`
+	GenFileUrlList     []OpenAPIAgentChatFile `json:"gen_file_url_list"`
+	SearchList         []OpenAIChatSearch     `json:"search_list"`
+	History            []OpenAIChatHistory    `json:"history"`
+	Usage              OpenAPIAgentChatUsage  `json:"usage"`
+	Finish             int                    `json:"finish"`
+	RecommendQuestions []string               `json:"recommend_questions,omitempty"`
 }
 
 type OpenAPIAgentChatFile struct {
@@ -64,9 +65,16 @@ type OpenAPIRagChatData struct {
 }
 
 type OpenAIChatSearch struct {
-	KBName  string `json:"kb_name"`
-	Title   string `json:"title"`
-	Snippet string `json:"snippet"`
+	KBName   string                `json:"kb_name"`
+	Title    string                `json:"title"`
+	Snippet  string                `json:"snippet"`
+	MetaData *OpenAIChatSearchMeta `json:"meta_data,omitempty"`
+}
+
+// OpenAIChatSearchMeta 知识库命中片段的元信息
+type OpenAIChatSearchMeta struct {
+	FileName     string `json:"file_name"`
+	DownloadLink string `json:"download_link"`
 }
 
 type OpenAIChatHistory struct {
