@@ -3,9 +3,9 @@
     <div class="auth-popup">
       <div class="popup-header">
         <img
-          v-if="commonInfo.login.logo && commonInfo.login.logo.path"
+          v-if="commonInfo?.data?.login?.logo?.path"
           class="logo"
-          :src="avatarSrc(commonInfo.login.logo.path)"
+          :src="avatarSrc(commonInfo.data.login.logo.path)"
           alt=""
         />
         <span class="title">{{ $t('oauth.popup.title') }}</span>
@@ -35,8 +35,8 @@
 
 <script>
 import { OPENAPI_API } from '@/utils/requestConstants';
-import { store } from '@/store';
-import { avatarSrc } from '@/utils/util';
+import { mapActions } from 'vuex';
+import { avatarSrc, replaceIcon, replaceTitle } from '@/utils/util';
 
 export default {
   data() {
@@ -49,24 +49,25 @@ export default {
         state: '',
         client_name: '',
       },
-      token: store.getters['user/token'],
-      commonInfo: store.getters['user/commonInfo'],
     };
   },
-  watch: {
-    $route: {
-      handler() {
-        this.params = this.$route.query;
-      },
-      // 深度观察监听
-      deep: true,
+  computed: {
+    commonInfo() {
+      return this.$store.state.user.commonInfo;
+    },
+    token() {
+      return this.$store.state.user.token;
     },
   },
   mounted() {
     this.params = this.$route.query;
+    this.getCommonInfo().then(() => {
+      replaceTitle(this.commonInfo?.data?.tab?.title || '');
+      replaceIcon(this.commonInfo?.data?.tab?.logo?.path || '');
+    });
   },
-
   methods: {
+    ...mapActions('user', ['getCommonInfo']),
     avatarSrc,
     handleCancel() {
       window.open('about:blank', '_top');

@@ -155,7 +155,7 @@
           <div class="auth-bt">
             <p
               class="primary-bt"
-              :style="`background: ${commonInfo.login.loginButtonColor} !important`"
+              :style="`background: ${commonInfo?.data?.login?.loginButtonColor} !important`"
               @click="doLogin"
             >
               {{ $t('login.twoFA.button') }}
@@ -267,7 +267,7 @@ export default {
     };
   },
   computed: {
-    ...mapState('login', ['commonInfo']),
+    ...mapState('user', ['commonInfo']),
   },
   methods: {
     ...mapActions('user', ['LoginIn2FA2']),

@@ -7,7 +7,7 @@ import {
   login2FA1,
 } from '@/api/user';
 import { fetchOrgs } from '@/api/permission/org';
-import { jumpOAuth, redirectUserInfoPage } from '@/utils/util';
+import { jumpOAuth, redirectUserInfoPage, deepMerge } from '@/utils/util';
 import { formatPerms } from '@/router/permission';
 import { replaceRouter } from '@/router';
 
@@ -64,7 +64,31 @@ export const user = {
     expiresAt: 0,
     is2FA: false,
     permission: {},
-    commonInfo: {},
+    commonInfo: {
+      data: {
+        login: {
+          logo: {},
+          loginButtonColor: '#5983FF',
+        },
+        home: {},
+        tab: {},
+        loginEmail: {
+          email: {
+            status: false,
+          },
+        },
+        register: {
+          email: {
+            status: false,
+          },
+        },
+        resetPassword: {
+          email: {
+            status: false,
+          },
+        },
+      },
+    },
     lang: '',
     defaultIcons: {
       agentIcon: '',
@@ -98,7 +122,7 @@ export const user = {
     setLang(state, lang) {
       if (lang.code) {
         state.lang = lang.code;
-        window.localStorage.setItem('locale', lang.code);
+        localStorage.setItem('locale', lang.code);
       }
     },
     setPermission(state, permission) {
@@ -109,10 +133,13 @@ export const user = {
       state.token = '';
       state.permission = {};
       localStorage.setItem('access_cert', JSON.stringify(state));
-      window.location.reload();
+      location.reload();
     },
     setCommonInfo(state, commonInfo) {
-      state.commonInfo = { ...state.commonInfo, ...commonInfo };
+      state.commonInfo = deepMerge(
+        structuredClone(state.commonInfo),
+        commonInfo,
+      );
     },
   },
   actions: {
