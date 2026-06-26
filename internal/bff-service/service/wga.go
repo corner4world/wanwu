@@ -554,9 +554,9 @@ func ResolveModelConfigByUuid(ctx *gin.Context, modelUuid string) (*request.AppM
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFGeneral, fmt.Sprintf("model not found by uuid: %s", modelUuid))
 	}
 	return &request.AppModelConfig{
-		Provider: modelInfo.Provider,
-		Model:    modelInfo.Model,
-		ModelId:  modelInfo.ModelId,
+		Provider:  modelInfo.Provider,
+		Model:     modelInfo.Model,
+		ModelId:   modelInfo.ModelId,
 		ModelType: modelInfo.ModelType,
 	}, nil
 }

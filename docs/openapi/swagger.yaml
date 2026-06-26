@@ -1195,20 +1195,6 @@ definitions:
     required:
     - modelId
     type: object
-  request.GeneralAgentConfigItem:
-    properties:
-      id:
-        type: string
-      type:
-        type: string
-    type: object
-  request.GeneralAgentConfigToolItem:
-    properties:
-      toolId:
-        type: string
-      toolType:
-        type: string
-    type: object
   request.GeneralAgentConversationMessage:
     properties:
       content:
@@ -1656,52 +1642,6 @@ definitions:
     - contentStatus
     - docId
     type: object
-  request.UpdateGeneralAgentConfigReq:
-    properties:
-      assistant:
-        items:
-          $ref: '#/definitions/request.GeneralAgentConfigItem'
-        type: array
-      knowledge:
-        items:
-          $ref: '#/definitions/request.GeneralAgentConfigItem'
-        type: array
-      mcp:
-        items:
-          $ref: '#/definitions/request.GeneralAgentConfigItem'
-        type: array
-      ontology:
-        description: 目前限制只能选一个知识网络
-        items:
-          $ref: '#/definitions/request.GeneralAgentConfigItem'
-        maxItems: 1
-        type: array
-      skill:
-        items:
-          $ref: '#/definitions/request.GeneralAgentConfigItem'
-        type: array
-      tool:
-        items:
-          $ref: '#/definitions/request.GeneralAgentConfigToolItem'
-        type: array
-      workflow:
-        items:
-          $ref: '#/definitions/request.GeneralAgentConfigItem'
-        type: array
-    type: object
-  request.UpdateGeneralAgentConversationConfigReq:
-    properties:
-      modelConfig:
-        allOf:
-        - $ref: '#/definitions/request.AppModelConfig'
-        description: 模型
-      threadId:
-        description: 对话ID
-        type: string
-    required:
-    - modelConfig
-    - threadId
-    type: object
   request.UpdateKnowledgeReq:
     properties:
       avatar:
@@ -2093,28 +2033,6 @@ definitions:
       knowledgeId:
         type: string
     type: object
-  response.DirectUploadFileInfo:
-    properties:
-      fileId:
-        description: 上传文件名
-        type: string
-      fileName:
-        description: 原始文件名
-        type: string
-      filePath:
-        description: minio文件的完整路径
-        type: string
-      fileSize:
-        description: 文件大小
-        type: integer
-    type: object
-  response.DirectUploadFilesResp:
-    properties:
-      files:
-        items:
-          $ref: '#/definitions/response.DirectUploadFileInfo'
-        type: array
-    type: object
   response.DocAnalyzerTextInfo:
     properties:
       displayName:
@@ -2365,39 +2283,6 @@ definitions:
         description: '"file" or "directory"'
         type: string
     type: object
-  response.GeneralAgentResourceSelectItem:
-    properties:
-      author:
-        description: 作者
-        type: string
-      avatar:
-        allOf:
-        - $ref: '#/definitions/request.Avatar'
-        description: 头像
-      desc:
-        description: 描述
-        type: string
-      id:
-        description: ID
-        type: string
-      name:
-        description: 名称
-        type: string
-      type:
-        description: 类型
-        type: string
-    type: object
-  response.GeneralAgentResourceSelectList:
-    properties:
-      list:
-        description: 列表项
-        items:
-          $ref: '#/definitions/response.GeneralAgentResourceSelectItem'
-        type: array
-      listType:
-        description: '列表类型: mcp, workflow, skill, assistant, knowledge, ontology'
-        type: string
-    type: object
   response.GeneralAgentWorkspaceResp:
     properties:
       fileCount:
@@ -2416,16 +2301,6 @@ definitions:
         type: string
       totalSize:
         type: integer
-    type: object
-  response.GetGeneralAgentConversationConfigResp:
-    properties:
-      modelConfig:
-        allOf:
-        - $ref: '#/definitions/request.AppModelConfig'
-        description: 模型
-      threadId:
-        description: 对话ID
-        type: string
     type: object
   response.KeywordsInfo:
     properties:
@@ -2828,9 +2703,18 @@ definitions:
     properties:
       kb_name:
         type: string
+      meta_data:
+        $ref: '#/definitions/response.OpenAIChatSearchMeta'
       snippet:
         type: string
       title:
+        type: string
+    type: object
+  response.OpenAIChatSearchMeta:
+    properties:
+      download_link:
+        type: string
+      file_name:
         type: string
     type: object
   response.OpenAPIAgentBriefInfo:
@@ -2885,6 +2769,10 @@ definitions:
         type: array
       message:
         type: string
+      recommend_questions:
+        items:
+          type: string
+        type: array
       response:
         type: string
       search_list:
@@ -4535,30 +4423,6 @@ paths:
       summary: 文本问答OpenAPI
       tags:
       - openapi
-  /wga/config:
-    put:
-      consumes:
-      - application/json
-      description: 更新通用智能体工具配置
-      parameters:
-      - description: 更新WGA配置请求参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.UpdateGeneralAgentConfigReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - OpenAPIKey: []
-      summary: 更新WGA资源配置
-      tags:
-      - openapi
   /wga/conversation:
     delete:
       consumes:
@@ -4633,57 +4497,6 @@ paths:
       security:
       - OpenAPIKey: []
       summary: WGA对话流
-      tags:
-      - openapi
-  /wga/conversation/config:
-    get:
-      consumes:
-      - application/json
-      description: 获取指定会话的模型配置信息
-      parameters:
-      - description: 对话ID
-        in: query
-        name: threadId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.GetGeneralAgentConversationConfigResp'
-              type: object
-      security:
-      - OpenAPIKey: []
-      summary: 获取WGA对话配置
-      tags:
-      - openapi
-    put:
-      consumes:
-      - application/json
-      description: 更新指定会话的模型配置
-      parameters:
-      - description: 更新对话配置请求参数
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.UpdateGeneralAgentConversationConfigReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - OpenAPIKey: []
-      summary: 更新WGA对话配置
       tags:
       - openapi
   /wga/conversation/detail:
@@ -4820,60 +4633,6 @@ paths:
       security:
       - OpenAPIKey: []
       summary: WGA工作区文件下载
-      tags:
-      - openapi
-  /wga/file/upload:
-    post:
-      consumes:
-      - multipart/form-data
-      description: 上传文件（图片/文档等），获取URL用于聊天消息中引用
-      parameters:
-      - description: 上传文件
-        in: formData
-        name: files
-        required: true
-        type: file
-      - description: 是否过期删除
-        in: formData
-        name: isExpired
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.DirectUploadFilesResp'
-              type: object
-      security:
-      - OpenAPIKey: []
-      summary: WGA文件上传
-      tags:
-      - openapi
-  /wga/resource/select:
-    get:
-      consumes:
-      - application/json
-      description: 获取所有可选资源（MCP、工作流、技能、助手、知识库、知识网络）
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.GeneralAgentResourceSelectList'
-              type: object
-      security:
-      - OpenAPIKey: []
-      summary: 获取WGA可选资源列表
       tags:
       - openapi
   /workflow/file/upload:

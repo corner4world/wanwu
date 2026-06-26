@@ -1,13 +1,14 @@
 package response
 
 import (
+	"path/filepath"
+	"regexp"
+	"strings"
+
 	"github.com/UnicomAI/wanwu/internal/agent-service/pkg/util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	queue_util "github.com/UnicomAI/wanwu/pkg/queue-util"
 	pkg_util "github.com/UnicomAI/wanwu/pkg/util"
-	"path/filepath"
-	"regexp"
-	"strings"
 )
 
 // mdDownloadLinkRegex 匹配 markdown 下载链接格式：[文件名](URL)

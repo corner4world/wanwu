@@ -2264,45 +2264,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/wga/config": {
-            "put": {
-                "security": [
-                    {
-                        "OpenAPIKey": []
-                    }
-                ],
-                "description": "更新通用智能体工具配置",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "openapi"
-                ],
-                "summary": "更新WGA资源配置",
-                "parameters": [
-                    {
-                        "description": "更新WGA配置请求参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.UpdateGeneralAgentConfigReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/wga/conversation": {
             "post": {
                 "security": [
@@ -2425,92 +2386,6 @@ const docTemplate = `{
                         "description": "SSE流式返回",
                         "schema": {
                             "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/wga/conversation/config": {
-            "get": {
-                "security": [
-                    {
-                        "OpenAPIKey": []
-                    }
-                ],
-                "description": "获取指定会话的模型配置信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "openapi"
-                ],
-                "summary": "获取WGA对话配置",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "对话ID",
-                        "name": "threadId",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.GetGeneralAgentConversationConfigResp"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "OpenAPIKey": []
-                    }
-                ],
-                "description": "更新指定会话的模型配置",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "openapi"
-                ],
-                "summary": "更新WGA对话配置",
-                "parameters": [
-                    {
-                        "description": "更新对话配置请求参数",
-                        "name": "data",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.UpdateGeneralAgentConversationConfigReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -2747,101 +2622,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "type": "file"
-                        }
-                    }
-                }
-            }
-        },
-        "/wga/file/upload": {
-            "post": {
-                "security": [
-                    {
-                        "OpenAPIKey": []
-                    }
-                ],
-                "description": "上传文件（图片/文档等），获取URL用于聊天消息中引用",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "openapi"
-                ],
-                "summary": "WGA文件上传",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "上传文件",
-                        "name": "files",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "是否过期删除",
-                        "name": "isExpired",
-                        "in": "formData"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.DirectUploadFilesResp"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/wga/resource/select": {
-            "get": {
-                "security": [
-                    {
-                        "OpenAPIKey": []
-                    }
-                ],
-                "description": "获取所有可选资源（MCP、工作流、技能、助手、知识库、知识网络）",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "openapi"
-                ],
-                "summary": "获取WGA可选资源列表",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/response.GeneralAgentResourceSelectList"
-                                        }
-                                    }
-                                }
-                            ]
                         }
                     }
                 }
@@ -4663,28 +4443,6 @@ const docTemplate = `{
                 }
             }
         },
-        "request.GeneralAgentConfigItem": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
-        "request.GeneralAgentConfigToolItem": {
-            "type": "object",
-            "properties": {
-                "toolId": {
-                    "type": "string"
-                },
-                "toolType": {
-                    "type": "string"
-                }
-            }
-        },
         "request.GeneralAgentConversationMessage": {
             "type": "object",
             "required": [
@@ -5344,76 +5102,6 @@ const docTemplate = `{
                 }
             }
         },
-        "request.UpdateGeneralAgentConfigReq": {
-            "type": "object",
-            "properties": {
-                "assistant": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
-                    }
-                },
-                "knowledge": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
-                    }
-                },
-                "mcp": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
-                    }
-                },
-                "ontology": {
-                    "description": "目前限制只能选一个知识网络",
-                    "type": "array",
-                    "maxItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
-                    }
-                },
-                "skill": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
-                    }
-                },
-                "tool": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.GeneralAgentConfigToolItem"
-                    }
-                },
-                "workflow": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.GeneralAgentConfigItem"
-                    }
-                }
-            }
-        },
-        "request.UpdateGeneralAgentConversationConfigReq": {
-            "type": "object",
-            "required": [
-                "modelConfig",
-                "threadId"
-            ],
-            "properties": {
-                "modelConfig": {
-                    "description": "模型",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/request.AppModelConfig"
-                        }
-                    ]
-                },
-                "threadId": {
-                    "description": "对话ID",
-                    "type": "string"
-                }
-            }
-        },
         "request.UpdateKnowledgeReq": {
             "type": "object",
             "required": [
@@ -6015,38 +5703,6 @@ const docTemplate = `{
                 }
             }
         },
-        "response.DirectUploadFileInfo": {
-            "type": "object",
-            "properties": {
-                "fileId": {
-                    "description": "上传文件名",
-                    "type": "string"
-                },
-                "fileName": {
-                    "description": "原始文件名",
-                    "type": "string"
-                },
-                "filePath": {
-                    "description": "minio文件的完整路径",
-                    "type": "string"
-                },
-                "fileSize": {
-                    "description": "文件大小",
-                    "type": "integer"
-                }
-            }
-        },
-        "response.DirectUploadFilesResp": {
-            "type": "object",
-            "properties": {
-                "files": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/response.DirectUploadFileInfo"
-                    }
-                }
-            }
-        },
         "response.DocAnalyzerTextInfo": {
             "type": "object",
             "properties": {
@@ -6410,55 +6066,6 @@ const docTemplate = `{
                 }
             }
         },
-        "response.GeneralAgentResourceSelectItem": {
-            "type": "object",
-            "properties": {
-                "author": {
-                    "description": "作者",
-                    "type": "string"
-                },
-                "avatar": {
-                    "description": "头像",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/request.Avatar"
-                        }
-                    ]
-                },
-                "desc": {
-                    "description": "描述",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "名称",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "类型",
-                    "type": "string"
-                }
-            }
-        },
-        "response.GeneralAgentResourceSelectList": {
-            "type": "object",
-            "properties": {
-                "list": {
-                    "description": "列表项",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/response.GeneralAgentResourceSelectItem"
-                    }
-                },
-                "listType": {
-                    "description": "列表类型: mcp, workflow, skill, assistant, knowledge, ontology",
-                    "type": "string"
-                }
-            }
-        },
         "response.GeneralAgentWorkspaceResp": {
             "type": "object",
             "properties": {
@@ -6485,23 +6092,6 @@ const docTemplate = `{
                 },
                 "totalSize": {
                     "type": "integer"
-                }
-            }
-        },
-        "response.GetGeneralAgentConversationConfigResp": {
-            "type": "object",
-            "properties": {
-                "modelConfig": {
-                    "description": "模型",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/request.AppModelConfig"
-                        }
-                    ]
-                },
-                "threadId": {
-                    "description": "对话ID",
-                    "type": "string"
                 }
             }
         },
@@ -7086,10 +6676,24 @@ const docTemplate = `{
                 "kb_name": {
                     "type": "string"
                 },
+                "meta_data": {
+                    "$ref": "#/definitions/response.OpenAIChatSearchMeta"
+                },
                 "snippet": {
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.OpenAIChatSearchMeta": {
+            "type": "object",
+            "properties": {
+                "download_link": {
+                    "type": "string"
+                },
+                "file_name": {
                     "type": "string"
                 }
             }
@@ -7170,6 +6774,12 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string"
+                },
+                "recommend_questions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "response": {
                     "type": "string"

@@ -166,4 +166,3 @@ func validateAgentKnowledgeConfig(cfg *AppKnowledgebaseConfig) error {
 	}
 	return nil
 }
-
