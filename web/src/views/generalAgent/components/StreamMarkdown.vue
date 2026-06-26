@@ -79,6 +79,10 @@ export default {
     },
   },
   mounted() {
+    // 如果 isStreaming 为 true，且 content 非空，则初始化 stableContent
+    if (this.isStreaming && this.content && !this.stableContent) {
+      this.stableContent = this.content;
+    }
     this.bindCopyButtons();
   },
   beforeDestroy() {
