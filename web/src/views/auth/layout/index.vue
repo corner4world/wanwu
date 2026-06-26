@@ -6,9 +6,9 @@
     <div class="auth-modal">
       <div class="header__left">
         <img
-          v-if="commonInfo.login.logo && commonInfo.login.logo.path"
+          v-if="commonInfo?.data?.login?.logo?.path"
           style="max-height: 60px; max-width: 220px; margin: 0 15px 0 22px"
-          :src="avatarSrc(commonInfo.login.logo.path)"
+          :src="avatarSrc(commonInfo.data.login.logo.path)"
           alt=""
         />
         <!--<span style="font-size: 16px;">{{commonInfo.home.title || ''}}</span>-->
@@ -20,7 +20,7 @@
       <!--        {{ commonInfo.login.welcomeText }}-->
       <!--      </div>-->
 
-      <slot :commonInfo="commonInfo" />
+      <router-view />
     </div>
   </div>
 </template>
@@ -29,15 +29,14 @@
 import { mapState, mapActions } from 'vuex';
 import ChangeLang from '@/components/changeLang.vue';
 import { replaceTitle, replaceIcon, avatarSrc } from '@/utils/util';
-import { getCommonInfo } from '@/api/user';
 
 export default {
   components: { ChangeLang },
   computed: {
-    ...mapState('login', ['commonInfo']),
+    ...mapState('user', ['commonInfo']),
     ...mapState('user', ['lang']),
     backgroundSrc() {
-      return avatarSrc(this.commonInfo?.login?.background?.path || '');
+      return avatarSrc(this.commonInfo?.data?.login?.background?.path || '');
     },
   },
   watch: {
@@ -53,25 +52,22 @@ export default {
   },
   created() {
     this.getCommonInfo().then(() => {
-      replaceTitle(this.commonInfo?.tab?.title || '');
-      replaceIcon(this.commonInfo?.tab?.logo?.path || '');
-      this.$emit('getCommonInfo', this.commonInfo);
+      replaceTitle(this.commonInfo?.data?.tab?.title || '');
+      replaceIcon(this.commonInfo?.data?.tab?.logo?.path || '');
     });
   },
   methods: {
     avatarSrc,
-    ...mapActions('login', ['getCommonInfo']),
+    ...mapActions('user', ['getCommonInfo']),
   },
 };
 </script>
 
 <style lang="scss" scoped>
-@import '@/style/auth.scss';
 .overview {
   position: relative;
   height: 100%;
   overflow: hidden;
-  //background-color: #000;
   z-index: 10;
   background: linear-gradient(to bottom, #f4faff 0%, #dceeff 50%, #c2e0ff 100%);
 
@@ -80,35 +76,6 @@ export default {
     height: 100%;
     object-fit: cover;
     background-size: 100% 100%;
-  }
-
-  .overview-desc {
-    width: 800px;
-    position: absolute;
-    bottom: 56px;
-    left: 56px;
-    color: #fff;
-    text-align: center;
-    opacity: 0.8;
-    letter-spacing: 1px;
-
-    .desc {
-      font-size: 30px;
-      text-align: left;
-
-      p:nth-child(1) {
-        font-size: 22px;
-      }
-
-      p:nth-child(2) {
-        font-size: 30px;
-        margin: 10px 0;
-      }
-
-      p:nth-child(3) {
-        font-size: 18px;
-      }
-    }
   }
 }
 
@@ -137,17 +104,6 @@ export default {
     margin-top: 16px;
     margin-left: 10px;
     height: 60px;
-  }
-
-  .container__left {
-    display: flex;
-    align-items: center;
-    height: calc(80% - 60px);
-    font-size: 35px;
-    width: calc(100% - 13% - 400px);
-    justify-content: center;
-    color: #fff;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
   }
 }
 </style>

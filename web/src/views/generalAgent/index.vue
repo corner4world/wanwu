@@ -184,7 +184,7 @@
                 :loading="modelLoading"
                 :options="modelList"
                 :placeholder="$t('common.model.select')"
-                class="model-select-inline"
+                :style="{ width: modelSelectWidth }"
                 @change="handleModelChange"
               />
             </div>
@@ -563,6 +563,18 @@ export default {
   },
   computed: {
     ...mapGetters('user', ['commonInfo']),
+
+    modelSelectWidth() {
+      const selected = this.modelList.find(
+        m => m.modelId === this.selectedModel,
+      );
+      const text = selected?.displayName || this.$t('common.model.select');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.font = '14px sans-serif';
+      const textWidth = ctx.measureText(text).width;
+      return `${Math.ceil(textWidth) + 68}px`;
+    },
 
     assistantAvatar() {
       return avatarSrc(this.commonInfo?.data?.generalAgent?.logo?.path);
@@ -2057,6 +2069,10 @@ export default {
   overflow: hidden;
   padding: 16px;
   box-sizing: border-box;
+
+  ::v-deep .model-select .el-input__inner {
+    border-radius: 12px;
+  }
 }
 
 .agent-main-content {
@@ -2660,22 +2676,6 @@ export default {
       display: flex;
       align-items: center;
       gap: 8px;
-
-      .model-select-inline {
-        min-width: 200px;
-
-        ::v-deep .el-input__inner {
-          background: transparent;
-          border: none;
-          padding-left: 32px;
-          font-size: 13px;
-          color: $wga-text;
-        }
-
-        ::v-deep .el-input__prefix {
-          left: 8px;
-        }
-      }
     }
 
     .toolbar-right {

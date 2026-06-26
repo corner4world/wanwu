@@ -199,6 +199,9 @@ export default {
     initHistoryList(list) {
       this.$refs['session-com'].initHistoryList(list);
     },
+    reconnectModelExperienceStream() {
+      this.connectModelExperienceEventSource();
+    },
     preSend(inputVal, fileList, fileInfo) {
       this.inputVal = inputVal;
       this.fileList = fileList;

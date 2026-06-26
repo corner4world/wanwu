@@ -42,3 +42,12 @@ export const getExprienceDetail = (params = {}) => {
     params,
   });
 };
+
+// 模型体验流式问答主动停止
+export const cancelModelExperienceStream = (data = {}) => {
+  return service({
+    url: `${MODEL_API}/model/experience/llm/cancel`,
+    method: 'post',
+    data,
+  });
+};

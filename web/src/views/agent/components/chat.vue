@@ -462,7 +462,13 @@ export default {
       const signal = this.recommendConfig.reqController.signal;
 
       class RetriableError extends Error {}
-      class FatalError extends Error {}
+      class FatalError extends Error {
+        constructor(message = '', detail = {}) {
+          super(message);
+          this.name = 'FatalError';
+          Object.assign(this, detail);
+        }
+      }
 
       const params = {
         query: query,
@@ -478,6 +484,52 @@ export default {
       let contentQueue = []; // 字符队列，用于模拟打字机效果
       let isFinished = false; // 标记 SSE 是否已结束接收
 
+      const getResponseErrorInfo = async response => {
+        const fallbackMessage =
+          response.statusText || `HTTP ${response.status}`;
+
+        try {
+          const errorData = await response.clone().json();
+          return {
+            message:
+              errorData.msg ||
+              errorData.message ||
+              errorData.error ||
+              fallbackMessage,
+            data: errorData,
+          };
+        } catch (jsonError) {
+          try {
+            const text = await response.clone().text();
+            return {
+              message: text || fallbackMessage,
+              data: text,
+            };
+          } catch (textError) {
+            return {
+              message: fallbackMessage,
+              data: null,
+            };
+          }
+        }
+      };
+      const normalizeFatalError = error => {
+        if (error instanceof FatalError) {
+          return error;
+        }
+
+        const message =
+          (error && (error.msg || error.message || error.error)) ||
+          (typeof error === 'string' ? error : '') ||
+          '连接错误';
+
+        return new FatalError(message, {
+          status: error && error.status,
+          statusText: error && error.statusText,
+          data: error && error.data !== undefined ? error.data : error,
+          cause: error,
+        });
+      };
       if (this.recommendTimer) {
         clearInterval(this.recommendTimer);
         this.recommendTimer = null;
@@ -576,10 +628,8 @@ export default {
         headers,
         body: JSON.stringify(params),
         async onopen(response) {
-          if (
-            response.ok &&
-            response.headers.get('content-type').includes('text/event-stream')
-          ) {
+          const contentType = response.headers.get('content-type') || '';
+          if (response.ok && contentType.includes('text/event-stream')) {
             console.log('连接成功，开始获取数据...');
           } else if (
             response.status >= 400 &&
@@ -587,7 +637,12 @@ export default {
             response.status !== 429
           ) {
             _this.recommendConfig.loading = false;
-            throw new FatalError();
+            const errorInfo = await getResponseErrorInfo(response);
+            throw new FatalError(errorInfo.message, {
+              status: response.status,
+              statusText: response.statusText,
+              data: errorInfo.data,
+            });
           } else {
             throw new RetriableError();
           }
@@ -640,10 +695,9 @@ export default {
           return false;
         },
         onerror(event) {
-          console.log('连接错误:', event);
           isFinished = true;
           _this.recommendConfig.loading = false;
-          throw event;
+          throw normalizeFatalError(event);
         },
       });
     },
@@ -1060,9 +1114,6 @@ export default {
         this._getConversationDraftHistory();
       }, 1000);
     }
-    setTimeout(() => {
-      console.log(this.getHeaderConfig);
-    }, 5000);
   },
   beforeDestroy() {
     this.stopEventSource();

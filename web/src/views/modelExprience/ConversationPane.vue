@@ -267,9 +267,18 @@ export default {
           const resultList = this.assembleHistoryQnA(res);
           this.$nextTick(() => {
             Object.entries(this.sessionRefs).forEach(([key, sessionRef]) => {
-              modelId === key &&
-                sessionRef &&
-                sessionRef.initHistoryList(resultList);
+              if (modelId !== key || !sessionRef) {
+                return;
+              }
+              sessionRef.initHistoryList(resultList);
+              if (
+                this.isModelExprience &&
+                modelExperienceId &&
+                modelExperienceId !== '0' &&
+                sessionRef.reconnectModelExperienceStream
+              ) {
+                sessionRef.reconnectModelExperienceStream();
+              }
             });
           });
           this.fetchModelDetail(modelId).then(result => {

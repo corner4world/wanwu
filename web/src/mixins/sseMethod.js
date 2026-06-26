@@ -19,11 +19,13 @@ import { OPENURL_API, USER_API } from '@/utils/requestConstants';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
 import { processToolResultBlocks } from '@/utils/toolResultProcessor.js';
 import { cancelAgentStream, cancelOpenurlAgentStream } from '@/api/agent';
+import { cancelModelExperienceStream } from '@/api/modelExprience';
 
 const AGENT_API_URL = `${USER_API}/assistant/stream`;
 const AGENT_CONNECT_API_URL = `${USER_API}/assistant/stream/connect`;
 const RAG_API_URL = `${USER_API}/rag/chat`;
 const EXPRIENCE_API_URL = `${USER_API}/model/experience/llm`;
+const EXPRIENCE_CONNECT_API_URL = `${USER_API}/model/experience/llm/connect`;
 
 export default {
   data() {
@@ -1216,6 +1218,17 @@ export default {
         console.error(error);
       }
     },
+    async cancelCurrentModelExperienceStream() {
+      if (!this.sessionId || !this.apiParams) return;
+
+      try {
+        await cancelModelExperienceStream({
+          sessionId: this.apiParams.sessionId,
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    },
     doSend(params) {
       this.stopBtShow = true;
       this.isStoped = false;
@@ -1884,10 +1897,29 @@ export default {
         params.fileList,
       );
     },
-    sendExprienceEventStream(prompt, msgStr, lastIndex, fileList) {
+    sendExprienceEventStream(
+      prompt,
+      msgStr,
+      lastIndex,
+      fileList,
+      options = {},
+    ) {
       this.sseResponse = {};
       this.setStoreSessionStatus(0);
-      let params = {
+      const sessionCom = this.$refs['session-com'];
+      if (!sessionCom) return;
+
+      let targetIndex = typeof lastIndex === 'number' ? lastIndex : 0;
+      let hasPushedHistory = false;
+      const {
+        streamApi = this.exprience_sseApi,
+        streamData = null,
+        skipPushHistory = false,
+        lazyPushHistory = false,
+        pushHistoryData = null,
+        initialResponse = '',
+      } = options;
+      const params = pushHistoryData || {
         query: prompt,
         pending: true,
         responseLoading: true,
@@ -1895,11 +1927,20 @@ export default {
         fileList: fileList || [],
         pendingResponse: '',
       };
-      this.$refs['session-com'].pushHistory(params);
-      let endStr = '';
+      if (!skipPushHistory && !lazyPushHistory) {
+        sessionCom.pushHistory(params);
+        hasPushedHistory = true;
+      }
+      const ensureHistoryForStream = () => {
+        if (hasPushedHistory || skipPushHistory) return;
+        targetIndex = sessionCom.getList().length;
+        sessionCom.pushHistory(params);
+        hasPushedHistory = true;
+      };
+      let endStr = initialResponse;
       // 初始化推理流处理器
       const reasoningProcessor = this._initReasoningStream({
-        lastIndex,
+        lastIndex: targetIndex,
         md,
         parseSub,
         convertLatexSyntax,
@@ -1912,13 +1953,14 @@ export default {
       });
 
       this.eventSource = this.fetchEventSource(
-        this.exprience_sseApi,
-        {
+        streamApi,
+        streamData || {
           ...this.apiParams,
           content: prompt,
           fileInfo: this.fileInfoList,
         },
         {
+          headers: this.getAgentStreamHeaders(),
           onopen: async e => {
             //console.log("已建立SSE连接~",new Date().getTime());
             if (e.status !== 200) {
@@ -1933,7 +1975,8 @@ export default {
                   ...commonData,
                   response: errorData.msg,
                 };
-                this.$refs['session-com'].replaceLastData(lastIndex, fillData);
+                ensureHistoryForStream();
+                sessionCom.replaceLastData(targetIndex, fillData);
               } catch (e) {
                 const text = await e.text();
                 this.$message.error(text || i18n.t('sse.error'));
@@ -1953,6 +1996,8 @@ export default {
               } catch (error) {
                 return; // 如果解析失败，直接返回，不处理这条消息
               }
+
+              ensureHistoryForStream();
 
               const choices = data.choices && data.choices[0];
               const delta = (choices && choices.delta) || {};
@@ -1994,7 +2039,7 @@ export default {
                   response: data.message,
                   error: true,
                 };
-                this.$refs['session-com'].replaceLastData(lastIndex, fillData);
+                sessionCom.replaceLastData(targetIndex, fillData);
               } else {
                 // 定义推理内容渲染逻辑
                 const doRenderReasoning = worldObj => {
@@ -2009,10 +2054,7 @@ export default {
                       reasoningRenderResult.stableChunks || [],
                     finish: 0,
                   };
-                  this.$refs['session-com'].replaceLastData(
-                    lastIndex,
-                    fillData,
-                  );
+                  sessionCom.replaceLastData(targetIndex, fillData);
                 };
 
                 // 定义正文渲染逻辑（保持原有非分片拼接特性）
@@ -2022,7 +2064,7 @@ export default {
                     reasoningProcessor.getRenderResult();
                   endStr += worldObj.world;
                   endStr = convertLatexSyntax(endStr);
-                  endStr = parseSub(endStr, lastIndex);
+                  endStr = parseSub(endStr, targetIndex);
                   let fillData = {
                     ...commonData,
                     activeReasoning: reasoningRenderResult.activeResponse || '',
@@ -2039,10 +2081,7 @@ export default {
                           }))
                         : [],
                   };
-                  this.$refs['session-com'].replaceLastData(
-                    lastIndex,
-                    fillData,
-                  );
+                  sessionCom.replaceLastData(targetIndex, fillData);
                   if (worldObj.isEnd && worldObj.finish) {
                     this.setStoreSessionStatus(-1);
                   }
@@ -2062,6 +2101,36 @@ export default {
           },
         },
       );
+    },
+    // 重连模型体验 SSE
+    connectModelExperienceEventSource() {
+      if (!this.sessionId) return;
+      const sessionCom = this.$refs['session-com'];
+      if (!sessionCom) return;
+
+      this.stopEventSource();
+      this._print && this._print.stop();
+      this._reasoningPrint && this._reasoningPrint.stop();
+
+      const sessionData = sessionCom.getSessionData() || {};
+      const history = sessionData.history || [];
+      const hasHistory = history.length > 0;
+      const lastIndex = hasHistory ? history.length - 1 : 0;
+      const lastItem = hasHistory ? history[lastIndex] || {} : {};
+      const query = lastItem.query || '';
+      const fileList = lastItem.fileList || [];
+
+      this.stopBtShow = true;
+      this.isStoped = false;
+      this.sendExprienceEventStream(query, '', lastIndex, fileList, {
+        streamApi: EXPRIENCE_CONNECT_API_URL,
+        streamData: {
+          sessionId: this.sessionId,
+        },
+        skipPushHistory: hasHistory,
+        lazyPushHistory: !hasHistory,
+        initialResponse: lastItem.oriResponse || '',
+      });
     },
     // 多线程SSE简化版本
     sendEventStreamIsolation(url, params, callbacks = {}, timeout = 0) {
@@ -2147,6 +2216,7 @@ export default {
       // 立即置 -1：隐藏停止按钮，避免重复点击触发多次 abort
       this.setStoreSessionStatus(-1);
       this.cancelCurrentAgentStream();
+      this.cancelCurrentModelExperienceStream();
       // 立刻同步断流 + 停掉两个打字机，不等 sseOnCloseCallBack 的异步链路。
       // 这样"点一次停止，字立刻停"：在 reasoning 阶段也不会被残余帧拉回。
       this.ctrlAbort && this.ctrlAbort.abort();

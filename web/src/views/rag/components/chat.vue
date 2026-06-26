@@ -43,6 +43,8 @@
             :fileTypeArr="fileTypeArr"
             :type="'ragChat'"
             :hasHistory="hasHistory"
+            :maxImageSize="maxImageSize"
+            :visibleUpload="editForm.visionsupport === 'support'"
             @preSend="preSend"
             @setSessionStatus="setSessionStatus"
             @clearHistory="clearHistory"
@@ -74,6 +76,11 @@ export default {
     type: {
       type: String,
       default: 'agentChat',
+    },
+    maxImageSize: {
+      type: [Number, String],
+      required: false,
+      default: null,
     },
   },
   components: {

@@ -378,16 +378,22 @@ const constantRoutes = [
     component: resolve => require(['@/views/layout'], resolve),
   },
   {
-    path: '/login',
-    component: () => import('@/views/auth/login'),
-  },
-  {
-    path: '/register',
-    component: () => import('@/views/auth/register'),
-  },
-  {
-    path: '/reset',
-    component: () => import('@/views/auth/reset'),
+    path: '/auth',
+    component: () => import('@/views/auth/layout'),
+    children: [
+      {
+        path: '/login',
+        component: () => import('@/views/auth/login'),
+      },
+      {
+        path: '/register',
+        component: () => import('@/views/auth/register'),
+      },
+      {
+        path: '/reset',
+        component: () => import('@/views/auth/reset'),
+      },
+    ],
   },
   {
     path: '/oauth',

@@ -311,6 +311,7 @@
           :editForm="editForm"
           :chatType="'test'"
           :disableClick="disableClick"
+          :maxImageSize="maxImageSize"
         />
       </div>
     </div>
@@ -564,6 +565,13 @@ export default {
       } else {
         return KNOWLEDGE;
       }
+    },
+    maxImageSize() {
+      const selected = this.modelOptions.find(
+        item => item.modelId === this.editForm.modelParams,
+      );
+      const size = Number(selected?.config?.maxImageSize);
+      return size > 0 ? size : null;
     },
   },
   mounted() {
