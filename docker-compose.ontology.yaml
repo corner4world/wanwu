@@ -81,6 +81,9 @@ services:
       - KAFKA_TENANT=default
       - VEGA_GATEWAY_PRO_HOST=vega-gateway-pro
       - VEGA_GATEWAY_PRO_PORT=8097
+      - VEGA_CALCULATE_COORDINATOR_HOST=vega-calculate-coordinator
+      - VEGA_CALCULATE_COORDINATOR_PORT=8090
+      - VEGA_CALCULATE_COORDINATOR_PROTOCOL=http
     # ports:
     #   - "8099:8099"
     depends_on:
@@ -106,6 +109,9 @@ services:
       - DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
       - DATA_CONNECTION_HOST=data-connection
       - DATA_CONNECTION_PORT=8098
+      - VEGA_CALCULATE_COORDINATOR_HOST=vega-calculate-coordinator
+      - VEGA_CALCULATE_COORDINATOR_PORT=8090
+      - VEGA_CALCULATE_COORDINATOR_PROTOCOL=http
     # ports:
     #   - "8097:8097"
     depends_on:
@@ -116,6 +122,30 @@ services:
     restart: always
     volumes:
       - ./configs/microservice/ontology/vega-server/private_key.pem:/opt/vega-gateway-pro/config/private_key.pem:ro
+
+  vega-calculate-coordinator:
+    image: ${WANWU_ONTOLOGY_VEGA_CALCULATE_IMAGE}
+    container_name: vega-calculate-coordinator
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}
+    volumes:
+      - wanwu_shared_ontology_calculate_catalog:/opt/openlookeng/hetu-server-1.9.0/etc/catalog
+      - wanwu_shared_ontology_calculate_data:/opt/openlookeng/data
+      - ./configs/microservice/ontology/vega-server/vega-calculate-coordinator/config.properties:/opt/openlookeng/hetu-server-1.9.0/etc/config.properties:ro
+      - ./configs/microservice/ontology/vega-server/vega-calculate-coordinator/jvm.config:/opt/openlookeng/hetu-server-1.9.0/etc/jvm.config:ro
+      # 本地文件系统 profile：替代镜像默认的 hdfs-config-default（避免依赖 core-site.xml）
+      - ./configs/microservice/ontology/vega-server/vega-calculate-coordinator/local-config-default.properties:/opt/openlookeng/hetu-server-1.9.0/etc/filesystem/local-config-default.properties:ro
+      # 空 udf.properties：消除 HiveFunctionsPlugin 的启动错误日志
+      - ./configs/microservice/ontology/vega-server/vega-calculate-coordinator/udf.properties:/opt/openlookeng/hetu-server-1.9.0/etc/udf.properties:ro
+      # 关闭 vega-cache：避免依赖外部 ClickHouse/MySQL 元数据库导致启动崩溃
+      - ./configs/microservice/ontology/vega-server/vega-calculate-coordinator/cache.properties:/opt/openlookeng/hetu-server-1.9.0/etc/cache.properties:ro
+      # JDBC 下推规则库连接（SqlConfiguration 读取，指向 kweaver；不挂则用镜像默认的失效地址，导致逻辑规划卡几百秒）
+      - ./configs/microservice/ontology/vega-server/vega-calculate-coordinator/render-mysql-and-run.sh:/opt/openlookeng/render-mysql-and-run.sh:ro
+    # ports:
+    #   - "8090:8090"
+    networks:
+      - ${WANWU_DOCKER_NETWORK}
+    restart: always
 
   # Vega Backend - 后端服务
   vega-backend:
@@ -462,6 +492,10 @@ services:
       timeout: 5s
       retries: 99
       start_period: 10s
+
+volumes:
+  wanwu_shared_ontology_calculate_catalog:
+  wanwu_shared_ontology_calculate_data:
 
 networks:
   wanwu-net:
