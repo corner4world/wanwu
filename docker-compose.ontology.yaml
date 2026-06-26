@@ -126,10 +126,15 @@ services:
   vega-calculate-coordinator:
     image: ${WANWU_ONTOLOGY_VEGA_CALCULATE_IMAGE}
     container_name: vega-calculate-coordinator
+    entrypoint: ["/bin/sh", "/opt/openlookeng/render-mysql-and-run.sh"]
     environment:
       - TZ=${TZ:-Asia/Shanghai}
+      - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
+      - DB_PORT=${WANWU_MYSQL_PORT:-3306}
+      - DB_NAME=${ONTOLOGY_DB_NAME:-kweaver}
+      - DB_USER=${WANWU_MYSQL_USER}- DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
     volumes:
-      - wanwu_shared_ontology_calculate_catalog:/opt/openlookeng/hetu-server-1.9.0/etc/catalog
+      - wanwu_shared_ontology_calculate_catalog:/opt/openlookeng/hetu-server-1.9.0/catalog/share
       - wanwu_shared_ontology_calculate_data:/opt/openlookeng/data
       - ./configs/microservice/ontology/vega-server/vega-calculate-coordinator/config.properties:/opt/openlookeng/hetu-server-1.9.0/etc/config.properties:ro
       - ./configs/microservice/ontology/vega-server/vega-calculate-coordinator/jvm.config:/opt/openlookeng/hetu-server-1.9.0/etc/jvm.config:ro

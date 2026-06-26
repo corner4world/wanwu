@@ -76,6 +76,7 @@ services:
   user-management-private: ${USER_MANAGEMENT_PROTOCOL:http}://${USER_MANAGEMENT_HOST:user-mgmt}:${USER_MANAGEMENT_PORT:30980}
   authorization-private: ${AUTHORIZATION_PROTOCOL:http}://${AUTHORIZATION_HOST:authorization}:${AUTHORIZATION_PORT:30920}
   vega-gateway: ${VEGA_GATEWAY_PROTOCOL:http}://${VEGA_GATEWAY_HOST:vega-gateway}:${VEGA_GATEWAY_PORT:8099}
+  vega-calculate-coordinator: ${VEGA_CALCULATE_COORDINATOR_PROTOCOL:http}://${VEGA_CALCULATE_COORDINATOR_HOST:vega-calculate-coordinator}:${VEGA_CALCULATE_COORDINATOR_PORT:8090}
 
 logging:
   config: classpath:logback-spring.xml
