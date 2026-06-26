@@ -17,7 +17,11 @@
                 style="max-height: 46px; max-width: 80%"
                 :src="avatarSrc(homeLogoPath)"
               />
-              <img v-else style="width: 50%" src="@/assets/imgs/yuanjing.png" />
+              <img
+                v-else
+                :src="avatarSrc(tabLogoPath)"
+                style="height: 36px; width: 36px; object-fit: contain"
+              />
             </div>
           </div>
           <!-- 组织切换 -->
@@ -337,6 +341,7 @@ export default {
       menuHover: false,
       isCollapse: false,
       homeLogoPath: '',
+      tabLogoPath: '',
       bgColor: '',
       version: '',
       orgList: [],
@@ -446,6 +451,7 @@ export default {
       handler(val) {
         const { home = {}, tab = {}, about = {} } = val.data || {};
         this.homeLogoPath = home.logo ? home.logo.path : '';
+        this.tabLogoPath = tab.logo ? tab.logo.path : '';
         this.bgColor = home.backgroundColor || this.$config.backgroundColor;
         this.version = about.version || '1.0';
         replaceIcon(tab.logo ? tab.logo.path : '');
