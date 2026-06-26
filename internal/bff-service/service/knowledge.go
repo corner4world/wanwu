@@ -169,21 +169,43 @@ func CreateKnowledge(ctx *gin.Context, userId, orgId string, r *request.CreateKn
 }
 
 func CreateKnowledgeOpenapi(ctx *gin.Context, userId, orgId string, r *request.CreateKnowledgeReq) (*response.CreateKnowledgeResp, error) {
-	embModelId, err := GetModelIdByUuid(ctx, r.EmbeddingModel.ModelId)
+	embModel, err := model.GetModelByUuid(ctx, &model_service.GetModelByUuidReq{Uuid: r.EmbeddingModel.ModelId})
 	if err != nil {
 		return nil, err
 	}
-	r.EmbeddingModel.ModelId = embModelId
+	// 校验所选模型为对应类型的 embedding 模型：多模态知识库需多模态 embedding，其余需文本 embedding
+	if err := checkEmbeddingModelType(r.Category, embModel.ModelType); err != nil {
+		return nil, err
+	}
+	r.EmbeddingModel.ModelId = embModel.ModelId
 	if r.Category == request.CategoryKnowledge || r.Category == request.CategoryMultimodalKnowledge {
 		if r.KnowledgeGraph.Switch {
-			llmModelId, err := GetModelIdByUuid(ctx, r.KnowledgeGraph.LLMModelId)
+			llmModel, err := model.GetModelByUuid(ctx, &model_service.GetModelByUuidReq{Uuid: r.KnowledgeGraph.LLMModelId})
 			if err != nil {
 				return nil, err
 			}
-			r.KnowledgeGraph.LLMModelId = llmModelId
+			// 校验知识图谱所选模型为 LLM 类型
+			if llmModel.ModelType != mp.ModelTypeLLM {
+				return nil, grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "knowledge graph requires an llm model")
+			}
+			r.KnowledgeGraph.LLMModelId = llmModel.ModelId
 		}
 	}
 	return CreateKnowledge(ctx, userId, orgId, r)
+}
+
+// checkEmbeddingModelType 校验知识库 embedding 模型类型与知识库类型匹配
+func checkEmbeddingModelType(category int32, modelType string) error {
+	if category == request.CategoryMultimodalKnowledge {
+		if modelType != mp.ModelTypeMultiEmbedding {
+			return grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "multimodal knowledge requires a multimodal-embedding model")
+		}
+		return nil
+	}
+	if modelType != mp.ModelTypeTextEmbedding {
+		return grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "knowledge requires an embedding model")
+	}
+	return nil
 }
 
 // UpdateKnowledge 更新知识库

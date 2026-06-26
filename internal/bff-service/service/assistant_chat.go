@@ -295,6 +295,35 @@ func AssistantQuestionRecommend(ctx *gin.Context, userId, orgId string, req *req
 	AgentRecommendChatCompletions(ctx, agentInfo.RecommendConfig.ModelConfig.ModelId, &data)
 }
 
+// GenAgentRecommendQuestions 在对话结束后生成追问问题列表（非流式收集），供 openapi 对话接口内嵌返回。
+// 未开启追问/未配置推荐模型/模型拒绝推荐/解析失败时返回 nil，不影响对话本身。
+func GenAgentRecommendQuestions(ctx *gin.Context, userId, orgId, assistantId, conversationId, query string, needLatestPublished bool) []string {
+	agentInfo, err := searchAssistantInfo(ctx, userId, orgId, assistantId, needLatestPublished)
+	if err != nil {
+		log.Errorf("[Agent] %v recommend get assistant info err: %v", assistantId, err)
+		return nil
+	}
+	if agentInfo.RecommendConfig == nil {
+		return nil
+	}
+	// checkRecommendParam 会校验追问开关/推荐模型，并按需补默认 systemPrompt
+	if err := checkRecommendParam(agentInfo); err != nil {
+		return nil
+	}
+	req := &request.QuestionRecommendRequest{Query: query, AssistantId: assistantId, ConversationId: conversationId}
+	data, err := buildPublishRecommendParams(ctx, userId, orgId, false, req, agentInfo)
+	if err != nil {
+		log.Errorf("[Agent] %v recommend build params err: %v", assistantId, err)
+		return nil
+	}
+	answer, err := collectRecommendLLMAnswer(ctx, agentInfo.RecommendConfig.ModelConfig.ModelId, &data)
+	if err != nil {
+		log.Errorf("[Agent] %v recommend llm err: %v", assistantId, err)
+		return nil
+	}
+	return parseRecommendQuestions(answer)
+}
+
 func buildPublishRecommendParams(ctx *gin.Context, userId string, orgId string, streamValue bool, req *request.QuestionRecommendRequest, agentInfo *assistant_service.AssistantInfo) (mp_common.LLMReq, error) {
 	history, err := assistant.GetConversationDetailList(ctx, &assistant_service.GetConversationDetailListReq{
 		ConversationId: req.ConversationId,

@@ -1126,11 +1126,14 @@ func buildSubConversationList(conversationList []*assistant_service.SubConversat
 }
 
 func transKnowledgebases2Proto(kbConfig request.AppKnowledgebaseConfig) *assistant_service.AssistantKnowledgeBaseConfig {
+	validKbs := make([]request.AppKnowledgeBase, 0, len(kbConfig.Knowledgebases))
 	var knowIds []string
-	if len(kbConfig.Knowledgebases) > 0 {
-		for _, v := range kbConfig.Knowledgebases {
-			knowIds = append(knowIds, v.ID)
+	for _, v := range kbConfig.Knowledgebases {
+		if v.ID == "" {
+			continue
 		}
+		validKbs = append(validKbs, v)
+		knowIds = append(knowIds, v.ID)
 	}
 	return &assistant_service.AssistantKnowledgeBaseConfig{
 		KnowledgeBaseIds:     knowIds,
@@ -1144,7 +1147,7 @@ func transKnowledgebases2Proto(kbConfig request.AppKnowledgebaseConfig) *assista
 		TermWeight:           kbConfig.Config.TermWeight,
 		TermWeightEnable:     kbConfig.Config.TermWeightEnable,
 		UseGraph:             kbConfig.Config.UseGraph,
-		AppKnowledgeBaseList: transKnowledgeParams(kbConfig.Knowledgebases),
+		AppKnowledgeBaseList: transKnowledgeParams(validKbs),
 	}
 }
 

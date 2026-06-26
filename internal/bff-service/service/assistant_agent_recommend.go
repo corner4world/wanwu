@@ -56,39 +56,9 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 	detachedCtx := trace_util.DetachContext(ctx.Request.Context())
 	// 推荐属于锦上添花能力，流开始前的任何失败都不打扰用户（前端见 4xx 走 FatalError：仅置 loading=false，
 	// 不弹窗、不渲染、不重试）。失败原因写入 ERROR 日志，并随 4xx JSON body 返回，前端读取 body 后可在 F12 排查。
-	modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: modelID})
+	iLLM, llmReq, modelInfo, startTime, err := setupRecommendLLMReq(ctx, modelID, req)
 	if err != nil {
-		recommendFail(ctx, "model %v get model err: %v", modelID, err)
-		return
-	}
-	if !modelInfo.IsActive {
-		recommendFail(ctx, "model %v inactive", modelInfo.ModelId)
-		return
-	}
-	if req != nil && req.Model != modelInfo.Model {
-		recommendFail(ctx, "model %v chat completions err: model mismatch (req=%v)", modelInfo.ModelId, req.Model)
-		return
-	}
-	// llm config
-	llm, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
-	if err != nil {
-		recommendFail(ctx, "model %v to model config err: %v", modelInfo.ModelId, err)
-		return
-	}
-	// 推荐不需要模型输出思考过程，模型支持深度思考时强制关闭 thinking
-	if req != nil && modelSupportsThinking(llm) {
-		enableThinking := false
-		req.EnableThinking = &enableThinking
-	}
-	iLLM, ok := llm.(mp.ILLM)
-	if !ok {
-		recommendFail(ctx, "model %v chat completions err: invalid provider", modelInfo.ModelId)
-		return
-	}
-	startTime := time.Now()
-	llmReq, err := iLLM.NewReq(req)
-	if err != nil {
-		recommendFail(ctx, "model %v chat completions NewReq err: %v", modelInfo.ModelId, err)
+		recommendFail(ctx, "%v", err)
 		return
 	}
 	_, sseCh, err := iLLM.ChatCompletions(ctx.Request.Context(), llmReq)
@@ -101,6 +71,42 @@ func AgentRecommendChatCompletions(ctx *gin.Context, modelID string, req *mp_com
 		return
 	}
 	streamRecommend(ctx, detachedCtx, modelInfo, sseCh, startTime)
+}
+
+// setupRecommendLLMReq 完成推荐模型的获取、校验、配置与请求构造（GetModel→ToModelConfig→关 thinking→NewReq），
+// 返回可直接 ChatCompletions 的 iLLM、llmReq、modelInfo 与起始时间。
+// 供流式(AgentRecommendChatCompletions)与收集(collectRecommendLLMAnswer)复用，调用方各自处理 ChatCompletions 之后的差异。
+func setupRecommendLLMReq(ctx *gin.Context, modelID string, req *mp_common.LLMReq) (mp.ILLM, mp_common.ILLMReq, *model_service.ModelInfo, time.Time, error) {
+	modelInfo, err := model.GetModel(ctx.Request.Context(), &model_service.GetModelReq{ModelId: modelID})
+	if err != nil {
+		return nil, nil, nil, time.Time{}, fmt.Errorf("model %v get model err: %v", modelID, err)
+	}
+	if !modelInfo.IsActive {
+		return nil, nil, nil, time.Time{}, fmt.Errorf("model %v inactive", modelInfo.ModelId)
+	}
+	if req != nil && req.Model != modelInfo.Model {
+		return nil, nil, nil, time.Time{}, fmt.Errorf("model %v chat completions err: model mismatch (req=%v)", modelInfo.ModelId, req.Model)
+	}
+	// llm config
+	llm, err := mp.ToModelConfig(modelInfo.Provider, modelInfo.ModelType, modelInfo.ProviderConfig)
+	if err != nil {
+		return nil, nil, nil, time.Time{}, fmt.Errorf("model %v to model config err: %v", modelInfo.ModelId, err)
+	}
+	// 推荐不需要模型输出思考过程，模型支持深度思考时强制关闭 thinking
+	if req != nil && modelSupportsThinking(llm) {
+		enableThinking := false
+		req.EnableThinking = &enableThinking
+	}
+	iLLM, ok := llm.(mp.ILLM)
+	if !ok {
+		return nil, nil, nil, time.Time{}, fmt.Errorf("model %v chat completions err: invalid provider", modelInfo.ModelId)
+	}
+	startTime := time.Now()
+	llmReq, err := iLLM.NewReq(req)
+	if err != nil {
+		return nil, nil, nil, time.Time{}, fmt.Errorf("model %v chat completions NewReq err: %v", modelInfo.ModelId, err)
+	}
+	return iLLM, llmReq, modelInfo, startTime, nil
 }
 
 // recommendFail 处理推荐流开始前的失败：记录 ERROR 日志，并返回 4xx JSON 错误。
@@ -381,4 +387,56 @@ func buildRecommendResp(errorFlag bool, data *mp_common.LLMResp) *RecommendLLMRe
 		Code:              data.Code,
 		ImgId:             data.ImgId,
 	}
+}
+
+// collectRecommendLLMAnswer 调用推荐模型并把输出收集成完整文本返回（不向客户端流式写出），
+// 供"对话接口内嵌追问"复用。与 AgentRecommendChatCompletions 的区别是只收集、不 writer.Write。
+func collectRecommendLLMAnswer(ctx *gin.Context, modelID string, req *mp_common.LLMReq) (string, error) {
+	iLLM, llmReq, modelInfo, _, err := setupRecommendLLMReq(ctx, modelID, req)
+	if err != nil {
+		return "", err
+	}
+	resp, sseCh, err := iLLM.ChatCompletions(ctx.Request.Context(), llmReq)
+	if err != nil {
+		return "", err
+	}
+	// 非流式：直接取完整消息
+	if !llmReq.Stream() {
+		if data, ok := resp.ConvertResp(); ok && len(data.Choices) > 0 && data.Choices[0].Message != nil {
+			return data.Choices[0].Message.Content, nil
+		}
+		return "", grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model %v recommend err: invalid resp", modelInfo.ModelId))
+	}
+	// 流式：累加 delta
+	var answer string
+	for sseResp := range sseCh {
+		if data, ok := sseResp.ConvertResp(); ok && data != nil && len(data.Choices) > 0 && data.Choices[0].Delta != nil {
+			answer += data.Choices[0].Delta.Content
+		}
+	}
+	return answer, nil
+}
+
+// parseRecommendQuestions 解析推荐模型输出（非流式整段），与流式 recommendStreamProcessor 同协议：
+// 剥离前置 <think>…</think> → 首行须为类型标识 ANSWER（REJECT/无标识均返回空）→ 其余行为问题，
+// 逐行用 cleanRecommendLine 清洗（去行首序号/项目符号、行尾问号）。
+func parseRecommendQuestions(answer string) []string {
+	if i := strings.LastIndex(answer, "</think>"); i >= 0 {
+		answer = answer[i+len("</think>"):]
+	}
+	answer = strings.TrimLeft(answer, " \t\r\n")
+	idx := strings.IndexByte(answer, '\n')
+	if idx < 0 {
+		return nil // 只有类型行、没有正文
+	}
+	if !strings.EqualFold(strings.TrimSpace(answer[:idx]), recommendAnswerTag) {
+		return nil // REJECT 或未按格式输出，不返回追问
+	}
+	var questions []string
+	for _, line := range strings.Split(answer[idx+1:], "\n") {
+		if q := cleanRecommendLine(line); q != "" {
+			questions = append(questions, q)
+		}
+	}
+	return questions
 }
