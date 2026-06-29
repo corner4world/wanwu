@@ -3,6 +3,7 @@ package sse_connector
 import (
 	"context"
 	"errors"
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"strings"
 	"sync"
 	"time"
@@ -42,9 +43,18 @@ func (c *SSEConnector) delete(sessionID string) {
 }
 
 func NewSSESession(ctx context.Context, userSession *model.Session, s store.MessageStore) *session.Manager {
-	if !userSession.Check() {
+	return NewSSESessionValid(ctx, userSession, s, true)
+}
+
+func NewSSESessionValid(ctx context.Context, userSession *model.Session, s store.MessageStore, valid bool) *session.Manager {
+	//对于openapi 不需要链接保持，但是又不想打断整体流程，所以手动置为valid=false
+	if !valid {
 		log.Infof("invalid clientID：%s sessionID: %s", userSession.ClientID, userSession.ConversationID)
-		return &session.Manager{Invalid: true, Ctx: ctx}
+		return &session.Manager{Invalid: true, Ctx: trace_util.DetachContext(ctx)}
+	}
+	if !userSession.Check() {
+		log.Infof("invalid user clientID：%s sessionID: %s", userSession.ClientID, userSession.ConversationID)
+		return &session.Manager{Invalid: true, Ctx: trace_util.DetachContext(ctx)}
 	}
 	// 检查会话是否已经存在,如果已经存在，则取消旧会话
 	existManager := GetSession(userSession)
