@@ -84,6 +84,11 @@ func (s *Service) AssistantCreate(ctx context.Context, req *assistant_service.As
 		return nil, errStatus(errs.Code_AssistantErr, status)
 	}
 
+	// 创建智能体后自动绑定"文档解析"内置工具
+	if status := s.cli.CreateAssistantTool(ctx, assistant.ID, "doc_parser", "builtin", "chatdoc", req.Identity.UserId, req.Identity.OrgId); status != nil {
+		log.Warnf("auto bind doc_parser tool for assistant %d failed: %v", assistant.ID, status)
+	}
+
 	return &assistant_service.AssistantCreateResp{
 		AssistantId: util.Int2Str(assistant.ID),
 	}, nil
