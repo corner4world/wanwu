@@ -82,6 +82,48 @@ md.linkify.set({ fuzzyLink: false });
 
 md.use(mk, { throwOnError: false, errorColor: '#000000', output: 'mathml' });
 
+function applyTableWrapper(markdown) {
+  const defaultTableOpen =
+    markdown.renderer.rules.table_open ||
+    function (tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options);
+    };
+  const defaultTableClose =
+    markdown.renderer.rules.table_close ||
+    function (tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options);
+    };
+
+  markdown.renderer.rules.table_open = function (
+    tokens,
+    idx,
+    options,
+    env,
+    self,
+  ) {
+    tokens[idx].attrJoin('class', 'md-table');
+    tokens[idx].attrJoin(
+      'style',
+      'width:max-content;min-width:100%;max-width:none;margin:0;white-space:nowrap;',
+    );
+    return (
+      '<div class="md-table-wrapper" style="max-width:100%;max-height:min(60vh,520px);overflow:auto;margin:12px 0;">' +
+      defaultTableOpen(tokens, idx, options, env, self)
+    );
+  };
+
+  markdown.renderer.rules.table_close = function (
+    tokens,
+    idx,
+    options,
+    env,
+    self,
+  ) {
+    return defaultTableClose(tokens, idx, options, env, self) + '</div>';
+  };
+}
+
+applyTableWrapper(md);
 md.disable('code');
 
 // 对 md.render 输出进行 DOMPurify 净化，防止 XSS 攻击
