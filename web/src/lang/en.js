@@ -1223,13 +1223,8 @@ export default {
       textExtraction: '文字提取(默认)',
       textExtractionDesc: '提取文档文本信息时开启，适用于所有文件',
       OCRAnalysisDesc: '解析图片、扫描件文档时开启，仅适用于pdf文件',
-      modelAnalysis: '模型解析',
-      modelAnalysisDesc: '提取标题、图表、公式时开启，适用于pdf/word/ppt文件',
       OCRModel: 'OCR模型',
       OCRModelDesc: '若需使用，请前往模型管理-联通元景-添加ocr模型',
-      documentAnalysis: '文档解析服务',
-      documentAnalysisDesc:
-        '若需使用，请前往模型管理-联通元景-添加文档解析服务',
       read: '可读',
       edit: '可编辑',
       admin: '管理员',

@@ -14,7 +14,6 @@ import {
   SEGMENT_TYPE_PARENTSON,
   ANALYZER_TYPE_TEXT,
   ANALYZER_TYPE_OCR,
-  ANALYZER_TYPE_MODEL,
   REPORT_STATUS_PENDING,
   REPORT_STATUS_GENERATING,
   REPORT_STATUS_GENERATED,
@@ -89,20 +88,11 @@ export const DOC_ANALYZER_LIST = [
     text: i18n.t('knowledgeManage.OCRAnalysis'),
     desc: i18n.t('knowledgeManage.config.OCRAnalysisDesc'),
   },
-  {
-    label: ANALYZER_TYPE_MODEL,
-    text: i18n.t('knowledgeManage.config.modelAnalysis'),
-    desc: i18n.t('knowledgeManage.config.modelAnalysisDesc'),
-  },
 ];
 export const MODEL_TYPE_TIP = {
   [ANALYZER_TYPE_OCR]: {
     label: i18n.t('knowledgeManage.config.OCRModel'),
     desc: i18n.t('knowledgeManage.config.OCRModelDesc'),
-  },
-  [ANALYZER_TYPE_MODEL]: {
-    label: i18n.t('knowledgeManage.config.documentAnalysis'),
-    desc: i18n.t('knowledgeManage.config.documentAnalysisDesc'),
   },
 };
 export const POWER_TYPE = {
