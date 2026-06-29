@@ -1,8 +1,11 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	safe_go_util "github.com/UnicomAI/wanwu/pkg/safe-go-util"
+	"github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector/session"
 	"io"
 	"strings"
 	"time"
@@ -163,54 +166,16 @@ func AssistantConversionStreamCancel(ctx *gin.Context, userId, orgId, clientID s
 }
 
 func CallAssistantConversationStream(ctx *gin.Context, userId, orgId, clientId string, req request.ConversionStreamRequest, needLatestPublished bool) (<-chan string, error) {
-	// 根据agentID获取敏感词配置
-	agentInfo, err := searchAssistantInfo(ctx, userId, orgId, req.AssistantId, needLatestPublished)
+	// 检查敏感词等相关参数
+	agentInfo, matchDicts, err := checkAssistantChatParams(ctx, userId, orgId, req, needLatestPublished)
 	if err != nil {
 		return nil, err
 	}
+	// 构建参数
+	agentReq, sessionManager := buildAssistantChatParams(ctx, userId, orgId, clientId, req, needLatestPublished)
 
-	var matchDicts []ahocorasick.DictConfig
-
-	var ids []string
-	for _, idx := range agentInfo.SafetyConfig.GetSensitiveTable() {
-		ids = append(ids, idx.TableId)
-	}
-	matchDicts, err = BuildSensitiveDict(ctx, ids, agentInfo.SafetyConfig.GetEnable())
-	if err != nil {
-		return nil, err
-	}
-	matchResults, err := ahocorasick.ContentMatch(req.Prompt, matchDicts, true)
-	if err != nil {
-		return nil, err
-	}
-	if len(matchResults) > 0 {
-		if matchResults[0].Reply != "" {
-			return nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFSensitiveWordCheck, "bff_sensitive_check_req", matchResults[0].Reply)
-		}
-		return nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFSensitiveWordCheck, "bff_sensitive_check_req_default_reply")
-	}
-
-	agentReq := &assistant_service.AssistantConversionStreamReq{
-		DetailId:       uuid.New().String(),
-		AssistantId:    req.AssistantId,
-		ConversationId: req.ConversationId,
-		FileInfo:       transFileInfo(req.FileInfo),
-		Prompt:         req.Prompt,
-		SystemPrompt:   req.SystemPrompt,
-		Identity: &assistant_service.Identity{
-			UserId: userId,
-			OrgId:  orgId,
-		},
-		Draft: !needLatestPublished,
-	}
-	//初始化sse 链接保持器
-	session := &sse_model.Session{ConversationID: req.ConversationId, ClientID: clientId}
-	sseSessionManager := sse_connector.NewSSESession(ctx, session, store.NewMemoryStore())
-	bgCtx := sseSessionManager.GetBgContext()
-	//对于openapi 不需要链接保持，但是又不想打断整体流程，所以手动置为invalid
-	if !req.SseHold {
-		sseSessionManager.InvalidManager()
-	}
+	bgCtx := sessionManager.GetBgContext()
+	//执行调用
 	var stream grpc.ServerStreamingClient[assistant_service.AssistantConversionStreamResp]
 	if agentInfo.Category == constant.AgentCategoryMulti {
 		stream, err = assistant.MultiAssistantConversionStream(bgCtx, buildMultiAssistantConversionStreamReq(agentReq))
@@ -221,45 +186,15 @@ func CallAssistantConversationStream(ctx *gin.Context, userId, orgId, clientId s
 		return nil, err
 	}
 
-	rawCh := make(chan string, 128)
-	go func() {
-		defer util.PrintPanicStack()
-		defer close(rawCh)
-		defer func() {
-			log.Infof("[Agent] %v conversation %v user %v org %v session finish", req.AssistantId, req.ConversationId, userId, orgId)
-			if err1 := sse_connector.Close(session); err1 != nil {
-				log.Errorf("[Agent] %v conversation %v user %v org %v session finish err: %v", req.AssistantId, req.ConversationId, userId, orgId, err1)
-			}
-		}()
+	//流式数据接收
+	rawCh := safe_go_util.SafeChannelReceiveByIterCloser(bgCtx, assistantIteratorReader(agentReq, sessionManager, stream), sessionCloser(agentReq, sessionManager))
 
-		// 添加扩展信息
-		sseSessionManager.AddExt(map[string]interface{}{"prompt": req.Prompt, "fileInfo": req.FileInfo})
-
-		log.Infof("[Agent] %v conversation %v user %v org %v start, query: %s", req.AssistantId, req.ConversationId, userId, orgId, req.Prompt)
-		for {
-			s, err := stream.Recv()
-			if err == io.EOF {
-				log.Infof("[Agent] %v conversation %v user %v org %v stop", req.AssistantId, req.ConversationId, userId, orgId)
-				break
-			}
-			if err != nil {
-				log.Errorf("[Agent] %v conversation %v user %v org %v recv err: %v", req.AssistantId, req.ConversationId, userId, orgId, err)
-				break
-			}
-			_ = sseSessionManager.Publish(&sse_model.Message{Data: s.Content}, sseCompactProcessor())
-			select {
-			case rawCh <- s.Content:
-			default:
-				//log.Debugf("[Agent] %v conversation %v user %v org %v recv chan full", req.AssistantId, req.ConversationId, userId, orgId)
-			}
-		}
-	}()
 	// 敏感词过滤(必须过滤，全局敏感词)
 	outputCh := ProcessSensitiveWordsWithCallback(ctx, rawCh, matchDicts, &agentSensitiveService{}, func(messageId string, sensitiveMsg string) {
 		//敏感词存入redis
 		redis.StoreSensitiveConversation(agentReq.ConversationId, agentReq.DetailId, sensitiveMsg)
 		//触发sse cancel
-		_ = sseSessionManager.Cancel()
+		_ = sessionManager.Cancel()
 	})
 	return outputCh, nil
 }
@@ -610,4 +545,94 @@ func noneCompactMessage(currentMsg *sse_model.Message, lastMsg *sse_model.Messag
 		return true, nil, nil
 	}
 	return false, lastMsgData, currentMsgData
+}
+
+// assistantIteratorReader enio 返回的智能体数据处理器
+func assistantIteratorReader(req *assistant_service.AssistantConversionStreamReq, sseSessionManager *session.Manager, stream grpc.ServerStreamingClient[assistant_service.AssistantConversionStreamResp]) *safe_go_util.IteratorReader[*assistant_service.AssistantConversionStreamResp, string] {
+	//event读取器
+	var reader = func(ctx context.Context) safe_go_util.IteratorReaderResponse[*assistant_service.AssistantConversionStreamResp, string] {
+		event, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				log.Errorf("[Agent] %v conversation %v user %v org %v recv err: %v", req.AssistantId, req.ConversationId, req.Identity.UserId, req.Identity.OrgId, err)
+			}
+			return safe_go_util.IteratorResponseStop[*assistant_service.AssistantConversionStreamResp, string]()
+		}
+		return safe_go_util.IteratorReaderResponse[*assistant_service.AssistantConversionStreamResp, string]{Data: event}
+	}
+	// event数据处理器
+	var processor = func(ctx context.Context, data *assistant_service.AssistantConversionStreamResp, rawCh chan string) ([]string, *safe_go_util.IteratorError[string]) {
+		_ = sseSessionManager.Publish(&sse_model.Message{Data: data.Content}, sseCompactProcessor())
+		select {
+		case rawCh <- data.Content:
+		default:
+			//log.Debugf("[Agent] %v conversation %v user %v org %v recv chan full", req.AssistantId, req.ConversationId, req.Identity.UserId, req.Identity.OrgId)
+		}
+		return nil, nil
+	}
+	return &safe_go_util.IteratorReader[*assistant_service.AssistantConversionStreamResp, string]{
+		Reader:    reader,
+		Processor: processor,
+	}
+}
+
+func sessionCloser(req *assistant_service.AssistantConversionStreamReq, sessionManager *session.Manager) func(ctx context.Context) {
+	return func(ctx context.Context) {
+		log.Infof("[Agent] %v conversation %v user %v org %v session finish", req.AssistantId, req.ConversationId, req.Identity.UserId, req.Identity.OrgId)
+		if err1 := sse_connector.Close(sessionManager.GetSession()); err1 != nil {
+			log.Errorf("[Agent] %v conversation %v user %v org %v session finish err: %v", req.AssistantId, req.ConversationId, req.Identity.UserId, req.Identity.OrgId, err1)
+		}
+	}
+}
+
+// checkAssistantChatParams 智能体参数敏感词检查
+func checkAssistantChatParams(ctx *gin.Context, userId, orgId string, req request.ConversionStreamRequest, needLatestPublished bool) (*assistant_service.AssistantInfo, []ahocorasick.DictConfig, error) {
+	// 根据agentID获取敏感词配置
+	agentInfo, err := searchAssistantInfo(ctx, userId, orgId, req.AssistantId, needLatestPublished)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var ids []string
+	for _, idx := range agentInfo.SafetyConfig.GetSensitiveTable() {
+		ids = append(ids, idx.TableId)
+	}
+	matchDicts, err := BuildSensitiveDict(ctx, ids, agentInfo.SafetyConfig.GetEnable())
+	if err != nil {
+		return nil, nil, err
+	}
+	matchResults, err := ahocorasick.ContentMatch(req.Prompt, matchDicts, true)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(matchResults) > 0 {
+		if matchResults[0].Reply != "" {
+			return nil, nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFSensitiveWordCheck, "bff_sensitive_check_req", matchResults[0].Reply)
+		}
+		return nil, nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFSensitiveWordCheck, "bff_sensitive_check_req_default_reply")
+	}
+	return agentInfo, matchDicts, nil
+}
+
+// buildAssistantChatParams 构造智能体会话参数
+func buildAssistantChatParams(ctx *gin.Context, userId, orgId, clientId string, req request.ConversionStreamRequest, needLatestPublished bool) (*assistant_service.AssistantConversionStreamReq, *session.Manager) {
+	agentReq := &assistant_service.AssistantConversionStreamReq{
+		DetailId:       uuid.New().String(),
+		AssistantId:    req.AssistantId,
+		ConversationId: req.ConversationId,
+		FileInfo:       transFileInfo(req.FileInfo),
+		Prompt:         req.Prompt,
+		SystemPrompt:   req.SystemPrompt,
+		Identity: &assistant_service.Identity{
+			UserId: userId,
+			OrgId:  orgId,
+		},
+		Draft: !needLatestPublished,
+	}
+
+	//初始化sse 链接保持器
+	sseSessionManager := sse_connector.NewSSESessionValid(ctx, &sse_model.Session{ConversationID: req.ConversationId, ClientID: clientId}, store.NewMemoryStore(), req.SseHold)
+	// 添加扩展信息
+	sseSessionManager.AddExt(map[string]interface{}{"prompt": req.Prompt, "fileInfo": req.FileInfo})
+	return agentReq, sseSessionManager
 }
