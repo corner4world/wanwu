@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/UnicomAI/wanwu/internal/agent-service/model/request"
@@ -21,6 +22,11 @@ import (
 	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/schema"
 	"github.com/getkin/kin-openapi/openapi3"
+)
+
+const (
+	chatDocToolID = "chatdoc"
+	callbackWanWu = "callback-wanwu"
 )
 
 // openAPITool 实现了 tool.InvokableTool 接口
@@ -44,12 +50,13 @@ func (t *openAPITool) InvokableRun(ctx context.Context, argumentsInJSON string, 
 	return t.handler(ctx, argumentsInJSON)
 }
 
-func GetToolsFromOpenAPISchema(ctx context.Context, pluginToolList []*request.PluginToolInfo, changeToolName bool) ([]tool.BaseTool, map[string]*request.ToolConfig, error) {
+func GetToolsFromOpenAPISchema(ctx context.Context, pluginToolList []*request.PluginToolInfo, changeToolName bool) ([]tool.BaseTool, bool, map[string]*request.ToolConfig, error) {
 	if len(pluginToolList) == 0 {
-		return nil, nil, nil
+		return nil, false, nil, nil
 	}
 	var allTools []tool.BaseTool
 	var toolIDMap = make(map[string]*request.ToolConfig)
+	var hasChatDoc = false
 
 	for _, wrapper := range pluginToolList {
 		if wrapper.APISchema == nil {
@@ -82,7 +89,16 @@ func GetToolsFromOpenAPISchema(ctx context.Context, pluginToolList []*request.Pl
 				if operation == nil {
 					continue
 				}
+				serverURL := ""
+				if len(wrapper.APISchema.Servers) > 0 {
+					serverURL = wrapper.APISchema.Servers[0].URL
+				}
 
+				//内置，chatDoc 单独处理
+				if chatDocToolID == operation.OperationID && strings.Contains(serverURL, callbackWanWu) {
+					hasChatDoc = true
+					continue
+				}
 				einoTool := openapi3_util.Operation2EinoTool(operation)
 				if einoTool.Name == "" {
 					einoTool.Name = fmt.Sprintf("%s_%s", method, path)
@@ -104,11 +120,6 @@ func GetToolsFromOpenAPISchema(ctx context.Context, pluginToolList []*request.Pl
 					einoTool.Desc = fmt.Sprintf("%s,%s", apiTitle, einoTool.Desc)
 				}
 
-				serverURL := ""
-				if len(wrapper.APISchema.Servers) > 0 {
-					serverURL = wrapper.APISchema.Servers[0].URL
-				}
-
 				contentType := getRequestContentType(operation)
 				handler := createHTTPHandler(serverURL, path, method, wrapper.APIAuth, contentType, toolName)
 
@@ -122,7 +133,7 @@ func GetToolsFromOpenAPISchema(ctx context.Context, pluginToolList []*request.Pl
 		}
 	}
 
-	return allTools, toolIDMap, nil
+	return allTools, hasChatDoc, toolIDMap, nil
 }
 
 func GetEnioToolsFromOpenAPISchema(ctx context.Context, pluginTool *request.PluginToolInfo) ([]*schema.ToolInfo, error) {

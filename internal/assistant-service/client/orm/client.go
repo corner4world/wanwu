@@ -3,10 +3,12 @@ package orm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 
 	err_code "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/assistant-service/client/model"
+	"github.com/UnicomAI/wanwu/internal/assistant-service/config"
 	"github.com/UnicomAI/wanwu/pkg/constant"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
@@ -14,11 +16,28 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	// builtin_tools 初始化标记，保证历史数据清洗只执行一次
+	initBuiltinToolsFlagKey = "v0.6.10_builtin_tools_initialized"
+)
+
+// Metadata 数据清洗幂等标记表
+type Metadata struct {
+	MetaKey   string `gorm:"primaryKey;column:key"`
+	MetaValue string `gorm:"column:value"`
+	CreatedAt int64  `gorm:"autoCreateTime:milli"`
+	UpdatedAt int64  `gorm:"autoUpdateTime:milli"`
+}
+
 type Client struct {
 	db *gorm.DB
 }
 
 func NewClient(db *gorm.DB) (*Client, error) {
+	if err := db.AutoMigrate(&Metadata{}); err != nil {
+		return nil, err
+	}
+
 	// auto migrate
 	if err := db.AutoMigrate(
 		model.Assistant{},
@@ -41,6 +60,10 @@ func NewClient(db *gorm.DB) (*Client, error) {
 	}
 
 	if err := initConversationType(db); err != nil {
+		return nil, err
+	}
+
+	if err := initBuiltinTools(db); err != nil {
 		return nil, err
 	}
 
@@ -122,6 +145,59 @@ func initConversationType(dbClient *gorm.DB) error {
 		}
 	}
 
+	return nil
+}
+
+// initBuiltinTools 为历史智能体补绑定配置中的内置工具，幂等执行一次
+func initBuiltinTools(db *gorm.DB) error {
+	builtinTools := config.Cfg().BuiltinTools
+	if len(builtinTools) == 0 {
+		return nil
+	}
+
+	// 幂等检查：已执行过则跳过
+	var meta Metadata
+	if err := db.Where(&Metadata{MetaKey: initBuiltinToolsFlagKey}).First(&meta).Error; err == nil {
+		return nil
+	}
+
+	// 查询所有智能体
+	var assistants []model.Assistant
+	if err := db.Select("id, user_id, org_id").Find(&assistants).Error; err != nil {
+		return fmt.Errorf("initBuiltinTools query assistants failed: %w", err)
+	}
+
+	for _, a := range assistants {
+		for _, tool := range builtinTools {
+			var count int64
+			if err := db.Model(&model.AssistantTool{}).
+				Where("assistant_id = ? AND tool_id = ? AND tool_type = ? AND action_name = ?",
+					a.ID, tool.ToolId, tool.ToolType, tool.ActionName).
+				Count(&count).Error; err != nil {
+				log.Warnf("initBuiltinTools check tool %s for assistant %d failed: %v", tool.ToolId, a.ID, err)
+				continue
+			}
+			if count > 0 {
+				continue
+			}
+			if err := db.Create(&model.AssistantTool{
+				AssistantId: a.ID,
+				ToolId:      tool.ToolId,
+				ToolType:    tool.ToolType,
+				ActionName:  tool.ActionName,
+				Enable:      true,
+				UserId:      a.UserId,
+				OrgId:       a.OrgId,
+			}).Error; err != nil {
+				log.Warnf("initBuiltinTools bind tool %s for assistant %d failed: %v", tool.ToolId, a.ID, err)
+				continue
+			}
+		}
+	}
+
+	if err := db.Create(&Metadata{MetaKey: initBuiltinToolsFlagKey}).Error; err != nil {
+		return fmt.Errorf("initBuiltinTools set flag failed: %w", err)
+	}
 	return nil
 }
 

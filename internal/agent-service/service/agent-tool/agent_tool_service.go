@@ -30,12 +30,12 @@ func BuildAgentToolsConfig(ctx *gin.Context, req *request.AgentChatParams, chatI
 		toolList = append(toolList, mcpToolList...)
 	}
 	//plugin 工具
-	pluginToolList, pluginToolIDNameMap, _ := GetToolsFromOpenAPISchema(ctx, req.ToolParams.PluginToolList, changeToolName)
+	pluginToolList, hasChatDoc, pluginToolIDNameMap, _ := GetToolsFromOpenAPISchema(ctx, req.ToolParams.PluginToolList, changeToolName)
 	if len(pluginToolList) > 0 {
 		toolList = append(toolList, pluginToolList...)
 	}
 	//chatDoc 内置工具
-	docTool := GetChatDocTool(chatInfo)
+	docTool := GetChatDocTool(chatInfo, hasChatDoc)
 	if docTool != nil {
 		toolList = append(toolList, docTool)
 	}
