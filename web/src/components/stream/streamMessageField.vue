@@ -1684,9 +1684,13 @@ export default {
       this.$set(this.session_data, 'history', list);
       this.$nextTick(() => {
         this.updateAllFileScrollStates();
-        // 初始化滚动条滑到底部
-        this.scrollBottom();
       });
+      // 组件重建后内容渲染可能需要更长时间，设置滚动到底部
+      clearTimeout(this.scrollTimeout);
+      this.scrollTimeout = setTimeout(() => {
+        this.autoScroll = true;
+        this.scrollBottom();
+      }, 100);
     },
     handleGlobalClick(e) {
       // 复制
