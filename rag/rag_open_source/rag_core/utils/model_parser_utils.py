@@ -54,20 +54,22 @@ def get_page_data(page_num, add_file_path, ocr_model_id):
         new_pdf.save(output_pdf_path)
         new_pdf.close()
 
-        # 上传单页 PDF 到 MinIO，改为 URL 请求
+        if ocr_model_id == "":
+            logger.error("ocr_model_id为空")
+            if os.path.exists(output_pdf_path):
+                os.remove(output_pdf_path)
+            return None, page_num
+
+        # ocr_model_id 有效后再上传 MinIO
         upload_result = minio_utils.upload_local_file(output_pdf_path)
         if upload_result['code'] != 0:
             logger.error(f"页 {page_num} 上传 MinIO 失败")
+            if os.path.exists(output_pdf_path):
+                os.remove(output_pdf_path)
             return None, page_num
 
         minio_url = upload_result['download_link']
         object_name = minio_url.split('/')[-1]
-
-        if ocr_model_id == "":
-            logger.error("ocr_model_id为空")
-            # ocr_model_id 为空时，仍需清掉已上传的 MinIO 文件
-            minio_utils.remove_minio_file(object_name)
-            return None, page_num
 
         model_config = get_model_configure(ocr_model_id)
         wanwu_ocr_url = ""
