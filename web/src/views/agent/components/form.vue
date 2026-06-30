@@ -1202,6 +1202,17 @@ export default {
     updateDetail() {
       this.getAppDetail();
     },
+    // 同步工具选择
+    syncToolDialogSelected() {
+      const toolDialog = this.$refs.toolDialog;
+      if (!toolDialog || !toolDialog.dialogVisible) return;
+      toolDialog.syncToolsSelected({
+        mcpInfos: this.mcpInfos,
+        workFlowInfos: this.workFlowInfos,
+        customInfos: this.actionInfos,
+        skillInfos: this.skillInfos,
+      });
+    },
     showSafety() {
       this.$refs.setSafety.showDialog(this.editForm.safetyConfig.tables);
     },
@@ -1626,6 +1637,7 @@ export default {
             typeName: this.nameMap[AGENT_TOOL_TYPE.SKILL].typeName,
           })),
         ];
+        this.syncToolDialogSelected();
 
         // 暂时隐藏picNum字段依赖
         // this.setMaxPicNum(this.editForm.visionConfig.picNum);

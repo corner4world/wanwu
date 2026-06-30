@@ -114,6 +114,7 @@
                 </div>
               </template>
               <el-collapse
+                v-model="item.activeNames"
                 @change="handleToolChange"
                 v-else
                 class="tool_collapse"
@@ -130,6 +131,11 @@
                       <div class="tool-name-main">
                         <div class="tool-title-line">
                           <h3 class="tool-name">{{ item.toolName }}</h3>
+                          <svg-icon
+                            v-if="isParentSelected(item, type)"
+                            class-name="selected-parent-icon"
+                            icon-class="circle-check"
+                          />
                           <span
                             v-if="item.loading"
                             class="el-icon-loading loading-text"
@@ -325,15 +331,70 @@ export default {
         }
       }
     },
+    sortBySelected(list, selectedIndexGetter) {
+      return list
+        .map((item, index) => ({
+          item,
+          index,
+          selectedIndex: selectedIndexGetter(item),
+        }))
+        .sort((a, b) => {
+          const aSelected = a.selectedIndex > -1;
+          const bSelected = b.selectedIndex > -1;
+          if (aSelected && bSelected) {
+            return a.selectedIndex - b.selectedIndex;
+          }
+          if (aSelected !== bSelected) {
+            return aSelected ? -1 : 1;
+          }
+          return a.index - b.index;
+        })
+        .map(({ item }) => item);
+    },
+    getToolSelectedIndex(toolId) {
+      return this.customList.findIndex(item => item.toolId === toolId);
+    },
+    getMcpSelectedIndex(toolId) {
+      return this.mcpList.findIndex(item => item.mcpId === toolId);
+    },
+    isParentSelected(item, type) {
+      if (type === AGENT_TOOL_TYPE.TOOL) {
+        return this.getToolSelectedIndex(item.toolId) > -1;
+      }
+      if (type === AGENT_TOOL_TYPE.MCP) {
+        return this.getMcpSelectedIndex(item.toolId) > -1;
+      }
+      return false;
+    },
+    getWorkflowSelectedIndex(appId) {
+      return this.workFlowList.findIndex(item => item.workFlowId === appId);
+    },
+    getSkillSelectedIndex(skillId) {
+      return this.skillList.findIndex(item => item.skillId === skillId);
+    },
+    getToolActionSelectedIndex(toolId, actionName) {
+      return this.customList.findIndex(
+        item => item.toolId === toolId && item.actionName === actionName,
+      );
+    },
+    getMcpActionSelectedIndex(toolId, actionName) {
+      return this.mcpList.findIndex(
+        item => item.mcpId === toolId && item.actionName === actionName,
+      );
+    },
     getCustomList(name) {
       //获取自定义和内置工具
       toolList({ name }).then(res => {
         if (res.code === 0) {
-          this.customInfos = (res.data.list || []).map(m => ({
+          const list = (res.data.list || []).map(m => ({
             ...m,
             loading: false,
+            activeNames: [],
             children: [],
           }));
+          this.customInfos = this.sortBySelected(list, item =>
+            this.getToolSelectedIndex(item.toolId),
+          );
         }
       });
     },
@@ -349,6 +410,13 @@ export default {
                 item => item.actionName === m.name && item.toolId === toolId,
               );
             });
+            this.$set(
+              this.customInfos[index],
+              'children',
+              this.sortBySelected(this.customInfos[index]['children'], item =>
+                this.getToolActionSelectedIndex(toolId, item.name),
+              ),
+            );
           }
         })
         .catch(() => {
@@ -479,11 +547,15 @@ export default {
       //获取mcp工具
       mcptoolList({ name }).then(res => {
         if (res.code === 0) {
-          this.mcpInfos = (res.data.list || []).map(m => ({
+          const list = (res.data.list || []).map(m => ({
             ...m,
             children: [],
+            activeNames: [],
             loading: false,
           }));
+          this.mcpInfos = this.sortBySelected(list, item =>
+            this.getMcpSelectedIndex(item.toolId),
+          );
         }
       });
     },
@@ -499,6 +571,13 @@ export default {
                 item => item.actionName === m.name && item.mcpId === toolId,
               );
             });
+            this.$set(
+              this.mcpInfos[index],
+              'children',
+              this.sortBySelected(this.mcpInfos[index]['children'], item =>
+                this.getMcpActionSelectedIndex(toolId, item.name),
+              ),
+            );
           }
         })
         .catch(() => {
@@ -508,28 +587,32 @@ export default {
     getWorkflowList(name) {
       getWorkflowList({ name }).then(res => {
         if (res.code === 0) {
-          this.workFlowInfos = (res.data.list || []).map(m => ({
+          const list = (res.data.list || []).map(m => ({
             ...m,
             checked: this.workFlowList.some(
               item => item.workFlowId === m.appId,
             ),
           }));
+          this.workFlowInfos = this.sortBySelected(list, item =>
+            this.getWorkflowSelectedIndex(item.appId),
+          );
         }
       });
     },
     getSkillList(name) {
       getSkillSelectList({ name }).then(res => {
         if (res.code === 0) {
-          this.skillInfos = (res.data.list || []).map(m => ({
+          const list = (res.data.list || []).map(m => ({
             ...m,
             checked: this.skillList.some(item => item.skillId === m.skillId),
           }));
+          this.skillInfos = this.sortBySelected(list, item =>
+            this.getSkillSelectedIndex(item.skillId),
+          );
         }
       });
     },
-    showDialog(row) {
-      this.dialogVisible = true;
-      this.setWorkflow(row.workFlowInfos);
+    syncToolsSelected(row = {}) {
       this.mcpList = row.mcpInfos || [];
       this.workFlowList = row.workFlowInfos || [];
       this.customList = row.customInfos || [];
@@ -538,12 +621,55 @@ export default {
       this.mcpCount = this.mcpList.length;
       this.workflowCount = this.workFlowList.length;
       this.skillCount = this.skillList.length;
+      this.refreshCheckedStatus();
     },
-    setWorkflow(data) {
-      this.workFlowInfos = this.workFlowInfos.map(m => ({
-        ...m,
-        checked: data.some(item => item.workFlowId === m.appId),
-      }));
+    refreshCheckedStatus() {
+      this.workFlowInfos.forEach(item => {
+        this.$set(
+          item,
+          'checked',
+          this.workFlowList.some(
+            selected => selected.workFlowId === item.appId,
+          ),
+        );
+      });
+      this.skillInfos.forEach(item => {
+        this.$set(
+          item,
+          'checked',
+          this.skillList.some(selected => selected.skillId === item.skillId),
+        );
+      });
+      this.customInfos.forEach(item => {
+        (item.children || []).forEach(action => {
+          this.$set(
+            action,
+            'checked',
+            this.customList.some(
+              selected =>
+                selected.toolId === item.toolId &&
+                selected.actionName === action.name,
+            ),
+          );
+        });
+      });
+      this.mcpInfos.forEach(item => {
+        (item.children || []).forEach(action => {
+          this.$set(
+            action,
+            'checked',
+            this.mcpList.some(
+              selected =>
+                selected.mcpId === item.toolId &&
+                selected.actionName === action.name,
+            ),
+          );
+        });
+      });
+    },
+    showDialog(row) {
+      this.dialogVisible = true;
+      this.syncToolsSelected(row);
     },
     handleClose() {
       this.toolIndex = -1;
@@ -755,6 +881,12 @@ export default {
     height: auto;
     line-height: 1.5;
     margin: 0;
+  }
+  .selected-parent-icon {
+    flex-shrink: 0;
+    margin-left: 6px;
+    color: #18a058;
+    font-size: 15px;
   }
   .tag {
     height: auto;
