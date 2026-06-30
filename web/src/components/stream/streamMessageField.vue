@@ -1679,11 +1679,13 @@ export default {
         this.cv && this.cv.resizeCurrImg(currImg);
       });
     },
-    // 初始化history列表
+    // 初始化 history 列表（模型体验）
     initHistoryList(list) {
       this.$set(this.session_data, 'history', list);
       this.$nextTick(() => {
         this.updateAllFileScrollStates();
+        // 初始化滚动条滑到底部
+        this.scrollBottom();
       });
     },
     handleGlobalClick(e) {
