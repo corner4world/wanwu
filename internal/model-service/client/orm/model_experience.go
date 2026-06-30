@@ -10,7 +10,14 @@ import (
 	"gorm.io/gorm"
 )
 
+const maxTitleLen = 512
+
 func (c *Client) SaveModelExperienceDialog(ctx context.Context, dialog *model_client.ModelExperienceDialog) (*model_client.ModelExperienceDialog, *errs.Status) {
+	//  检查dialog.Title长度
+	runes := []rune(dialog.Title)
+	if len(runes) >= maxTitleLen {
+		dialog.Title = string(runes[:maxTitleLen-1]) + "…"
+	}
 	// create
 	if err := sqlopt.WithSessionID(dialog.SessionId).
 		Apply(c.db).WithContext(ctx).First(&model_client.ModelExperienceDialog{}).Error; err != nil {

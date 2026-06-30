@@ -34,11 +34,6 @@ import (
 
 func ModelExperienceLLM(ctx *gin.Context, userId, orgId, clientId string, req *request.ModelExperienceLlmRequest) {
 
-	// 创建 SSE Session 用于断点续传（仅当 clientId 存在时）
-	session := &sse_model.Session{ConversationID: req.SessionId, ClientID: clientId}
-	sseSessionManager := sse_connector.NewSSESession(ctx.Request.Context(), session, store.NewMemoryStore())
-	bgCtx := sseSessionManager.GetBgContext()
-
 	// 敏感词检测 - 输入检测
 	matchDicts, err := BuildSensitiveDict(ctx, nil, false)
 	if err != nil {
@@ -58,8 +53,23 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId, clientId string, req *r
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFSensitiveWordCheck, "bff_sensitive_check_req_default_reply"))
 		return
 	}
+	// save query
+	if _, err := model.SaveModelExperienceDialogRecord(ctx, &model_service.SaveModelExperienceDialogRecordReq{
+		UserId:            userId,
+		OrgId:             orgId,
+		ModelExperienceId: req.ModelExperienceId,
+		ModelId:           req.ModelId,
+		SessionId:         req.SessionId,
+		OriginalContent:   req.Content,
+		Role:              string(mp_common.MsgRoleUser),
+		FileInfo:          toJsonFromModelExperienceFileInfo(req.FileInfo),
+	}); err != nil {
+		gin_util.Response(ctx, nil, err)
+		return
+	}
+
 	// model info
-	modelInfo, err := model.GetModel(bgCtx, &model_service.GetModelReq{ModelId: req.ModelId})
+	modelInfo, err := model.GetModel(ctx, &model_service.GetModelReq{ModelId: req.ModelId})
 	if err != nil {
 		gin_util.Response(ctx, nil, err)
 		return
@@ -82,14 +92,14 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId, clientId string, req *r
 			gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, "model does not support vision"))
 			return
 		}
-		if err := validateModelExperienceImageFiles(bgCtx, modelInfo, req.FileInfo); err != nil {
+		if err := validateModelExperienceImageFiles(ctx, modelInfo, req.FileInfo); err != nil {
 			gin_util.Response(ctx, nil, err)
 			return
 		}
 	}
 
 	// dialog records
-	recordsResp, err := model.GetModelExperienceDialogRecords(bgCtx, &model_service.GetModelExperienceDialogRecordsReq{
+	recordsResp, err := model.GetModelExperienceDialogRecords(ctx, &model_service.GetModelExperienceDialogRecordsReq{
 		UserId: userId,
 		OrgId:  orgId,
 		// 常规模型对话记录（非模型对比时），modelExperienceId与sessionId非空
@@ -116,7 +126,7 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId, clientId string, req *r
 		}
 		messages = append(messages, mp_common.OpenAIReqMsg{
 			Role:    mp_common.MsgRole(record.Role),
-			Content: buildModelExperienceMultimodalContent(bgCtx, content, fileInfo),
+			Content: buildModelExperienceMultimodalContent(ctx, content, fileInfo),
 		})
 	}
 	// 添加当前用户消息（支持多模态）
@@ -126,7 +136,7 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId, clientId string, req *r
 	}
 	userMsg := mp_common.OpenAIReqMsg{
 		Role:    mp_common.MsgRoleUser,
-		Content: buildModelExperienceMultimodalContent(bgCtx, req.Content, currentUserFileInfo),
+		Content: buildModelExperienceMultimodalContent(ctx, req.Content, currentUserFileInfo),
 	}
 
 	messages = append(messages, userMsg)
@@ -174,6 +184,12 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId, clientId string, req *r
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
+
+	// 创建 SSE Session 用于断点续传（仅当 clientId 存在时）
+	session := &sse_model.Session{ConversationID: req.SessionId, ClientID: clientId}
+	sseSessionManager := sse_connector.NewSSESession(ctx.Request.Context(), session, store.NewMemoryStore())
+	bgCtx := sseSessionManager.GetBgContext()
+
 	_, sseCh, err := iLLM.ChatCompletions(bgCtx, iLLMReq)
 	if err != nil {
 		go func() {
@@ -183,22 +199,6 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId, clientId string, req *r
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
 	}
-
-	// save query
-	if _, err := model.SaveModelExperienceDialogRecord(bgCtx, &model_service.SaveModelExperienceDialogRecordReq{
-		UserId:            userId,
-		OrgId:             orgId,
-		ModelExperienceId: req.ModelExperienceId,
-		ModelId:           req.ModelId,
-		SessionId:         req.SessionId,
-		OriginalContent:   req.Content,
-		Role:              string(mp_common.MsgRoleUser),
-		FileInfo:          toJsonFromModelExperienceFileInfo(req.FileInfo),
-	}); err != nil {
-		gin_util.Response(ctx, nil, err)
-		return
-	}
-
 	// stream
 	var answer string
 	var reasonContent string
