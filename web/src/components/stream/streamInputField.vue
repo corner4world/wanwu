@@ -110,6 +110,7 @@
               :type="type"
               :maxImageSize="maxImageSize"
               :maxPicNum="maxPicNum"
+              :maxFileNum="maxFileNum"
               @setFileId="setFileId"
               @setFile="setFile"
             ></streamUploadField>
@@ -191,6 +192,11 @@ export default {
       required: false,
       default: -1,
     },
+    maxFileNum: {
+      type: Number,
+      required: false,
+      default: -1,
+    },
   },
   mixins: [commonMixin, uploadChunk],
   components: { streamUploadField },
@@ -248,6 +254,22 @@ export default {
     },
     hasImageLimit() {
       return this.normalizedMaxPicNum >= 0;
+    },
+    normalizedMaxFileNum() {
+      const maxFileNum = Number(this.maxFileNum);
+      return Number.isFinite(maxFileNum) ? maxFileNum : -1;
+    },
+    hasFileLimit() {
+      return this.normalizedMaxFileNum >= 0;
+    },
+    effectiveImageLimit() {
+      const limits = [];
+      if (this.hasImageLimit) limits.push(this.normalizedMaxPicNum);
+      if (this.hasFileLimit) limits.push(this.normalizedMaxFileNum);
+      return limits.length ? Math.min(...limits) : -1;
+    },
+    hasEffectiveImageLimit() {
+      return this.effectiveImageLimit >= 0;
     },
     placeholder() {
       return this.supportReminder
@@ -325,7 +347,9 @@ export default {
     },
     processFiles(files) {
       if (!files || files.length === 0) return;
-      const picked = this.filterImageCount(this.filterImageSize(files));
+      const picked = this.filterFileCount(
+        this.filterImageCount(this.filterImageSize(files)),
+      );
       if (!picked.length) return;
       const fileObjs = picked.map(f => ({
         raw: f,
@@ -377,21 +401,42 @@ export default {
         ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].indexOf(ext) > -1
       );
     },
+    showFileLimitMessage() {
+      this.$message.warning(
+        this.$t('app.uploadFileLimitTips', {
+          num: this.normalizedMaxFileNum,
+        }),
+      );
+    },
+    showImageLimitMessage() {
+      this.$message.warning(
+        this.$t('app.uploadImgTips', { num: this.normalizedMaxPicNum }),
+      );
+    },
+    showEffectiveImageLimitMessage() {
+      if (
+        this.hasFileLimit &&
+        (!this.hasImageLimit ||
+          this.normalizedMaxFileNum <= this.normalizedMaxPicNum)
+      ) {
+        this.showFileLimitMessage();
+        return;
+      }
+      this.showImageLimitMessage();
+    },
     filterImageCount(files) {
       const picked = Array.prototype.slice.call(files || []);
-      if (!this.hasImageLimit) return picked;
+      if (!this.hasEffectiveImageLimit) return picked;
 
       let imageCount = 0;
       const validFiles = picked.filter(file => {
         if (!this.isImageFile(file)) return true;
         imageCount += 1;
-        return imageCount <= this.normalizedMaxPicNum;
+        return imageCount <= this.effectiveImageLimit;
       });
 
       if (validFiles.length !== picked.length) {
-        this.$message.warning(
-          this.$t('app.uploadImgTips', { num: this.normalizedMaxPicNum }),
-        );
+        this.showEffectiveImageLimitMessage();
       }
 
       return validFiles;
@@ -413,6 +458,15 @@ export default {
       }
 
       return validFiles;
+    },
+    filterFileCount(files) {
+      const picked = Array.prototype.slice.call(files || []);
+      if (!this.hasFileLimit || picked.length <= this.normalizedMaxFileNum) {
+        return picked;
+      }
+
+      this.showFileLimitMessage();
+      return picked.slice(0, this.normalizedMaxFileNum);
     },
     uploadFile(fileName, oldFileName, fiePath) {
       //文件上传完之后

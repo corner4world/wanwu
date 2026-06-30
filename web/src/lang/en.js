@@ -1986,6 +1986,7 @@ export default {
     qaUplodFileTips: '文件上传成功，请手动刷新问答库列表',
     imageSizeModelLimit:
       'The current model only supports image files under {maxSize} MB',
+    uploadFileLimitTips: 'You can upload up to {num} files',
     publishType: {
       private: '私密发布为应用：仅自己可见',
       organization: '公开发布为应用：组织内可见',

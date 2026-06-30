@@ -647,6 +647,7 @@
           :chatType="'test'"
           :disableClick="disableClick"
           :maxPicNum="currentMaxPicNum"
+          :maxFileNum="5"
         />
       </div>
     </div>

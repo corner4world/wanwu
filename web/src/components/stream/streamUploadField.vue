@@ -221,6 +221,11 @@ export default {
       required: false,
       default: -1, // -1不限制
     },
+    maxFileNum: {
+      type: Number,
+      required: false,
+      default: -1, // -1不限制
+    },
   },
   mixins: [uploadChunk],
   data() {
@@ -259,15 +264,30 @@ export default {
     hasImageLimit() {
       return this.normalizedMaxPicNum >= 0;
     },
+    normalizedMaxFileNum() {
+      const maxFileNum = Number(this.maxFileNum);
+      return Number.isFinite(maxFileNum) ? maxFileNum : -1;
+    },
+    hasFileLimit() {
+      return this.normalizedMaxFileNum >= 0;
+    },
     displayMaxPicNum() {
       return this.normalizedMaxPicNum;
     },
+    displayMaxFileNum() {
+      return this.normalizedMaxFileNum;
+    },
+    effectiveImageLimit() {
+      const limits = [];
+      if (this.hasImageLimit) limits.push(this.normalizedMaxPicNum);
+      if (this.hasFileLimit) limits.push(this.normalizedMaxFileNum);
+      return limits.length ? Math.min(...limits) : -1;
+    },
+    hasEffectiveImageLimit() {
+      return this.effectiveImageLimit >= 0;
+    },
     uploadLimit() {
-      const shouldUseImageLimit =
-        this.fileType === 'image/*' ||
-        (!this.fileType && this.fileTypeArr.includes('image/*'));
-      if (!shouldUseImageLimit) return 2;
-      return this.hasImageLimit ? this.normalizedMaxPicNum : undefined;
+      return undefined;
     },
     maxImageSizeMB() {
       const maxSize = Number(this.maxImageSize);
@@ -332,10 +352,34 @@ export default {
       this.clearFile();
       this.dialogVisible = false;
     },
+    showFileLimitMessage() {
+      this.$message.warning(
+        this.$t('app.uploadFileLimitTips', { num: this.displayMaxFileNum }),
+      );
+    },
+    showImageLimitMessage() {
+      this.$message.warning(
+        this.$t('app.uploadImgTips', { num: this.displayMaxPicNum }),
+      );
+    },
+    showEffectiveImageLimitMessage() {
+      if (
+        this.hasFileLimit &&
+        (!this.hasImageLimit ||
+          this.normalizedMaxFileNum <= this.normalizedMaxPicNum)
+      ) {
+        this.showFileLimitMessage();
+        return;
+      }
+      this.showImageLimitMessage();
+    },
     uploadOnExceed(files) {
-      if (this.fileType === 'image/*' && !this.hasImageLimit) return;
+      const isImageUpload =
+        this.fileType === 'image/*' ||
+        (!this.fileType && this.fileTypeArr.includes('image/*'));
+      if (!isImageUpload || !this.hasEffectiveImageLimit) return;
 
-      if (this.fileType === 'image/*' && this.normalizedMaxPicNum === 1) {
+      if (this.effectiveImageLimit === 1) {
         const rawFile = files && files[0];
         if (!rawFile) return;
         const file = this.createUploadFile(rawFile);
@@ -350,9 +394,7 @@ export default {
         return;
       }
 
-      this.$message.warning(
-        this.$t('app.uploadImgTips', { num: this.displayMaxPicNum }),
-      );
+      this.showEffectiveImageLimitMessage();
     },
     uploadOnChange(file, fileList) {
       const prevFileType = this.fileType;
@@ -386,12 +428,25 @@ export default {
 
       if (
         nextFileType === 'image/*' &&
-        this.hasImageLimit &&
-        fileList.length > this.normalizedMaxPicNum
+        this.hasEffectiveImageLimit &&
+        fileList.length > this.effectiveImageLimit
       ) {
-        this.$message.warning(
-          this.$t('app.uploadImgTips', { num: this.displayMaxPicNum }),
-        );
+        if (this.effectiveImageLimit === 1) {
+          this.resetReplacingFiles();
+          fileList = [file];
+        } else {
+          this.showEffectiveImageLimitMessage();
+          this.removeUploadFile(file, fileList);
+          return;
+        }
+      }
+
+      if (
+        nextFileType !== 'image/*' &&
+        this.hasFileLimit &&
+        this.normalizedMaxFileNum < 1
+      ) {
+        this.showFileLimitMessage();
         this.removeUploadFile(file, fileList);
         return;
       }

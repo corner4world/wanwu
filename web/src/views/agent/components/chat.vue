@@ -64,6 +64,7 @@
             :type="type"
             :hasHistory="hasHistory"
             :maxPicNum="maxPicNum"
+            :maxFileNum="maxFileNum"
             @preSend="preSend"
             @setSessionStatus="setSessionStatus"
             @clearHistory="handleClearHistory"
@@ -155,6 +156,11 @@ export default {
       default: '',
     },
     maxPicNum: {
+      type: Number,
+      required: false,
+      default: -1,
+    },
+    maxFileNum: {
       type: Number,
       required: false,
       default: -1,

@@ -2181,6 +2181,7 @@ export default {
     uploadModelTips:
       ' *若该智能体基于大语言模型创建，则上传图片暂时无法进行解析',
     uploadImgTips: '只能上传{num}个图片文件',
+    uploadFileLimitTips: '最多上传{num}个文件',
     createConversation: '新建对话',
     copyright: '版权所有',
     switchSession: '已切换最新会话',
