@@ -96,3 +96,9 @@ skill:
   builtin_skill_list_uri: /callback/v1/skill/builtin/list
   custom_skill_list_uri: /callback/v1/skill/custom/list
   acquired_skill_list_uri: /callback/v1/skill/acquired/list
+
+# 创建智能体时自动绑定的内置工具列表
+builtin_tools:
+  - tool_id: "doc_parser"
+    tool_type: "builtin"
+    action_name: "chatdoc"

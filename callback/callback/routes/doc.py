@@ -108,7 +108,7 @@ def req_parse_doc():
     data = request.get_json()
 
     file_url = data.get("upload_file_url")
-    max_token = data.get("max_token")
+    max_token = data.get("max_token", 0)
 
     if not file_url:
         raise BizError("upload_file_url is required")
