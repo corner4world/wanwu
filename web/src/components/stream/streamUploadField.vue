@@ -31,7 +31,7 @@
             action=""
             :show-file-list="false"
             :auto-upload="false"
-            :limit="fileType === 'image/*' ? maxPicNum : 2"
+            :limit="uploadLimit"
             :accept="tipsArr"
             :file-list="fileList"
             :on-change="uploadOnChange"
@@ -140,20 +140,22 @@
                   max="100"
                   style="width: 360px; margin: 0 auto"
                 ></el-progress>
-                <p
-                  v-if="
-                    fileTypeArr.length === 1 && fileTypeArr[0] === 'image/*'
-                  "
-                >
-                  {{ $t('app.imgLimitOnly', { num: maxPicNum }) }}
-                </p>
-                <p v-else>
-                  {{ $t('app.imgLimit', { num: maxPicNum }) }}
-                  <span style="color: var(--color)">
-                    {{ $t('common.fileUpload.click') }}
-                  </span>
-                  {{ $t('app.imgLimitTips') }}
-                </p>
+                <template v-if="hasImageLimit">
+                  <p
+                    v-if="
+                      fileTypeArr.length === 1 && fileTypeArr[0] === 'image/*'
+                    "
+                  >
+                    {{ $t('app.imgLimitOnly', { num: displayMaxPicNum }) }}
+                  </p>
+                  <p v-else>
+                    {{ $t('app.imgLimit', { num: displayMaxPicNum }) }}
+                    <span style="color: var(--color)">
+                      {{ $t('common.fileUpload.click') }}
+                    </span>
+                    {{ $t('app.imgLimitTips') }}
+                  </p>
+                </template>
               </div>
             </div>
             <div v-else>
@@ -200,7 +202,6 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
 import uploadChunk from '@/mixins/uploadChunk';
 export default {
   props: {
@@ -214,6 +215,11 @@ export default {
       type: [Number, String],
       required: false,
       default: null,
+    },
+    maxPicNum: {
+      type: Number,
+      required: false,
+      default: -1, // -1不限制
     },
   },
   mixins: [uploadChunk],
@@ -246,7 +252,23 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('app', ['maxPicNum']),
+    normalizedMaxPicNum() {
+      const maxPicNum = Number(this.maxPicNum);
+      return Number.isFinite(maxPicNum) ? maxPicNum : 3;
+    },
+    hasImageLimit() {
+      return this.normalizedMaxPicNum >= 0;
+    },
+    displayMaxPicNum() {
+      return this.normalizedMaxPicNum;
+    },
+    uploadLimit() {
+      const shouldUseImageLimit =
+        this.fileType === 'image/*' ||
+        (!this.fileType && this.fileTypeArr.includes('image/*'));
+      if (!shouldUseImageLimit) return 2;
+      return this.hasImageLimit ? this.normalizedMaxPicNum : undefined;
+    },
     maxImageSizeMB() {
       const maxSize = Number(this.maxImageSize);
       return maxSize > 0 ? maxSize : 0;
@@ -311,7 +333,9 @@ export default {
       this.dialogVisible = false;
     },
     uploadOnExceed(files) {
-      if (this.fileType === 'image/*' && this.maxPicNum === 1) {
+      if (this.fileType === 'image/*' && !this.hasImageLimit) return;
+
+      if (this.fileType === 'image/*' && this.normalizedMaxPicNum === 1) {
         const rawFile = files && files[0];
         if (!rawFile) return;
         const file = this.createUploadFile(rawFile);
@@ -327,7 +351,7 @@ export default {
       }
 
       this.$message.warning(
-        this.$t('app.uploadImgTips', { num: this.maxPicNum }),
+        this.$t('app.uploadImgTips', { num: this.displayMaxPicNum }),
       );
     },
     uploadOnChange(file, fileList) {
@@ -360,9 +384,13 @@ export default {
         return;
       }
 
-      if (nextFileType === 'image/*' && fileList.length > this.maxPicNum) {
+      if (
+        nextFileType === 'image/*' &&
+        this.hasImageLimit &&
+        fileList.length > this.normalizedMaxPicNum
+      ) {
         this.$message.warning(
-          this.$t('app.uploadImgTips', { num: this.maxPicNum }),
+          this.$t('app.uploadImgTips', { num: this.displayMaxPicNum }),
         );
         this.removeUploadFile(file, fileList);
         return;

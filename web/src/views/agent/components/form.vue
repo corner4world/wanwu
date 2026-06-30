@@ -646,6 +646,7 @@
           :editForm="editForm"
           :chatType="'test'"
           :disableClick="disableClick"
+          :maxPicNum="currentMaxPicNum"
         />
       </div>
     </div>
@@ -691,7 +692,7 @@
 <script>
 import { appPublish, getApiKeyRoot } from '@/api/appspace';
 import { store } from '@/store/index';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters } from 'vuex';
 import CreateIntelligent from '@/components/createApp/createIntelligent';
 import setSafety from '@/components/setSafety';
 import visualSet from './visualSet';
@@ -857,6 +858,9 @@ export default {
       return this.modelOptions.find(
         item => item.modelId === this.editForm.modelParams,
       );
+    },
+    currentMaxPicNum() {
+      return this.editForm.visionsupport === 'support' ? 3 : -1;
     },
   },
   data() {
@@ -1059,7 +1063,6 @@ export default {
   },
   beforeDestroy() {
     store.dispatch('app/initState');
-    this.clearMaxPicNum();
   },
   methods: {
     avatarSrc,
@@ -1072,7 +1075,6 @@ export default {
       this.version = item.version || '';
       this.getAppDetail();
     },
-    ...mapActions('app', ['setMaxPicNum', 'clearMaxPicNum']),
     //系统提示词失去焦点时，触发提示词更新
     handleInstructionsBlur(e) {
       this.updateInfo();
@@ -1182,9 +1184,12 @@ export default {
         }
       } else {
         this.editForm.modelParams = '';
+        this.editForm.visionsupport = '';
+        this.editForm.functionCalling = '';
         if (val) this.$message.warning(this.$t('agent.form.modelNotSupport'));
       }
     },
+
     handlePublishSet() {
       this.$router.push({
         path: `/agent/publishSet`,
@@ -1638,10 +1643,6 @@ export default {
           })),
         ];
         this.syncToolDialogSelected();
-
-        // 暂时隐藏picNum字段依赖
-        // this.setMaxPicNum(this.editForm.visionConfig.picNum);
-        this.setMaxPicNum(1);
 
         this.$nextTick(() => {
           this.isSettingFromDetail = false;

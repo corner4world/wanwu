@@ -63,6 +63,7 @@
             :fileTypeArr="fileTypeArr"
             :type="type"
             :hasHistory="hasHistory"
+            :maxPicNum="maxPicNum"
             @preSend="preSend"
             @setSessionStatus="setSessionStatus"
             @clearHistory="handleClearHistory"
@@ -152,6 +153,11 @@ export default {
     assistantId: {
       type: String,
       default: '',
+    },
+    maxPicNum: {
+      type: Number,
+      required: false,
+      default: -1,
     },
   },
   components: {

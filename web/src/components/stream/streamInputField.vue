@@ -109,6 +109,7 @@
               :fileTypeArr="fileTypeArr"
               :type="type"
               :maxImageSize="maxImageSize"
+              :maxPicNum="maxPicNum"
               @setFileId="setFileId"
               @setFile="setFile"
             ></streamUploadField>
@@ -185,6 +186,11 @@ export default {
       required: false,
       default: null,
     },
+    maxPicNum: {
+      type: Number,
+      required: false,
+      default: -1,
+    },
   },
   mixins: [commonMixin, uploadChunk],
   components: { streamUploadField },
@@ -203,6 +209,7 @@ export default {
       isDragging: false,
       lastFileType: '',
       dragConfigured: false,
+      dragCleanup: null,
       colorArr: [
         '#dca3c2',
         '#aaa9db',
@@ -227,15 +234,21 @@ export default {
   watch: {
     maxPicNum: {
       handler(val) {
-        if (!val || this.dragConfigured) return;
+        if (val === undefined || val === null || val === '') return;
         this.initDrag(val);
-        this.dragConfigured = true;
       },
       immediate: true,
     },
   },
   computed: {
-    ...mapGetters('app', ['maxPicNum', 'sessionStatus']),
+    ...mapGetters('app', ['sessionStatus']),
+    normalizedMaxPicNum() {
+      const maxPicNum = Number(this.maxPicNum);
+      return Number.isFinite(maxPicNum) ? maxPicNum : 3;
+    },
+    hasImageLimit() {
+      return this.normalizedMaxPicNum >= 0;
+    },
     placeholder() {
       return this.supportReminder
         ? this.$t('common.input.modelChatPlaceholder2')
@@ -288,11 +301,17 @@ export default {
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
     }
+    if (typeof this.dragCleanup === 'function') {
+      this.dragCleanup();
+    }
   },
   methods: {
     initDrag(maxFiles) {
       this.$nextTick(() => {
-        this.$setupDragAndDrop({
+        if (typeof this.dragCleanup === 'function') {
+          this.dragCleanup();
+        }
+        this.dragCleanup = this.$setupDragAndDrop({
           containerSelector: '.editable-wp',
           maxImageFiles: maxFiles,
           maxSizeMB: Number.MAX_SAFE_INTEGER,
@@ -301,11 +320,12 @@ export default {
             this.processFiles(files);
           },
         });
+        this.dragConfigured = true;
       });
     },
     processFiles(files) {
       if (!files || files.length === 0) return;
-      const picked = this.filterImageSize(files);
+      const picked = this.filterImageCount(this.filterImageSize(files));
       if (!picked.length) return;
       const fileObjs = picked.map(f => ({
         raw: f,
@@ -356,6 +376,25 @@ export default {
         (file.type && file.type.indexOf('image/') === 0) ||
         ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].indexOf(ext) > -1
       );
+    },
+    filterImageCount(files) {
+      const picked = Array.prototype.slice.call(files || []);
+      if (!this.hasImageLimit) return picked;
+
+      let imageCount = 0;
+      const validFiles = picked.filter(file => {
+        if (!this.isImageFile(file)) return true;
+        imageCount += 1;
+        return imageCount <= this.normalizedMaxPicNum;
+      });
+
+      if (validFiles.length !== picked.length) {
+        this.$message.warning(
+          this.$t('app.uploadImgTips', { num: this.normalizedMaxPicNum }),
+        );
+      }
+
+      return validFiles;
     },
     filterImageSize(files) {
       const picked = Array.prototype.slice.call(files || []);

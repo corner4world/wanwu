@@ -53,6 +53,7 @@
             :assistantId="assistantId"
             :appUrlInfo="appUrlInfo"
             :type="chatType"
+            :maxPicNum="1"
             ref="agentChat"
             @reloadList="reloadList"
             @setHistoryStatus="setHistoryStatus"
@@ -65,7 +66,7 @@
 <script>
 import CommonLayout from '@/components/exploreContainer.vue';
 import Chat from './components/chat.vue';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters } from 'vuex';
 import {
   getAgentPublishedInfo,
   getOpenurlInfo,
@@ -164,11 +165,9 @@ export default {
     window.addEventListener('resize', this.checkMobile);
   },
   beforeDestroy() {
-    this.clearMaxPicNum();
     window.removeEventListener('resize', this.checkMobile);
   },
   methods: {
-    ...mapActions('app', ['setMaxPicNum', 'clearMaxPicNum']),
     checkMobile() {
       this.isMobile = window.innerWidth < 768;
       if (this.isMobile) {
@@ -227,10 +226,6 @@ export default {
         this.editForm.name = data.name;
         this.editForm.desc = data.desc;
         this.editForm.prologue = data.prologue;
-        this.setMaxPicNum(1);
-        // 待服务端支持后放开，目前限制1⬆️
-        // this.setMaxPicNum(data.visionConfig.picNum);
-
         this.editForm.recommendQuestion = data.recommendQuestion.map(item => ({
           value: item,
         }));

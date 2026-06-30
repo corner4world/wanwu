@@ -299,7 +299,6 @@
               @input="
                 val => {
                   editForm.visionConfig.picNum = val ? 1 : 0;
-                  setMaxPicNum(editForm.visionConfig.picNum);
                 }
               "
             ></el-switch>
@@ -312,6 +311,7 @@
           :chatType="'test'"
           :disableClick="disableClick"
           :maxImageSize="maxImageSize"
+          :maxPicNum="editForm.visionConfig.picNum"
         />
       </div>
     </div>
@@ -337,7 +337,6 @@
 
 <script>
 import { appPublish, getApiKeyRoot } from '@/api/appspace';
-import { mapActions } from 'vuex';
 import CreateTxtQues from '@/components/createApp/createRag.vue';
 import ModelSet from './modelSetDialog.vue';
 import metaSet from '@/components/metaSet';
@@ -588,9 +587,7 @@ export default {
       }, 500);
     }
   },
-  beforeDestroy() {
-    this.clearMaxPicNum();
-  },
+
   methods: {
     avatarSrc,
     reloadData() {
@@ -602,7 +599,6 @@ export default {
       this.version = item.version || '';
       this.getDetail();
     },
-    ...mapActions('app', ['setMaxPicNum', 'clearMaxPicNum']),
     //获取知识库或问答库选中数据
     getSelectKnowledge(data, type) {
       this.editForm[type]['knowledgebases'] = data;
@@ -662,8 +658,7 @@ export default {
             this.editForm.desc = res.data.desc;
             this.editForm.visionConfig = res.data.visionConfig;
             // 临时隐藏visionConfig的配置，全都设置为1
-            // this.setMaxPicNum(this.editForm.visionConfig.picNum);
-            this.setMaxPicNum(1);
+            this.editForm.visionConfig.picNum = 1;
 
             this.setModelInfo(res.data.modelConfig.modelId);
 
