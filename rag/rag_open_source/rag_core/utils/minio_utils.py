@@ -77,6 +77,24 @@ def upload_local_file(file_path):
         return {"code": 1, 'message': f'Minio 上传失败{e}', "download_link": ''}
 
 
+def remove_minio_file(object_name, bucket_name=None):
+    """
+    删除 MinIO 上的对象。
+
+    :param object_name: 对象名（不含桶名）
+    :param bucket_name: 桶名，默认取 MINIO_UPLOAD_BUCKET_NAME
+    :return: True=删除成功，False=删除失败
+    """
+    bucket = bucket_name or MINIO_UPLOAD_BUCKET_NAME
+    try:
+        GLOBAL_MINIO_CLIENT.remove_object(bucket, object_name)
+        logger.info(f"MinIO 删除成功: {bucket}/{object_name}")
+        return True
+    except Exception as e:
+        logger.error(f"MinIO 删除失败: {bucket}/{object_name}, 错误: {e}")
+        return False
+
+
 def create_download_url(bucket_name, object_name, expire=timedelta(days=1)):
     """生成预签名下载链接"""
     # 生成预签名下载链接
