@@ -183,7 +183,7 @@ func ResetPasswordByEmail(ctx *gin.Context, reset *request.ResetPasswordByEmail)
 	if config.Cfg().CustomInfo.ResetPasswordByEmail == 0 {
 		return grpc_util.ErrorStatus(errs.Code_BFFResetPasswordDisable)
 	}
-	password, err := decryptPD(reset.Password)
+	password, err := decryptCipherRSA(ctx.Request.Context(), reset.Cipher, reset.KeyID, challengeConsume)
 	if err != nil {
 		return fmt.Errorf("decrypt password err: %v", err)
 	}

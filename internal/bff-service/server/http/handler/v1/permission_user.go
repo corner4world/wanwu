@@ -152,7 +152,7 @@ func ChangeUserPassword(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFGeneral, "bff_user_cannot_change_other_password"))
 		return
 	}
-	err := service.ChangeUserPassword(ctx, req.UserID.UserID, req.OldPassword, req.NewPassword)
+	err := service.ChangeUserPassword(ctx, req.UserID.UserID, &req)
 	gin_util.Response(ctx, nil, err)
 }
 
@@ -175,7 +175,7 @@ func AdminChangeUserPassword(ctx *gin.Context) {
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatusWithKey(err_code.Code_BFFGeneral, "bff_user_cannot_change_other_password"))
 		return
 	}
-	err := service.AdminChangeUserPassword(ctx, req.UserID.UserID, req.Password)
+	err := service.AdminChangeUserPassword(ctx, req.UserID.UserID, &req)
 	gin_util.Response(ctx, nil, err)
 }
 

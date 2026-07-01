@@ -1821,15 +1821,21 @@ definitions:
       email:
         description: 邮箱
         type: string
-      newPassword:
+      keyId:
+        description: RSA公钥ID
         type: string
-      oldPassword:
+      newCipher:
+        description: 新密码RSA加密后的Base64字符串，包含{password, challenge}
+        type: string
+      oldCipher:
+        description: 旧密码RSA加密后的Base64字符串，包含{password, challenge}
         type: string
     required:
     - code
     - email
-    - newPassword
-    - oldPassword
+    - keyId
+    - newCipher
+    - oldCipher
     type: object
   request.ChatRagRequest:
     properties:
@@ -3461,22 +3467,26 @@ definitions:
     type: object
   request.Login:
     properties:
+      cipher:
+        description: RSA加密后的Base64字符串，包含{password, challenge}
+        type: string
       code:
         description: 验证码
         type: string
       key:
         description: 客户端key
         type: string
-      password:
-        description: 密码
+      keyId:
+        description: RSA公钥ID
         type: string
       username:
         description: 用户名
         type: string
     required:
+    - cipher
     - code
     - key
-    - password
+    - keyId
     - username
     type: object
   request.LoginEmailCheck:
@@ -4283,19 +4293,23 @@ definitions:
     type: object
   request.ResetPasswordByEmail:
     properties:
+      cipher:
+        description: RSA加密后的Base64字符串，包含{password, challenge}
+        type: string
       code:
         description: 邮箱验证码
         type: string
       email:
         description: 邮箱
         type: string
-      password:
-        description: 密码
+      keyId:
+        description: RSA公钥ID
         type: string
     required:
+    - cipher
     - code
     - email
-    - password
+    - keyId
     type: object
   request.ResetPasswordSendEmailCode:
     properties:
@@ -4913,17 +4927,20 @@ definitions:
     type: object
   request.UserCreate:
     properties:
+      cipher:
+        description: RSA加密后的Base64字符串，包含{password, challenge}
+        type: string
       company:
         description: 公司
         type: string
       gender:
         description: 性别（0-女，1-男，空-未知）
         type: string
+      keyId:
+        description: RSA公钥ID
+        type: string
       nickname:
         description: 昵称
-        type: string
-      password:
-        description: 密码
         type: string
       phone:
         description: 电话
@@ -4941,7 +4958,8 @@ definitions:
         description: 用户名
         type: string
     required:
-    - password
+    - cipher
+    - keyId
     - username
     type: object
   request.UserID:
@@ -4954,27 +4972,38 @@ definitions:
     type: object
   request.UserPassword:
     properties:
-      newPassword:
+      keyId:
+        description: RSA公钥ID
         type: string
-      oldPassword:
+      newCipher:
+        description: 新密码RSA加密后的Base64字符串，包含{password, challenge}
+        type: string
+      oldCipher:
+        description: 旧密码RSA加密后的Base64字符串，包含{password, challenge}
         type: string
       userId:
         description: 用户ID
         type: string
     required:
-    - newPassword
-    - oldPassword
+    - keyId
+    - newCipher
+    - oldCipher
     - userId
     type: object
   request.UserPasswordByAdmin:
     properties:
-      password:
+      cipher:
+        description: RSA加密后的Base64字符串，包含{password, challenge}
+        type: string
+      keyId:
+        description: RSA公钥ID
         type: string
       userId:
         description: 用户ID
         type: string
     required:
-    - password
+    - cipher
+    - keyId
     - userId
     type: object
   request.UserStatus:
@@ -4989,17 +5018,20 @@ definitions:
     type: object
   request.UserUpdate:
     properties:
+      cipher:
+        description: RSA加密后的Base64字符串，包含{password, challenge}
+        type: string
       company:
         description: 公司
         type: string
       gender:
         description: 性别（0-女，1-男，空-未知）
         type: string
+      keyId:
+        description: RSA公钥ID
+        type: string
       nickname:
         description: 昵称
-        type: string
-      password:
-        description: 密码
         type: string
       phone:
         description: 电话
@@ -5017,7 +5049,8 @@ definitions:
         description: 用户ID
         type: string
     required:
-    - password
+    - cipher
+    - keyId
     - userId
     type: object
   request.VisionConfig:
@@ -7803,6 +7836,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/response.CustomLoginEmail'
         description: 邮箱登录信息
+      passwordRSAEncrypt:
+        description: 是否启用密码RSA加密
+        type: boolean
       register:
         allOf:
         - $ref: '#/definitions/response.CustomRegister'
@@ -8575,6 +8611,21 @@ definitions:
       permissionType:
         description: 当前用户对该问答库的权限类型 -1:无权限 0:查看 10:编辑 20:授权 30:系统管理授权
         type: integer
+    type: object
+  response.RSAPublicKey:
+    properties:
+      challenge:
+        description: 服务端下发的Challenge，前端提交密码时需原样带回
+        type: string
+      expires_in:
+        description: 建议缓存时间(秒)
+        type: integer
+      keyId:
+        description: 密钥ID
+        type: string
+      public_key:
+        description: PEM格式的公钥
+        type: string
     type: object
   response.RagInfo:
     properties:
@@ -13425,6 +13476,26 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: 邮箱注册验证码发送
+      tags:
+      - guest
+  /base/rsa/public-key:
+    get:
+      consumes:
+      - application/json
+      description: 获取用于密码加密的RSA公钥和Challenge
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.RSAPublicKey'
+              type: object
+      summary: 获取RSA公钥
       tags:
       - guest
   /builtin/skill/download:

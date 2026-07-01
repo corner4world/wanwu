@@ -20,22 +20,10 @@ func Login(ctx *gin.Context, login *request.Login, language string) (*response.L
 		return nil, grpc_util.ErrorStatus(err_code.Code_BFFSingleLoginDisable)
 	}
 
-	// 优先使用RSA解密（新方式），如果keyID为空则降级使用AES解密（兼容旧版本）
-	var password string
-	var err error
-
-	if login.KeyID != "" {
-		// RSA解密方式
-		password, err = decryptPasswordRSA(login.Password, login.KeyID, login.Timestamp)
-		if err != nil {
-			return nil, fmt.Errorf("decrypt password with RSA err: %v", err)
-		}
-	} else {
-		// AES解密方式（兼容旧版本，后续可移除）
-		password, err = decryptPD(login.Password)
-		if err != nil {
-			return nil, fmt.Errorf("decrypt password with AES err: %v", err)
-		}
+	// 使用RSA解密密码
+	password, err := decryptCipherRSA(ctx.Request.Context(), login.Cipher, login.KeyID, challengeConsume)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt password err: %v", err)
 	}
 
 	resp, err := iam.Login(ctx.Request.Context(), &iam_service.LoginReq{
@@ -56,22 +44,10 @@ func LoginByEmail(ctx *gin.Context, login *request.Login) (*response.LoginByEmai
 		return nil, grpc_util.ErrorStatus(err_code.Code_BFFLoginDisable)
 	}
 
-	// 优先使用RSA解密（新方式），如果keyID为空则降级使用AES解密（兼容旧版本）
-	var password string
-	var err error
-
-	if login.KeyID != "" {
-		// RSA解密方式
-		password, err = decryptPasswordRSA(login.Password, login.KeyID, login.Timestamp)
-		if err != nil {
-			return nil, fmt.Errorf("decrypt password with RSA err: %v", err)
-		}
-	} else {
-		// AES解密方式（兼容旧版本，后续可移除）
-		password, err = decryptPD(login.Password)
-		if err != nil {
-			return nil, fmt.Errorf("decrypt password with AES err: %v", err)
-		}
+	// 使用RSA解密密码
+	password, err := decryptCipherRSA(ctx.Request.Context(), login.Cipher, login.KeyID, challengeConsume)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt password err: %v", err)
 	}
 
 	resp, err := iam.LoginByEmail(ctx.Request.Context(), &iam_service.LoginByEmailReq{
@@ -120,13 +96,13 @@ func ChangeUserPasswordByEmail(ctx *gin.Context, login *request.ChangeUserPasswo
 	if config.Cfg().CustomInfo.LoginByEmail == 0 {
 		return nil, grpc_util.ErrorStatus(err_code.Code_BFFLoginDisable)
 	}
-	oldPassword, err := decryptPD(login.OldPassword)
+	oldPassword, err := decryptCipherRSA(ctx.Request.Context(), login.OldCipher, login.KeyID, challengeValidateOnly)
 	if err != nil {
-		return nil, fmt.Errorf("decrypt password err: %v", err)
+		return nil, fmt.Errorf("decrypt old password err: %v", err)
 	}
-	newPassword, err := decryptPD(login.NewPassword)
+	newPassword, err := decryptCipherRSA(ctx.Request.Context(), login.NewCipher, login.KeyID, challengeConsume)
 	if err != nil {
-		return nil, fmt.Errorf("decrypt password err: %v", err)
+		return nil, fmt.Errorf("decrypt new password err: %v", err)
 	}
 	resp, err := iam.ChangeUserPasswordByEmail(ctx.Request.Context(), &iam_service.ChangeUserPasswordByEmailReq{
 		UserId:      userId,
