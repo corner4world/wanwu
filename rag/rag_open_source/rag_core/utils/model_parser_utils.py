@@ -76,7 +76,7 @@ def get_page_data(page_num, add_file_path, ocr_model_id):
         api_key = ""
         model_name = ""
         if isinstance(model_config, OcrModelConfig):
-            wanwu_ocr_url = model_config.endpoint_url + "/pdf-parser"
+            wanwu_ocr_url = model_config.endpoint_url + "/ocr"
             api_key = model_config.api_key
             model_name = getattr(model_config, "model_name", "") or ""
         headers = {
@@ -306,7 +306,7 @@ def model_parser_image(image_file_path, ocr_model_id):
     wanwu_ocr_url = ""
     api_key = ""
     if isinstance(model_config, OcrModelConfig):
-        wanwu_ocr_url = model_config.endpoint_url + "/pdf-parser"
+        wanwu_ocr_url = model_config.endpoint_url + "/ocr"
         api_key = model_config.api_key
 
     file_name = os.path.split(image_file_path)[-1]
