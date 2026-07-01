@@ -107,7 +107,7 @@ def get_page_data(page_num, add_file_path, ocr_model_id):
                 if ret_json.get("code") == 0:
                     data_obj = ret_json.get("data", {}) or {}
                     text = data_obj.get("fullContent", "")
-                    image_url_prefix = ret_json.get("prefix_image_url", "")
+                    image_url_prefix = ret_json.get("prefixImageUrl", "")
                     if image_url_prefix:
                         text, replace_info = minio_utils.replace_minio_url(text, image_url_prefix)
                         logger.info(f"get_page_data replace url info: {replace_info}")
@@ -338,7 +338,7 @@ def model_parser_image(image_file_path, ocr_model_id):
         if ret_json.get("code") == 0:
             data_obj = ret_json.get("data", {}) or {}
             text = data_obj.get("fullContent", "")
-            image_url_prefix = ret_json.get("prefix_image_url", "")
+            image_url_prefix = ret_json.get("prefixImageUrl", "")
             if image_url_prefix:
                 text, replace_info = minio_utils.replace_minio_url(text, image_url_prefix)
             return text
