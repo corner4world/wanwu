@@ -321,7 +321,7 @@
 import Pagination from '@/components/pagination.vue';
 import resetPwd from '../components/resetPwd';
 import SearchInput from '@/components/searchInput.vue';
-import { urlEncrypt } from '@/utils/crypto';
+import { rsaEncrypt } from '@/utils/crypto';
 import { debounce } from 'throttle-debounce';
 import {
   fetchUserList,
@@ -623,7 +623,10 @@ export default {
 
         this.submitLoading = true;
         const params = { ...this.form };
-        params.password = urlEncrypt(this.form.password);
+        const { cipher, keyId } = await rsaEncrypt(this.form.password);
+        params.cipher = cipher;
+        params.keyId = keyId;
+        delete params.password;
         params.nickname = this.form.username;
         params.roleIds = params.roleIds ? [params.roleIds] : [];
         if (this.isEdit) params.userId = this.row.userId;
@@ -644,7 +647,7 @@ export default {
                 await this.getTableData();
                 return;
               }
-              window.location.reload();
+              location.reload();
               return;
             }
             await this.getTableData();
