@@ -68,10 +68,11 @@ func GetLogoCustomInfo(ctx *gin.Context, mode string) (response.LogoCustomInfo, 
 				Version:   config.Cfg().CustomInfo.Version,
 				Copyright: gin_util.I18nKey(ctx, mode.About.Copyright),
 			},
-			LinkList:      config.Cfg().DocCenter.GetDocs(),
-			Register:      response.CustomRegister{Email: response.CustomEmail{Status: config.Cfg().CustomInfo.RegisterByEmail != 0}},
-			ResetPassword: response.CustomResetPassword{Email: response.CustomEmail{Status: config.Cfg().CustomInfo.ResetPasswordByEmail != 0}},
-			LoginEmail:    response.CustomLoginEmail{Email: response.CustomEmail{Status: config.Cfg().CustomInfo.LoginByEmail != 0}},
+			LinkList:           config.Cfg().DocCenter.GetDocs(),
+			Register:           response.CustomRegister{Email: response.CustomEmail{Status: config.Cfg().CustomInfo.RegisterByEmail != 0}},
+			ResetPassword:      response.CustomResetPassword{Email: response.CustomEmail{Status: config.Cfg().CustomInfo.ResetPasswordByEmail != 0}},
+			LoginEmail:         response.CustomLoginEmail{Email: response.CustomEmail{Status: config.Cfg().CustomInfo.LoginByEmail != 0}},
+			PasswordRSAEncrypt: config.Cfg().CustomInfo.PasswordRSAEncrypt != 0,
 			DefaultIcon: response.CustomDefaultIcon{
 				RagIcon:      config.Cfg().DefaultIcon.RagIcon,
 				AgentIcon:    config.Cfg().DefaultIcon.AgentIcon,
@@ -182,7 +183,7 @@ func ResetPasswordByEmail(ctx *gin.Context, reset *request.ResetPasswordByEmail)
 	if config.Cfg().CustomInfo.ResetPasswordByEmail == 0 {
 		return grpc_util.ErrorStatus(errs.Code_BFFResetPasswordDisable)
 	}
-	password, err := decryptPD(reset.Password)
+	password, err := decryptCipherRSA(ctx.Request.Context(), reset.Cipher, reset.KeyID, challengeConsume)
 	if err != nil {
 		return fmt.Errorf("decrypt password err: %v", err)
 	}
