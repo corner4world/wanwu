@@ -17,6 +17,7 @@ import time
 import fitz
 from pathlib import Path
 from utils import minio_utils
+from settings import MINIO_ADDRESS, REPLACE_MINIO_DOWNLOAD_URL
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,10 @@ def get_page_data(page_num, add_file_path, ocr_model_id):
             return None, page_num
 
         minio_url = upload_result['download_link']
+        # 与 ASR 保持一致：将公开代理 URL 替换为内网 MinIO 地址
+        if not minio_url.startswith(f"http://{MINIO_ADDRESS}") and REPLACE_MINIO_DOWNLOAD_URL in minio_url:
+            suffix = minio_url.replace(REPLACE_MINIO_DOWNLOAD_URL, "").lstrip("/")
+            minio_url = f"http://{MINIO_ADDRESS}/{suffix}"
         object_name = minio_url.split('/')[-1]
 
         model_config = get_model_configure(ocr_model_id)
@@ -318,6 +323,10 @@ def model_parser_image(image_file_path, ocr_model_id):
         return ""
 
     minio_url = upload_result['download_link']
+    # 与 ASR 保持一致：将公开代理 URL 替换为内网 MinIO 地址
+    if not minio_url.startswith(f"http://{MINIO_ADDRESS}") and REPLACE_MINIO_DOWNLOAD_URL in minio_url:
+        suffix = minio_url.replace(REPLACE_MINIO_DOWNLOAD_URL, "").lstrip("/")
+        minio_url = f"http://{MINIO_ADDRESS}/{suffix}"
     object_name = minio_url.split('/')[-1]
 
     headers = {
