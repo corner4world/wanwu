@@ -273,8 +273,12 @@ func generateKeyFilesAtomic(privateKeyPath, publicKeyPath string) error {
 	}
 	// 获取锁成功，确保退出时清理
 	defer func() {
-		lockFile.Close()
-		os.Remove(lockPath)
+		if err := lockFile.Close(); err != nil {
+			log.Warnf("close lock file failed: %v", err)
+		}
+		if err := os.Remove(lockPath); err != nil && !os.IsNotExist(err) {
+			log.Warnf("remove lock file failed: %v", err)
+		}
 	}()
 
 	// 获取锁后再次检查，防止竞态
@@ -342,26 +346,38 @@ func atomicWriteFile(path string, data []byte, perm os.FileMode) error {
 	tmpPath := tmpFile.Name()
 
 	if _, err := tmpFile.Write(data); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		if closeErr := tmpFile.Close(); closeErr != nil {
+			log.Warnf("close temp file failed: %v", closeErr)
+		}
+		if removeErr := os.Remove(tmpPath); removeErr != nil && !os.IsNotExist(removeErr) {
+			log.Warnf("remove temp file failed: %v", removeErr)
+		}
 		return fmt.Errorf("write temp file failed: %w", err)
 	}
 
 	if err := tmpFile.Chmod(perm); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		if closeErr := tmpFile.Close(); closeErr != nil {
+			log.Warnf("close temp file failed: %v", closeErr)
+		}
+		if removeErr := os.Remove(tmpPath); removeErr != nil && !os.IsNotExist(removeErr) {
+			log.Warnf("remove temp file failed: %v", removeErr)
+		}
 		return fmt.Errorf("chmod temp file failed: %w", err)
 	}
 
 	if err := tmpFile.Close(); err != nil {
-		os.Remove(tmpPath)
+		if removeErr := os.Remove(tmpPath); removeErr != nil && !os.IsNotExist(removeErr) {
+			log.Warnf("remove temp file failed: %v", removeErr)
+		}
 		return fmt.Errorf("close temp file failed: %w", err)
 	}
 
 	// 原子 rename 到目标路径
 	if err := os.Rename(tmpPath, path); err != nil {
 		// rename 失败（Docker bind mount 等场景），回退到直接写入
-		os.Remove(tmpPath)
+		if removeErr := os.Remove(tmpPath); removeErr != nil && !os.IsNotExist(removeErr) {
+			log.Warnf("remove temp file failed: %v", removeErr)
+		}
 		//log.Infof("rename failed for %s (likely Docker bind mount), falling back to direct write: %v", path, err)
 		if err := os.WriteFile(path, data, perm); err != nil {
 			return fmt.Errorf("direct write file failed: %w", err)
