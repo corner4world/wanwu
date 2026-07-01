@@ -1991,6 +1991,7 @@ export default {
     imageSizeModelLimit:
       'The current model only supports image files under {maxSize} MB',
     uploadFileLimitTips: 'You can upload up to {num} files',
+    uploadFileSizeLimitTips: 'Non-image files cannot exceed {maxSize} MB',
     uploadFileAndImgLimitTips:
       'You can upload up to {fileNum} files, including up to {imageNum} images',
     publishType: {

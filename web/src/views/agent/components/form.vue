@@ -646,8 +646,10 @@
           :editForm="editForm"
           :chatType="'test'"
           :disableClick="disableClick"
+          :maxImageSize="currentMaxImageSize"
           :maxPicNum="currentMaxPicNum"
           :maxFileNum="10"
+          :maxFileSize="3"
         />
       </div>
     </div>
@@ -862,6 +864,10 @@ export default {
     },
     currentMaxPicNum() {
       return this.editForm.visionsupport === 'support' ? 3 : -1;
+    },
+    currentMaxImageSize() {
+      const size = Number(this.modelSelectedInfo?.config?.maxImageSize);
+      return size > 0 ? size : null;
     },
   },
   data() {

@@ -125,11 +125,7 @@
                 }}
               </p>
               <div class="tips">
-                <p v-if="visibleImageSizeLimit">
-                  {{
-                    $t('app.imageSizeModelLimit', { maxSize: maxImageSizeMB })
-                  }}
-                </p>
+                <p v-if="visibleSizeLimitTips">{{ sizeLimitTips }}</p>
                 <p>
                   {{ $t('common.fileUpload.typeFileTip1') }}
                   <span>{{ tipsArr }}</span>
@@ -174,6 +170,13 @@ export default {
       required: false,
       default: null,
     },
+    // 文件大小限制（null,undefined,-1，0表示不限制）
+    maxFileSize: {
+      type: [Number, String],
+      required: false,
+      default: null,
+    },
+    // 图片数量限制（-1表示不限制）
     maxPicNum: {
       type: Number,
       required: false,
@@ -289,8 +292,37 @@ export default {
     maxImageSizeBytes() {
       return this.maxImageSizeMB ? this.maxImageSizeMB * 1024 * 1024 : 0;
     },
+    maxFileSizeMB() {
+      const maxSize = Number(this.maxFileSize);
+      return maxSize > 0 ? maxSize : 0;
+    },
+    maxFileSizeBytes() {
+      return this.maxFileSizeMB ? this.maxFileSizeMB * 1024 * 1024 : 0;
+    },
     visibleImageSizeLimit() {
       return this.maxImageSizeMB > 0;
+    },
+    visibleFileSizeLimit() {
+      return this.maxFileSizeMB > 0;
+    },
+    visibleSizeLimitTips() {
+      return this.visibleImageSizeLimit || this.visibleFileSizeLimit;
+    },
+    sizeLimitTips() {
+      const tips = [];
+      if (this.visibleImageSizeLimit) {
+        tips.push(
+          this.$t('app.imageSizeModelLimit', { maxSize: this.maxImageSizeMB }),
+        );
+      }
+      if (this.visibleFileSizeLimit) {
+        tips.push(
+          this.$t('app.uploadFileSizeLimitTips', {
+            maxSize: this.maxFileSizeMB,
+          }),
+        );
+      }
+      return tips.join('，');
     },
     allFilesUploaded() {
       return (
@@ -500,7 +532,9 @@ export default {
       if (nextFileType === 'image/*' && this.isImageOverSize(file)) {
         return { valid: false, type: 'imageSize' };
       }
-
+      if (nextFileType !== 'image/*' && this.isFileOverSize(file)) {
+        return { valid: false, type: 'fileSize' };
+      }
       return { valid: true, type: nextFileType };
     },
     showUploadValidateMessage(validateResult) {
@@ -508,6 +542,15 @@ export default {
         this.$message.warning(
           this.$t('knowledgeManage.multiKnowledgeDatabase.imageSizeLimit', {
             maxSize: this.maxImageSizeMB,
+          }),
+        );
+        return;
+      }
+
+      if (validateResult.type === 'fileSize') {
+        this.$message.warning(
+          this.$t('app.uploadFileSizeLimitTips', {
+            maxSize: this.maxFileSizeMB,
           }),
         );
         return;
@@ -532,6 +575,9 @@ export default {
       return (
         this.maxImageSizeBytes && file && file.size > this.maxImageSizeBytes
       );
+    },
+    isFileOverSize(file) {
+      return this.maxFileSizeBytes && file && file.size > this.maxFileSizeBytes;
     },
     uploadFile(fileName, oldFileName, fiePath) {
       // 文件上传完成后，释放队列锁并继续调度下一个 pending 文件

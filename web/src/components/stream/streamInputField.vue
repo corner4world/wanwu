@@ -105,6 +105,7 @@
               :fileTypeArr="fileTypeArr"
               :type="type"
               :maxImageSize="maxImageSize"
+              :maxFileSize="maxFileSize"
               :maxPicNum="maxPicNum"
               :maxFileNum="maxFileNum"
               @setFileId="setFileId"
@@ -183,6 +184,13 @@ export default {
       required: false,
       default: null,
     },
+    // 文件大小限制（null,undefined,-1，0表示不限制）
+    maxFileSize: {
+      type: [Number, String],
+      required: false,
+      default: null,
+    },
+    // 图片数量限制（-1 表示不限制）
     maxPicNum: {
       type: Number,
       required: false,
@@ -280,6 +288,13 @@ export default {
     maxImageSizeBytes() {
       return this.maxImageSizeMB ? this.maxImageSizeMB * 1024 * 1024 : 0;
     },
+    maxFileSizeMB() {
+      const maxSize = Number(this.maxFileSize);
+      return maxSize > 0 ? maxSize : 0;
+    },
+    maxFileSizeBytes() {
+      return this.maxFileSizeMB ? this.maxFileSizeMB * 1024 * 1024 : 0;
+    },
   },
   mounted() {
     if (this.supportReminder) {
@@ -345,7 +360,7 @@ export default {
     processFiles(files) {
       if (!files || files.length === 0) return;
       const picked = this.filterFileCount(
-        this.filterImageCount(this.filterImageSize(files)),
+        this.filterImageCount(this.filterFileSize(this.filterImageSize(files))),
       );
       if (!picked.length) return;
       const fileObjs = picked.map(f => {
@@ -459,6 +474,24 @@ export default {
         this.$message.warning(
           this.$t('knowledgeManage.multiKnowledgeDatabase.imageSizeLimit', {
             maxSize: this.maxImageSizeMB,
+          }),
+        );
+      }
+
+      return validFiles;
+    },
+    filterFileSize(files) {
+      const picked = Array.prototype.slice.call(files || []);
+      if (!this.maxFileSizeBytes) return picked;
+
+      const validFiles = picked.filter(file => {
+        return this.isImageFile(file) || file.size <= this.maxFileSizeBytes;
+      });
+
+      if (validFiles.length !== picked.length) {
+        this.$message.warning(
+          this.$t('app.uploadFileSizeLimitTips', {
+            maxSize: this.maxFileSizeMB,
           }),
         );
       }

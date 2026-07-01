@@ -63,8 +63,10 @@
             :fileTypeArr="fileTypeArr"
             :type="type"
             :hasHistory="hasHistory"
+            :maxImageSize="maxImageSize"
             :maxPicNum="maxPicNum"
             :maxFileNum="maxFileNum"
+            :maxFileSize="maxFileSize"
             @preSend="preSend"
             @setSessionStatus="setSessionStatus"
             @clearHistory="handleClearHistory"
@@ -155,6 +157,11 @@ export default {
       type: String,
       default: '',
     },
+    maxImageSize: {
+      type: [Number, String],
+      required: false,
+      default: null,
+    },
     maxPicNum: {
       type: Number,
       required: false,
@@ -164,6 +171,11 @@ export default {
       type: Number,
       required: false,
       default: -1,
+    },
+    maxFileSize: {
+      type: [Number, String],
+      required: false,
+      default: null,
     },
   },
   components: {
