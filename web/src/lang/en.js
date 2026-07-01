@@ -1984,9 +1984,15 @@ export default {
     selectKnowledge: '请选择知识库',
     recommendedQuestion: '推荐问题:',
     qaUplodFileTips: '文件上传成功，请手动刷新问答库列表',
+    imgLimit: 'You can upload up to {num} images',
+    imgLimitOnly: 'You can upload up to {num} images',
+    imgLimitTips: 'Images and other files can be uploaded together',
+    uploadImgTips: 'You can upload up to {num} images',
     imageSizeModelLimit:
       'The current model only supports image files under {maxSize} MB',
     uploadFileLimitTips: 'You can upload up to {num} files',
+    uploadFileAndImgLimitTips:
+      'You can upload up to {fileNum} files, including up to {imageNum} images',
     publishType: {
       private: '私密发布为应用：仅自己可见',
       organization: '公开发布为应用：组织内可见',

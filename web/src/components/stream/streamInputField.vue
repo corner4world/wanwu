@@ -21,52 +21,48 @@
       </el-tooltip>
     </div>
     <div class="editable-box">
-      <!-- image file -->
-      <div v-if="fileType === 'image/*'" class="echo-img-box">
+      <!-- file preview -->
+      <div v-if="fileList.length" class="echo-img-box mixed-file-box">
         <div
           v-for="(file, i) in fileList"
-          class="echo-img-item"
-          :key="'file' + i"
+          :class="[
+            'echo-img-item',
+            'mixed-file-item',
+            { 'doc-file-item': !isImageFile(file) && !isAudioFile(file) },
+          ]"
+          :key="file.uid || 'file' + i"
         >
           <el-image
+            v-if="isImageFile(file)"
             class="echo-img"
             :src="file.fileUrl"
             :preview-src-list="[file.imgUrl || file.fileUrl]"
           ></el-image>
+          <audio v-else-if="isAudioFile(file)" controls class="echo-audio">
+            <source :src="file.fileUrl" type="video/mp3" />
+            <source :src="file.fileUrl" type="audio/ogg" />
+            <source :src="file.fileUrl" type="audio/mpeg" />
+            {{ $t('agent.autioTips') }}
+          </audio>
+          <div v-else class="docInfo-container">
+            <img :src="require('@/assets/imgs/fileicon.png')" class="docIcon" />
+            <div class="docInfo">
+              <p class="docInfo_name">
+                {{ $t('knowledgeManage.fileName') }}：{{ file.name }}
+              </p>
+              <p class="docInfo_size">
+                {{ $t('knowledgeManage.fileSize') }}：{{
+                  getFileSizeDisplay(file.size)
+                }}
+              </p>
+            </div>
+          </div>
           <i class="el-icon-close echo-close" @click.stop="removeFile(i)"></i>
           <span
             class="el-icon-loading loading-icon-img"
-            v-if="fileLoading"
+            v-if="file.uploadStatus === 'uploading'"
           ></span>
         </div>
-      </div>
-      <!-- audio file -->
-      <div v-if="fileType === 'audio/*'" class="echo-audio-box">
-        <audio id="audio" controls>
-          <source :src="fileUrl" type="video/mp3" />
-          <source :src="fileUrl" type="audio/ogg" />
-          <source :src="fileUrl" type="audio/mpeg" />
-          {{ $t('agent.autioTips') }}
-        </audio>
-        <i class="el-icon-close echo-close" @click="clearFile"></i>
-      </div>
-      <!-- document file -->
-      <div v-if="fileType === 'doc/*'" class="echo-img-box echo-doc-box">
-        <img :src="require('@/assets/imgs/fileicon.png')" class="docIcon" />
-        <div class="docInfo">
-          <p class="docInfo_name">
-            {{ $t('knowledgeManage.fileName') }}：{{ fileList[0]['name'] }}
-          </p>
-          <p class="docInfo_size">
-            {{ $t('knowledgeManage.fileSize') }}：{{
-              fileList[0]['size'] > 1024
-                ? (fileList[0]['size'] / (1024 * 1024)).toFixed(2) + ' MB'
-                : fileList[0]['size'] + ' bytes'
-            }}
-          </p>
-        </div>
-        <span class="el-icon-loading loading-icon" v-if="fileLoading"></span>
-        <i class="el-icon-close echo-close" @click="clearFile"></i>
       </div>
       <!-- 问答输入框 -->
       <div
@@ -212,6 +208,7 @@ export default {
       fileList: [],
       fileUrl: '',
       fileLoading: false,
+      isUploading: false,
       isDragging: false,
       lastFileType: '',
       dragConfigured: false,
@@ -351,55 +348,62 @@ export default {
         this.filterImageCount(this.filterImageSize(files)),
       );
       if (!picked.length) return;
-      const fileObjs = picked.map(f => ({
-        raw: f,
-        uid: f.uid || this.$guid(),
-        percentage: 0,
-        progressStatus: 'active',
-        fileName: f.name,
-        name: f.name,
-        size: f.size,
-        type: f.type,
-        fileUrl: URL.createObjectURL(f),
-        imgUrl: URL.createObjectURL(f),
-      }));
-      const ext = (picked[0].name.split('.').pop() || '').toLowerCase();
-      const mime = picked[0].type;
-      let ftype = '';
-      if (
-        (mime && mime.indexOf('image/') === 0) ||
-        ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].indexOf(ext) > -1
-      )
-        ftype = 'image/*';
-      else if (
-        (mime && mime.indexOf('audio/') === 0) ||
-        ['mp3', 'wav', 'ogg'].indexOf(ext) > -1
-      )
-        ftype = 'audio/*';
-      else ftype = 'doc/*';
-      this.fileType = ftype;
-      this.fileList = fileObjs;
-      this.fileUrl = fileObjs[0].fileUrl;
+      const fileObjs = picked.map(f => {
+        const fileUrl = URL.createObjectURL(f);
+        const fileObj = {
+          raw: f,
+          uid: f.uid || this.$guid(),
+          percentage: 0,
+          progressStatus: 'active',
+          uploadStatus: 'pending',
+          uploaded: false,
+          fileName: f.name,
+          name: f.name,
+          size: f.size,
+          type: f.type,
+          fileUrl,
+        };
+        fileObj.fileType = this.getFileType(fileObj);
+        if (fileObj.fileType === 'image/*') {
+          fileObj.imgUrl = fileUrl;
+        }
+        return fileObj;
+      });
+      this.fileList = [...this.fileList, ...fileObjs];
+      this.fileType = this.fileList[this.fileList.length - 1]?.fileType || '';
+      this.fileUrl = this.fileList[this.fileList.length - 1]?.fileUrl || '';
       this.hasFile = true;
       this.fileLoading = true;
-      if (this.fileList.length > 0) {
-        this.maxSizeBytes = 0;
-        this.isExpire = true;
-        for (let i = 0; i < this.fileList.length; i++) {
-          if (!this.fileList[i].uploaded) {
-            this.startUpload(i);
-            this.fileList[i].uploaded = true;
-          }
-        }
-      }
+      this.triggerNextUpload();
     },
     isImageFile(file) {
       if (!file || !file.name) return false;
       const ext = (file.name.split('.').pop() || '').toLowerCase();
       return (
+        file.fileType === 'image/*' ||
         (file.type && file.type.indexOf('image/') === 0) ||
         ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].indexOf(ext) > -1
       );
+    },
+    isAudioFile(file) {
+      if (!file || !file.name) return false;
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      return (
+        file.fileType === 'audio/*' ||
+        (file.type && file.type.indexOf('audio/') === 0) ||
+        ['mp3', 'wav', 'ogg'].indexOf(ext) > -1
+      );
+    },
+    getFileType(file) {
+      if (!file || !file.name) return '';
+      if (this.isImageFile(file)) return 'image/*';
+      if (this.isAudioFile(file)) return 'audio/*';
+      return 'doc/*';
+    },
+    getFileSizeDisplay(fileSize) {
+      return fileSize > 1024
+        ? `${(fileSize / (1024 * 1024)).toFixed(2)} MB`
+        : `${fileSize} bytes`;
     },
     showFileLimitMessage() {
       this.$message.warning(
@@ -428,7 +432,9 @@ export default {
       const picked = Array.prototype.slice.call(files || []);
       if (!this.hasEffectiveImageLimit) return picked;
 
-      let imageCount = 0;
+      let imageCount = this.fileList.filter(file =>
+        this.isImageFile(file),
+      ).length;
       const validFiles = picked.filter(file => {
         if (!this.isImageFile(file)) return true;
         imageCount += 1;
@@ -461,25 +467,80 @@ export default {
     },
     filterFileCount(files) {
       const picked = Array.prototype.slice.call(files || []);
-      if (!this.hasFileLimit || picked.length <= this.normalizedMaxFileNum) {
+      if (!this.hasFileLimit) return picked;
+
+      const remainCount = this.normalizedMaxFileNum - this.fileList.length;
+      if (remainCount <= 0) {
+        this.showFileLimitMessage();
+        return [];
+      }
+      if (picked.length <= remainCount) {
         return picked;
       }
 
       this.showFileLimitMessage();
-      return picked.slice(0, this.normalizedMaxFileNum);
+      return picked.slice(0, remainCount);
     },
     uploadFile(fileName, oldFileName, fiePath) {
-      //文件上传完之后
-      if (this.lastFileType && this.lastFileType !== this.fileType) {
-        this.fileIdList = [];
+      // 文件上传完成后，释放队列锁并继续调度下一个 pending 文件
+      const currentFile = this.fileList[this.fileIndex] || {};
+      if (!currentFile.uid) {
+        this.isUploading = false;
+        this.fileLoading = false;
+        this.triggerNextUpload();
+        return;
       }
-      this.lastFileType = this.fileType;
-      this.fileLoading = false;
-      this.fileIdList.push({
+      this.lastFileType = currentFile.fileType || this.fileType;
+      this.$set(currentFile, 'uploadStatus', 'success');
+      this.$set(currentFile, 'uploaded', true);
+      this.$set(currentFile, 'percentage', 100);
+      const fileInfoItem = {
+        uid: currentFile.uid,
+        fileType: currentFile.fileType,
         fileName,
-        fileSize: this.fileList[this.fileIndex]['size'],
+        oldFileName,
+        fileSize: currentFile.size,
         fileUrl: fiePath,
-      });
+      };
+      if (currentFile.fileType === 'image/*') {
+        fileInfoItem.imgUrl = currentFile.imgUrl || currentFile.fileUrl;
+      }
+      const index = this.fileIdList.findIndex(
+        item => item.uid === currentFile.uid,
+      );
+      if (index > -1) {
+        this.$set(this.fileIdList, index, fileInfoItem);
+      } else {
+        this.fileIdList.push(fileInfoItem);
+      }
+      this.isUploading = false;
+      this.fileLoading = this.fileList.some(file => this.isPendingUpload(file));
+      this.triggerNextUpload();
+    },
+    isPendingUpload(file) {
+      if (!file) return false;
+      if (file.uploadStatus) return file.uploadStatus === 'pending';
+      return file.percentage !== 100;
+    },
+    triggerNextUpload() {
+      if (this.isUploading || !this.fileList || this.fileList.length === 0) {
+        return;
+      }
+      const nextPendingIndex = this.fileList.findIndex(file =>
+        this.isPendingUpload(file),
+      );
+      if (nextPendingIndex === -1) {
+        this.fileLoading = false;
+        return;
+      }
+
+      this.maxSizeBytes = 0;
+      this.isExpire = true;
+      this.isUploading = true;
+      this.fileLoading = true;
+      this.$set(this.fileList[nextPendingIndex], 'uploadStatus', 'uploading');
+      this.$set(this.fileList[nextPendingIndex], 'uploaded', true);
+      this.startUpload(nextPendingIndex);
     },
     // 处理拖拽到输入框的文件
     handleDrop(event) {
@@ -518,45 +579,51 @@ export default {
       this.fileType = '';
       this.fileUrl = '';
       this.hasFile = false;
+      this.fileLoading = false;
+      this.isUploading = false;
     },
     removeFile(index) {
+      const removedFile = this.fileList[index];
       this.fileList.splice(index, 1);
-      this.fileIdList.splice(index, 1);
+      const fileInfoIndex = this.fileIdList.findIndex(
+        item => item.uid === removedFile?.uid,
+      );
+      if (fileInfoIndex > -1) {
+        this.fileIdList.splice(fileInfoIndex, 1);
+      } else {
+        this.fileIdList.splice(index, 1);
+      }
 
       if (this.fileList.length === 0) {
         this.clearFile();
         return;
       }
 
-      const lastFileId = this.fileIdList[this.fileIdList.length - 1];
       const lastFile = this.fileList[this.fileList.length - 1];
-      this.fileUrl = (lastFileId && lastFileId.fileUrl) || lastFile.fileUrl;
+      this.fileType = lastFile.fileType || this.getFileType(lastFile);
+      this.fileUrl = lastFile.fileUrl;
       this.hasFile = true;
     },
     setFileId(fileIdList) {
-      this.fileIdList = fileIdList;
-      this.fileUrl = this.fileIdList[this.fileIdList.length - 1].fileUrl;
-      let fileType =
-        this.fileIdList[this.fileIdList.length - 1]['fileName']
-          .split('.')
-          .pop() || '';
-      if (['jpeg', 'PNG', 'png', 'JPG', 'jpg'].includes(fileType)) {
-        this.fileType = 'image/*';
-      }
-      if (['mp3', 'wav'].includes(fileType)) {
-        this.fileType = 'audio/*';
-      }
-      if (
-        ['txt', 'csv', 'xlsx', 'doc', 'docx', 'html', 'pptx', 'pdf'].includes(
-          fileType,
-        )
-      ) {
-        this.fileType = 'doc/*';
-      }
+      this.fileIdList = (fileIdList || []).map(item => ({
+        ...item,
+        fileType: item.fileType || this.getFileType({ name: item.fileName }),
+      }));
+      const lastFileId = this.fileIdList[this.fileIdList.length - 1];
+      this.fileUrl = lastFileId?.fileUrl || '';
+      this.fileType = lastFileId?.fileType || '';
     },
     setFile(fileList) {
-      this.fileList = fileList;
-      if (this.fileList.length > 0) {
+      this.fileList = (fileList || []).map(file => ({
+        ...file,
+        fileType: file.fileType || this.getFileType(file),
+        uploadStatus: file.uploadStatus || 'success',
+        uploaded: file.uploaded !== undefined ? file.uploaded : true,
+      }));
+      const lastFile = this.fileList[this.fileList.length - 1];
+      if (lastFile) {
+        this.fileType = lastFile.fileType || this.getFileType(lastFile);
+        this.fileUrl = lastFile.fileUrl;
         this.hasFile = true;
       }
     },
@@ -564,7 +631,9 @@ export default {
       return this.fileList;
     },
     getFileIdList() {
-      return this.fileIdList;
+      return this.fileList
+        .map(file => this.fileIdList.find(item => item.uid === file.uid))
+        .filter(Boolean);
     },
     clearInput() {
       this.$refs.editor.innerHTML = '';
@@ -690,6 +759,10 @@ export default {
     color: $color;
     margin-left: 10px;
   }
+  .mixed-file-box {
+    width: 100%;
+    overflow-x: auto;
+  }
   .echo-img-box {
     position: absolute;
     display: flex;
@@ -702,6 +775,7 @@ export default {
       width: 60px;
       display: flex;
       position: relative;
+      flex-shrink: 0;
       .loading-icon-img {
         position: absolute;
         right: 50%;
@@ -719,6 +793,47 @@ export default {
       background: #ffff;
       box-shadow: 1px 1px 10px #9b9a9a;
       border-radius: 4px;
+    }
+    .mixed-file-item.doc-file-item {
+      width: 220px;
+    }
+    .docInfo-container {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 24px 8px 8px;
+      background: #fff;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      box-shadow: 1px 1px 10px #9b9a9a;
+      overflow: hidden;
+    }
+    .docIcon {
+      flex: 0 0 32px;
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+    .docInfo {
+      min-width: 0;
+      flex: 1;
+      line-height: 1.4;
+      p {
+        margin: 0;
+      }
+      .docInfo_name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #333;
+      }
+      .docInfo_size {
+        margin-top: 2px;
+        color: #bbbbbb;
+      }
     }
     .echo-close {
       position: absolute;
