@@ -909,11 +909,7 @@ export default {
   },
   methods: {
     getModelOptions() {
-      if (this.ruleForm.docAnalyzer.includes('ocr')) {
-        this.getOcrList();
-      } else if (this.ruleForm.docAnalyzer.includes('model')) {
-        this.getParserList();
-      }
+      this.getOcrList();
     },
     maxSplitterChange(item) {
       if (item.level === 'parent') {
