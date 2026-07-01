@@ -8,6 +8,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
+	bff_rsautil "github.com/UnicomAI/wanwu/internal/bff-service/pkg/rsa-util"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	rsautil "github.com/UnicomAI/wanwu/pkg/rsa-util"
@@ -104,13 +105,13 @@ func GetLanguageSelect(ctx *gin.Context) {
 
 // GetRSAPublicKey
 //
-//	@Tags		guest
-//	@Summary	获取RSA公钥
-//	@Description	获取用于密码加密的RSA公钥，前端应缓存此公钥（建议5分钟）
-//	@Accept		json
-//	@Produce	json
-//	@Success	200	{object}	response.Response{data=response.RSAPublicKey}
-//	@Router		/base/rsa/public-key [get]
+//	@Tags			guest
+//	@Summary		获取RSA公钥
+//	@Description	获取用于密码加密的RSA公钥和Challenge
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.Response{data=response.RSAPublicKey}
+//	@Router			/base/rsa/public-key [get]
 func GetRSAPublicKey(ctx *gin.Context) {
 	keyID, publicKey, expiresIn, err := rsautil.GetManager().GetPublicKey()
 	if err != nil {
@@ -118,9 +119,17 @@ func GetRSAPublicKey(ctx *gin.Context) {
 		return
 	}
 
+	// 生成Challenge，存入Redis，一次性消费
+	challenge, err := bff_rsautil.GetChallengeManager().GenerateChallenge(ctx.Request.Context())
+	if err != nil {
+		gin_util.Response(ctx, nil, fmt.Errorf("generate challenge failed: %w", err))
+		return
+	}
+
 	gin_util.Response(ctx, &response.RSAPublicKey{
 		KeyID:     keyID,
 		PublicKey: publicKey,
+		Challenge: challenge,
 		ExpiresIn: expiresIn,
 	}, nil)
 }

@@ -1,17 +1,17 @@
 package service
 
 import (
-	"encoding/base64"
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
-	"net/url"
 	"regexp"
 	"sort"
-	"time"
 
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
+	bff_rsautil "github.com/UnicomAI/wanwu/internal/bff-service/pkg/rsa-util"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
@@ -41,7 +41,7 @@ var requiredUserExcelHeaders = []string{
 }
 
 func CreateUser(ctx *gin.Context, creatorID, orgID string, userCreate *request.UserCreate) (*response.UserID, error) {
-	password, err := decryptPD(userCreate.Password)
+	password, err := decryptCipherRSA(ctx.Request.Context(), userCreate.Cipher, userCreate.KeyID, challengeConsume)
 	if err != nil {
 		return nil, fmt.Errorf("decrypt password err: %v", err)
 	}
@@ -159,14 +159,14 @@ func ChangeUserStatus(ctx *gin.Context, userID, orgID string, status bool) error
 	return err
 }
 
-func ChangeUserPassword(ctx *gin.Context, userID, oldPwd, newPwd string) error {
-	oldPassword, err := decryptPD(oldPwd)
+func ChangeUserPassword(ctx *gin.Context, userID string, req *request.UserPassword) error {
+	oldPassword, err := decryptCipherRSA(ctx.Request.Context(), req.OldCipher, req.KeyID, challengeValidateOnly)
 	if err != nil {
-		return fmt.Errorf("decrypt password err: %v", err)
+		return fmt.Errorf("decrypt old password err: %v", err)
 	}
-	newPassword, err := decryptPD(newPwd)
+	newPassword, err := decryptCipherRSA(ctx.Request.Context(), req.NewCipher, req.KeyID, challengeConsume)
 	if err != nil {
-		return fmt.Errorf("decrypt password err: %v", err)
+		return fmt.Errorf("decrypt new password err: %v", err)
 	}
 	if err := validatePassword(newPassword); err != nil {
 		return err
@@ -179,8 +179,8 @@ func ChangeUserPassword(ctx *gin.Context, userID, oldPwd, newPwd string) error {
 	return err
 }
 
-func AdminChangeUserPassword(ctx *gin.Context, userID, pwd string) error {
-	password, err := decryptPD(pwd)
+func AdminChangeUserPassword(ctx *gin.Context, userID string, req *request.UserPasswordByAdmin) error {
+	password, err := decryptCipherRSA(ctx.Request.Context(), req.Cipher, req.KeyID, challengeConsume)
 	if err != nil {
 		return fmt.Errorf("decrypt password err: %v", err)
 	}
@@ -510,56 +510,63 @@ func toOrgRole(ctx *gin.Context, userOrg *iam_service.UserOrg) response.OrgRole 
 	}
 }
 
-// 解密password
-func decryptPD(encryptStr string) (string, error) {
-	var (
-		err                      error
-		urlUnescape              string
-		base64Decode, decryptAes []byte
-	)
-	if encryptStr == "" {
-		return "", nil
-	}
-
-	if urlUnescape, err = url.QueryUnescape(encryptStr); nil != err {
-		return "", err
-	}
-
-	if base64Decode, err = base64.StdEncoding.DecodeString(urlUnescape); nil != err {
-		return "", err
-	}
-
-	iv := []byte(config.Cfg().Decrypt.IV)
-	key := []byte(config.Cfg().Decrypt.Key)
-	if decryptAes, err = util.DecryptAES(base64Decode, key, iv); nil != err {
-		return "", err
-	}
-
-	return string(decryptAes), nil
+// rsaCipherPayload RSA加密传输的载荷结构
+// 前端将 {password, challenge} 打包为JSON后整体RSA加密
+type rsaCipherPayload struct {
+	Password  string `json:"password"`  // 明文密码
+	Challenge string `json:"challenge"` // 服务端下发的Challenge
 }
 
-// decryptPasswordRSA 使用RSA解密密码
-// 参数:
-//   - encryptedBase64: RSA加密后的Base64编码密码
-//   - keyID: 密钥ID
-//   - timestamp: 时间戳(毫秒)，用于防重放攻击
+const (
+	// challengeConsume 消费Challenge，校验后立即删除（GET+DEL），用于单cipher场景或双cipher的最后一次解密
+	challengeConsume = true
+	// challengeValidateOnly 仅校验Challenge是否存在，不消费，用于双cipher场景中非最后一次解密
+	challengeValidateOnly = false
+)
+
+// decryptCipherRSA 使用RSA解密cipher并校验Challenge
+// cipher = RSA-OAEP-SHA256(Base64(JSON({password, challenge})), publicKey)
+//
+// 流程：
+//  1. RSA私钥解密cipher，得到JSON明文
+//  2. 解析JSON提取password和challenge
+//  3. 校验challenge：consume=true时一次性消费（GET+DEL），consume=false时仅校验存在性
 //
 // 返回解密后的明文密码
-func decryptPasswordRSA(encryptedBase64 string, keyID string, timestamp int64) (string, error) {
-	// 1. 验证时间戳，防重放攻击（5分钟有效期）
-	now := time.Now().UnixMilli()
-	if now-timestamp > 5*60*1000 {
-		return "", fmt.Errorf("request expired, timestamp is too old")
-	}
-	if timestamp > now+60*1000 {
-		return "", fmt.Errorf("invalid timestamp, cannot be in the future")
-	}
-
-	// 2. 使用RSA解密
-	plaintext, err := rsautil.GetManager().Decrypt(keyID, encryptedBase64)
+func decryptCipherRSA(ctx context.Context, cipher string, keyID string, consume bool) (string, error) {
+	// 1. RSA解密
+	plaintextBytes, err := rsautil.GetManager().Decrypt(keyID, cipher)
 	if err != nil {
 		return "", fmt.Errorf("RSA decrypt failed: %w", err)
 	}
 
-	return string(plaintext), nil
+	// 2. 解析JSON载荷
+	var payload rsaCipherPayload
+	if err := json.Unmarshal(plaintextBytes, &payload); err != nil {
+		return "", fmt.Errorf("invalid cipher payload: %w", err)
+	}
+
+	// 3. 校验Challenge
+	challengeManager := bff_rsautil.GetChallengeManager()
+	if consume {
+		// 消费Challenge（Redis原子GET+DEL，一次性），防重放攻击
+		ok, err := challengeManager.ValidateAndConsume(ctx, payload.Challenge)
+		if err != nil {
+			return "", fmt.Errorf("challenge validation failed: %w", err)
+		}
+		if !ok {
+			return "", fmt.Errorf("challenge invalid or already used, possible replay attack")
+		}
+	} else {
+		// 仅校验Challenge是否存在，不消费（用于同一个challenge解密多个cipher的场景）
+		ok, err := challengeManager.Validate(ctx, payload.Challenge)
+		if err != nil {
+			return "", fmt.Errorf("challenge validation failed: %w", err)
+		}
+		if !ok {
+			return "", fmt.Errorf("challenge invalid or expired, possible replay attack")
+		}
+	}
+
+	return payload.Password, nil
 }

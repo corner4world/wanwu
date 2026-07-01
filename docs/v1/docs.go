@@ -6290,6 +6290,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/base/rsa/public-key": {
+            "get": {
+                "description": "获取用于密码加密的RSA公钥和Challenge",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "guest"
+                ],
+                "summary": "获取RSA公钥",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.RSAPublicKey"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/builtin/skill/download": {
             "get": {
                 "security": [
@@ -22979,8 +23014,9 @@ const docTemplate = `{
             "required": [
                 "code",
                 "email",
-                "newPassword",
-                "oldPassword"
+                "keyId",
+                "newCipher",
+                "oldCipher"
             ],
             "properties": {
                 "code": {
@@ -22991,10 +23027,16 @@ const docTemplate = `{
                     "description": "邮箱",
                     "type": "string"
                 },
-                "newPassword": {
+                "keyId": {
+                    "description": "RSA公钥ID",
                     "type": "string"
                 },
-                "oldPassword": {
+                "newCipher": {
+                    "description": "新密码RSA加密后的Base64字符串，包含{password, challenge}",
+                    "type": "string"
+                },
+                "oldCipher": {
+                    "description": "旧密码RSA加密后的Base64字符串，包含{password, challenge}",
                     "type": "string"
                 }
             }
@@ -25405,12 +25447,17 @@ const docTemplate = `{
         "request.Login": {
             "type": "object",
             "required": [
+                "cipher",
                 "code",
                 "key",
-                "password",
+                "keyId",
                 "username"
             ],
             "properties": {
+                "cipher": {
+                    "description": "RSA加密后的Base64字符串，包含{password, challenge}",
+                    "type": "string"
+                },
                 "code": {
                     "description": "验证码",
                     "type": "string"
@@ -25419,8 +25466,8 @@ const docTemplate = `{
                     "description": "客户端key",
                     "type": "string"
                 },
-                "password": {
-                    "description": "密码",
+                "keyId": {
+                    "description": "RSA公钥ID",
                     "type": "string"
                 },
                 "username": {
@@ -26611,11 +26658,16 @@ const docTemplate = `{
         "request.ResetPasswordByEmail": {
             "type": "object",
             "required": [
+                "cipher",
                 "code",
                 "email",
-                "password"
+                "keyId"
             ],
             "properties": {
+                "cipher": {
+                    "description": "RSA加密后的Base64字符串，包含{password, challenge}",
+                    "type": "string"
+                },
                 "code": {
                     "description": "邮箱验证码",
                     "type": "string"
@@ -26624,8 +26676,8 @@ const docTemplate = `{
                     "description": "邮箱",
                     "type": "string"
                 },
-                "password": {
-                    "description": "密码",
+                "keyId": {
+                    "description": "RSA公钥ID",
                     "type": "string"
                 }
             }
@@ -27526,10 +27578,15 @@ const docTemplate = `{
         "request.UserCreate": {
             "type": "object",
             "required": [
-                "password",
+                "cipher",
+                "keyId",
                 "username"
             ],
             "properties": {
+                "cipher": {
+                    "description": "RSA加密后的Base64字符串，包含{password, challenge}",
+                    "type": "string"
+                },
                 "company": {
                     "description": "公司",
                     "type": "string"
@@ -27538,12 +27595,12 @@ const docTemplate = `{
                     "description": "性别（0-女，1-男，空-未知）",
                     "type": "string"
                 },
-                "nickname": {
-                    "description": "昵称",
+                "keyId": {
+                    "description": "RSA公钥ID",
                     "type": "string"
                 },
-                "password": {
-                    "description": "密码",
+                "nickname": {
+                    "description": "昵称",
                     "type": "string"
                 },
                 "phone": {
@@ -27583,15 +27640,22 @@ const docTemplate = `{
         "request.UserPassword": {
             "type": "object",
             "required": [
-                "newPassword",
-                "oldPassword",
+                "keyId",
+                "newCipher",
+                "oldCipher",
                 "userId"
             ],
             "properties": {
-                "newPassword": {
+                "keyId": {
+                    "description": "RSA公钥ID",
                     "type": "string"
                 },
-                "oldPassword": {
+                "newCipher": {
+                    "description": "新密码RSA加密后的Base64字符串，包含{password, challenge}",
+                    "type": "string"
+                },
+                "oldCipher": {
+                    "description": "旧密码RSA加密后的Base64字符串，包含{password, challenge}",
                     "type": "string"
                 },
                 "userId": {
@@ -27603,11 +27667,17 @@ const docTemplate = `{
         "request.UserPasswordByAdmin": {
             "type": "object",
             "required": [
-                "password",
+                "cipher",
+                "keyId",
                 "userId"
             ],
             "properties": {
-                "password": {
+                "cipher": {
+                    "description": "RSA加密后的Base64字符串，包含{password, challenge}",
+                    "type": "string"
+                },
+                "keyId": {
+                    "description": "RSA公钥ID",
                     "type": "string"
                 },
                 "userId": {
@@ -27634,10 +27704,15 @@ const docTemplate = `{
         "request.UserUpdate": {
             "type": "object",
             "required": [
-                "password",
+                "cipher",
+                "keyId",
                 "userId"
             ],
             "properties": {
+                "cipher": {
+                    "description": "RSA加密后的Base64字符串，包含{password, challenge}",
+                    "type": "string"
+                },
                 "company": {
                     "description": "公司",
                     "type": "string"
@@ -27646,12 +27721,12 @@ const docTemplate = `{
                     "description": "性别（0-女，1-男，空-未知）",
                     "type": "string"
                 },
-                "nickname": {
-                    "description": "昵称",
+                "keyId": {
+                    "description": "RSA公钥ID",
                     "type": "string"
                 },
-                "password": {
-                    "description": "密码",
+                "nickname": {
+                    "description": "昵称",
                     "type": "string"
                 },
                 "phone": {
@@ -31863,6 +31938,10 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "passwordRSAEncrypt": {
+                    "description": "是否启用密码RSA加密",
+                    "type": "boolean"
+                },
                 "register": {
                     "description": "注册信息",
                     "allOf": [
@@ -33015,6 +33094,27 @@ const docTemplate = `{
                 "permissionType": {
                     "description": "当前用户对该问答库的权限类型 -1:无权限 0:查看 10:编辑 20:授权 30:系统管理授权",
                     "type": "integer"
+                }
+            }
+        },
+        "response.RSAPublicKey": {
+            "type": "object",
+            "properties": {
+                "challenge": {
+                    "description": "服务端下发的Challenge，前端提交密码时需原样带回",
+                    "type": "string"
+                },
+                "expires_in": {
+                    "description": "建议缓存时间(秒)",
+                    "type": "integer"
+                },
+                "keyId": {
+                    "description": "密钥ID",
+                    "type": "string"
+                },
+                "public_key": {
+                    "description": "PEM格式的公钥",
+                    "type": "string"
                 }
             }
         },

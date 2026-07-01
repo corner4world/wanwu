@@ -20,12 +20,13 @@ func (u *UserUpdate) Check() error {
 
 type UserInfo struct {
 	Nickname string   `json:"nickname"`                     // 昵称
-	Password string   `json:"password" validate:"required"` // 密码
+	Cipher   string   `json:"cipher" validate:"required"`   // RSA加密后的Base64字符串，包含{password, challenge}
 	Phone    string   `json:"phone"`                        // 电话
 	Remark   string   `json:"remark"`                       // 备注
 	Gender   string   `json:"gender"`                       // 性别（0-女，1-男，空-未知）
 	Company  string   `json:"company"`                      // 公司
 	RoleIDs  []string `json:"roleIds" validate:"max=1"`     // 角色列表
+	KeyID    string   `json:"keyId" validate:"required"`   // RSA公钥ID
 }
 
 type UserID struct {
@@ -47,8 +48,9 @@ func (u *UserStatus) Check() error {
 
 type UserPassword struct {
 	UserID
-	OldPassword string `json:"oldPassword" validate:"required"`
-	NewPassword string `json:"newPassword" validate:"required"`
+	OldCipher string `json:"oldCipher" validate:"required"` // 旧密码RSA加密后的Base64字符串，包含{password, challenge}
+	NewCipher string `json:"newCipher" validate:"required"` // 新密码RSA加密后的Base64字符串，包含{password, challenge}
+	KeyID     string `json:"keyId" validate:"required"`   // RSA公钥ID
 }
 
 func (u *UserPassword) Check() error {
@@ -57,7 +59,8 @@ func (u *UserPassword) Check() error {
 
 type UserPasswordByAdmin struct {
 	UserID
-	Password string `json:"password" validate:"required"`
+	Cipher string `json:"cipher" validate:"required"`   // RSA加密后的Base64字符串，包含{password, challenge}
+	KeyID  string `json:"keyId" validate:"required"`  // RSA公钥ID
 }
 
 func (u *UserPasswordByAdmin) Check() error {
