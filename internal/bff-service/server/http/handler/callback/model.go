@@ -298,16 +298,26 @@ func ModelMultiModalRerank(ctx *gin.Context) {
 //
 //	@Tags		callback
 //	@Summary	Model Ocr
-//	@Accept		multipart/form-data
+//	@Accept		json
 //	@Produce	json
-//	@Param		modelId	path		string	true	"模型ID"
-//	@Param		file	formData	file	true	"文件"
+//	@Param		modelId	path		string				true	"模型ID"
+//	@Param		data	body		mp_common.OcrReq{}	true	"请求参数"
 //	@Success	200		{object}	mp_common.OcrResp{}
 //	@Router		/model/{modelId}/ocr [post]
 func ModelOcr(ctx *gin.Context) {
 	var data mp_common.OcrReq
-	if !gin_util.BindForm(ctx, &data) {
+	if !gin_util.Bind(ctx, &data) {
 		return
+	}
+	// url 转 base64（支持 minio URL）
+	if data.Url != nil && *data.Url != "" {
+		_, base64StrWithPrefix, err := minio_util.MinioUrlToBase64(ctx.Request.Context(), *data.Url)
+		if err != nil {
+			gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, fmt.Sprintf("model ocr url to base64 err: %v", err)))
+			return
+		}
+		data.FileData = &base64StrWithPrefix
+		data.Url = nil
 	}
 	service.ModelOcr(ctx, ctx.Param("modelId"), &data)
 }
