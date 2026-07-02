@@ -53,7 +53,10 @@
             :assistantId="assistantId"
             :appUrlInfo="appUrlInfo"
             :type="chatType"
-            :maxPicNum="1"
+            :maxPicNum="currentMaxPicNum"
+            :maxImageSize="currentMaxImageSize"
+            :maxFileNum="10"
+            :maxFileSize="100"
             ref="agentChat"
             @reloadList="reloadList"
             @setHistoryStatus="setHistoryStatus"
@@ -74,6 +77,7 @@ import {
   getConversationlist,
 } from '@/api/agent';
 import { getApiKeyRoot } from '@/api/appspace';
+import { selectModelList } from '@/api/modelAccess';
 import sseMethod from '@/mixins/sseMethod';
 import { MULTIPLE_AGENT, SINGLE_AGENT } from '@/views/agent/constants';
 import { guid, getXClientId } from '@/utils/util';
@@ -95,6 +99,7 @@ export default {
       assistantId: '',
       historyList: [],
       appUrlInfo: {},
+      modelOptions: [],
       editForm: {
         assistantId: '',
         category: SINGLE_AGENT,
@@ -103,6 +108,7 @@ export default {
         desc: '',
         prologue: '',
         recommendQuestion: [],
+        modelConfig: {},
         recommendConfig: {
           recommendEnable: false,
           modelConfig: {
@@ -143,6 +149,31 @@ export default {
   },
   computed: {
     ...mapGetters('app', ['sessionStatus']),
+    currentModelId() {
+      return this.editForm.modelConfig?.modelId || '';
+    },
+    currentModelInfo() {
+      return (
+        this.modelOptions.find(item => item.modelId === this.currentModelId) ||
+        this.editForm.modelConfig ||
+        {}
+      );
+    },
+    currentModelFullConfig() {
+      return (
+        this.currentModelInfo.fullConfig || this.currentModelInfo.config || {}
+      );
+    },
+    currentMaxPicNum() {
+      const visionSupport = this.currentModelFullConfig.visionSupport;
+      if (visionSupport === 'support') return 3;
+      if (visionSupport) return -1;
+      return 1;
+    },
+    currentMaxImageSize() {
+      const size = Number(this.currentModelFullConfig.maxImageSize);
+      return size > 0 ? size : null;
+    },
   },
   created() {
     const id = this.$route.query.id || this.$route.params.id;
@@ -203,6 +234,29 @@ export default {
       };
       return config;
     },
+    async getModelData() {
+      try {
+        const res = await selectModelList();
+        if (res.code === 0) {
+          this.modelOptions = res.data.list || [];
+          this.applyModelFullConfig();
+        }
+      } catch (error) {
+        console.warn('[agent chat] get model list failed', error);
+      }
+    },
+    applyModelFullConfig() {
+      const modelId = this.currentModelId;
+      if (!modelId) return;
+      const selectedModel = this.modelOptions.find(
+        item => item.modelId === modelId,
+      );
+      if (!selectedModel) return;
+      this.$set(this.editForm, 'modelConfig', {
+        ...(this.editForm.modelConfig || {}),
+        fullConfig: selectedModel.config || {},
+      });
+    },
     async getDetail() {
       let res = null;
       let data = null;
@@ -230,6 +284,8 @@ export default {
           value: item,
         }));
         this.editForm.recommendConfig = data.recommendConfig;
+        this.$set(this.editForm, 'modelConfig', data.modelConfig || {});
+        await this.getModelData();
       }
     },
     async getList(noInit) {
