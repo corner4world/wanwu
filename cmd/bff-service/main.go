@@ -106,6 +106,9 @@ func main() {
 	if err := redis.InitOP(ctx, config.Cfg().Redis); err != nil {
 		log.Fatalf("init redis err: %v", err)
 	}
+	if err := redis.InitSys(ctx, config.Cfg().Redis); err != nil {
+		log.Fatalf("init redis err: %v", err)
+	}
 	if err := redis.InitAssistant(ctx, config.Cfg().Redis); err != nil {
 		log.Fatalf("init assistant redis err: %v", err)
 	}
