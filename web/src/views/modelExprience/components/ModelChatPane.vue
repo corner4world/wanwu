@@ -206,7 +206,6 @@ export default {
       this.inputVal = inputVal;
       this.fileList = fileList;
       this.fileInfoList = fileInfo;
-      console.log(fileInfo, '===========================fileInfo');
       this.doExprienceSend({ inputVal, fileList, fileInfo });
     },
     // 创建会话前
