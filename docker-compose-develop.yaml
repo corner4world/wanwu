@@ -36,7 +36,6 @@ services:
       - ${WANWU_BFF_OAUTH_RSA_PUBLIC_KEY_PATH}:/app/tmp/oauth_rsa_public.pem
       - ${WANWU_BFF_LOGIN_RSA_PATH}:/app/tmp/rsa/login-rsa
     environment:
-      CUSTOM_INFO_VERSION: ${WANWU_VERSION}
       SERVER_WEB_BASE_URL: ${WANWU_WEB_BASE_URL}
       SERVER_API_BASE_URL: ${WANWU_API_BASE_URL}
       SERVER_APP_OPEN_BASE_URL: ${WANWU_APP_OPEN_BASE_URL}
