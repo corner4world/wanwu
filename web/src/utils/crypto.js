@@ -1,5 +1,6 @@
 import service from '@/utils/request';
 import { USER_API } from '@/utils/requestConstants';
+import forge from 'node-forge';
 
 // 获取 RSA 公钥 + Challenge
 async function getRSAPublicKey() {
@@ -8,22 +9,6 @@ async function getRSAPublicKey() {
     method: 'get',
   });
   return res.data;
-}
-
-// PEM → CryptoKey
-async function importPublicKey(pem) {
-  const b64 = pem
-    .replaceAll('-----BEGIN PUBLIC KEY-----', '')
-    .replaceAll('-----END PUBLIC KEY-----', '')
-    .replaceAll('\n', '');
-  const binary = Uint8Array.from(atob(b64), c => c.codePointAt(0));
-  return await crypto.subtle.importKey(
-    'spki',
-    binary,
-    { name: 'RSA-OAEP', hash: 'SHA-256' },
-    false,
-    ['encrypt'],
-  );
 }
 
 /**
@@ -45,13 +30,11 @@ export async function rsaEncrypt(password, keyMaterial) {
     challenge = res.challenge;
   }
   const plaintext = JSON.stringify({ password, challenge });
-  const pubKey = await importPublicKey(publicKey);
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'RSA-OAEP' },
-    pubKey,
-    new TextEncoder().encode(plaintext),
-  );
-  const cipher = btoa(String.fromCodePoint(...new Uint8Array(encrypted)));
+  const pubKey = forge.pki.publicKeyFromPem(publicKey);
+  const encrypted = pubKey.encrypt(plaintext, 'RSA-OAEP', {
+    md: forge.md.sha256.create(),
+  });
+  const cipher = forge.util.encode64(encrypted);
   return { cipher, keyId };
 }
 
