@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import { urlEncrypt } from '@/utils/crypto';
+import { rsaEncrypt, getRSAKeyMaterial } from '@/utils/crypto';
 import { restOwnPassword } from '@/api/user';
 
 export default {
@@ -182,10 +182,16 @@ export default {
     doSubmit() {
       this.$refs.form.validate(async valid => {
         if (!valid) return;
+        const keyMaterial = await getRSAKeyMaterial();
+        const [oldCipherRes, newCipherRes] = await Promise.all([
+          rsaEncrypt(this.form.oldPassword, keyMaterial),
+          rsaEncrypt(this.form.newPassword, keyMaterial),
+        ]);
         let params = {
           userId: this.userId,
-          oldPassword: urlEncrypt(this.form.oldPassword),
-          newPassword: urlEncrypt(this.form.newPassword),
+          oldCipher: oldCipherRes.cipher,
+          newCipher: newCipherRes.cipher,
+          keyId: keyMaterial.keyId,
         };
         let res = await restOwnPassword(params);
         if (res.code === 0) {

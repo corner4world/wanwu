@@ -24,7 +24,7 @@ export const SEGMENT_TYPE_PARENTSON = '1';
 
 // 分析器类型常量
 export const ANALYZER_TYPE_TEXT = 'text';
-export const ANALYZER_TYPE_OCR = 'ocr';
+export const ANALYZER_TYPE_OCR = 'model';
 
 // 报告状态常量
 export const REPORT_STATUS_PENDING = 0;

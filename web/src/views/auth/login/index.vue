@@ -110,7 +110,7 @@
 import dialog2FA from './2FADialog';
 import { mapActions, mapMutations, mapState } from 'vuex';
 import { getImgVerCode } from '@/api/user';
-import { urlEncrypt } from '@/utils/crypto';
+import { rsaEncrypt } from '@/utils/crypto';
 import { redirectUrl } from '@/utils/util';
 
 export default {
@@ -205,9 +205,11 @@ export default {
     async doLogin() {
       if (this.isDisabled()) return;
 
+      const { cipher, keyId } = await rsaEncrypt(this.form.password);
       const data = {
         username: this.form.username,
-        password: urlEncrypt(this.form.password),
+        cipher,
+        keyId,
         key: this.codeData.key,
         code: this.form.code,
       };

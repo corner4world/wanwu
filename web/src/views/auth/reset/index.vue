@@ -119,7 +119,7 @@
 
 <script>
 import { resetCode, reset } from '@/api/user';
-import { urlEncrypt } from '@/utils/crypto';
+import { rsaEncrypt } from '@/utils/crypto';
 import { mapState } from 'vuex';
 
 export default {
@@ -214,12 +214,14 @@ export default {
         this.doReset();
       }
     },
-    doReset() {
-      this.$refs.form.validate(valid => {
+    async doReset() {
+      this.$refs.form.validate(async valid => {
         if (!valid) return;
+        const { cipher, keyId } = await rsaEncrypt(this.form.password1);
         const data = {
           email: this.form.email,
-          password: urlEncrypt(this.form.password1),
+          cipher,
+          keyId,
           code: this.form.code,
         };
         reset(data).then(res => {
