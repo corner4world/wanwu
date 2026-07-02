@@ -2413,6 +2413,11 @@ export default {
           refresh: '刷新',
           preview: '预览',
         },
+        securityReview: {
+          btn: '安全审核',
+          tip: '强烈建议您在发布前，进行skill安全审查。',
+          message: '对工作区中最新的 Skill 进行安全审查',
+        },
         preview: {
           title: '预览会话',
           notReady: '预览 ID 未就绪，请稍后',

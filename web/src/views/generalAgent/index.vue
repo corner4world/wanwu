@@ -418,6 +418,7 @@
             :skillPreviewParams="skillPreviewParams"
             @view-workspace="handleViewWorkspace"
             @refresh-workspace="loadWorkspaceFiles"
+            @security-review="handleSecurityReview"
           />
         </div>
       </div>
@@ -1583,8 +1584,12 @@ export default {
 
     async sendMessage(options = {}) {
       const skipUnsavedCheck = options?.skipUnsavedCheck === true;
-      const content = this.inputMessage.trim();
-      if (!content && this.uploadedFiles.length === 0) return;
+      const hasContentOverride = typeof options?.contentOverride === 'string';
+      const content = hasContentOverride
+        ? options.contentOverride.trim()
+        : this.inputMessage.trim();
+      const messageFiles = hasContentOverride ? [] : this.uploadedFiles;
+      if (!content && messageFiles.length === 0) return;
       if (this.currentPreviewIsStreaming) return;
 
       // 检查当前会话是否正在流式传输
@@ -1658,15 +1663,26 @@ export default {
         }
       }
 
-      const userMessage = this.buildUserMessage(content);
+      const userMessage = this.buildUserMessage(content, messageFiles);
       this.ensureMessageList(this.currentThreadId);
-      this.addUserMessage(this.currentThreadId, content, this.uploadedFiles);
+      this.addUserMessage(this.currentThreadId, content, messageFiles);
 
-      this.clearFiles();
-      this.$refs.mentionInput?.clear();
+      if (!hasContentOverride) {
+        this.clearFiles();
+        this.$refs.mentionInput?.clear();
+      }
       this.$nextTick(() => this.scrollToBottom());
 
       await this.startStreaming(userMessage);
+    },
+
+    async handleSecurityReview() {
+      if (this.mainIsStreaming || this.previewIsStreaming) return;
+      await this.sendMessage({
+        contentOverride: this.$t(
+          'generalAgent.skill.skillWorkBench.securityReview.message',
+        ),
+      });
     },
 
     async confirmSkillUnsavedBeforeSend() {
