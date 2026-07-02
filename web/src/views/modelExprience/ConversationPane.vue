@@ -453,6 +453,7 @@ export default {
     async handleModelSelect(ids, config) {
       // 模型体验模式下，新建会话时选择模型
       if (config.mode === 'create') {
+        this.isInit = true;
         this.modelChatList = [];
         await this.$nextTick();
         this.modelChatList = [

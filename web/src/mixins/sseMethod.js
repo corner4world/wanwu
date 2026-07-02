@@ -1885,7 +1885,7 @@ export default {
       this.isStoped = false;
       this.fileInfoList =
         params.fileInfo?.map(item => ({
-          fileName: item.oldFileName,
+          fileName: item.oldFileName || item.fileName,
           fileSize: item.fileSize,
           fileUrl: item.fileUrl,
         })) || [];
@@ -1895,6 +1895,7 @@ export default {
         '',
         _history.length,
         params.fileList,
+        { fileInfo: this.fileInfoList },
       );
     },
     sendExprienceEventStream(
@@ -1925,6 +1926,7 @@ export default {
         responseLoading: true,
         requestFileUrls: [],
         fileList: fileList || [],
+        fileInfo: options.fileInfo || [],
         pendingResponse: '',
       };
       if (!skipPushHistory && !lazyPushHistory) {
@@ -1970,6 +1972,7 @@ export default {
                   ...this.sseParams,
                   query: prompt,
                   fileList: fileList || [],
+                  fileInfo: this.fileInfoList || [],
                 };
                 let fillData = {
                   ...commonData,
@@ -2017,6 +2020,7 @@ export default {
                 ...this.sseParams,
                 query: prompt,
                 fileList: fileList || [],
+                fileInfo: this.fileInfoList || [],
                 fileName: '',
                 fileSize: '',
                 response: '',
