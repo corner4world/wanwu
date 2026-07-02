@@ -29,8 +29,8 @@ jwt:
 oauth:
   switch:
   rsa:
-    private_key_path: /app/tmp/oauth_rsa_private.pem
-    public_key_path: /app/tmp/oauth_rsa_public.pem
+    private_key_path: /app/tmp/rsa/oauth-rsa/oauth_rsa_private.pem
+    public_key_path: /app/tmp/rsa/oauth-rsa/oauth_rsa_public.pem
 
 decrypt-passwd:
   iv: "sdf4ddfsFD86Vdf2"
