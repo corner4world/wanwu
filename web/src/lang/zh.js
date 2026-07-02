@@ -1858,6 +1858,8 @@ export default {
       publishType: '私密发布为应用：仅自己可见',
       publishType1: '公开发布为应用：组织内可见',
       publishType2: '公开发布为应用：全局可见',
+      publishWarnTips:
+        '安全风险提示：如果智能体被不当使用，您为skill配置的变量有泄露风险，请慎重评估变量的敏感级别并选择适当的智能体发布范围。',
       hideKnowledge: '隐藏知识库出处',
       systemPrompt: '系统提示词',
       submitToPrompt: '提交至提示词',

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div
     class="agent-from-content page-wrapper"
     :class="{ 'disable-clicks': disableClick }"
@@ -144,6 +144,15 @@
               </el-radio-group>
             </el-form-item>
 
+            <div v-if="showPublishWarnTipsForSkill" class="publish-warn-tips">
+              <svg-icon
+                class-name="publish-warn-tips__icon"
+                icon-class="alert-triangle"
+              />
+              <div class="publish-warn-tips__content">
+                {{ $t('agent.form.publishWarnTips') }}
+              </div>
+            </div>
             <div class="saveBtn">
               <el-button size="mini" type="primary" @click="savePublish">
                 {{ $t('common.button.save') }}
@@ -649,7 +658,7 @@
           :maxImageSize="currentMaxImageSize"
           :maxPicNum="currentMaxPicNum"
           :maxFileNum="10"
-          :maxFileSize="3"
+          :maxFileSize="100"
         />
       </div>
     </div>
@@ -831,6 +840,10 @@ export default {
     },
     useToolNum() {
       return this.allTools.filter(item => item.enable).length;
+    },
+    // 发布提示(skill关联)
+    showPublishWarnTipsForSkill() {
+      return this.allTools.some(item => item.type === AGENT_TOOL_TYPE.SKILL);
     },
     isRecommendPromptChanged() {
       return (
@@ -1804,6 +1817,33 @@ $gap-scale: (
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.publish-warn-tips {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 2px 0 12px;
+  padding: 10px 12px;
+  color: #8a5a00;
+  background: #fff7e6;
+  border: 1px solid #ffe0a3;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 20px;
+  max-width: 240px;
+
+  .publish-warn-tips__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 16px;
+    color: #d48806;
+  }
+
+  .publish-warn-tips__content {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .agent_form {
