@@ -65,6 +65,9 @@ type skillRunEnv struct {
 	skillDir       string
 	runDir         string
 	enableThinking bool //是否输出智能体思考过程
+	// variables：本次 skill 执行注入到 sandbox 的自定义变量集合。
+	// 严格约束：仅供 buildSkillOptions 透传到 wga_sandbox_option.Skill.Variables，不得用于日志/SKILL.md。
+	variables []wga_sandbox_option.SkillVariable
 }
 
 type SkillExecutor struct {
@@ -187,8 +190,27 @@ func (s *SkillExecutor) initEnv(argumentsInJSON string) *SkillExecutor {
 		skillDir:       dir.SkillDir,
 		runDir:         dir.RunDir,
 		enableThinking: false,
+		variables:      toSandboxSkillVariables(skill.Variables),
 	}
 	return s
+}
+
+// toSandboxSkillVariables 把 agent-svc 本包 SkillVariable 映射成 wga-sandbox option 形态。
+// 仅做字段拷贝；任何过滤/校验放到 sandbox 层统一处理，避免双向维护两套规则。
+func toSandboxSkillVariables(vars []request.SkillVariable) []wga_sandbox_option.SkillVariable {
+	if len(vars) == 0 {
+		return nil
+	}
+	out := make([]wga_sandbox_option.SkillVariable, 0, len(vars))
+	for _, v := range vars {
+		out = append(out, wga_sandbox_option.SkillVariable{
+			Name:          v.Name,
+			Description:   v.Desc,
+			VariableKey:   v.VariableKey,
+			VariableValue: v.VariableValue,
+		})
+	}
+	return out
 }
 
 // clearEnv 清理运行环境，删除 runDir 下的所有数据
@@ -395,7 +417,12 @@ func buildSkillOptions(modelConfig *wga_sandbox_option.ModelConfig, runEnv *skil
 	if len(skillCreatorCfg.Skills) > 0 {
 		skills := make([]wga_sandbox_option.Skill, len(skillCreatorCfg.Skills))
 		for i, skill := range skillCreatorCfg.Skills {
-			skills[i] = wga_sandbox_option.Skill{Dir: skill.Dir}
+			skills[i] = wga_sandbox_option.Skill{
+				Dir: skill.Dir,
+				// 当前 skillCreatorCfg.Skills 由 runEnv.skillDir 单条构造（见上文），
+				// runEnv.variables 即为该 skill 的变量集合，直接复用即可。
+				Variables: runEnv.variables,
+			}
 		}
 		opts = append(opts, wga_sandbox_option.WithSkills(skills))
 	}

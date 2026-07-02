@@ -9,6 +9,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	grpc_util "github.com/UnicomAI/wanwu/pkg/grpc-util"
+	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,7 +21,11 @@ func GetAgentSkillDetail(ctx *gin.Context, skillId string) (*response.SkillDetai
 	return buildSkillTempDetail(skillsCfg, true), nil
 }
 
-func GetAgentSkillListDetail(ctx *gin.Context, skillIdList []string) (*response.SkillDetailListResp, error) {
+// GetAgentSkillListDetail 返回内置 skill 详情列表。当 userId / orgId 非空时，
+// 会额外通过 mcp.GetBuiltinSkillVars 拉取每个 skill 的 per-user 变量集填入 Variables；
+// userId / orgId 缺失时跳过 vars 填充（保持老 caller 行为）。
+// 单个 skill 拉 vars 失败只打 Warn 跳过，不影响别的 skill。
+func GetAgentSkillListDetail(ctx *gin.Context, userId, orgId string, skillIdList []string) (*response.SkillDetailListResp, error) {
 	var skillDetailList []*response.SkillDetail
 	for _, skillId := range skillIdList {
 		skillsCfg, exist := config.Cfg().AgentSkill(skillId)
@@ -29,6 +34,16 @@ func GetAgentSkillListDetail(ctx *gin.Context, skillIdList []string) (*response.
 		}
 		detail := buildSkillTempDetail(skillsCfg, false)
 		detail.SkillPath = skillsCfg.SkillPath
+
+		if userId != "" && orgId != "" {
+			vars, varsErr := getBuiltinSkillVariables(ctx, userId, orgId, skillId)
+			if varsErr != nil {
+				log.Warnf("callback builtin skill list failed to fetch variables, skillId: %s, err: %v", skillId, varsErr)
+			} else {
+				detail.Variables = toSkillVariables(vars)
+			}
+		}
+
 		skillDetailList = append(skillDetailList, detail)
 	}
 	return &response.SkillDetailListResp{SkillList: skillDetailList}, nil
@@ -130,4 +145,24 @@ func buildSkillTempDetail(skillsCfg config.SkillsConfig, needMd bool) *response.
 		ret.SkillMarkdown = string(skillsCfg.SkillMarkdown)
 	}
 	return ret
+}
+
+// getBuiltinSkillVariables 通过 mcp gRPC 拉取单个内置 skill 的变量集（per-user）。
+// userId/orgId 缺一不可（mcp.GetBuiltinSkillVars 要求 Identity）；缺时直接返回 nil，
+// 让 callback 退化为不带 vars 的行为（向后兼容旧 caller）。
+func getBuiltinSkillVariables(ctx *gin.Context, userId, orgId, skillId string) ([]*mcp_service.Variable, error) {
+	if userId == "" || orgId == "" {
+		return nil, nil
+	}
+	varResp, err := mcp.GetBuiltinSkillVars(ctx.Request.Context(), &mcp_service.GetBuiltinSkillVarsReq{
+		SkillId:  skillId,
+		Identity: &mcp_service.Identity{UserId: userId, OrgId: orgId},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if varResp == nil {
+		return nil, nil
+	}
+	return varResp.GetVariables(), nil
 }

@@ -381,8 +381,14 @@ func fillCustomSkillPublishInfo(ctx *gin.Context, skillList []*response.Publishe
 	}
 }
 
-func GetCustomSkillListDetail(ctx *gin.Context, skillIdList []string) (*response.CustomSkillDetailListResp, error) {
+// GetCustomSkillListDetail 返回一批 custom skill 的详情（含变量）。
+// userId/orgId 是 assistant-service callback 传入的智能体（Assistant）创建者身份，
+// 不是发起 HTTP 请求的调用者身份——发布态智能体常被非创建者调用，二者不一定一致。
+// 当前 var 查询走 mcp 层按 skill 记录自带的 owner 隐式解析，这两个参数不改变返回内容，
+// 仅用于日志/审计，便于排查发布态智能体被非创建者调用时的问题。
+func GetCustomSkillListDetail(ctx *gin.Context, userId, orgId string, skillIdList []string) (*response.CustomSkillDetailListResp, error) {
 	skillIdList = uniqueSkillIDs(skillIdList)
+	log.Debugf("callback custom skill list, assistantCreator=%s/%s, skillIds=%v", orgId, userId, skillIdList)
 	publishBySkill, err := getCustomSkillPublishMap(ctx, skillIdList)
 	if err != nil {
 		return nil, err
@@ -400,7 +406,7 @@ func GetCustomSkillListDetail(ctx *gin.Context, skillIdList []string) (*response
 			continue
 		}
 		skill := publish.GetSkill()
-		skillDetailList = append(skillDetailList, &response.CustomSkillListDetail{
+		detail := &response.CustomSkillListDetail{
 			SkillBasicInfo: response.SkillBasicInfo{
 				SkillId: skill.GetSkillId(),
 				Name:    skill.GetName(),
@@ -409,8 +415,17 @@ func GetCustomSkillListDetail(ctx *gin.Context, skillIdList []string) (*response
 				Desc:    skill.GetDesc(),
 			},
 			ObjectPath: publish.GetObjectPath(),
-			// Variables:  toSkillVariables(skill.Variables),
-		})
+		}
+		// 通过 mcp gRPC 拉取该 custom skill 的变量集（per-request，无缓存）。
+		// 失败只打日志、不中断 callback：让 LLM 拿到无 var 的 skill 也比直接拒绝整批好。
+		// fail-closed 风格：err != nil 时不赋 Variables，与 skill_acquired / skill_builtin 对齐。
+		vars, varsErr := getCustomSkillVariables(ctx, skillId)
+		if varsErr != nil {
+			log.Warnf("callback custom skill list failed to fetch variables, skillId: %s, err: %v", skillId, varsErr)
+		} else {
+			detail.Variables = toSkillVariables(vars)
+		}
+		skillDetailList = append(skillDetailList, detail)
 	}
 
 	return &response.CustomSkillDetailListResp{SkillList: skillDetailList}, nil

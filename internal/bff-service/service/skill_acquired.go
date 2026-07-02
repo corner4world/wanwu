@@ -57,7 +57,13 @@ func GetAcquiredSkill(ctx *gin.Context, userId, orgId, acquiredSkillId string) (
 	return toAcquiredSkillDetail(ctx, skill, true), nil
 }
 
-func GetCallbackAcquiredSkillListDetail(ctx *gin.Context, acquiredSkillIdList []string) (*response.CallbackAcquiredSkillDetailListResp, error) {
+// GetCallbackAcquiredSkillListDetail 返回一批 acquired skill 的详情（含变量）。
+// userId/orgId 是 assistant-service callback 传入的智能体（Assistant）创建者身份，
+// 不是发起 HTTP 请求的调用者身份——发布态智能体常被非创建者调用，二者不一定一致。
+// 当前 var 查询走 mcp 层按 acquired 记录自带的 owner 隐式解析，这两个参数不改变返回内容，
+// 仅用于日志/审计，便于排查发布态智能体被非创建者调用时的问题。
+func GetCallbackAcquiredSkillListDetail(ctx *gin.Context, userId, orgId string, acquiredSkillIdList []string) (*response.CallbackAcquiredSkillDetailListResp, error) {
+	log.Debugf("callback acquired skill list, assistantCreator=%s/%s, acquiredSkillIds=%v", orgId, userId, acquiredSkillIdList)
 	if len(acquiredSkillIdList) == 0 {
 		return nil, grpc_util.ErrorStatus(errs.Code_BFFInvalidArg, "skillIdList is required")
 	}
@@ -108,6 +114,14 @@ func GetCallbackAcquiredSkillListDetail(ctx *gin.Context, acquiredSkillIdList []
 		if err != nil {
 			log.Warnf("callback acquired skill list ignored invalid acquired skill, acquiredSkillId: %s, err: %v", acquiredSkillId, err)
 			continue
+		}
+		// 通过 mcp gRPC 拉取该 acquired skill 的变量集（per-request，无缓存）。
+		// 失败只打日志、不中断 callback：让 LLM 拿到无 var 的 skill 也比直接拒绝整批好。
+		vars, varsErr := getAcquiredSkillVariables(ctx, acquiredSkillId)
+		if varsErr != nil {
+			log.Warnf("callback acquired skill list failed to fetch variables, acquiredSkillId: %s, err: %v", acquiredSkillId, varsErr)
+		} else {
+			detail.Variables = toSkillVariables(vars)
 		}
 		skillDetailList = append(skillDetailList, detail)
 	}

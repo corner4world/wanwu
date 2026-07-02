@@ -852,6 +852,17 @@ message SkillInfo {
   string desc = 4;
   string avatar = 5;
   string objectPath = 6;
+  repeated SkillVariable variables = 7; // 技能自定义变量，将注入到 sandbox bash 子进程 env
+}
+
+// SkillVariable 注意：variableValue 字段仅允许沿 "assistant-svc → agent-svc → sandbox" 流动，
+// 不得进入回流 LLM 的上下文（system prompt / SKILL.md / 日志 / 错误信息 / SSE 帧）。
+// gRPC 拦截器若 dump request body 需要做 redaction。
+message SkillVariable {
+  string name          = 1; // 变量人类可读名（仅供 SKILL.md key/name/desc 展示用）
+  string desc          = 2; // 变量描述（仅供 SKILL.md key/name/desc 展示用）
+  string variableKey   = 3; // 环境变量名（受白名单正则 + 黑名单约束）
+  string variableValue = 4; // 变量值（敏感）
 }
 
 

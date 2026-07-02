@@ -171,12 +171,23 @@ type MCPToolInfo struct {
 }
 
 type SkillToolInfo struct {
-	SkillId    string    `json:"skillId"`
-	SkillType  SkillType `json:"skillType"`
-	Name       string    `json:"name"`
-	Desc       string    `json:"desc"`
-	Avatar     string    `json:"avatar"`
-	ObjectPath string    `json:"objectPath"`
+	SkillId    string          `json:"skillId"`
+	SkillType  SkillType       `json:"skillType"`
+	Name       string          `json:"name"`
+	Desc       string          `json:"desc"`
+	Avatar     string          `json:"avatar"`
+	ObjectPath string          `json:"objectPath"`
+	Variables  []SkillVariable `json:"variables,omitempty"`
+}
+
+// SkillVariable 与 proto SkillVariable 字段对齐。
+// 注意：VariableValue 仅允许沿 "agent-svc → wga-sandbox option → sandbox 文件" 流动，
+// 不得进入回流 LLM 的上下文（system prompt / SKILL.md / 日志 / 错误信息 / SSE 帧）。
+type SkillVariable struct {
+	Name          string `json:"name"`
+	Desc          string `json:"desc"`
+	VariableKey   string `json:"variableKey"`
+	VariableValue string `json:"variableValue"`
 }
 
 type MetadataFilterParam struct {

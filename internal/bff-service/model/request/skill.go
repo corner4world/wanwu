@@ -1,10 +1,17 @@
 package request
 
-import "fmt"
+import (
+	"fmt"
+
+	skill_var "github.com/UnicomAI/wanwu/pkg/skill-var"
+)
 
 // --- Skill Variable ---
 
-// SkillVariable 变量配置
+// SkillVariable 变量配置。
+// 安全约束（与 assistant_service.SkillVariable 注释一致）：
+// VariableValue 仅允许沿 BFF -> assistant-svc -> agent-svc -> sandbox (.skill_env.json) 流动；
+// 不得进入 LLM 上下文 (system prompt / SKILL.md / 日志 / 错误信息 / SSE 帧)。
 type SkillVariable struct {
 	Name          string `json:"name"`
 	Desc          string `json:"desc"`
@@ -84,10 +91,7 @@ type SkillConfigReq struct {
 }
 
 func (r *SkillConfigReq) Check() error {
-	if r.Variable.Name == "" {
-		return fmt.Errorf("variable.name is required")
-	}
-	return nil
+	return r.Variable.validate()
 }
 
 type UpdateSkillConfigReq struct {
@@ -96,8 +100,21 @@ type UpdateSkillConfigReq struct {
 }
 
 func (r *UpdateSkillConfigReq) Check() error {
-	if r.Variable.Name == "" {
+	return r.Variable.validate()
+}
+
+// validate 共享给 SkillConfigReq / UpdateSkillConfigReq 用，避免两处重复。
+// 规则的 key 黑名单与 value 长度上限来自 pkg/skill-var 共享模块，与 sandbox 兜底
+// 单一事实源，黑名单更新时不会两边漂移。
+func (v *SkillVariable) validate() error {
+	if v.Name == "" {
 		return fmt.Errorf("variable.name is required")
+	}
+	if err := skill_var.ValidateVariableKey(v.VariableKey); err != nil {
+		return err
+	}
+	if err := skill_var.ValidateVariableValueLen(v.VariableValue); err != nil {
+		return err
 	}
 	return nil
 }
@@ -114,15 +131,30 @@ func (r *DeleteSkillConfigReq) Check() error {
 
 type SearchBuiltinSkillListReq struct {
 	SkillIdList []string `json:"skillIdList" form:"skillIdList" validate:"required"`
+	// UserId / OrgId 用于 mcp.GetBuiltinSkillVars 鉴权（builtin skill var 按 user 配）。
+	// 老 caller 不传时回退为不带 vars 的行为，保持向后兼容。
+	UserId string `json:"userId" form:"userId"`
+	OrgId  string `json:"orgId" form:"orgId"`
 	CommonCheck
 }
 
 type SearchCustomSkillListReq struct {
 	SkillIdList []string `json:"skillIdList" form:"skillIdList" validate:"required"`
+	// UserId/OrgId：调用方期望"以哪个用户身份"查询这批 skill 的详情与变量。
+	// callback 由 assistant-service 在处理智能体（Assistant）对话时内部回调过来，
+	// 此处应传智能体在 assistant 表里的 user_id / org_id（智能体创建者），
+	// 而不是发起 HTTP 请求的调用者——发布态智能体常被非创建者调用，
+	// 用调用者身份会查不到创建者配置的 per-user skill 变量。
+	UserId string `json:"userId" form:"userId"`
+	OrgId  string `json:"orgId" form:"orgId"`
 	CommonCheck
 }
 
 type SearchAcquiredSkillListReq struct {
 	SkillIdList []string `json:"skillIdList" form:"skillIdList" validate:"required"`
+	// UserId/OrgId：同 SearchCustomSkillListReq 说明，应传智能体创建者身份，
+	// 而非 HTTP 调用者身份。
+	UserId string `json:"userId" form:"userId"`
+	OrgId  string `json:"orgId" form:"orgId"`
 	CommonCheck
 }

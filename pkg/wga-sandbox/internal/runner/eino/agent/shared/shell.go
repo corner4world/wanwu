@@ -3,11 +3,12 @@ package shared
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -18,7 +19,16 @@ import (
 const (
 	maxOutputSize  = 1024 * 1024 // 1MB
 	commandTimeout = 5 * time.Minute
+	// ScriptFileMaxSize 读取脚本文件做 body-scan 的大小上限。
+	// 越权脚本通常几 KB - 几十 KB；超过 1 MB 一般是数据文件或大型工具，
+	// 静态扫描收益低、成本高，直接放行让 shell 自己去跑。
+	ScriptFileMaxSize = 1 << 20 // 1 MB
 )
+
+// SkillEnvFileName sandbox workspace 下注入 skill 变量的文件名。
+// 写侧（eino runner.injectEnvVariables）与读侧（ShellOnlyBackend.Execute）共用此常量，
+// 避免两处字面值漂移。JSON 格式不与 dotenv 兼容，故文件名带 .json 后缀。
+const SkillEnvFileName = ".skill_env.json"
 
 // ShellOnlyBackend 仅提供 shell 命令执行能力。
 // 不实现 filesystem.Backend 的其他文件操作方法，因为 bash 工具只调用 Execute。
@@ -26,145 +36,122 @@ type ShellOnlyBackend struct {
 	maxOutputSize  int
 	commandTimeout time.Duration
 	workDir        string
+	// skillEnvPath 指向 workspace 下的 SkillEnvFileName 文件；Execute 每次会重新读，
+	// 文件不存在时保持 cmd.Env=nil（透明继承父进程 env），从而对无 skill var 的请求零侵入。
+	skillEnvPath string
+	// halt 累计单次 sandbox 会话内的连续 [BLOCKED:...] 次数；连续到阈值触发熔断。
+	// 可空：nil 表示不启用熔断（兼容 tests + oneshot 沙箱路径）。
+	halt *HaltState
 }
 
-func NewShellOnlyBackend(workDir string) *ShellOnlyBackend {
+// NewShellOnlyBackend 构造 ShellOnlyBackend。halt 可空——为 nil 时不启用连续 BLOCKED 熔断。
+func NewShellOnlyBackend(workDir string, halt *HaltState) *ShellOnlyBackend {
 	return &ShellOnlyBackend{
 		maxOutputSize:  maxOutputSize,
 		commandTimeout: commandTimeout,
 		workDir:        workDir,
+		skillEnvPath:   filepath.Join(workDir, SkillEnvFileName),
+		halt:           halt,
 	}
 }
 
-// --- 安全规则 ---
-//
-// 设计原则：
-//   1. wga-sandbox 本身已是隔离容器，本层不再承担"防止一切危险字符串"的职责，
-//      只防"破坏沙箱自身 + 泄露宿主敏感信息"。
-//   2. 区分读/写：cat /proc/cpuinfo、cat /etc/hosts 这类只读操作不拦，只在
-//      写入或删除时拦截敏感路径。
-//   3. 高危且无合法替代的动作（mkfs、shutdown、写块设备、反向 shell 通道、
-//      rm 系统目录）无条件拦截。
-
-var dangerousPatterns = []*regexp.Regexp{
-	// 无可逆/无合法用途的系统破坏命令
-	regexp.MustCompile(`(?i)\bmkfs\b`),
-	regexp.MustCompile(`(?i)\b(shutdown|reboot|halt|poweroff|init\s+[06])\b`),
-
-	// 直接向块设备写入
-	regexp.MustCompile(`(?i)\bdd\b[^|;&]*\bof=/dev/(sd|nvme|hd|mmcblk|loop|mapper)`),
-	regexp.MustCompile(`(?i)>\s*/dev/(sd|nvme|hd|mmcblk)`),
-
-	// bash 反向 shell 通道
-	regexp.MustCompile(`/dev/(tcp|udp)/`),
-
-	// 删除根目录或系统目录（工作目录内 rm -rf 放行）。
-	// 注意：故意不列 /home —— 工作区前缀就是 /home/root/workspace/...，列了会误杀。
-	// /root\b 是兜底；走到 sensitiveWritePatterns 的 /root/ + writeAction 也会再拦一次。
-	regexp.MustCompile(`(?i)\brm\s+-[a-zA-Z]*[rRf][a-zA-Z]*\s+(/\s|/$|/\*|\$HOME\b|~/?\*?\s|~/?\*?$|/etc\b|/var\b|/usr\b|/bin\b|/sbin\b|/lib\b|/lib64\b|/boot\b|/root\b)`),
-
-	// 明显的代码注入
-	regexp.MustCompile(`(?i)\b__import__\s*\(\s*['"]os['"]\s*\)`),
+// haltedResponse 返回熔断后 Execute 的短路响应。命令不进入 cmd.Run，直接向 LLM 返回终止提示。
+func haltedResponse() *filesystem.ExecuteResponse {
+	exitCode := 1
+	return &filesystem.ExecuteResponse{
+		Output:   "[BLOCKED:HALT] session terminated by sandbox security guard due to repeated policy violations; no further commands will execute.",
+		ExitCode: &exitCode,
+	}
 }
 
-// sensitiveReadPatterns：无论读写，命中即拦。
-// 真正存放凭证/秘密的位置才进来。
-var sensitiveReadPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`/etc/(shadow|sudoers)\b`),
-	regexp.MustCompile(`\.ssh/(id_rsa|id_ed25519|id_ecdsa|id_dsa)\b`),
-	regexp.MustCompile(`\.aws/credentials\b`),
-	regexp.MustCompile(`/var/lib/(mysql|postgresql)\b`),
-	regexp.MustCompile(`/proc/\d+/(mem|maps|environ)\b`),
-	regexp.MustCompile(`/proc/sys/kernel/`),
-}
-
-// sensitiveWritePatterns：仅当紧邻写动作（>, >>, tee, rm, mv, cp, chmod, chown）时拦截。
-var sensitiveWritePatterns = []*regexp.Regexp{
-	regexp.MustCompile(`/etc/`),
-	regexp.MustCompile(`/proc/`),
-	regexp.MustCompile(`/sys/`),
-	regexp.MustCompile(`/var/lib/`),
-	regexp.MustCompile(`/boot/`),
-	regexp.MustCompile(`/root/`),
-}
-
-// writeActionPattern：命中点之前若以这些动作结尾，则视为"对该路径写"。
-// 用 $ 锚点配合"取前缀子串"的方式判定。
-var writeActionPattern = regexp.MustCompile(`(?i)(>\s*|>>\s*|\|\s*tee\s+(-[a-zA-Z]+\s+)*|\btee\s+(-[a-zA-Z]+\s+)*|\brm\s+(-[a-zA-Z]+\s+)*|\bmv\s+\S+\s+|\bcp\s+(-[a-zA-Z]+\s+)*\S+\s+|\bchmod\s+\S+\s+|\bchown\s+\S+\s+)$`)
-
-var (
-	pathTraversalPattern = regexp.MustCompile(`\.\./`)
-	symlinkPattern       = regexp.MustCompile(`(?i)\bln\s+-[a-z]*s`)
-)
-
-// hasWriteActionBefore 判断 command[:idx] 末尾是否以"写动作"结束。
-// lookback 限制回看窗口避免误判跨命令的远距离 token。
-func hasWriteActionBefore(command string, idx int) bool {
-	const lookback = 64
-	start := max(idx-lookback, 0)
-	prefix := command[start:idx]
-	return writeActionPattern.MatchString(prefix)
-}
-
-func validateCommand(command string) error {
-	// 1) 高危动作：无论上下文都拦
-	for _, pattern := range dangerousPatterns {
-		if pattern.MatchString(command) {
-			matched := pattern.FindString(command)
-			log.Printf("[安全拦截] 检测到危险操作: %s", matched)
-			return fmt.Errorf("安全拦截：检测到高危命令片段 [%s]，已拒绝执行", matched)
-		}
+// readSkillEnv 读取并反序列化 .skill_env.json。文件不存在返回 nil（合法路径）；
+// 存在但解析失败打日志后返回 nil（不阻断命令执行，保持"无 var = 透明继承"的兜底行为）。
+// 错误信息只带文件路径，不含内容片段。
+func (b *ShellOnlyBackend) readSkillEnv() map[string]string {
+	if b.skillEnvPath == "" {
+		return nil
 	}
-
-	// 2) 读敏感路径：命中即拦
-	for _, pattern := range sensitiveReadPatterns {
-		if matched := pattern.FindString(command); matched != "" {
-			log.Printf("[安全拦截] 检测到对敏感路径读取尝试: %s", matched)
-			return fmt.Errorf("安全拦截：检测到对敏感路径 [%s] 的访问尝试，已拒绝执行", matched)
+	data, err := os.ReadFile(b.skillEnvPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Printf("[Shell] read %s failed: %v", b.skillEnvPath, err)
 		}
+		return nil
 	}
-
-	// 3) 写敏感路径：仅当命中位置前紧邻写动作时拦截
-	for _, pattern := range sensitiveWritePatterns {
-		for _, loc := range pattern.FindAllStringIndex(command, -1) {
-			if hasWriteActionBefore(command, loc[0]) {
-				matched := command[loc[0]:loc[1]]
-				log.Printf("[安全拦截] 检测到对敏感路径写入尝试: %s", matched)
-				return fmt.Errorf("安全拦截：检测到对敏感路径 [%s] 的写入尝试，已拒绝执行", matched)
-			}
-		}
+	if len(data) == 0 {
+		return nil
 	}
-
-	// 4) 路径穿越
-	if strings.Contains(command, "..") && pathTraversalPattern.MatchString(command) {
-		return fmt.Errorf("安全拦截：检测到路径穿越尝试（../），已拒绝执行")
+	var envMap map[string]string
+	if err := json.Unmarshal(data, &envMap); err != nil {
+		log.Printf("[Shell] parse %s failed: %v", b.skillEnvPath, err)
+		return nil
 	}
-
-	// 5) 指向敏感路径的符号链接
-	if symlinkPattern.MatchString(command) {
-		for _, pattern := range sensitiveReadPatterns {
-			if matched := pattern.FindString(command); matched != "" {
-				return fmt.Errorf("安全拦截：禁止创建指向敏感路径 [%s] 的符号链接", matched)
-			}
-		}
-		for _, pattern := range sensitiveWritePatterns {
-			if matched := pattern.FindString(command); matched != "" {
-				return fmt.Errorf("安全拦截：禁止创建指向敏感路径 [%s] 的符号链接", matched)
-			}
-		}
-	}
-
-	return nil
+	return envMap
 }
 
 // Execute 执行 shell 命令，附带安全校验、超时、输出截断与退出码处理。
+//
+// 三层防线（按顺序）：
+//  1. halt 短路：已熔断则直接返回 [BLOCKED:HALT]，命令永不进入 cmd.Run。
+//  2. validateCommand：通用系统安全（rm -rf / 路径穿越 / 写敏感文件等）。
+//     与 skill vars 状态无关，**永远生效**——predates 本次 skill-var 工作。
+//  3. precheck 家族（precheckCommand + precheckScriptFile）：skill 变量保护层。
+//     仅在 skill 配置了至少一个 var（envMap 非空）时启用——**无 vars 时跳过**，
+//     backward compat 到 v4 之前的行为。
+//
+// 熔断计数：precheck 拦截或 validate 拦截触发的 output 会以 [BLOCKED:xxx] 或
+// `安全拦截：` 起头；连续 BLOCKED 到阈值触发 haltFn（绑定到 sessionCtx 的
+// CancelCauseFunc），eino runner iterator 关闭，上层通过 BuildFinalAgentEvent
+// 下发 error[agent] 兜底 SSE。**halt 计数同样只在有 skill vars 时启用**——
+// 无 vars 时 precheck 不跑，halt 也无意义；validate 拦截在无 vars 场景不计入
+// halt（保持 backward compat 语义纯粹）。
 func (b *ShellOnlyBackend) Execute(ctx context.Context, req *filesystem.ExecuteRequest) (*filesystem.ExecuteResponse, error) {
+	// 已熔断：短路返回，命令不进入执行链。放在最前面确保后续步骤都不跑。
+	if b.halt != nil && b.halt.Halted() {
+		return haltedResponse(), nil
+	}
+
+	// 通用安全校验（永远生效，与 skill vars 状态无关）
 	if err := validateCommand(req.Command); err != nil {
 		exitCode := 1
 		return &filesystem.ExecuteResponse{
 			Output:   err.Error(),
 			ExitCode: &exitCode,
 		}, nil
+	}
+
+	// 读取 skill 已注入的环境变量。文件格式：JSON map[string]string（由 runner BeforeRun
+	// 的 injectEnvVariables 写入）。两条不变量：
+	//   1. 文件不存在时 cmd.Env 保持 nil（Go exec 自动继承父进程 env），透明无侵入；
+	//   2. 文件存在时 cmd.Env = append(os.Environ(), kv...)，PATH/PYTHONPATH/HOME 不丢失，
+	//      同名 key 以 skill var 为准（os/exec 取后出现的值）。
+	// 安全：读 / 解析失败的错误信息只带文件路径不带值；同样不打印 envMap 内容。
+	envMap := b.readSkillEnv()
+	hasVars := len(envMap) > 0
+
+	// Skill 变量保护层：仅在有 skill vars 时启用。
+	// 无 vars 时保护对象不存在，precheck 跳过——backward compat 到 v4 之前的行为。
+	if hasVars {
+		// cmd.Run 前对命令字符串做静态拦截，阻止 LLM 通过 echo/cat/printenv 等方式回流敏感 value。
+		if err := precheckCommand(req.Command, envMap); err != nil {
+			exitCode := 1
+			resp := &filesystem.ExecuteResponse{
+				Output:   err.Error(),
+				ExitCode: &exitCode,
+			}
+			b.recordHalt(resp.Output, hasVars)
+			return resp, nil
+		}
+		// 文件形式脚本 body-scan：拦下 `python3 x.py` / `bash script.sh` 等通过文件运行脚本的越权手法。
+		if err := precheckScriptFile(req.Command, b.workDir, envMap); err != nil {
+			exitCode := 1
+			resp := &filesystem.ExecuteResponse{
+				Output:   err.Error(),
+				ExitCode: &exitCode,
+			}
+			b.recordHalt(resp.Output, hasVars)
+			return resp, nil
+		}
 	}
 
 	execCtx, cancel := context.WithTimeout(ctx, b.commandTimeout)
@@ -181,6 +168,14 @@ func (b *ShellOnlyBackend) Execute(ctx context.Context, req *filesystem.ExecuteR
 		if absWorkDir, err := filepath.Abs(b.workDir); err == nil {
 			cmd.Dir = absWorkDir
 		}
+	}
+
+	if len(envMap) > 0 {
+		env := os.Environ()
+		for k, v := range envMap {
+			env = append(env, k+"="+v)
+		}
+		cmd.Env = env
 	}
 
 	var stdout, stderr bytes.Buffer
@@ -220,9 +215,207 @@ func (b *ShellOnlyBackend) Execute(ctx context.Context, req *filesystem.ExecuteR
 		exitCode = exitErr.ExitCode()
 	}
 
-	return &filesystem.ExecuteResponse{
+	resp := &filesystem.ExecuteResponse{
 		Output:    output,
 		ExitCode:  &exitCode,
 		Truncated: truncated,
-	}, nil
+	}
+	// exec 正常收尾也走 recordHalt：output 若是 sh 报错回显"[BLOCKED:..."/"安全拦截："
+	// 之类的字符串（合法场景下几乎不可能，兜底），也一并计入；否则 NoteSuccess 重置计数。
+	b.recordHalt(resp.Output, hasVars)
+	return resp, nil
 }
+
+// recordHalt 根据 output 是否为拦截产物累计或重置 halt 计数。
+// hasVars=false 时短路——无 skill vars 场景下 halt 不启用（backward compat）。
+func (b *ShellOnlyBackend) recordHalt(output string, hasVars bool) {
+	if b.halt == nil || !hasVars {
+		return
+	}
+	if isBlockedOutput(output) {
+		b.halt.NoteBlocked()
+	} else {
+		b.halt.NoteSuccess()
+	}
+}
+
+// isBlockedOutput 判断 Execute 的 Output 是否为安全拦截产物。
+// 覆盖两个前缀：precheck 家族的 [BLOCKED:xxx] 与 validateCommand 家族的 `安全拦截：...`。
+func isBlockedOutput(output string) bool {
+	return strings.HasPrefix(output, "[BLOCKED:") || strings.HasPrefix(output, "安全拦截：")
+}
+
+// scriptFileExtSet 与 precheck.go 里 scriptFileExtRe 保持同源。
+// script-file 扫 tokens 位置参数时用它做后缀快速匹配。
+var scriptFileExtSet = map[string]struct{}{
+	".py": {}, ".pyw": {}, ".sh": {}, ".bash": {},
+	".js": {}, ".mjs": {}, ".cjs": {},
+	".pl": {}, ".rb": {}, ".php": {}, ".awk": {},
+}
+
+// devStdinPaths 解释器 "从 stdin/fd 读脚本" 的伪路径集合。命中即拒（stdin-source 标签）。
+var devStdinPaths = map[string]struct{}{
+	"/dev/stdin": {}, "/proc/self/fd/0": {},
+}
+
+// precheckScriptFile 拦截 "命令行传入 workspace 内脚本文件时脚本 body 含越权代码"。
+//
+// 扫所有 tokens 位置参数：任何位置参数（不论 head 是 python / bash / cat / grep / less / cp / mv 等）
+// 只要指向 workspace 内的脚本后缀文件，都读进来做 body-scan。
+//
+// 触发规则：
+//  1. 位置参数是 /dev/stdin / /dev/fd/* / /proc/self/fd/* → 拒（stdin-source 标签）
+//  2. 位置参数后缀在 scriptFileExtSet 内 + 路径在 workDir 边界内 + 文件存在 + size ≤ 上限
+//     → 读进来跑 precheckScriptReadSensitive + precheckScriptBody；任一命中即拒
+//
+// 路径信任分级：
+//   - workspace/skills/** 下的脚本视为可信预置（构建期审计），免除三条件 body-scan；
+//     但 precheckScriptReadSensitive（读 .env 两条件）仍生效，作为硬防线。
+//   - workspace 其它路径（tmp / output）不豁免，两层扫描都走。
+//
+// 兜底策略：
+//   - 文件不存在 / 超大 / 读失败 / 路径越出 workDir → 跳过此 arg（不阻断命令）
+//   - workDir 为空 → 放行（测试或极端 corner case）
+//   - envMap 空时 precheckScriptBody 不触发，但 precheckScriptReadSensitive 仍会拦（护 .env 本身）
+//
+// 历史注：早期版本这里有 "位置参数以 $ 开头一律拒"（indirect-target）分支，因误伤
+// `python3 script.py --token "$KEY"` 这类合法 skill 调用模式已删除。头位置的变量
+// 展开（$X / $(...)）仍由 precheck.go 顶层 indirectCmdRe 拦。
+func precheckScriptFile(cmdStr, workDir string, envMap map[string]string) error {
+	// 用引号感知 tokenizer 替代 strings.Fields：把 `awk 'BEGIN{print $0}'` 的整块 body
+	// 视为一个 token，避免 awk 的字段引用 $0/$1/... 被独立看作 "$-prefix 位置参数"。
+	// （历史遗留原因：早期这里的 $-prefix 判定会拒 script-file 层的位置参数，现已删除；
+	// 但引号感知分词保留，因其对其它 $KEY 相关判定也更准确。）
+	tokens := splitFieldsRespectQuotes(cmdStr)
+	if len(tokens) < 2 {
+		return nil
+	}
+	head := strings.TrimPrefix(tokens[0], "/usr/bin/")
+	head = strings.TrimPrefix(head, "/bin/")
+	head = strings.ToLower(head)
+
+	if workDir == "" {
+		return nil
+	}
+	absWorkDir, wderr := filepath.Abs(workDir)
+	if wderr != nil {
+		return nil
+	}
+
+	// "flag + 值" 组合：这些 flag 后紧跟的一个 arg 不是位置参数
+	skipNextArg := map[string]bool{
+		"-c": true, "-e": true, "--eval": true, "-p": true, "--print": true, "-r": true,
+		"-m": true, "-E": true,
+	}
+
+	i := 1
+	for i < len(tokens) {
+		tok := tokens[i]
+		if tok == "" || tok == "-" || tok == "--" {
+			i++
+			continue
+		}
+		if strings.HasPrefix(tok, "--") {
+			i++
+			continue
+		}
+		if strings.HasPrefix(tok, "-") {
+			if skipNextArg[tok] {
+				i += 2
+			} else {
+				i++
+			}
+			continue
+		}
+		// 位置参数：判定
+		// 注：早期版本这里有 "$-prefix 位置参数一律拒" 分支（indirect-target 标签），
+		// 但会误伤合法用法——例如 skill 官方调用模式 `python3 script.py --token "$KEY"`
+		// 里的 flag value。由于本函数上层的 skipNextArg 无法穷举所有 skill / 用户自定义
+		// flag（--token / --url / --arguments 等），"位置参数 = 脚本路径" 这一判断在
+		// 混着 flag value 的现实命令上不成立。已删除该分支：
+		//   - head 位置的 $X / $(...) 变量展开仍由 precheck.go 顶层 indirectCmdRe 拦；
+		//   - 位置参数是变量展开时，shell 展开后要么落到 workspace 内脚本文件继续走
+		//     script-file 路径检查，要么展开失败让 bash 报错——不打开新的泄露通道。
+		// 剥外层配对引号
+		arg := tok
+		if len(arg) >= 2 {
+			if (arg[0] == '"' || arg[0] == '\'') && arg[len(arg)-1] == arg[0] {
+				arg = arg[1 : len(arg)-1]
+			}
+		}
+		// /dev/stdin / /proc/self/fd/0 / /dev/fd/N 伪路径（stdin 喂脚本）→ 拒
+		if _, ok := devStdinPaths[arg]; ok {
+			return fmt.Errorf("%s", blockedMsg("stdin-source", head))
+		}
+		if strings.HasPrefix(arg, "/dev/fd/") || strings.HasPrefix(arg, "/proc/self/fd/") {
+			return fmt.Errorf("%s", blockedMsg("stdin-source", head))
+		}
+		// 脚本后缀判定：不在集合内跳过此 arg
+		ext := strings.ToLower(filepath.Ext(arg))
+		if _, ok := scriptFileExtSet[ext]; !ok {
+			i++
+			continue
+		}
+		// 路径解析：绝对路径直接用；相对路径相对 workDir。
+		var absPath string
+		if filepath.IsAbs(arg) {
+			absPath = filepath.Clean(arg)
+		} else {
+			absPath = filepath.Join(absWorkDir, arg)
+		}
+		// 边界：workDir 内
+		relToWork, rerr := filepath.Rel(absWorkDir, absPath)
+		if rerr != nil || relToWork == ".." || strings.HasPrefix(relToWork, ".."+string(filepath.Separator)) {
+			i++
+			continue
+		}
+		stat, serr := os.Stat(absPath)
+		if serr != nil {
+			if !os.IsNotExist(serr) {
+				log.Printf("[Shell] script-file stat failed: %v (path=%s)", serr, absPath)
+			}
+			i++
+			continue
+		}
+		if stat.IsDir() || stat.Size() > ScriptFileMaxSize {
+			i++
+			continue
+		}
+		data, rerr2 := os.ReadFile(absPath)
+		if rerr2 != nil {
+			log.Printf("[Shell] script-file read failed: %v (path=%s)", rerr2, absPath)
+			i++
+			continue
+		}
+		body := string(data)
+		// 硬防线：任何路径下的脚本读 .env / .skill_env 都拒（含 skill 目录）
+		if perr := precheckScriptReadSensitive(body); perr != nil {
+			return fmt.Errorf("%s", blockedMsg("script-file", head))
+		}
+		// 三条件 body-scan：workspace/skills/** 下的可信预置脚本免除，其它路径（tmp / output）走。
+		if len(envMap) > 0 && !isTrustedSkillScript(absPath, absWorkDir) {
+			if perr := precheckScriptBody(body, envMap); perr != nil {
+				return fmt.Errorf("%s", blockedMsg("script-file", head))
+			}
+		}
+		i++
+	}
+	return nil
+}
+
+// isTrustedSkillScript 判断 absPath 是否位于 workspace/skills/ 下。
+// 这些脚本是 sandbox 启动前静态挑选、可审计的预置文件，不是 LLM 或攻击者写入的
+// 运行时产物，免除三条件 body-scan；但仍受 precheckScriptReadSensitive 两条件
+// 保护（读 .env / .skill_env 不豁免）。
+//
+// 前提：workspace/skills/ 目录内容由构建/打包流程审计；运行时 LLM 不应有写入
+// 该目录的权限（该权限边界由 sandbox 文件系统层保障，不在本函数职责内）。
+func isTrustedSkillScript(absPath, absWorkDir string) bool {
+	rel, err := filepath.Rel(absWorkDir, absPath)
+	if err != nil {
+		return false
+	}
+	rel = filepath.ToSlash(rel)
+	return strings.HasPrefix(rel, "skills/")
+}
+

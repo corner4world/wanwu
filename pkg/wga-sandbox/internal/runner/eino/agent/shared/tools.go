@@ -78,8 +78,10 @@ func NewSkillMiddleware(ctx context.Context, workspace string) (adk.AgentMiddlew
 
 // NewBashMiddleware 把 bash 工具包装成 AgentMiddleware，
 // 与 NewSkillMiddleware 并列在调用点装配，每个中间件自包含。
-func NewBashMiddleware(workspace string) (adk.AgentMiddleware, error) {
-	backend := NewShellOnlyBackend(workspace)
+//
+// halt 可空——为 nil 时不启用连续 BLOCKED 熔断（用于 tests + oneshot 沙箱兼容）。
+func NewBashMiddleware(workspace string, halt *HaltState) (adk.AgentMiddleware, error) {
+	backend := NewShellOnlyBackend(workspace, halt)
 	bashTool, err := NewBashTool(backend)
 	if err != nil {
 		return adk.AgentMiddleware{}, err
