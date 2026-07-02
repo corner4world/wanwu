@@ -187,7 +187,13 @@
                 >
                   <div class="keyword-tags">
                     <template v-if="embeddingModel">
-                      {{ embeddingModel.displayName }}
+                      <img
+                        :src="convertModelIcon(embeddingModel?.avatar?.path)"
+                        class="model-img"
+                      />
+                      <span class="model-name">
+                        {{ embeddingModel.displayName }}
+                      </span>
                       <template
                         v-if="
                           embeddingModel.tags && embeddingModel.tags.length > 0
@@ -582,6 +588,7 @@ import exportRecord from '@/views/knowledge/qaDatabase/exportRecord.vue';
 import CopyIcon from '@/components/copyIcon.vue';
 import createKnowledge from '@/views/knowledge/component/create.vue';
 import { selectModelList } from '@/api/modelAccess';
+import { avatarSrc, getModelDefaultIcon } from '@/utils/util';
 
 export default {
   name: 'KnowledgeDoclist',
@@ -692,6 +699,9 @@ export default {
     this.clearTimer();
   },
   methods: {
+    convertModelIcon(iconPath) {
+      return iconPath ? avatarSrc(iconPath) : getModelDefaultIcon();
+    },
     showEdit() {
       this.$refs.createKnowledge.showDialog({
         category: this.category,
@@ -1202,6 +1212,17 @@ export default {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+
+  .model-img {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    vertical-align: middle;
+  }
+
+  .model-name {
+    font-weight: 500;
+  }
 }
 
 .keyword-tag {
