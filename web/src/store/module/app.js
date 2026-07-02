@@ -17,7 +17,6 @@ export const app = {
       starterPrompts: [{ value: '' }],
       models: [],
     },
-    maxPicNum: 6,
     //starterPrompts:[{value:''}],
     cacheData: {},
     historyAppList: [],
@@ -26,12 +25,6 @@ export const app = {
   },
 
   mutations: {
-    SET_MAX_PICNUM(state, data) {
-      state.maxPicNum = data;
-    },
-    CLEAR_MAX_PICNUM(state) {
-      state.maxPicNum = 6;
-    },
     SET_FROM_LIST(state, data) {
       state.fromList = data;
     },
@@ -76,12 +69,6 @@ export const app = {
     },
   },
   actions: {
-    setMaxPicNum({ commit }, data) {
-      commit('SET_MAX_PICNUM', data);
-    },
-    clearMaxPicNum({ commit }) {
-      commit('CLEAR_MAX_PICNUM');
-    },
     setFromList({ commit }, data) {
       commit('SET_FROM_LIST', data);
     },
@@ -146,6 +133,5 @@ export const app = {
     historyAppList: state => state.historyAppList,
     embeddingList: state => state.embeddingList,
     fromList: state => state.fromList,
-    maxPicNum: state => state.maxPicNum,
   },
 };

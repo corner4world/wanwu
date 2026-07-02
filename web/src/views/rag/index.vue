@@ -6,13 +6,12 @@
   >
     <template #main-content>
       <div class="app-content">
-        <Chat :editForm="editForm" :chatType="'chat'" />
+        <Chat :editForm="editForm" :chatType="'chat'" :maxPicNum="1" />
       </div>
     </template>
   </CommonLayout>
 </template>
 <script>
-import { mapActions } from 'vuex';
 import CommonLayout from '@/components/exploreContainer.vue';
 import Chat from './components/chat.vue';
 import { getRagPublishedInfo } from '@/api/rag';
@@ -38,11 +37,8 @@ export default {
       this.getDetail();
     }
   },
-  beforeDestroy() {
-    this.clearMaxPicNum();
-  },
+
   methods: {
-    ...mapActions('app', ['setMaxPicNum', 'clearMaxPicNum']),
     getDetail() {
       getRagPublishedInfo({ ragId: this.editForm.appId }).then(res => {
         if (res.code === 0) {
@@ -61,9 +57,6 @@ export default {
               value: item,
             }),
           );
-          // 临时隐藏visionConfig的配置，全都设置为1
-          // this.setMaxPicNum(res.data.visionConfig.picNum);
-          this.setMaxPicNum(1);
         }
       });
     },
