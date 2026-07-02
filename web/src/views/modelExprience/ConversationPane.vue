@@ -79,6 +79,7 @@
             :visibleClearHistory="false"
             :visibleUpload="visibleUpload"
             :maxImageSize="maxImageSize"
+            :maxPicNum="currentMaxPicNum"
             :fileTypeArr="['image/*']"
             @preSend="preSend"
           />
@@ -110,7 +111,6 @@ import SelectModelDialog from './components/SelectModelDialog.vue';
 import { createAndUpdateChat, getExprienceDetail } from '@/api/modelExprience';
 import { getModelDetail } from '@/api/modelAccess';
 import { md } from '@/mixins/markdown-it';
-import { mapActions } from 'vuex';
 export default {
   name: 'ConversationPane',
   props: {
@@ -171,6 +171,9 @@ export default {
         item => item?.modelDetail?.config?.visionSupport === 'support',
       );
     },
+    currentMaxPicNum() {
+      return this.visibleUpload ? 3 : -1;
+    },
     maxImageSize() {
       const sizes = this.modelChatList
         .map(item => item?.modelDetail?.config?.maxImageSize)
@@ -196,9 +199,7 @@ export default {
     this.initPage();
   },
   methods: {
-    ...mapActions('app', ['setMaxPicNum']),
     initPage() {
-      this.setMaxPicNum(1);
       const comparisonIds = this.$route.query.comparisonIds || '';
       const modelId =
         this.$route.query.modelId || this.modelOptions[0]?.modelId;

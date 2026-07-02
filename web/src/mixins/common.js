@@ -55,7 +55,16 @@ export default {
           if (!rawFiles.length) return;
 
           // 安全限制：数量/大小/类型白名单
-          const maxImageFiles = Number(opt.maxImageFiles || opt.maxFiles || 3); // 图片类型文件的最大数量
+          const configuredMaxImageFiles =
+            opt.maxImageFiles === undefined ||
+            opt.maxImageFiles === null ||
+            opt.maxImageFiles === ''
+              ? Number(opt.maxFiles || 3)
+              : Number(opt.maxImageFiles);
+          const maxImageFiles = Number.isFinite(configuredMaxImageFiles)
+            ? configuredMaxImageFiles
+            : 3;
+          const hasImageFileLimit = maxImageFiles >= 0;
           const maxSizeMB = Number(opt.maxSizeMB || 50); // 单个文件默认 50MB
           const maxSize = maxSizeMB * 1024 * 1024;
           const allowExt = (
@@ -166,7 +175,10 @@ export default {
 
             // 检查数量限制
             // 非图片类型：只能上传1个文件（覆盖之前）；图片类型：使用 maxImageFiles 限制
-            if (safeFiles.length >= maxFiles) {
+            if (
+              (!isImageType || hasImageFileLimit) &&
+              safeFiles.length >= maxFiles
+            ) {
               rejected.push(f);
               continue;
             }
@@ -220,9 +232,9 @@ export default {
       wrap.addEventListener('drop', onDrop);
 
       const cleanup = () => {
-        wrap.removeEventListener('dragenter');
-        wrap.removeEventListener('leave');
-        wrap.removeEventListener('drop');
+        wrap.removeEventListener('dragenter', prevent);
+        wrap.removeEventListener('leave', leave);
+        wrap.removeEventListener('drop', onDrop);
       };
 
       this.$once('hook:beforeDestroy', () => {

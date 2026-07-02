@@ -145,6 +145,7 @@ export default {
       uploadLimit: '最多上传{limit}个文件',
       uploadLimitTip: '最多上传{limit}个文件，支持图片、文档混合上传',
       continueAddFile: '可继续添加文件',
+      clickBlankContinueUpload: '点击空白处继续上传',
     },
     datePicker: {
       placeholder: '选择日期时间',
@@ -1715,6 +1716,8 @@ export default {
       publishType: '私密发布为应用：仅自己可见',
       publishType1: '公开发布为应用：组织内可见',
       publishType2: '公开发布为应用：全局可见',
+      publishWarnTips:
+        '安全风险提示：如果智能体被不当使用，您为skill配置的变量有泄露风险，请慎重评估变量的敏感级别并选择适当的智能体发布范围。',
       hideKnowledge: '隐藏知识库出处',
       systemPrompt: '系统提示词',
       submitToPrompt: '提交至提示词',
@@ -1984,8 +1987,16 @@ export default {
     selectKnowledge: '请选择知识库',
     recommendedQuestion: '推荐问题:',
     qaUplodFileTips: '文件上传成功，请手动刷新问答库列表',
+    imgLimit: 'You can upload up to {num} images',
+    imgLimitOnly: 'You can upload up to {num} images',
+    imgLimitTips: 'Images and other files can be uploaded together',
+    uploadImgTips: 'You can upload up to {num} images',
     imageSizeModelLimit:
       'The current model only supports image files under {maxSize} MB',
+    uploadFileLimitTips: 'You can upload up to {num} files',
+    uploadFileSizeLimitTips: 'Non-image files cannot exceed {maxSize} MB',
+    uploadFileAndImgLimitTips:
+      'You can upload up to {fileNum} files, including up to {imageNum} images',
     publishType: {
       private: '私密发布为应用：仅自己可见',
       organization: '公开发布为应用：组织内可见',

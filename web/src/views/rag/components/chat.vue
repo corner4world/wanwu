@@ -44,6 +44,7 @@
             :type="'ragChat'"
             :hasHistory="hasHistory"
             :maxImageSize="maxImageSize"
+            :maxPicNum="maxPicNum"
             :visibleUpload="editForm.visionsupport === 'support'"
             @preSend="preSend"
             @setSessionStatus="setSessionStatus"
@@ -81,6 +82,11 @@ export default {
       type: [Number, String],
       required: false,
       default: null,
+    },
+    maxPicNum: {
+      type: Number,
+      required: false,
+      default: 1,
     },
   },
   components: {

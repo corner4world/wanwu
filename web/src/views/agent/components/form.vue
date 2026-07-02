@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div
     class="agent-from-content page-wrapper"
     :class="{ 'disable-clicks': disableClick }"
@@ -144,6 +144,15 @@
               </el-radio-group>
             </el-form-item>
 
+            <div v-if="showPublishWarnTipsForSkill" class="publish-warn-tips">
+              <svg-icon
+                class-name="publish-warn-tips__icon"
+                icon-class="alert-triangle"
+              />
+              <div class="publish-warn-tips__content">
+                {{ $t('agent.form.publishWarnTips') }}
+              </div>
+            </div>
             <div class="saveBtn">
               <el-button size="mini" type="primary" @click="savePublish">
                 {{ $t('common.button.save') }}
@@ -646,6 +655,10 @@
           :editForm="editForm"
           :chatType="'test'"
           :disableClick="disableClick"
+          :maxImageSize="currentMaxImageSize"
+          :maxPicNum="currentMaxPicNum"
+          :maxFileNum="10"
+          :maxFileSize="100"
         />
       </div>
     </div>
@@ -691,7 +704,7 @@
 <script>
 import { appPublish, getApiKeyRoot } from '@/api/appspace';
 import { store } from '@/store/index';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters } from 'vuex';
 import CreateIntelligent from '@/components/createApp/createIntelligent';
 import setSafety from '@/components/setSafety';
 import visualSet from './visualSet';
@@ -828,6 +841,10 @@ export default {
     useToolNum() {
       return this.allTools.filter(item => item.enable).length;
     },
+    // 发布提示(skill关联)
+    showPublishWarnTipsForSkill() {
+      return this.allTools.some(item => item.type === AGENT_TOOL_TYPE.SKILL);
+    },
     isRecommendPromptChanged() {
       return (
         this.recommendPromptDraft !==
@@ -857,6 +874,13 @@ export default {
       return this.modelOptions.find(
         item => item.modelId === this.editForm.modelParams,
       );
+    },
+    currentMaxPicNum() {
+      return this.editForm.visionsupport === 'support' ? 3 : -1;
+    },
+    currentMaxImageSize() {
+      const size = Number(this.modelSelectedInfo?.config?.maxImageSize);
+      return size > 0 ? size : null;
     },
   },
   data() {
@@ -1059,7 +1083,6 @@ export default {
   },
   beforeDestroy() {
     store.dispatch('app/initState');
-    this.clearMaxPicNum();
   },
   methods: {
     avatarSrc,
@@ -1072,7 +1095,6 @@ export default {
       this.version = item.version || '';
       this.getAppDetail();
     },
-    ...mapActions('app', ['setMaxPicNum', 'clearMaxPicNum']),
     //系统提示词失去焦点时，触发提示词更新
     handleInstructionsBlur(e) {
       this.updateInfo();
@@ -1182,9 +1204,12 @@ export default {
         }
       } else {
         this.editForm.modelParams = '';
+        this.editForm.visionsupport = '';
+        this.editForm.functionCalling = '';
         if (val) this.$message.warning(this.$t('agent.form.modelNotSupport'));
       }
     },
+
     handlePublishSet() {
       this.$router.push({
         path: `/agent/publishSet`,
@@ -1201,6 +1226,17 @@ export default {
     },
     updateDetail() {
       this.getAppDetail();
+    },
+    // 同步工具选择
+    syncToolDialogSelected() {
+      const toolDialog = this.$refs.toolDialog;
+      if (!toolDialog || !toolDialog.dialogVisible) return;
+      toolDialog.syncToolsSelected({
+        mcpInfos: this.mcpInfos,
+        workFlowInfos: this.workFlowInfos,
+        customInfos: this.actionInfos,
+        skillInfos: this.skillInfos,
+      });
     },
     showSafety() {
       this.$refs.setSafety.showDialog(this.editForm.safetyConfig.tables);
@@ -1626,10 +1662,7 @@ export default {
             typeName: this.nameMap[AGENT_TOOL_TYPE.SKILL].typeName,
           })),
         ];
-
-        // 暂时隐藏picNum字段依赖
-        // this.setMaxPicNum(this.editForm.visionConfig.picNum);
-        this.setMaxPicNum(1);
+        this.syncToolDialogSelected();
 
         this.$nextTick(() => {
           this.isSettingFromDetail = false;
@@ -1784,6 +1817,33 @@ $gap-scale: (
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.publish-warn-tips {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 2px 0 12px;
+  padding: 10px 12px;
+  color: #8a5a00;
+  background: #fff7e6;
+  border: 1px solid #ffe0a3;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 20px;
+  max-width: 240px;
+
+  .publish-warn-tips__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 16px;
+    color: #d48806;
+  }
+
+  .publish-warn-tips__content {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .agent_form {

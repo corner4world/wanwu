@@ -413,6 +413,24 @@ export function getFileIcon(type) {
   }
 }
 
+// 根据文件名提取文件类型（配合FileIcon组件使用）
+export function getFileIconType(fileOrName) {
+  const filename =
+    typeof fileOrName === 'string'
+      ? fileOrName
+      : fileOrName?.name ||
+        fileOrName?.fileName ||
+        fileOrName?.oldFileName ||
+        fileOrName?.oldName ||
+        '';
+  const pureName = filename.split('?')[0].split('#')[0];
+  const ext = (pureName.split('.').pop() || '').toLowerCase();
+  const normalizedExtMap = {
+    jpeg: 'jpg',
+  };
+  return normalizedExtMap[ext] || ext || 'unknown';
+}
+
 // 文件大小格式化
 export function formatFileSize(bytes, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
