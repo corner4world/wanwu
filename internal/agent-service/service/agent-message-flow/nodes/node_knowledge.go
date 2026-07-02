@@ -134,6 +134,13 @@ func ragKnowledgeHit(ctx context.Context, knowledgeHitParams *request.KnowledgeP
 				list.MetaData.DownloadLink = uploadUrlMap[buildMinioPath(list.MetaData)]
 			}
 		}
+		//以score列表的数据填充对应的数据
+		hitData := resp.Data
+		if len(hitData.SearchList) == len(hitData.Score) {
+			for index, data := range hitData.SearchList {
+				data.Score = hitData.Score[index]
+			}
+		}
 		return &resp, nil
 	}
 	return &resp, nil
