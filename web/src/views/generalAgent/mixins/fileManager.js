@@ -59,11 +59,11 @@ export default {
     /**
      * 构建用户消息内容（包含文件）
      */
-    buildUserMessage(content) {
+    buildUserMessage(content, files = this.uploadedFiles) {
       const message = { id: this.generateId(), role: 'user' };
 
       // 如果没有文件，直接返回文本
-      if (this.uploadedFiles.length === 0) {
+      if (files.length === 0) {
         message.content = content;
         return message;
       }
@@ -77,7 +77,7 @@ export default {
       }
 
       // 添加文件内容 - 后端统一使用 type: 'binary'，根据 mimeType 判断具体类型
-      this.uploadedFiles.forEach(file => {
+      files.forEach(file => {
         contentArray.push({
           type: 'binary',
           mimeType: file.type || 'application/octet-stream',
