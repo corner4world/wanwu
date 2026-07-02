@@ -145,6 +145,7 @@ export default {
       uploadLimit: '最多上传{limit}个文件',
       uploadLimitTip: '最多上传{limit}个文件，支持图片、文档混合上传',
       continueAddFile: '可继续添加文件',
+      clickBlankContinueUpload: '点击空白处继续上传',
     },
     datePicker: {
       placeholder: '选择日期时间',

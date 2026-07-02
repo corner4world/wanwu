@@ -24,46 +24,65 @@
       <!-- file preview -->
       <div v-if="fileList.length" class="echo-img-box mixed-file-box">
         <div
-          v-for="(file, i) in fileList"
-          :class="[
-            'echo-img-item',
-            'mixed-file-item',
-            { 'doc-file-item': !isImageFile(file) && !isAudioFile(file) },
-          ]"
-          :key="file.uid || 'file' + i"
+          v-for="group in visibleMixedFileGroups"
+          :key="group.type"
+          :class="['mixed-file-group', 'mixed-file-' + group.type + '-group']"
         >
-          <el-image
-            v-if="isImageFile(file)"
-            class="echo-img"
-            :src="file.fileUrl"
-            :preview-src-list="[file.imgUrl || file.fileUrl]"
-          ></el-image>
-          <audio v-else-if="isAudioFile(file)" controls class="echo-audio">
-            <source :src="file.fileUrl" type="video/mp3" />
-            <source :src="file.fileUrl" type="audio/ogg" />
-            <source :src="file.fileUrl" type="audio/mpeg" />
-            {{ $t('agent.autioTips') }}
-          </audio>
-          <div v-else class="docInfo-container">
-            <img :src="require('@/assets/imgs/fileicon.png')" class="docIcon" />
-            <div class="docInfo">
-              <p class="docInfo_name">
-                {{ $t('knowledgeManage.fileName') }}：{{ file.name }}
-              </p>
-              <p class="docInfo_size">
-                {{ $t('knowledgeManage.fileSize') }}：{{
-                  getFileSizeDisplay(file.size)
-                }}
-              </p>
+          <div
+            v-for="item in group.files"
+            :class="[
+              'echo-img-item',
+              'mixed-file-item',
+              {
+                'doc-file-item':
+                  !isImageFile(item.file) && !isAudioFile(item.file),
+              },
+            ]"
+            :key="item.file.uid || 'file' + item.index"
+          >
+            <el-image
+              v-if="isImageFile(item.file)"
+              class="echo-img"
+              :src="item.file.fileUrl"
+              :preview-src-list="[item.file.imgUrl || item.file.fileUrl]"
+            ></el-image>
+            <audio
+              v-else-if="isAudioFile(item.file)"
+              controls
+              class="echo-audio"
+            >
+              <source :src="item.file.fileUrl" type="video/mp3" />
+              <source :src="item.file.fileUrl" type="audio/ogg" />
+              <source :src="item.file.fileUrl" type="audio/mpeg" />
+              {{ $t('agent.autioTips') }}
+            </audio>
+            <div v-else class="docInfo-container">
+              <FileIcon
+                :type="getFileIconType(item.file)"
+                size="32px"
+                class="docIcon"
+              />
+              <div class="docInfo">
+                <p class="docInfo_name">
+                  {{ item.file.name }}
+                </p>
+                <p class="docInfo_size">
+                  {{ getFileSizeDisplay(item.file.size) }}
+                </p>
+              </div>
             </div>
+            <i
+              class="el-icon-close echo-close"
+              @click.stop="removeFile(item.index)"
+            ></i>
+            <span
+              class="el-icon-loading loading-icon-img"
+              v-if="item.file.uploadStatus === 'uploading'"
+            ></span>
           </div>
-          <i class="el-icon-close echo-close" @click.stop="removeFile(i)"></i>
-          <span
-            class="el-icon-loading loading-icon-img"
-            v-if="file.uploadStatus === 'uploading'"
-          ></span>
         </div>
       </div>
+      <el-divider class="editable-box-divider" v-if="fileList.length" />
       <!-- 问答输入框 -->
       <div
         class="editable-wp flex"
@@ -108,6 +127,8 @@
               :maxFileSize="maxFileSize"
               :maxPicNum="maxPicNum"
               :maxFileNum="maxFileNum"
+              :confirmedFileList="fileList"
+              :confirmedFileIdList="fileIdList"
               @setFileId="setFileId"
               @setFile="setFile"
             ></streamUploadField>
@@ -162,6 +183,8 @@ import {
   getPromptTemplateList,
   getPromptBuiltInList,
 } from '@/api/promptTemplate';
+import FileIcon from '@/components/FileIcon.vue';
+import { getFileIconType } from '@/utils/util';
 
 export default {
   props: {
@@ -203,7 +226,7 @@ export default {
     },
   },
   mixins: [commonMixin, uploadChunk],
-  components: { streamUploadField },
+  components: { streamUploadField, FileIcon },
   data() {
     return {
       // placeholder: '请输入内容,用Ctrl+Enter可换行',
@@ -276,6 +299,28 @@ export default {
     hasEffectiveImageLimit() {
       return this.effectiveImageLimit >= 0;
     },
+    // 展示层按文件类型分组，保留原始 index，避免影响上传队列顺序。
+    mixedFileGroups() {
+      return this.fileList.reduce(
+        (groups, file, index) => {
+          const item = { file, index };
+          if (this.isImageFile(file)) {
+            groups.images.push(item);
+          } else {
+            groups.nonImages.push(item);
+          }
+          return groups;
+        },
+        { nonImages: [], images: [] },
+      );
+    },
+    // 控制 mixed-file-box 的展示顺序：非图片在上，图片在下。
+    visibleMixedFileGroups() {
+      return [
+        { type: 'non-image', files: this.mixedFileGroups.nonImages },
+        { type: 'image', files: this.mixedFileGroups.images },
+      ].filter(group => group.files.length);
+    },
     placeholder() {
       return this.supportReminder
         ? this.$t('common.input.modelChatPlaceholder2')
@@ -340,6 +385,7 @@ export default {
     }
   },
   methods: {
+    getFileIconType,
     initDrag(maxFiles) {
       this.$nextTick(() => {
         if (typeof this.dragCleanup === 'function') {
@@ -792,9 +838,8 @@ export default {
     color: $color;
     margin-left: 10px;
   }
-  .mixed-file-box {
-    width: 100%;
-    overflow-x: auto;
+  .editable-box-divider {
+    margin: 6px 0;
   }
   .echo-img-box {
     position: absolute;
@@ -824,8 +869,7 @@ export default {
       height: 100%;
       object-fit: contain;
       background: #ffff;
-      box-shadow: 1px 1px 10px #9b9a9a;
-      border-radius: 4px;
+      border-radius: 8px;
     }
     .mixed-file-item.doc-file-item {
       width: 220px;
@@ -839,10 +883,9 @@ export default {
       gap: 8px;
       padding: 8px 24px 8px 8px;
       background: #fff;
-      border: 1px solid #dcdfe6;
-      border-radius: 4px;
-      box-shadow: 1px 1px 10px #9b9a9a;
       overflow: hidden;
+      background-color: #f7f7fa;
+      border-radius: 8px;
     }
     .docIcon {
       flex: 0 0 32px;
@@ -870,11 +913,14 @@ export default {
     }
     .echo-close {
       position: absolute;
-      right: 0;
-      top: 0;
+      right: -4px;
+      top: -4px;
       background-color: #333;
       color: #fff;
       cursor: pointer;
+      border-radius: 15px;
+      font-size: 12px;
+      padding: 2px;
     }
     .fileid-icon {
       line-height: 20px;
@@ -888,6 +934,29 @@ export default {
         font-weight: bold;
         font-size: 16px;
       }
+    }
+  }
+  .echo-img-box.mixed-file-box {
+    position: static;
+    top: auto;
+    width: 100%;
+    box-sizing: border-box;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 10px 0;
+    overflow: visible;
+  }
+  .mixed-file-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    &.mixed-file-non-image-group {
+      max-height: 360px;
+      overflow-y: auto;
+      padding-top: 4px;
     }
   }
   .echo-doc-box {

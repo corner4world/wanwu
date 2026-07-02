@@ -71,7 +71,11 @@
                         {{ $t('common.fileUpload.audioTips') }}
                       </audio>
                       <div v-else class="docFile">
-                        <img :src="require('@/assets/imgs/fileicon.png')" />
+                        <FileIcon
+                          :type="getFileIconType(f)"
+                          size="60px"
+                          class="docIcon"
+                        />
                       </div>
                       <p class="type-img-info">
                         <el-tooltip
@@ -111,6 +115,12 @@
                   max="100"
                   style="width: 360px; margin: 0 auto"
                 ></el-progress>
+                <p
+                  v-if="visibleContinueUploadTips"
+                  class="continue-upload-tips"
+                >
+                  {{ $t('common.fileUpload.clickBlankContinueUpload') }}
+                </p>
                 <template v-if="hasUploadLimitTips">
                   <p>{{ uploadLimitTips }}</p>
                 </template>
@@ -157,7 +167,11 @@
 
 <script>
 import uploadChunk from '@/mixins/uploadChunk';
+import FileIcon from '@/components/FileIcon.vue';
+import { getFileIconType } from '@/utils/util';
+
 export default {
+  components: { FileIcon },
   props: {
     fileTypeArr: {
       type: Array,
@@ -186,6 +200,16 @@ export default {
       type: Number,
       required: false,
       default: -1, // -1不限制
+    },
+    confirmedFileList: {
+      type: Array,
+      required: false,
+      default: () => [],
+    },
+    confirmedFileIdList: {
+      type: Array,
+      required: false,
+      default: () => [],
     },
   },
   mixins: [uploadChunk],
@@ -282,6 +306,11 @@ export default {
     hasEffectiveImageLimit() {
       return this.effectiveImageLimit >= 0;
     },
+    visibleContinueUploadTips() {
+      if (!this.fileList.length) return false;
+      if (!this.hasFileLimit) return true;
+      return this.fileList.length < this.normalizedMaxFileNum;
+    },
     uploadLimit() {
       return undefined;
     },
@@ -332,6 +361,7 @@ export default {
     },
   },
   methods: {
+    getFileIconType,
     checkScrollable() {
       this.$nextTick(() => {
         const container = this.$refs.imgList;
@@ -368,7 +398,29 @@ export default {
       }
     },
     openDialog() {
+      this.syncConfirmedFiles();
       this.dialogVisible = true;
+    },
+    syncConfirmedFiles() {
+      this.fileList = (this.confirmedFileList || []).map(file =>
+        this.normalizeUploadFile({
+          ...file,
+          percentage: file.percentage !== undefined ? file.percentage : 100,
+          progressStatus: file.progressStatus || 'success',
+          uploadStatus: file.uploadStatus || 'success',
+          uploaded: file.uploaded !== undefined ? file.uploaded : true,
+        }),
+      );
+      this.fileInfo = (this.confirmedFileIdList || []).map(item => ({
+        ...item,
+      }));
+      this.fileIdList = this.fileInfo.map(item => ({ ...item }));
+      const lastFile = this.fileList[this.fileList.length - 1];
+      this.fileType = (lastFile && lastFile.fileType) || '';
+      this.fileUrl = (lastFile && lastFile.fileUrl) || '';
+      this.imgUrl = (lastFile && lastFile.imgUrl) || '';
+      this.isUploading = false;
+      this.checkScrollable();
     },
     clearFile() {
       this.fileIdList = [];
@@ -640,7 +692,6 @@ export default {
         .filter(Boolean);
       this.$emit('setFileId', sortedFileInfo);
       this.$emit('setFile', this.fileList);
-      this.clearFile();
       this.handleClose();
     },
     getFileIdList() {
@@ -660,9 +711,13 @@ export default {
       margin-bottom: 20px;
     }
     .upload-box {
-      height: 190px;
+      height: 230px;
       width: 100% !important;
       background-color: #fff;
+      ::v-deep .el-upload-dragger {
+        height: 100%;
+        width: 100%;
+      }
       .el-upload-dragger {
         .el-icon-upload {
           margin: 46px 0 10px 0 !important;
@@ -729,10 +784,12 @@ export default {
         }
       }
       .docFile {
-        img {
-          margin: 0;
-          width: 60px;
-          height: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .docIcon {
+          flex: 0 0 auto;
         }
       }
     }
@@ -741,7 +798,10 @@ export default {
       bottom: 16px;
       left: 0;
       right: 0;
+      padding: 0 24px;
+      line-height: 20px;
       p {
+        margin: 4px 0 0;
         color: #9d8d8d !important;
       }
     }
