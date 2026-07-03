@@ -1,0 +1,121 @@
+package grpc
+
+import (
+	"context"
+	"net"
+	"time"
+
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
+
+	channel_service "github.com/UnicomAI/wanwu/api/proto/channel-service"
+	"github.com/UnicomAI/wanwu/internal/channel-service/adapter"
+	"github.com/UnicomAI/wanwu/internal/channel-service/chat"
+	"github.com/UnicomAI/wanwu/internal/channel-service/client"
+	"github.com/UnicomAI/wanwu/internal/channel-service/config"
+	"github.com/UnicomAI/wanwu/pkg/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+)
+
+type Server struct {
+	cfg     *config.Config
+	serv    *grpc.Server
+	cli     client.IClient
+	channel *ChannelService
+	manager *adapter.Manager
+	handler *chat.Handler
+}
+
+func NewServer(cfg *config.Config, cli client.IClient) (*Server, error) {
+	s := &Server{
+		cfg: cfg,
+		cli: cli,
+	}
+
+	// 创建适配器管理器
+	mgr := adapter.NewManager(*cfg, cli)
+
+	// 创建消息处理器
+	chatHandler := chat.NewHandler(*cfg, cli, mgr)
+
+	// 设置全局消息处理函数：平台消息 → chat handler → wanwu OpenAPI → 回复
+	mgr.SetMessageHandler(chatHandler.HandlePlatformMessage)
+
+	s.manager = mgr
+	s.handler = chatHandler
+	s.channel = NewChannelService(cfg, cli, mgr)
+
+	return s, nil
+}
+
+// GetManager 获取适配器管理器（用于 HTTP callback server）
+func (s *Server) GetManager() *adapter.Manager {
+	return s.manager
+}
+
+func (s *Server) Start(ctx context.Context) error {
+	if s.serv != nil {
+		return nil
+	}
+
+	s.serv = trace_util.NewGrpcTracerServer(
+		[]grpc.UnaryServerInterceptor{trace_util.LoggingUnaryGRPC()},
+		[]grpc.StreamServerInterceptor{trace_util.LoggingStreamGRPC()},
+	)
+
+	healthcheck := health.NewServer()
+	healthpb.RegisterHealthServer(s.serv, healthcheck)
+
+	// register service
+	channel_service.RegisterChannelServiceServer(s.serv, s.channel)
+
+	// 启动适配器管理器（自动连接所有 enabled + loggedIn 的通道）
+	go func() {
+		if err := s.manager.StartAll(ctx); err != nil {
+			log.Errorf("failed to start adapter manager: %v", err)
+		}
+	}()
+
+	// listen
+	lis, err := net.Listen("tcp", s.cfg.Server.GrpcEndpoint)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		err = s.serv.Serve(lis)
+		if err != nil {
+			log.Fatalf("grpc server.Serve() failed, err: %v", err)
+		}
+	}()
+
+	log.Infof("channel-service start grpc server at: %s", s.cfg.Server.GrpcEndpoint)
+	return nil
+}
+
+func (s *Server) Stop(ctx context.Context) {
+	if s.serv == nil {
+		return
+	}
+
+	// 停止所有适配器
+	s.manager.StopAll()
+
+	log.Infof("closing channel-service grpc server...")
+	stopped := make(chan struct{})
+	go func() {
+		s.serv.GracefulStop()
+		log.Infof("close channel-service grpc server gracefully")
+		close(stopped)
+	}()
+
+	cancelCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	select {
+	case <-cancelCtx.Done():
+		s.serv.Stop()
+		log.Errorf("close channel-service grpc server forced")
+	case <-stopped:
+	}
+}

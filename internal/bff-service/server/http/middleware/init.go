@@ -116,6 +116,9 @@ func Init(r *gin.Engine) {
 	// api_key.api_key_management
 	mid.Sub("api_key").NewSub("api_key_management", "API Key管理", route.PermNeedCheck, true, true)
 
+	// --- channel ---
+	mid.NewSub("channel", "通道管理", route.PermNeedCheck, true, true, JWTUser, CheckUserPerm)
+
 	// --- app_observability ---
 	mid.NewSub("app_observability", "应用观测", route.PermNeedCheck, true, true, JWTUser, CheckUserPerm)
 

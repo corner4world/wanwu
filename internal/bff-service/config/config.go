@@ -53,6 +53,7 @@ type Config struct {
 	Assistant           ServiceConfig         `json:"assistant" mapstructure:"assistant"`
 	Operate             ServiceConfig         `json:"operate" mapstructure:"operate"`
 	AgentService        ServiceConfig         `json:"agent-service" mapstructure:"agent-service"`
+	Channel             ServiceConfig         `json:"channel" mapstructure:"channel"`
 	RagKnowledgeConfig  RagKnowledgeConfig    `json:"rag-knowledge" mapstructure:"rag-knowledge"`
 	DifyKnowledgeConfig DifyKnowledgeConfig   `json:"dify-knowledge" mapstructure:"dify-knowledge"`
 	Workflow            WorkflowServiceConfig `json:"workflow" mapstructure:"workflow"`

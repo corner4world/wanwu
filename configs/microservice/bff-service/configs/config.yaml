@@ -255,6 +255,9 @@ operate:
 agent-service:
   host: agent-service:8990
 
+channel:
+  host: channel-service:9990
+
 rag-knowledge:
   endpoint: 'http://rag-wanwu:8681'
   chat-endpoint: 'http://rag-wanwu:10891'
