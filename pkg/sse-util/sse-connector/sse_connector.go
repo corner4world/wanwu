@@ -3,11 +3,11 @@ package sse_connector
 import (
 	"context"
 	"errors"
-	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"strings"
 	"sync"
 	"time"
 
+	trace_util "github.com/UnicomAI/wanwu/pkg/trace-util"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	safe_go_util "github.com/UnicomAI/wanwu/pkg/safe-go-util"
 	"github.com/UnicomAI/wanwu/pkg/sse-util/sse-connector/model"

@@ -64,6 +64,10 @@ EXPOSE 8990
 COPY --from=builder /app/bin/$WANWU_ARCH/app-service ./bin/app-service
 EXPOSE 9988
 
+# channel-service
+COPY --from=builder /app/bin/$WANWU_ARCH/channel-service ./bin/channel-service
+EXPOSE 9990
+
 # operate-service
 COPY --from=builder /app/bin/$WANWU_ARCH/operate-service ./bin/operate-service
 EXPOSE 9797

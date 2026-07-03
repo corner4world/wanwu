@@ -607,48 +607,77 @@ definitions:
     required:
     - results
     type: object
-  mp_common.OcrData:
+  mp_common.OcrFileInfo:
     properties:
-      length:
-        type: integer
-      page_num:
-        items:
-          type: integer
-        minItems: 1
-        type: array
-      text:
+      fileName:
         type: string
-      type:
+      fileType:
+        type: string
+      totalPages:
+        type: integer
+    type: object
+  mp_common.OcrMeta:
+    properties:
+      requestId:
+        type: string
+      timestamp:
+        type: string
+      traceId:
+        type: string
+    type: object
+  mp_common.OcrReq:
+    properties:
+      data:
+        type: string
+      extract_image:
+        type: integer
+      extract_image_content:
+        type: integer
+      fileName:
+        type: string
+      fileType:
+        type: integer
+      model:
+        type: string
+      url:
         type: string
     required:
-    - page_num
-    - type
+    - fileName
     type: object
   mp_common.OcrResp:
     properties:
       code:
         type: integer
       data:
-        items:
-          $ref: '#/definitions/mp_common.OcrData'
-        type: array
-      filename:
-        type: string
-      id:
-        type: string
+        $ref: '#/definitions/mp_common.OcrRespData'
       message:
         type: string
-      sha1:
-        type: string
-      time_cost:
-        type: number
-      timestamp:
+      meta:
+        $ref: '#/definitions/mp_common.OcrMeta'
+      prefixImageUrl:
         type: string
       version:
         type: string
-    required:
-    - data
-    - message
+    type: object
+  mp_common.OcrRespData:
+    properties:
+      fileInfo:
+        $ref: '#/definitions/mp_common.OcrFileInfo'
+      fullContent:
+        type: string
+      ocrResults:
+        items:
+          $ref: '#/definitions/mp_common.OcrResult'
+        type: array
+    type: object
+  mp_common.OcrResult:
+    properties:
+      content:
+        type: string
+      pageNumber:
+        type: integer
+      type:
+        type: string
     type: object
   mp_common.OpenAIFunction:
     properties:
@@ -2036,28 +2065,52 @@ definitions:
     type: object
   request.SearchAcquiredSkillListReq:
     properties:
+      orgId:
+        type: string
       skillIdList:
         items:
           type: string
         type: array
+      userId:
+        description: |-
+          UserId/OrgId：同 SearchCustomSkillListReq 说明，应传智能体创建者身份，
+          而非 HTTP 调用者身份。
+        type: string
     required:
     - skillIdList
     type: object
   request.SearchBuiltinSkillListReq:
     properties:
+      orgId:
+        type: string
       skillIdList:
         items:
           type: string
         type: array
+      userId:
+        description: |-
+          UserId / OrgId 用于 mcp.GetBuiltinSkillVars 鉴权（builtin skill var 按 user 配）。
+          老 caller 不传时回退为不带 vars 的行为，保持向后兼容。
+        type: string
     required:
     - skillIdList
     type: object
   request.SearchCustomSkillListReq:
     properties:
+      orgId:
+        type: string
       skillIdList:
         items:
           type: string
         type: array
+      userId:
+        description: |-
+          UserId/OrgId：调用方期望"以哪个用户身份"查询这批 skill 的详情与变量。
+          callback 由 assistant-service 在处理智能体（Assistant）对话时内部回调过来，
+          此处应传智能体在 assistant 表里的 user_id / org_id（智能体创建者），
+          而不是发起 HTTP 请求的调用者——发布态智能体常被非创建者调用，
+          用调用者身份会查不到创建者配置的 per-user skill 变量。
+        type: string
     required:
     - skillIdList
     type: object
@@ -2242,6 +2295,10 @@ definitions:
         type: string
       skillId:
         type: string
+      variables:
+        items:
+          $ref: '#/definitions/response.SkillVariable'
+        type: array
     type: object
   response.CallbackAcquiredSkillDetailListResp:
     properties:
@@ -3307,18 +3364,19 @@ paths:
   /model/{modelId}/ocr:
     post:
       consumes:
-      - multipart/form-data
+      - application/json
       parameters:
       - description: 模型ID
         in: path
         name: modelId
         required: true
         type: string
-      - description: 文件
-        in: formData
-        name: file
+      - description: 请求参数
+        in: body
+        name: data
         required: true
-        type: file
+        schema:
+          $ref: '#/definitions/mp_common.OcrReq'
       produces:
       - application/json
       responses:

@@ -44,7 +44,7 @@ type ChangeUserPasswordByEmail struct {
 	NewCipher string `json:"newCipher" validate:"required"` // 新密码RSA加密后的Base64字符串，包含{password, challenge}
 	Email     string `json:"email" validate:"required"`     // 邮箱
 	Code      string `json:"code" validate:"required"`      // 邮箱验证码
-	KeyID     string `json:"keyId" validate:"required"`   // RSA公钥ID
+	KeyID     string `json:"keyId" validate:"required"`     // RSA公钥ID
 }
 
 func (c *ChangeUserPasswordByEmail) Check() error {

@@ -92,9 +92,11 @@ type AcquiredSkillDetail struct {
 
 // SkillVariable 与 BFF response.SkillVariable JSON shape 对齐；仅保留下游需要的字段。
 // VariableValue 注意：完整数据流为
-//   assistant-svc(Prepare) → HTTP callback BFF → mcp-svc(GetXxxVars) → BFF
-//     → assistant-svc(Build deserialize) → proto SkillInfo (gRPC) → agent-svc
-//     → wga-sandbox (.skill_env.json) → bash 子进程 env
+//
+//	assistant-svc(Prepare) → HTTP callback BFF → mcp-svc(GetXxxVars) → BFF
+//	  → assistant-svc(Build deserialize) → proto SkillInfo (gRPC) → agent-svc
+//	  → wga-sandbox (.skill_env.json) → bash 子进程 env
+//
 // 不得进入任何回流 LLM 的上下文（system prompt / SKILL.md / 日志 / 错误信息 / SSE 帧）。
 type SkillVariable struct {
 	Name          string `json:"name"`

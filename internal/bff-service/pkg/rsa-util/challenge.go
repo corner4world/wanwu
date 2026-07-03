@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	goredis "github.com/redis/go-redis/v9"
 	"github.com/UnicomAI/wanwu/pkg/redis"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 const (

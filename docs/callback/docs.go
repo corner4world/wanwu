@@ -977,7 +977,7 @@ const docTemplate = `{
         "/model/{modelId}/ocr": {
             "post": {
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -995,11 +995,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "file",
-                        "description": "文件",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
+                        "description": "请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/mp_common.OcrReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -2486,66 +2488,113 @@ const docTemplate = `{
                 }
             }
         },
-        "mp_common.OcrData": {
+        "mp_common.OcrFileInfo": {
             "type": "object",
-            "required": [
-                "page_num",
-                "type"
-            ],
             "properties": {
-                "length": {
-                    "type": "integer"
-                },
-                "page_num": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "text": {
+                "fileName": {
                     "type": "string"
                 },
-                "type": {
+                "fileType": {
+                    "type": "string"
+                },
+                "totalPages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "mp_common.OcrMeta": {
+            "type": "object",
+            "properties": {
+                "requestId": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        },
+        "mp_common.OcrReq": {
+            "type": "object",
+            "required": [
+                "fileName"
+            ],
+            "properties": {
+                "data": {
+                    "type": "string"
+                },
+                "extract_image": {
+                    "type": "integer"
+                },
+                "extract_image_content": {
+                    "type": "integer"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "fileType": {
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "url": {
                     "type": "string"
                 }
             }
         },
         "mp_common.OcrResp": {
             "type": "object",
-            "required": [
-                "data",
-                "message"
-            ],
             "properties": {
                 "code": {
                     "type": "integer"
                 },
                 "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mp_common.OcrData"
-                    }
-                },
-                "filename": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
+                    "$ref": "#/definitions/mp_common.OcrRespData"
                 },
                 "message": {
                     "type": "string"
                 },
-                "sha1": {
-                    "type": "string"
+                "meta": {
+                    "$ref": "#/definitions/mp_common.OcrMeta"
                 },
-                "time_cost": {
-                    "type": "number"
-                },
-                "timestamp": {
+                "prefixImageUrl": {
                     "type": "string"
                 },
                 "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "mp_common.OcrRespData": {
+            "type": "object",
+            "properties": {
+                "fileInfo": {
+                    "$ref": "#/definitions/mp_common.OcrFileInfo"
+                },
+                "fullContent": {
+                    "type": "string"
+                },
+                "ocrResults": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mp_common.OcrResult"
+                    }
+                }
+            }
+        },
+        "mp_common.OcrResult": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "pageNumber": {
+                    "type": "integer"
+                },
+                "type": {
                     "type": "string"
                 }
             }
@@ -4564,11 +4613,18 @@ const docTemplate = `{
                 "skillIdList"
             ],
             "properties": {
+                "orgId": {
+                    "type": "string"
+                },
                 "skillIdList": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "userId": {
+                    "description": "UserId/OrgId：同 SearchCustomSkillListReq 说明，应传智能体创建者身份，\n而非 HTTP 调用者身份。",
+                    "type": "string"
                 }
             }
         },
@@ -4578,11 +4634,18 @@ const docTemplate = `{
                 "skillIdList"
             ],
             "properties": {
+                "orgId": {
+                    "type": "string"
+                },
                 "skillIdList": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "userId": {
+                    "description": "UserId / OrgId 用于 mcp.GetBuiltinSkillVars 鉴权（builtin skill var 按 user 配）。\n老 caller 不传时回退为不带 vars 的行为，保持向后兼容。",
+                    "type": "string"
                 }
             }
         },
@@ -4592,11 +4655,18 @@ const docTemplate = `{
                 "skillIdList"
             ],
             "properties": {
+                "orgId": {
+                    "type": "string"
+                },
                 "skillIdList": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "userId": {
+                    "description": "UserId/OrgId：调用方期望\"以哪个用户身份\"查询这批 skill 的详情与变量。\ncallback 由 assistant-service 在处理智能体（Assistant）对话时内部回调过来，\n此处应传智能体在 assistant 表里的 user_id / org_id（智能体创建者），\n而不是发起 HTTP 请求的调用者——发布态智能体常被非创建者调用，\n用调用者身份会查不到创建者配置的 per-user skill 变量。",
+                    "type": "string"
                 }
             }
         },
@@ -4872,6 +4942,12 @@ const docTemplate = `{
                 },
                 "skillId": {
                     "type": "string"
+                },
+                "variables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.SkillVariable"
+                    }
                 }
             }
         },

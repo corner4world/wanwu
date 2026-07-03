@@ -418,4 +418,3 @@ func isTrustedSkillScript(absPath, absWorkDir string) bool {
 	rel = filepath.ToSlash(rel)
 	return strings.HasPrefix(rel, "skills/")
 }
-

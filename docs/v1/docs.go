@@ -33101,10 +33101,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "challenge": {
-                    "description": "服务端下发的Challenge，前端提交密码时需原样带回",
+                    "description": "服务端下发的Challenge，前端需嵌入cipher加密载荷中与密码一同加密提交",
                     "type": "string"
                 },
-                "expires_in": {
+                "expiresIn": {
                     "description": "建议缓存时间(秒)",
                     "type": "integer"
                 },
@@ -33112,7 +33112,7 @@ const docTemplate = `{
                     "description": "密钥ID",
                     "type": "string"
                 },
-                "public_key": {
+                "publicKey": {
                     "description": "PEM格式的公钥",
                     "type": "string"
                 }

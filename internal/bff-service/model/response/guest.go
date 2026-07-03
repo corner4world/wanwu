@@ -4,10 +4,10 @@ import "github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 
 // RSAPublicKey RSA公钥响应
 type RSAPublicKey struct {
-	KeyID     string `json:"keyId"`      // 密钥ID
-	PublicKey string `json:"publicKey"`  // PEM格式的公钥
-	Challenge string `json:"challenge"`  // 服务端下发的Challenge，前端需嵌入cipher加密载荷中与密码一同加密提交
-	ExpiresIn int64  `json:"expiresIn"`  // 建议缓存时间(秒)
+	KeyID     string `json:"keyId"`     // 密钥ID
+	PublicKey string `json:"publicKey"` // PEM格式的公钥
+	Challenge string `json:"challenge"` // 服务端下发的Challenge，前端需嵌入cipher加密载荷中与密码一同加密提交
+	ExpiresIn int64  `json:"expiresIn"` // 建议缓存时间(秒)
 }
 
 type Login struct {
