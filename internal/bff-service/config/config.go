@@ -10,6 +10,7 @@ import (
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/minio"
 	"github.com/UnicomAI/wanwu/pkg/redis"
+	rsa_util "github.com/UnicomAI/wanwu/pkg/rsa-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 )
 
@@ -23,6 +24,7 @@ type Config struct {
 	JWT               JWTConfig                  `json:"jwt" mapstructure:"jwt"`
 	OAuth             OAuthConfig                `json:"oauth" mapstructure:"oauth"`
 	Decrypt           DecryptPasswd              `json:"decrypt-passwd" mapstructure:"decrypt-passwd"`
+	RSAKey            RSAKeyConfig               `json:"rsa-key" mapstructure:"rsa-key"`
 	I18n              i18n.Config                `json:"i18n" mapstructure:"i18n"`
 	CustomInfo        CustomInfoConfig           `json:"custom-info" mapstructure:"custom-info"`
 	DocCenter         DocCenterConfig            `json:"doc-center" mapstructure:"doc-center"`
@@ -113,6 +115,16 @@ type OAuthConfig struct {
 type DecryptPasswd struct {
 	IV  string `json:"iv" mapstructure:"iv"`
 	Key string `json:"key" mapstructure:"key"`
+}
+
+// RSAKeyConfig RSA密钥配置
+type RSAKeyConfig struct {
+	// 私钥文件路径（权限应为 600）
+	PrivateKeyPath string `json:"private_key_path" mapstructure:"private_key_path"`
+	// 公钥文件路径（权限可为 644）
+	PublicKeyPath string `json:"public_key_path" mapstructure:"public_key_path"`
+	// 密钥轮换周期（天），默认 90 天
+	KeyRotationDays int `json:"key_rotation_days" mapstructure:"key_rotation_days"`
 }
 
 type ServiceConfig struct {
@@ -317,6 +329,7 @@ type CustomInfoConfig struct {
 	ResetPasswordByEmail int           `json:"reset_password_by_email" mapstructure:"reset_password_by_email"`
 	LoginByEmail         int           `json:"login_by_email" mapstructure:"login_by_email"`
 	UserPhoneRequired    int           `json:"user_phone_required" mapstructure:"user_phone_required"`
+	PasswordRSAEncrypt   int           `json:"password_rsa_encrypt" mapstructure:"password_rsa_encrypt"` // 密码RSA加密开关 0-关闭 1-开启
 }
 
 type CustomTheme struct {
@@ -431,6 +444,14 @@ func LoadConfig(in string) error {
 		}
 	} else {
 		log.Warnf("release_notes_path is empty, skip loading release notes")
+	}
+	// 初始化RSA密钥管理器
+	if err := rsa_util.InitKeyManager(rsa_util.Config{
+		PrivateKeyPath:  _c.RSAKey.PrivateKeyPath,
+		PublicKeyPath:   _c.RSAKey.PublicKeyPath,
+		KeyRotationDays: _c.RSAKey.KeyRotationDays,
+	}); err != nil {
+		return fmt.Errorf("init rsa key manager err: %v", err)
 	}
 	return nil
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/pkg/ahocorasick"
 	mcp_util "github.com/UnicomAI/wanwu/internal/bff-service/pkg/mcp-util"
 	oauth2_util "github.com/UnicomAI/wanwu/internal/bff-service/pkg/oauth2-util"
+	bff_rsautil "github.com/UnicomAI/wanwu/internal/bff-service/pkg/rsa-util"
 	"github.com/UnicomAI/wanwu/internal/bff-service/server/http/handler"
 	"github.com/UnicomAI/wanwu/pkg/i18n"
 	jwt_util "github.com/UnicomAI/wanwu/pkg/jwt-util"
@@ -105,9 +106,15 @@ func main() {
 	if err := redis.InitOP(ctx, config.Cfg().Redis); err != nil {
 		log.Fatalf("init redis err: %v", err)
 	}
+	if err := redis.InitSys(ctx, config.Cfg().Redis); err != nil {
+		log.Fatalf("init redis err: %v", err)
+	}
 	if err := redis.InitAssistant(ctx, config.Cfg().Redis); err != nil {
 		log.Fatalf("init assistant redis err: %v", err)
 	}
+
+	// init rsa challenge manager (depends on redis)
+	bff_rsautil.InitChallengeManager()
 
 	// init oauth2
 	if config.Cfg().OAuth.Switch != 0 {

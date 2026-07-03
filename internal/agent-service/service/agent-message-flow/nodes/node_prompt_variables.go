@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -95,14 +96,18 @@ func buildUserInput(reqContext *request.AgentChatContext) ([]*schema.Message, er
 	var input = req.Input
 
 	var messages []*schema.Message
-	if agentChatInfo.VisionSupport && agentChatInfo.ImageUpload { // 视觉模型，传了图片文件
+	if agentChatInfo.VisionSupport && agentChatInfo.ImageUpload {
+		imageUrl := extraImageUrl(req.UploadFile)
+		// 视觉模型，传了图片文件
 		var parts []schema.MessageInputPart
-		for _, minioFilePath := range req.UploadFile {
-			message, err := buildFileMessage(minioFilePath)
-			if err != nil {
-				return nil, err
+		if len(imageUrl) > 0 {
+			for _, minioFilePath := range imageUrl {
+				message, err := buildFileMessage(minioFilePath)
+				if err != nil {
+					return nil, err
+				}
+				parts = append(parts, *message)
 			}
-			parts = append(parts, *message)
 		}
 		input = buildVisionSupportUrlInput(input, req.UploadFile)
 		parts = append(parts, schema.MessageInputPart{
@@ -122,18 +127,62 @@ func buildUserInput(reqContext *request.AgentChatContext) ([]*schema.Message, er
 	return messages, nil
 }
 
+func extraImageUrl(fileUrlList []string) (imageUrl []string) {
+	if len(fileUrlList) == 0 {
+		return nil
+	}
+	for _, fileUrl := range fileUrlList {
+		fileName := agent_util.ExtractFileNameFromURL(fileUrl)
+		if agent_util.ImageFile(fileName) {
+			imageUrl = append(imageUrl, fileUrl)
+		}
+	}
+	return imageUrl
+}
+
 func buildUrlInput(query string, fileUrl []string) string {
-	if len(fileUrl) == 0 {
+	count, urlStr := buildMultiUrlString(fileUrl)
+	if count == 0 {
 		return query
 	}
-	return query + "\n用户上传的文档连接为:" + rebuildUlr(fileUrl[0])
+	if count == 1 {
+		return query + "\n用户上传的文档连接为:" + urlStr
+	}
+	return fmt.Sprintf("%s\n用户上传%d个文档连接为:%s", query, count, urlStr)
 }
 
 func buildVisionSupportUrlInput(query string, fileUrl []string) string {
-	if len(fileUrl) == 0 {
+	count, urlStr := buildMultiUrlString(fileUrl)
+	if count == 0 {
 		return query
 	}
-	return query + "\n用户上传的文档连接为（无需读取，供工具调用使用）:" + rebuildUlr(fileUrl[0])
+	if count == 1 {
+		return query + "\n用户上传的文档连接为（无需读取，供工具调用使用）:" + urlStr
+	}
+	return fmt.Sprintf("%s\n用户上传%d个文档连接为（无需读取，供工具调用使用）:%s", query, count, urlStr)
+}
+
+func buildMultiUrlString(fileUrlList []string) (int, string) {
+	if len(fileUrlList) == 0 {
+		return 0, ""
+	}
+	fileUrlList = rebuildUrlList(fileUrlList)
+	if len(fileUrlList) == 1 {
+		return 1, fileUrlList[0]
+	}
+	marshal, err := json.Marshal(fileUrlList)
+	if err != nil {
+		return 1, fileUrlList[0]
+	}
+	return len(fileUrlList), string(marshal)
+}
+
+func rebuildUrlList(fileUrl []string) []string {
+	var retList []string
+	for _, file := range fileUrl {
+		retList = append(retList, rebuildUlr(file))
+	}
+	return retList
 }
 
 func rebuildUlr(fileUrl string) (retUrl string) {

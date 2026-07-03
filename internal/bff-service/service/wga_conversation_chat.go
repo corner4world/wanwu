@@ -158,10 +158,7 @@ func WgaConversationChat(ctx *gin.Context, params *WgaChatParams) error {
 		ConversationID: params.ThreadID,
 		ClientID:       params.ClientID,
 	}
-	sseSessionManager := sse_connector.NewSSESession(ctx.Request.Context(), sseSession, store.NewMemoryStore())
-	if params.ClientID == "" {
-		sseSessionManager.InvalidManager()
-	}
+	sseSessionManager := sse_connector.NewSSESessionValid(ctx.Request.Context(), sseSession, store.NewMemoryStore(), params.ClientID != "")
 	sseSessionManager.AddExt(map[string]interface{}{
 		"runId":    runID,
 		"messages": params.Messages,

@@ -77,14 +77,14 @@ recommend_models:
       - model: "gui_agent_v1"
         display_name: "gui_agent_v1"
     ocr:
-      - model: "unicom-ocr"
-        display_name: "元景-PDF文字解析"
+      - model: "pdf-parser"
+        display_name: "OCR-高精度"
 #    sync-asr:
 #      - model: "yuanjing-asr"
 #        display_name: "yuanjing-asr"
-    pdf-parser:
-      - model: "pdf-parser"
-        display_name: "知识库-高精度文档解析工具"
+#    pdf-parser:
+#      - model: "pdf-parser"
+#        display_name: "知识库-高精度文档解析工具"
 
 
   - provider: "Qwen"

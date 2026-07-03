@@ -84,6 +84,13 @@ func (s *Service) AssistantCreate(ctx context.Context, req *assistant_service.As
 		return nil, errStatus(errs.Code_AssistantErr, status)
 	}
 
+	// 创建智能体后自动绑定配置中的内置工具
+	for _, tool := range config.Cfg().BuiltinTools {
+		if status := s.cli.CreateAssistantTool(ctx, assistant.ID, tool.ToolId, tool.ToolType, tool.ActionName, req.Identity.UserId, req.Identity.OrgId); status != nil {
+			log.Warnf("auto bind builtin tool %s for assistant %d failed: %v", tool.ToolId, assistant.ID, status)
+		}
+	}
+
 	return &assistant_service.AssistantCreateResp{
 		AssistantId: util.Int2Str(assistant.ID),
 	}, nil

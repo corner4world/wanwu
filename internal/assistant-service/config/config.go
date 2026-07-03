@@ -13,17 +13,25 @@ var (
 )
 
 type Config struct {
-	Server    ServerConfig `json:"server" mapstructure:"server"`
-	Log       LogConfig    `json:"log" mapstructure:"log"`
-	DB        db.Config    `json:"db" mapstructure:"db"`
-	Redis     redis.Config `json:"redis" mapstructure:"redis"`
-	ES        es.Config    `json:"es" mapstructure:"es"`
-	Assistant Assistant    `json:"assistant" mapstructure:"assistant"`
-	Minio     *MinioConfig `mapstructure:"minio" json:"minio"`
-	Knowledge Knowledge    `mapstructure:"knowledge" json:"knowledge" yaml:"knowledge"`
-	MCP       Mcp          `mapstructure:"mcp" json:"mcp"`
-	Workflow  Workflow     `mapstructure:"workflow" json:"workflow"`
-	Skill     Skill        `mapstructure:"skill" json:"skill"`
+	Server       ServerConfig  `json:"server" mapstructure:"server"`
+	Log          LogConfig     `json:"log" mapstructure:"log"`
+	DB           db.Config     `json:"db" mapstructure:"db"`
+	Redis        redis.Config  `json:"redis" mapstructure:"redis"`
+	ES           es.Config     `json:"es" mapstructure:"es"`
+	Assistant    Assistant     `json:"assistant" mapstructure:"assistant"`
+	Minio        *MinioConfig  `mapstructure:"minio" json:"minio"`
+	Knowledge    Knowledge     `mapstructure:"knowledge" json:"knowledge" yaml:"knowledge"`
+	MCP          Mcp           `mapstructure:"mcp" json:"mcp"`
+	Workflow     Workflow      `mapstructure:"workflow" json:"workflow"`
+	Skill        Skill         `mapstructure:"skill" json:"skill"`
+	BuiltinTools []BuiltinTool `mapstructure:"builtin_tools" json:"builtin_tools" yaml:"builtin_tools"`
+}
+
+// BuiltinTool 创建智能体时自动绑定的内置工具配置
+type BuiltinTool struct {
+	ToolId     string `mapstructure:"tool_id" json:"tool_id" yaml:"tool_id"`
+	ToolType   string `mapstructure:"tool_type" json:"tool_type" yaml:"tool_type"`
+	ActionName string `mapstructure:"action_name" json:"action_name" yaml:"action_name"`
 }
 
 type Knowledge struct {

@@ -48,6 +48,10 @@ func NewManager(ctx context.Context, s store.MessageStore, userSession *model.Se
 	}
 }
 
+func (m *Manager) GetSession() *model.Session {
+	return m.userSession
+}
+
 func (m *Manager) GetBgContext() context.Context {
 	return m.Ctx
 }
