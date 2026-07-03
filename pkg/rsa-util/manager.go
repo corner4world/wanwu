@@ -241,6 +241,19 @@ func (km *KeyManager) RotateKey() error {
 	return km.loadFromFile()
 }
 
+// EnsureKeyFiles 确保RSA密钥文件存在，如果私钥文件不存在则自动生成
+// 这是一个独立的函数，可在KeyManager之外使用（如OAuth RSA密钥初始化）
+func EnsureKeyFiles(privateKeyPath, publicKeyPath string) error {
+	if _, err := os.Stat(privateKeyPath); err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("stat private key file failed: %w", err)
+		}
+		// 文件不存在，自动生成密钥对
+		return generateKeyFilesAtomic(privateKeyPath, publicKeyPath)
+	}
+	return nil
+}
+
 // GenerateKeyFiles 生成RSA密钥对并保存到指定路径（供运维工具调用）
 // 如果文件已存在则返回错误，避免覆盖
 // 使用原子写入（先写临时文件再 rename）防止半写入状态

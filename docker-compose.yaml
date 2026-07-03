@@ -254,8 +254,7 @@ services:
       - wanwu_shared_data_wga_sandbox_rag:/shared/data/wga/sandbox/rag
       - ${WANWU_PROJECT_DIR}/bff-service/log:/app/log
       - ${WANWU_PROJECT_DIR}/bff-service/tmp:/app/tmp
-      - ${WANWU_BFF_OAUTH_RSA_PRIVATE_KEY_PATH}:/app/tmp/oauth_rsa_private.pem
-      - ${WANWU_BFF_OAUTH_RSA_PUBLIC_KEY_PATH}:/app/tmp/oauth_rsa_public.pem
+      - ${WANWU_BFF_OAUTH_RSA_PATH}:/app/tmp/rsa/oauth-rsa
       - ${WANWU_BFF_LOGIN_RSA_PATH}:/app/tmp/rsa/login-rsa
     environment:
       SERVER_WEB_BASE_URL: ${WANWU_WEB_BASE_URL}
