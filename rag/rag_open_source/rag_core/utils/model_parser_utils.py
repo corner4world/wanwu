@@ -178,12 +178,9 @@ def get_page_data(page_num, add_file_path, ocr_model_id):
                 logger.error(f"页 {page_num} 未预期错误 (attempt {attempt + 1}): {error_details}")
                 break
             finally:
-                # 清理本地临时文件
+                # 只清理本地临时文件，MinIO 文件保留供重试或运维独立清理
                 if os.path.exists(output_pdf_path):
                     os.remove(output_pdf_path)
-                # 清理已上传到 MinIO 的临时单页文件
-                if 'object_name' in locals() and object_name:
-                    minio_utils.remove_minio_file(object_name)
                 time.sleep(0.1)
     except Exception as e:
         logger.error(f"处理页 {page_num} 失败：{e}")
@@ -356,8 +353,7 @@ def model_parser_image(image_file_path, ocr_model_id):
     except Exception as e:
         logger.error(f"图片模型解析异常：{e}")
     finally:
-        # 清理已上传到 MinIO 的临时图片
-        if 'object_name' in locals() and object_name:
-            minio_utils.remove_minio_file(object_name)
+        # MinIO 文件保留供运维独立清理
+        pass
     return ""
 
