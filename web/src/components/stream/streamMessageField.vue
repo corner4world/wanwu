@@ -2475,7 +2475,6 @@ export default {
             scroll-behavior: smooth;
             display: flex;
             flex-wrap: nowrap;
-            flex-direction: row-reverse;
           }
           .docInfo-container {
             display: flex;
