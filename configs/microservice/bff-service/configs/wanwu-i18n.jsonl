@@ -121,6 +121,8 @@
 {"code":110000,"key":"bff_model_perm","langs":{"zh":"模型(%v)权限校验失败，请更换模型重试"}}
 {"code":110011,"key":"","langs":{"zh":"模型(%v)已禁用"}}
 {"code":110012,"key":"","langs":{"zh":"Skill解析错误: %v"}}
+{"code":110013,"key":"bff_rate_limited_failed_with_attempts","langs":{"en":"%v. You have %v attempt(s) remaining.","zh":"%v，您还有%v次尝试的机会"}}
+{"code":110013,"key":"bff_rate_limited_too_many_attempts","langs":{"en":"Too many attempts. Please try again in %v minute(s).","zh":"访问太频繁，请%v分钟之后重试"}}
 {"code":0,"key":"------ skill ------","langs":{}}
 {"code":110000,"key":"bff_skill_acquired_no_permission","langs":{"en":"No permission to access this skill.","zh":"当前无权限访问该技能"}}
 {"code":110000,"key":"bff_skill_acquired_source_inaccessible","langs":{"en":"source skill not found","zh":"源技能不存在"}}
