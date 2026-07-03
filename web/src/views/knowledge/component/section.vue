@@ -111,9 +111,11 @@
                 style="pointer-events: auto !important"
               >
                 <div slot="content" class="tooltip-content">
-                  <span>
-                    {{ item.displayName }}
-                  </span>
+                  <img
+                    :src="convertModelIcon(item?.avatar?.path)"
+                    class="model-img"
+                  />
+                  <span class="model-name">{{ item.displayName }}</span>
                   <template v-if="item.tags?.length">
                     <el-tag
                       v-for="(tag, tagIndex) in item.tags"
@@ -620,7 +622,7 @@ import dataBaseDialog from './dataBaseDialog';
 import tagDialog from './tagDialog.vue';
 import createChunk from './chunk/createChunk.vue';
 import FilePreviewDrawer from '@/views/generalAgent/components/FilePreviewDrawer.vue';
-import { Md2Img } from '@/utils/util';
+import { Md2Img, avatarSrc, getModelDefaultIcon } from '@/utils/util';
 import {
   INITIAL,
   POWER_TYPE_READ,
@@ -715,6 +717,9 @@ export default {
   },
   methods: {
     Md2Img,
+    convertModelIcon(iconPath) {
+      return iconPath ? avatarSrc(iconPath) : getModelDefaultIcon();
+    },
     handleSearch(val) {
       // keyword 变化时重置页码
       if (this.keyword !== val) {
@@ -1539,6 +1544,16 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
+
+  .model-img {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+  }
+
+  .model-name {
+    font-weight: 500;
+  }
 }
 
 .tooltip-content .keyword-tag {
@@ -1555,5 +1570,10 @@ export default {
   &:hover {
     background: $tag_bg;
   }
+}
+</style>
+<style lang="scss">
+.custom-tooltip {
+  max-width: none !important;
 }
 </style>

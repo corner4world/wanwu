@@ -56,6 +56,48 @@ export const md = MarkdownIt({
 
 md.use(mk, { throwOnError: false, errorColor: '#000000', output: 'mathml' });
 
+function applyTableWrapper(markdown) {
+  const defaultTableOpen =
+    markdown.renderer.rules.table_open ||
+    function (tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options);
+    };
+  const defaultTableClose =
+    markdown.renderer.rules.table_close ||
+    function (tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options);
+    };
+
+  markdown.renderer.rules.table_open = function (
+    tokens,
+    idx,
+    options,
+    env,
+    self,
+  ) {
+    tokens[idx].attrJoin('class', 'md-table');
+    tokens[idx].attrJoin(
+      'style',
+      'width:max-content;min-width:100%;max-width:none;margin:0;white-space:nowrap;',
+    );
+    return (
+      '<div class="md-table-wrapper" style="max-width:100%;max-height:min(60vh,520px);overflow:auto;margin:12px 0;">' +
+      defaultTableOpen(tokens, idx, options, env, self)
+    );
+  };
+
+  markdown.renderer.rules.table_close = function (
+    tokens,
+    idx,
+    options,
+    env,
+    self,
+  ) {
+    return defaultTableClose(tokens, idx, options, env, self) + '</div>';
+  };
+}
+
+applyTableWrapper(md);
 // 禁用缩进代码块（Indented Code Block）规则
 // 解决流式输出中因格式化产生的行首空格导致 Markdown 语法（如加粗、标题等）失效的问题
 md.disable('code');

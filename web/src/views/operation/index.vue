@@ -28,6 +28,10 @@
       >
         {{ $t('statistics.title') }}
       </div>
+      <!-- 渠道配置无单独权限，有运营管理权限则有渠道配置权限 -->
+      <div :class="['tab', { active: tabActive === 2 }]" @click="tabClick(2)">
+        {{ $t('channel.title') }}
+      </div>
     </div>
 
     <div v-if="tabActive === 0" style="margin: 0 20px 0 20px">
@@ -36,17 +40,21 @@
     <div v-if="tabActive === 1" style="margin: 30px 20px 0 20px">
       <Statistics />
     </div>
+    <div v-if="tabActive === 2" style="margin: 0 20px">
+      <Channel />
+    </div>
   </div>
 </template>
 
 <script>
 import Statistics from '@/views/permission/statistics';
 import Oauth from '@/views/permission/oauth';
+import Channel from './channel';
 import { checkPerm, PERMS } from '@/router/permission';
 
 export default {
   name: 'Operation',
-  components: { Statistics, Oauth },
+  components: { Statistics, Oauth, Channel },
   data() {
     return {
       radio: '',
@@ -55,6 +63,15 @@ export default {
       oauthPerm: PERMS.OAUTH,
       statisticsPerm: PERMS.STATISTIC,
     };
+  },
+  created() {
+    if (checkPerm(this.oauthPerm)) {
+      this.tabActive = 0;
+    } else if (checkPerm(this.statisticsPerm)) {
+      this.tabActive = 1;
+    } else {
+      this.tabActive = 2;
+    }
   },
   methods: {
     checkPerm,

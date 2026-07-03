@@ -8,6 +8,25 @@
         </span>
       </div>
       <div class="header-actions">
+        <div class="security-review-action">
+          <el-button
+            type="primary"
+            size="small"
+            :disabled="securityReviewDisabled"
+            @click="handleSecurityReview"
+          >
+            {{ $t('generalAgent.skill.skillWorkBench.securityReview.btn') }}
+          </el-button>
+          <el-tooltip
+            :content="
+              $t('generalAgent.skill.skillWorkBench.securityReview.tip')
+            "
+            placement="top"
+          >
+            <i class="el-icon-info security-review-tip"></i>
+          </el-tooltip>
+        </div>
+
         <AppPublishActions
           :appId="skillPreviewParams.customSkillId"
           :appType="SKILL"
@@ -49,9 +68,11 @@ import SkillWorkbench from './SkillWorkbench.vue';
 import AppPublishActions from '@/components/appPublishActions.vue';
 import { getCustomSkillInfo } from '@/api/templateSquare';
 import { SKILL } from '@/utils/commonSet';
+import skillManager from '../../mixins/skillManager';
 
 export default {
   name: 'SkillTabs',
+  mixins: [skillManager],
   components: {
     SkillWorkspaceExplorer,
     SkillWorkbench,
@@ -72,6 +93,11 @@ export default {
       assistantInfo: {},
       activeGitDiffId: '',
     };
+  },
+  computed: {
+    securityReviewDisabled() {
+      return this.mainIsStreaming || this.previewIsStreaming;
+    },
   },
   watch: {
     'skillPreviewParams.customSkillId': {
@@ -154,6 +180,10 @@ export default {
     handleFileSaved() {
       this.refreshGit();
     },
+    handleSecurityReview() {
+      if (this.securityReviewDisabled) return;
+      this.$emit('security-review');
+    },
     async getAppDetail() {
       const params = {
         skillId: this.skillPreviewParams.customSkillId,
@@ -216,6 +246,22 @@ export default {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+
+    .security-review-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .security-review-tip {
+      color: #909399;
+      font-size: 15px;
+      line-height: 1;
+
+      &:hover {
+        color: #606266;
+      }
+    }
   }
 }
 

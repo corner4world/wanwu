@@ -170,23 +170,22 @@
 <script>
 import { mapState, mapActions } from 'vuex';
 import { login2FA2Code, reset } from '@/api/user';
-import { urlEncrypt } from '@/utils/crypto';
+import { rsaEncrypt, getRSAKeyMaterial } from '@/utils/crypto';
 
 export default {
   data() {
     let checkPassword2 = (rule, value, callback) => {
       if (this.form.password1 !== this.form.password2)
-        callback(new Error(this.$t('resetPwd.differError')));
+        return callback(new Error(this.$t('resetPwd.differError')));
       callback();
     };
     let checkPassword1 = (rule, value, callback) => {
       let reg =
         /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[~!@#$%^&*()_+`\-={}:";'<>?,./]).{8,20}$/;
-      if (!reg.test(value)) {
-        callback(new Error(this.$t('resetPwd.pwdError')));
-      } else {
+      if (reg.test(value)) {
         return callback();
       }
+      callback(new Error(this.$t('resetPwd.pwdError')));
     };
     return {
       dialogVisible: false,
@@ -283,20 +282,33 @@ export default {
         this.doLogin();
       }
     },
-    doLogin() {
+    async doLogin() {
       this.$refs.form.validate(async valid => {
         if (!valid) return;
 
+        const keyMaterial = await getRSAKeyMaterial();
+        const [oldCipherRes, newCipherRes] = await Promise.all([
+          this.form.passwordOld
+            ? rsaEncrypt(this.form.passwordOld, keyMaterial)
+            : null,
+          this.form.password1
+            ? rsaEncrypt(this.form.password1, keyMaterial)
+            : null,
+        ]);
+
         const data = {
           email: this.form.email,
-          newPassword: urlEncrypt(this.form.password1),
-          oldPassword: urlEncrypt(this.form.passwordOld),
           code: this.form.code,
+          keyId: keyMaterial.keyId,
         };
 
+        if (oldCipherRes) data.oldCipher = oldCipherRes.cipher;
+        if (newCipherRes) data.newCipher = newCipherRes.cipher;
+
         if (this.isUpdatePassword) {
-          delete data.newPassword;
-          delete data.oldPassword;
+          delete data.newCipher;
+          delete data.oldCipher;
+          delete data.keyId;
         }
 
         await this.LoginIn2FA2({ loginInfo: data, params: this.params });

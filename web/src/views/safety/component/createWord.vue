@@ -82,7 +82,7 @@
                   </span>
                   <a
                     class="clickUpload template"
-                    :href="`/user/api/v1/static/docs/sensitive.xlsx`"
+                    :href="basePath + `/user/api/v1/static/docs/sensitive.xlsx`"
                     download
                     @click.stop
                   >
@@ -167,6 +167,7 @@ export default {
   mixins: [uploadChunk],
   data() {
     return {
+      basePath: this.$basePath,
       sensitiveTypeOptions: [
         {
           value: 'Political',

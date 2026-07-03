@@ -1,56 +1,47 @@
-import CryptoJS from 'crypto-js/crypto-js';
+import service from '@/utils/request';
+import { USER_API } from '@/utils/requestConstants';
+import forge from 'node-forge';
 
-const KEY = CryptoJS.enc.Utf8.parse('f5Su3GhNMM1rndyp');
-const IV = CryptoJS.enc.Utf8.parse('sdf4ddfsFD86Vdf2');
-
-// AES加密 ：字符串 key iv  返回base64
-export function Encrypt(str, keyStr, ivStr) {
-  let key = KEY;
-  let iv = IV;
-  if (keyStr && ivStr) {
-    key = CryptoJS.enc.Utf8.parse(keyStr);
-    iv = CryptoJS.enc.Utf8.parse(ivStr);
-  }
-  let srcs = CryptoJS.enc.Utf8.parse(str);
-  var encrypted = CryptoJS.AES.encrypt(srcs, key, {
-    iv: iv,
-    mode: CryptoJS.mode.CBC,
-    padding: CryptoJS.pad.Pkcs7,
+// 获取 RSA 公钥 + Challenge
+async function getRSAPublicKey() {
+  const res = await service({
+    url: `${USER_API}/base/rsa/public-key`,
+    method: 'get',
   });
-  return encrypted.toString();
+  return res.data;
 }
 
-// AES 解密 ：字符串 key iv  返回base64
-export function Decrypt(str, keyStr, ivStr) {
-  let key = KEY;
-  let iv = IV;
-
-  if (keyStr && ivStr) {
-    key = CryptoJS.enc.Utf8.parse(keyStr);
-    iv = CryptoJS.enc.Utf8.parse(ivStr);
+/**
+ * RSA-OAEP-SHA256 加密密码
+ * @param {string} password - 明文密码
+ * @param {object} [keyMaterial] - 可选，复用已获取的公钥+challenge
+ * @param {string} keyMaterial.publicKey
+ * @param {string} keyMaterial.challenge
+ * @returns {Promise<{cipher: string, keyId: string}>}
+ */
+export async function rsaEncrypt(password, keyMaterial) {
+  let keyId, publicKey, challenge;
+  if (keyMaterial) {
+    ({ keyId, publicKey, challenge } = keyMaterial);
+  } else {
+    const res = await getRSAPublicKey();
+    keyId = res.keyId;
+    publicKey = res.publicKey;
+    challenge = res.challenge;
   }
-  let base64 = CryptoJS.enc.Base64.parse(str);
-  let src = CryptoJS.enc.Base64.stringify(base64);
-  var decrypt = CryptoJS.AES.decrypt(src, key, {
-    iv: iv,
-    mode: CryptoJS.mode.CBC,
-    padding: CryptoJS.pad.Pkcs7,
+  const plaintext = JSON.stringify({ password, challenge });
+  const pubKey = forge.pki.publicKeyFromPem(publicKey);
+  const encrypted = pubKey.encrypt(plaintext, 'RSA-OAEP', {
+    md: forge.md.sha256.create(),
   });
-  var decryptedStr = decrypt.toString(CryptoJS.enc.Utf8);
-  return decryptedStr.toString();
+  const cipher = forge.util.encode64(encrypted);
+  return { cipher, keyId };
 }
 
-export function Urlencode(str) {
-  str = (str + '').toString();
-  return encodeURIComponent(str)
-    .replace(/!/g, '%21')
-    .replace(/'/g, '%27')
-    .replace(/\(/g, '%28')
-    .replace(/\)/g, '%29')
-    .replace(/\*/g, '%2A')
-    .replace(/%20/g, '+');
-}
-
-export function urlEncrypt(data) {
-  return Urlencode(Encrypt(data));
+/**
+ * 获取 RSA 公钥 + Challenge（供双 cipher 场景复用）
+ * @returns {Promise<{keyId: string, publicKey: string, challenge: string}>}
+ */
+export async function getRSAKeyMaterial() {
+  return await getRSAPublicKey();
 }

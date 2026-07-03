@@ -112,7 +112,7 @@ export default {
       this.dialogVisible = true;
     },
     downloadTemp() {
-      window.open('/user/api/v1/static/docs/users.xlsx');
+      window.open(this.$basePath + '/user/api/v1/static/docs/users.xlsx');
     },
     handleUpload(res) {
       if (res.file) {

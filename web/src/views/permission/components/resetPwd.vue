@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import { urlEncrypt } from '@/utils/crypto';
+import { rsaEncrypt } from '@/utils/crypto';
 import { restUserPassword } from '@/api/user';
 export default {
   data() {
@@ -124,9 +124,11 @@ export default {
     handleSubmit() {
       this.$refs.form.validate(async valid => {
         if (!valid) return;
+        const { cipher, keyId } = await rsaEncrypt(this.form.newPassword);
         let params = {
           userId: this.row.userId,
-          password: urlEncrypt(this.form.newPassword),
+          cipher,
+          keyId,
         };
         let res = await restUserPassword(params);
         if (res.code === 0) {

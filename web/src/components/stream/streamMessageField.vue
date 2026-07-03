@@ -56,10 +56,10 @@
                         fit="cover"
                       />
                       <div v-else class="docInfo-container">
-                        <img
-                          :src="require('@/assets/imgs/fileicon.png')"
+                        <FileIcon
+                          :type="getFileIconType(file)"
+                          size="30px"
                           class="docIcon"
-                          style="width: 30px !important"
                         />
                         <div class="docInfo">
                           <p class="docInfo_name">
@@ -888,12 +888,13 @@ import { md } from '@/mixins/markdown-it';
 import 'highlight.js/styles/atom-one-dark.css';
 import commonMixin from '@/mixins/common';
 import { mapGetters } from 'vuex';
-import { avatarSrc, formatScore } from '@/utils/util';
+import { avatarSrc, formatScore, getFileIconType } from '@/utils/util';
 import SubConversion from './subConversion/index.vue';
 import SubConversionList from './subConversion/SubConversionList.vue';
 import RagStepCard from './ragStepCard.vue';
 import ErrorMsgCard from './errorMsgCard.vue';
 import ImagePreview from '@/components/ImagePreview.vue';
+import FileIcon from '@/components/FileIcon.vue';
 import { AGENT_MESSAGE_CONFIG } from '@/components/stream/constants';
 
 export default {
@@ -929,6 +930,7 @@ export default {
     RagStepCard,
     ErrorMsgCard,
     ImagePreview,
+    FileIcon,
   },
   data() {
     return {
@@ -1059,6 +1061,7 @@ export default {
     }
   },
   methods: {
+    getFileIconType,
     avatarSrc,
     formatScore,
     getTitle(type) {
@@ -1679,12 +1682,18 @@ export default {
         this.cv && this.cv.resizeCurrImg(currImg);
       });
     },
-    // 初始化history列表
+    // 初始化 history 列表（模型体验）
     initHistoryList(list) {
       this.$set(this.session_data, 'history', list);
       this.$nextTick(() => {
         this.updateAllFileScrollStates();
       });
+      // 组件重建后内容渲染可能需要更长时间，设置滚动到底部
+      clearTimeout(this.scrollTimeout);
+      this.scrollTimeout = setTimeout(() => {
+        this.autoScroll = true;
+        this.scrollBottom();
+      }, 100);
     },
     handleGlobalClick(e) {
       // 复制
@@ -2466,7 +2475,6 @@ export default {
             scroll-behavior: smooth;
             display: flex;
             flex-wrap: nowrap;
-            flex-direction: row-reverse;
           }
           .docInfo-container {
             display: flex;
@@ -2518,6 +2526,7 @@ export default {
             }
           }
           .docIcon {
+            flex: 0 0 auto;
             width: 30px;
             height: 30px;
           }

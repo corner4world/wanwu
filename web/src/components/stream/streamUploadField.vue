@@ -31,7 +31,7 @@
             action=""
             :show-file-list="false"
             :auto-upload="false"
-            :limit="fileType === 'image/*' ? maxPicNum : 2"
+            :limit="uploadLimit"
             :accept="tipsArr"
             :file-list="fileList"
             :on-change="uploadOnChange"
@@ -39,26 +39,7 @@
           >
             <div v-if="fileUrl" class="echo-img-box">
               <div class="echo-img">
-                <video
-                  v-if="fileType === 'video/*'"
-                  id="video"
-                  muted
-                  loop
-                  playsinline
-                >
-                  <source :src="fileUrl" type="video/mp4" />
-                  {{ $t('common.fileUpload.videoTips') }}
-                </video>
-                <audio v-if="fileType === 'audio/*'" id="audio" controls>
-                  <source :src="fileUrl" type="video/mp3" />
-                  <source :src="fileUrl" type="audio/ogg" />
-                  <source :src="fileUrl" type="audio/mpeg" />
-                  {{ $t('common.fileUpload.audioTips') }}
-                </audio>
-                <div v-if="fileType === 'doc/*'" class="docFile">
-                  <img :src="require('@/assets/imgs/fileicon.png')" />
-                </div>
-                <div v-if="fileType === 'image/*'" class="type-img-container">
+                <div class="type-img-container">
                   <el-button
                     v-show="canScroll"
                     icon="el-icon-arrow-left "
@@ -78,7 +59,24 @@
                       :key="f.uid || idx"
                       class="type-img-item"
                     >
-                      <img :src="f.fileUrl" />
+                      <img v-if="isImageUploadFile(f)" :src="f.fileUrl" />
+                      <audio
+                        v-else-if="isAudioUploadFile(f)"
+                        controls
+                        class="type-audio"
+                      >
+                        <source :src="f.fileUrl" type="video/mp3" />
+                        <source :src="f.fileUrl" type="audio/ogg" />
+                        <source :src="f.fileUrl" type="audio/mpeg" />
+                        {{ $t('common.fileUpload.audioTips') }}
+                      </audio>
+                      <div v-else class="docFile">
+                        <FileIcon
+                          :type="getFileIconType(f)"
+                          size="60px"
+                          class="docIcon"
+                        />
+                      </div>
                       <p class="type-img-info">
                         <el-tooltip
                           class="item"
@@ -94,15 +92,7 @@
                             }}
                           </span>
                         </el-tooltip>
-                        <span>
-                          [
-                          {{
-                            f.size > 1024
-                              ? (f.size / (1024 * 1024)).toFixed(2) + ' MB'
-                              : f.size + ' bytes'
-                          }}
-                          ]
-                        </span>
+                        <span>[{{ getFileSizeDisplay(f.size) }}]</span>
                       </p>
                     </div>
                   </div>
@@ -116,21 +106,6 @@
                     type="primary"
                   ></el-button>
                 </div>
-                <div v-else>
-                  <p>
-                    {{ $t('knowledgeManage.fileName') }}:
-                    {{ fileList[0]['name'] }}
-                  </p>
-                  <p>
-                    {{ $t('knowledgeManage.fileSize') }}:
-                    {{
-                      fileList[0]['size'] > 1024
-                        ? (fileList[0]['size'] / (1024 * 1024)).toFixed(2) +
-                          ' MB'
-                        : fileList[0]['size'] + ' bytes'
-                    }}
-                  </p>
-                </div>
               </div>
               <div class="tips">
                 <el-progress
@@ -141,19 +116,14 @@
                   style="width: 360px; margin: 0 auto"
                 ></el-progress>
                 <p
-                  v-if="
-                    fileTypeArr.length === 1 && fileTypeArr[0] === 'image/*'
-                  "
+                  v-if="visibleContinueUploadTips"
+                  class="continue-upload-tips"
                 >
-                  {{ $t('app.imgLimitOnly', { num: maxPicNum }) }}
+                  {{ $t('common.fileUpload.clickBlankContinueUpload') }}
                 </p>
-                <p v-else>
-                  {{ $t('app.imgLimit', { num: maxPicNum }) }}
-                  <span style="color: var(--color)">
-                    {{ $t('common.fileUpload.click') }}
-                  </span>
-                  {{ $t('app.imgLimitTips') }}
-                </p>
+                <template v-if="hasUploadLimitTips">
+                  <p>{{ uploadLimitTips }}</p>
+                </template>
               </div>
             </div>
             <div v-else>
@@ -165,11 +135,7 @@
                 }}
               </p>
               <div class="tips">
-                <p v-if="visibleImageSizeLimit">
-                  {{
-                    $t('app.imageSizeModelLimit', { maxSize: maxImageSizeMB })
-                  }}
-                </p>
+                <p v-if="visibleSizeLimitTips">{{ sizeLimitTips }}</p>
                 <p>
                   {{ $t('common.fileUpload.typeFileTip1') }}
                   <span>{{ tipsArr }}</span>
@@ -188,7 +154,7 @@
         <div class="dialog-footer">
           <el-button
             type="primary"
-            :disabled="!fileUrl || !(file && file.percentage === 100)"
+            :disabled="!fileUrl || !allFilesUploaded"
             @click="doBatchUpload"
           >
             {{ $t('common.fileUpload.submitBtn') }}
@@ -200,9 +166,12 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
 import uploadChunk from '@/mixins/uploadChunk';
+import FileIcon from '@/components/FileIcon.vue';
+import { getFileIconType } from '@/utils/util';
+
 export default {
+  components: { FileIcon },
   props: {
     fileTypeArr: {
       type: Array,
@@ -215,6 +184,33 @@ export default {
       required: false,
       default: null,
     },
+    // 文件大小限制（null,undefined,-1，0表示不限制）
+    maxFileSize: {
+      type: [Number, String],
+      required: false,
+      default: null,
+    },
+    // 图片数量限制（-1表示不限制）
+    maxPicNum: {
+      type: Number,
+      required: false,
+      default: -1, // -1不限制
+    },
+    maxFileNum: {
+      type: Number,
+      required: false,
+      default: -1, // -1不限制
+    },
+    confirmedFileList: {
+      type: Array,
+      required: false,
+      default: () => [],
+    },
+    confirmedFileIdList: {
+      type: Array,
+      required: false,
+      default: () => [],
+    },
   },
   mixins: [uploadChunk],
   data() {
@@ -224,6 +220,7 @@ export default {
       fileList: [],
       fileType: '',
       loading: false,
+      isUploading: false,
       dialogVisible: false,
       fileUrl: '',
       tipsArr: '',
@@ -246,7 +243,77 @@ export default {
     },
   },
   computed: {
-    ...mapGetters('app', ['maxPicNum']),
+    normalizedMaxPicNum() {
+      const maxPicNum = Number(this.maxPicNum);
+      return Number.isFinite(maxPicNum) ? maxPicNum : 3;
+    },
+    hasImageLimit() {
+      return this.normalizedMaxPicNum >= 0;
+    },
+    normalizedMaxFileNum() {
+      const maxFileNum = Number(this.maxFileNum);
+      return Number.isFinite(maxFileNum) ? maxFileNum : -1;
+    },
+    hasFileLimit() {
+      return this.normalizedMaxFileNum >= 0;
+    },
+    displayMaxPicNum() {
+      return this.effectiveImageLimit;
+    },
+    displayMaxFileNum() {
+      return this.normalizedMaxFileNum;
+    },
+    supportsImageUpload() {
+      return this.fileTypeArr.includes('image/*');
+    },
+    isImageOnlyUpload() {
+      return this.supportsImageUpload && this.fileTypeArr.length === 1;
+    },
+    hasUploadLimitTips() {
+      return (
+        this.hasFileLimit ||
+        (this.supportsImageUpload && this.hasEffectiveImageLimit)
+      );
+    },
+    uploadLimitTips() {
+      if (
+        this.hasFileLimit &&
+        this.supportsImageUpload &&
+        this.hasEffectiveImageLimit &&
+        !this.isImageOnlyUpload
+      ) {
+        return this.$t('app.uploadFileAndImgLimitTips', {
+          fileNum: this.displayMaxFileNum,
+          imageNum: this.displayMaxPicNum,
+        });
+      }
+      if (this.supportsImageUpload && this.hasEffectiveImageLimit) {
+        return this.$t('app.imgLimitOnly', { num: this.displayMaxPicNum });
+      }
+      if (this.hasFileLimit) {
+        return this.$t('app.uploadFileLimitTips', {
+          num: this.displayMaxFileNum,
+        });
+      }
+      return '';
+    },
+    effectiveImageLimit() {
+      const limits = [];
+      if (this.hasImageLimit) limits.push(this.normalizedMaxPicNum);
+      if (this.hasFileLimit) limits.push(this.normalizedMaxFileNum);
+      return limits.length ? Math.min(...limits) : -1;
+    },
+    hasEffectiveImageLimit() {
+      return this.effectiveImageLimit >= 0;
+    },
+    visibleContinueUploadTips() {
+      if (!this.fileList.length) return false;
+      if (!this.hasFileLimit) return true;
+      return this.fileList.length < this.normalizedMaxFileNum;
+    },
+    uploadLimit() {
+      return undefined;
+    },
     maxImageSizeMB() {
       const maxSize = Number(this.maxImageSize);
       return maxSize > 0 ? maxSize : 0;
@@ -254,11 +321,47 @@ export default {
     maxImageSizeBytes() {
       return this.maxImageSizeMB ? this.maxImageSizeMB * 1024 * 1024 : 0;
     },
+    maxFileSizeMB() {
+      const maxSize = Number(this.maxFileSize);
+      return maxSize > 0 ? maxSize : 0;
+    },
+    maxFileSizeBytes() {
+      return this.maxFileSizeMB ? this.maxFileSizeMB * 1024 * 1024 : 0;
+    },
     visibleImageSizeLimit() {
       return this.maxImageSizeMB > 0;
     },
+    visibleFileSizeLimit() {
+      return this.maxFileSizeMB > 0;
+    },
+    visibleSizeLimitTips() {
+      return this.visibleImageSizeLimit || this.visibleFileSizeLimit;
+    },
+    sizeLimitTips() {
+      const tips = [];
+      if (this.visibleImageSizeLimit) {
+        tips.push(
+          this.$t('app.imageSizeModelLimit', { maxSize: this.maxImageSizeMB }),
+        );
+      }
+      if (this.visibleFileSizeLimit) {
+        tips.push(
+          this.$t('app.uploadFileSizeLimitTips', {
+            maxSize: this.maxFileSizeMB,
+          }),
+        );
+      }
+      return tips.join('，');
+    },
+    allFilesUploaded() {
+      return (
+        this.fileList.length > 0 &&
+        this.fileList.every(file => file.percentage === 100)
+      );
+    },
   },
   methods: {
+    getFileIconType,
     checkScrollable() {
       this.$nextTick(() => {
         const container = this.$refs.imgList;
@@ -295,7 +398,29 @@ export default {
       }
     },
     openDialog() {
+      this.syncConfirmedFiles();
       this.dialogVisible = true;
+    },
+    syncConfirmedFiles() {
+      this.fileList = (this.confirmedFileList || []).map(file =>
+        this.normalizeUploadFile({
+          ...file,
+          percentage: file.percentage !== undefined ? file.percentage : 100,
+          progressStatus: file.progressStatus || 'success',
+          uploadStatus: file.uploadStatus || 'success',
+          uploaded: file.uploaded !== undefined ? file.uploaded : true,
+        }),
+      );
+      this.fileInfo = (this.confirmedFileIdList || []).map(item => ({
+        ...item,
+      }));
+      this.fileIdList = this.fileInfo.map(item => ({ ...item }));
+      const lastFile = this.fileList[this.fileList.length - 1];
+      this.fileType = (lastFile && lastFile.fileType) || '';
+      this.fileUrl = (lastFile && lastFile.fileUrl) || '';
+      this.imgUrl = (lastFile && lastFile.imgUrl) || '';
+      this.isUploading = false;
+      this.checkScrollable();
     },
     clearFile() {
       this.fileIdList = [];
@@ -304,55 +429,41 @@ export default {
       this.fileUrl = '';
       this.imgUrl = '';
       this.fileInfo = [];
+      this.isUploading = false;
       this.canScroll = false;
     },
     handleClose() {
       this.clearFile();
       this.dialogVisible = false;
     },
-    uploadOnExceed(files) {
-      if (this.fileType === 'image/*' && this.maxPicNum === 1) {
-        const rawFile = files && files[0];
-        if (!rawFile) return;
-        const file = this.createUploadFile(rawFile);
-        const validateResult = this.validateUploadFile(file);
-        if (!validateResult.valid) {
-          this.showUploadValidateMessage(validateResult);
-          return;
-        }
-
-        this.resetReplacingFiles();
-        this.uploadOnChange(file, [file]);
-        return;
-      }
-
+    showFileLimitMessage() {
       this.$message.warning(
-        this.$t('app.uploadImgTips', { num: this.maxPicNum }),
+        this.$t('app.uploadFileLimitTips', { num: this.displayMaxFileNum }),
       );
     },
+    showImageLimitMessage() {
+      this.$message.warning(
+        this.$t('app.uploadImgTips', { num: this.displayMaxPicNum }),
+      );
+    },
+    showEffectiveImageLimitMessage() {
+      if (
+        this.hasFileLimit &&
+        (!this.hasImageLimit ||
+          this.normalizedMaxFileNum <= this.normalizedMaxPicNum)
+      ) {
+        this.showFileLimitMessage();
+        return;
+      }
+      this.showImageLimitMessage();
+    },
+    uploadOnExceed() {
+      this.showEffectiveImageLimitMessage();
+    },
     uploadOnChange(file, fileList) {
-      const prevFileType = this.fileType;
-      let filename = file.name;
-      let fileType = filename.split('.')[filename.split('.').length - 1];
-      let nextFileType = '';
-      let nextImgUrl = '';
+      const filename = file.name;
+      const nextFileType = this.getFileType(filename);
 
-      const fileTypeLower = fileType.toLowerCase();
-
-      if (this.tipsObj['image/*'].includes(fileTypeLower)) {
-        nextFileType = 'image/*';
-        if (file.url) {
-          nextImgUrl = file.url;
-        }
-      }
-      if (this.tipsObj['audio/*'].includes(fileTypeLower)) {
-        nextFileType = 'audio/*';
-      }
-      if ([...this.tipsObj['doc/*'], 'md'].includes(fileTypeLower)) {
-        nextFileType = 'doc/*';
-      }
-
-      // 格式拦截
       const validateResult = this.validateUploadFile(file, nextFileType);
       if (!validateResult.valid) {
         this.showUploadValidateMessage(validateResult);
@@ -360,60 +471,51 @@ export default {
         return;
       }
 
-      if (nextFileType === 'image/*' && fileList.length > this.maxPicNum) {
-        this.$message.warning(
-          this.$t('app.uploadImgTips', { num: this.maxPicNum }),
+      const nextFileList = fileList.map(item => {
+        const existingFile = this.fileList.find(
+          oldFile => oldFile.uid === item.uid,
         );
+        if (existingFile) {
+          ['uploaded', 'uploadStatus', 'percentage', 'progressStatus'].forEach(
+            key => {
+              if (existingFile[key] !== undefined)
+                this.$set(item, key, existingFile[key]);
+            },
+          );
+          ['fileUrl', 'imgUrl', 'fileType'].forEach(key => {
+            if (existingFile[key]) this.$set(item, key, existingFile[key]);
+          });
+        }
+        return this.normalizeUploadFile(item);
+      });
+
+      if (
+        this.hasFileLimit &&
+        nextFileList.length > this.normalizedMaxFileNum
+      ) {
+        this.showFileLimitMessage();
         this.removeUploadFile(file, fileList);
         return;
       }
 
-      if (this.shouldResetFileInfo(nextFileType, prevFileType)) {
-        this.resetReplacingFiles();
+      if (
+        this.hasEffectiveImageLimit &&
+        nextFileList.filter(item => this.isImageUploadFile(item)).length >
+          this.effectiveImageLimit
+      ) {
+        this.showEffectiveImageLimitMessage();
+        this.removeUploadFile(file, fileList);
+        return;
       }
 
-      if (nextFileType === 'image/*' && !nextImgUrl && file.raw) {
-        nextImgUrl = URL.createObjectURL(file.raw);
-      }
+      this.fileList = nextFileList;
+      const currentFile = this.normalizeUploadFile(file);
+      this.fileType = currentFile.fileType;
+      this.imgUrl = currentFile.imgUrl || '';
+      this.fileUrl = currentFile.fileUrl;
+      this.checkScrollable();
 
-      this.fileType = nextFileType;
-      this.imgUrl = nextImgUrl;
-      this.fileUrl = file.raw ? URL.createObjectURL(file.raw) : file.url;
-
-      if (this.fileType === 'image/*') {
-        // 图片类型可累加至maxPicNum个
-        if (prevFileType && prevFileType !== this.fileType) {
-          this.fileList = [];
-          this.canScroll = false;
-          this.fileList.push(file);
-        } else {
-          this.fileList = fileList;
-        }
-        const currentFileIndex = this.fileList.length - 1;
-        if (file.raw) {
-          this.fileList[currentFileIndex].fileUrl = URL.createObjectURL(
-            file.raw,
-          );
-        }
-        this.checkScrollable();
-      } else {
-        // 非图片类型只保留最新一个
-        this.fileList = [];
-        this.fileList.push(file);
-      }
-
-      if (this.fileList.length > 0) {
-        this.maxSizeBytes = 0;
-        this.isExpire = true;
-        // 为每个文件启动上传，而不是只上传索引0的文件
-        for (let i = 0; i < this.fileList.length; i++) {
-          if (!this.fileList[i].uploaded) {
-            // 添加标记避免重复上传
-            this.startUpload(i, this.type === 'webChat');
-            this.fileList[i].uploaded = true;
-          }
-        }
-      }
+      this.triggerNextUpload();
     },
     removeUploadFile(file, fileList) {
       const index = fileList.indexOf(file);
@@ -424,14 +526,46 @@ export default {
     createUploadFile(rawFile) {
       const uid = rawFile.uid || this.$guid();
       rawFile.uid = uid;
-      return {
+      return this.normalizeUploadFile({
         name: rawFile.name,
         size: rawFile.size,
         uid,
         raw: rawFile,
         percentage: 0,
         progressStatus: 'active',
-      };
+        uploadStatus: 'pending',
+        uploaded: false,
+      });
+    },
+    normalizeUploadFile(file) {
+      const fileType = file.fileType || this.getFileType(file.name);
+      this.$set(file, 'fileType', fileType);
+      if (!file.fileUrl && (file.raw || file.url)) {
+        this.$set(
+          file,
+          'fileUrl',
+          file.raw ? URL.createObjectURL(file.raw) : file.url,
+        );
+      }
+      if (fileType === 'image/*' && !file.imgUrl) {
+        this.$set(file, 'imgUrl', file.fileUrl);
+      }
+      return file;
+    },
+    isImageUploadFile(file) {
+      return (
+        (file?.fileType || this.getFileType(file?.name || '')) === 'image/*'
+      );
+    },
+    isAudioUploadFile(file) {
+      return (
+        (file?.fileType || this.getFileType(file?.name || '')) === 'audio/*'
+      );
+    },
+    getFileSizeDisplay(fileSize) {
+      return fileSize > 1024
+        ? `${(fileSize / (1024 * 1024)).toFixed(2)} MB`
+        : `${fileSize} bytes`;
     },
     validateUploadFile(file, fileType) {
       const filename = (file && file.name) || '';
@@ -450,7 +584,9 @@ export default {
       if (nextFileType === 'image/*' && this.isImageOverSize(file)) {
         return { valid: false, type: 'imageSize' };
       }
-
+      if (nextFileType !== 'image/*' && this.isFileOverSize(file)) {
+        return { valid: false, type: 'fileSize' };
+      }
       return { valid: true, type: nextFileType };
     },
     showUploadValidateMessage(validateResult) {
@@ -458,6 +594,15 @@ export default {
         this.$message.warning(
           this.$t('knowledgeManage.multiKnowledgeDatabase.imageSizeLimit', {
             maxSize: this.maxImageSizeMB,
+          }),
+        );
+        return;
+      }
+
+      if (validateResult.type === 'fileSize') {
+        this.$message.warning(
+          this.$t('app.uploadFileSizeLimitTips', {
+            maxSize: this.maxFileSizeMB,
           }),
         );
         return;
@@ -478,51 +623,75 @@ export default {
       }
       return '';
     },
-    shouldResetFileInfo(nextFileType, prevFileType) {
-      const hasPreviousFile =
-        (this.fileList && this.fileList.length) ||
-        (this.fileInfo && this.fileInfo.length);
-      if (!hasPreviousFile) return false;
-      return nextFileType !== 'image/*' || prevFileType !== nextFileType;
-    },
-    resetReplacingFiles() {
-      this.cancelAllRequests();
-      this.fileList = [];
-      this.fileType = '';
-      this.fileUrl = '';
-      this.imgUrl = '';
-      this.fileInfo = [];
-      this.fileIdList = [];
-      this.lastFileType = '';
-      this.canScroll = false;
-    },
     isImageOverSize(file) {
       return (
         this.maxImageSizeBytes && file && file.size > this.maxImageSizeBytes
       );
     },
+    isFileOverSize(file) {
+      return this.maxFileSizeBytes && file && file.size > this.maxFileSizeBytes;
+    },
     uploadFile(fileName, oldFileName, fiePath) {
-      //文件上传完之后
-      if (this.lastFileType && this.lastFileType !== this.fileType) {
-        this.fileInfo = [];
+      // 文件上传完成后，释放队列锁并继续调度下一个 pending 文件
+      const currentFile = this.fileList[this.fileIndex] || {};
+      if (!currentFile.uid) {
+        this.isUploading = false;
+        this.triggerNextUpload();
+        return;
       }
-      this.lastFileType = this.fileType;
+      this.lastFileType = currentFile.fileType || this.fileType;
+      this.$set(currentFile, 'uploadStatus', 'success');
+      this.$set(currentFile, 'uploaded', true);
+      this.$set(currentFile, 'percentage', 100);
       const fileInfoItem = {
+        uid: currentFile.uid,
+        fileType: currentFile.fileType,
         fileName,
         oldFileName,
-        fileSize: this.fileList[this.fileIndex]['size'],
+        fileSize: currentFile.size,
         fileUrl: fiePath,
       };
-      // 如果是图片类型，添加 imgUrl 用于前端预览
-      if (this.fileType === 'image/*' && this.imgUrl) {
-        fileInfoItem.imgUrl = this.imgUrl;
+      if (currentFile.fileType === 'image/*') {
+        fileInfoItem.imgUrl = currentFile.imgUrl || currentFile.fileUrl;
       }
-      this.fileInfo.push(fileInfoItem);
+      const index = this.fileInfo.findIndex(
+        item => item.uid === currentFile.uid,
+      );
+      if (index > -1) {
+        this.$set(this.fileInfo, index, fileInfoItem);
+      } else {
+        this.fileInfo.push(fileInfoItem);
+      }
+      this.isUploading = false;
+      this.triggerNextUpload();
+    },
+    isPendingUpload(file) {
+      if (!file) return false;
+      if (file.uploadStatus) return file.uploadStatus === 'pending';
+      return file.percentage !== 100;
+    },
+    triggerNextUpload() {
+      if (this.isUploading || !this.fileList || this.fileList.length === 0) {
+        return;
+      }
+      const nextPendingIndex = this.fileList.findIndex(file =>
+        this.isPendingUpload(file),
+      );
+      if (nextPendingIndex === -1) return;
+
+      this.maxSizeBytes = 0;
+      this.isExpire = true;
+      this.isUploading = true;
+      this.$set(this.fileList[nextPendingIndex], 'uploadStatus', 'uploading');
+      this.$set(this.fileList[nextPendingIndex], 'uploaded', true);
+      this.startUpload(nextPendingIndex, this.type === 'webChat');
     },
     doBatchUpload() {
-      this.$emit('setFileId', this.fileInfo);
+      const sortedFileInfo = this.fileList
+        .map(file => this.fileInfo.find(item => item.uid === file.uid))
+        .filter(Boolean);
+      this.$emit('setFileId', sortedFileInfo);
       this.$emit('setFile', this.fileList);
-      this.clearFile();
       this.handleClose();
     },
     getFileIdList() {
@@ -542,9 +711,13 @@ export default {
       margin-bottom: 20px;
     }
     .upload-box {
-      height: 190px;
+      height: 230px;
       width: 100% !important;
       background-color: #fff;
+      ::v-deep .el-upload-dragger {
+        height: 100%;
+        width: 100%;
+      }
       .el-upload-dragger {
         .el-icon-upload {
           margin: 46px 0 10px 0 !important;
@@ -611,10 +784,12 @@ export default {
         }
       }
       .docFile {
-        img {
-          margin: 0;
-          width: 60px;
-          height: 100px;
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        .docIcon {
+          flex: 0 0 auto;
         }
       }
     }
@@ -623,7 +798,10 @@ export default {
       bottom: 16px;
       left: 0;
       right: 0;
+      padding: 0 24px;
+      line-height: 20px;
       p {
+        margin: 4px 0 0;
         color: #9d8d8d !important;
       }
     }
