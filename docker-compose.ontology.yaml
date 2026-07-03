@@ -132,7 +132,8 @@ services:
       - DB_HOST=${WANWU_MYSQL_HOST:-mysql-wanwu}
       - DB_PORT=${WANWU_MYSQL_PORT:-3306}
       - DB_NAME=${ONTOLOGY_DB_NAME:-kweaver}
-      - DB_USER=${WANWU_MYSQL_USER}- DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
+      - DB_USER=${WANWU_MYSQL_USER}
+      - DB_PASSWORD=${WANWU_MYSQL_PASSWORD}
     volumes:
       - wanwu_shared_ontology_calculate_catalog:/opt/openlookeng/hetu-server-1.9.0/catalog/share
       - wanwu_shared_ontology_calculate_data:/opt/openlookeng/data
