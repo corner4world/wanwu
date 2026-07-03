@@ -12,7 +12,6 @@ from chains.local_doc_qa import load_file, ChineseTextSplitter
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-from utils import ocr_utils
 from utils.constant import MAX_SENTENCE_SIZE, MIN_SENTENCE_SIZE, MIN_EMBEDDING_SIZE
 from utils import model_parser_utils
 from utils import asr_utils
@@ -335,21 +334,22 @@ def split_file_adapter(add_file_path: str, download_link: str, config: SplitConf
 
     if file_name.lower().endswith(".pdf"):
         if "model" in config.parser_choices:
-            logger.info("-----模型PDF解析+markdown定制切分：模型PDF解析-------")
+            logger.info("-----文档解析模型(model)处理PDF-------")
             chunks = model_parser_utils.model_parser(add_file_path, config.ocr_model_id)
         else:
-            loader = PDFLoader(file_path=add_file_path, parser_choices=config.parser_choices, ocr_model_id = config.ocr_model_id, autodetect_encoding=True)
-            chunk_type, height_list = loader.get_chunk_type()
-            logger.info("------>load_file,chunk_type=%s" % str(loader.get_chunk_type()))
-            if chunk_type == 2:
-                logger.info("-----定制化pdf解析+切分：处理文字版（含表格、标题）-------")
+            # text 模式：传统解析，不再根据 chunk_type 自动分发
+            logger.info("-----文字提取(text)处理PDF-------")
+            loader = PDFLoader(file_path=add_file_path, parser_choices=config.parser_choices,
+                               ocr_model_id=config.ocr_model_id, autodetect_encoding=True)
+            height_list = loader.get_height_list() if hasattr(loader, 'get_height_list') else loader.get_chunk_type()[1]
+            if height_list and len(height_list) >= 2:
+                # 含表格/标题的 PDF 走结构化提取
                 chunks = loader.load_and_split_doc(height_list)
-            elif chunk_type == 3:
-                logger.info("-----定制化pdf解析+切分：OCR影印版PDF解析-------")
-                chunks = ocr_utils.ocr_parser(add_file_path, config.ocr_model_id)
-            elif chunk_type == 4:
-                logger.info("-----pdf模型解析工具解析+切分：利用模型解析工具解析-------")
-                chunks = ocr_utils.ocr_parser(add_file_path, config.ocr_model_id)
+            else:
+                # 普通 PDF 走基础 load()
+                docs = loader.load()
+                chunks = [{"type": "text", "text": doc.page_content, "page_num": [],
+                           "length": len(doc.page_content)} for doc in docs]
 
     elif file_name.lower().endswith(".xlsx"):
         logger.info("-----定制化xlsx解析+切分：支持多sheet页-------")

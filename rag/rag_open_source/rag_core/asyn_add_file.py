@@ -127,7 +127,7 @@ def kafkal():
                 is_enhanced = doc.get("is_enhanced", "false")
                 enable_knowledge_graph = doc.get("enable_knowledge_graph", "false")
 
-                # 文件导入时选择解析方式，默认勾选文字提取，可选光学识别ocr当多选时此参数默认为["text"],当勾选ocr时传：["text","ocr"]
+                # 文件导入时选择解析方式，默认勾选文字提取。可选模型解析(model)，当多选时此参数默认为["text"]，当勾选model时传：["text","model"]
                 parser_choices = doc.get("parser_choices", ["text"])
                 asr_model_id = doc.get("asr_model_id", "")
                 multimodal_model_id = doc.get("multimodal_model_id", "")

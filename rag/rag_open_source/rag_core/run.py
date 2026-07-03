@@ -1008,7 +1008,7 @@ def doc_parser(request_json=None):
         overlap_size = request_json.get('overlap_size', 0)
         sentence_size = request_json.get('sentence_size', 8096)
         separators = request_json.get('separators', ['。'])
-        parser_choices = request_json.get('parser_choices', ['text','ocr'])
+        parser_choices = request_json.get('parser_choices', ['text', 'model'])
         ocr_model_id = request_json.get('ocr_model_id',"")
         chunk_type = 'split_by_design'
 
