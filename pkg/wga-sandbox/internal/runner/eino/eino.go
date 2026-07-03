@@ -57,6 +57,14 @@ func (r *Runner) BeforeRun(ctx context.Context) error {
 	if err := r.setupWorkspaceDirs(ctx); err != nil {
 		return err
 	}
+	// setupWorkspaceDirs 必须先把 skill 目录 copy 进 workspace/skills/，
+	// 之后才能向各 skill 的 SKILL.md 追加 Variables 段。
+	if err := r.injectEnvVariables(ctx); err != nil {
+		return err
+	}
+	if err := r.setupSkillVariables(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 

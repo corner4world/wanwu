@@ -18,6 +18,9 @@ type AppConfig struct {
 	APIKey    string
 	BaseURL   string
 	ModelID   string
+	// Halt 连续 [BLOCKED:...] 计数与熔断回调。可空——为 nil 时不启用熔断
+	// （用于 tests + oneshot 沙箱路径的向后兼容）。
+	Halt *HaltState
 }
 
 // ApplyDefaults 填充默认值。

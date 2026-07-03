@@ -11,7 +11,12 @@ type SkillBasicInfo struct {
 	Desc    string         `json:"desc"`
 }
 
-// SkillVariable 变量配置
+// SkillVariable 变量配置。
+// 安全约束（与 assistant_service.SkillVariable 注释一致）：
+// VariableValue 仅允许沿 BFF -> assistant-svc -> agent-svc -> sandbox (.skill_env.json) 流动；
+// 不得进入 LLM 上下文 (system prompt / SKILL.md / 日志 / 错误信息 / SSE 帧)。
+// 注意 BFF callback HTTP response 会在内部网络携带此字段返回 assistant-svc，gRPC interceptor
+// 若 dump request/response body 需要做 redaction
 type SkillVariable struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
@@ -137,7 +142,8 @@ type CallbackAcquiredSkillDetailListResp struct {
 // CallbackAcquiredSkillDetail 回调用
 type CallbackAcquiredSkillDetail struct {
 	SkillBasicInfo
-	ObjectPath string `json:"objectPath"`
+	ObjectPath string           `json:"objectPath"`
+	Variables  []*SkillVariable `json:"variables,omitempty"`
 }
 
 // SkillInfo（select 列表用）

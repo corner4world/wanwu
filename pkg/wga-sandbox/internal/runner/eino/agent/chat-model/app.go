@@ -33,7 +33,7 @@ func NewApp(ctx context.Context, cfg shared.AppConfig) (shared.AgentApp, error) 
 		return nil, err
 	}
 
-	bashMW, err := shared.NewBashMiddleware(cfg.Workspace)
+	bashMW, err := shared.NewBashMiddleware(cfg.Workspace, cfg.Halt)
 	if err != nil {
 		return nil, err
 	}

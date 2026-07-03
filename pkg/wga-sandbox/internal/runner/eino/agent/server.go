@@ -92,6 +92,19 @@ func (s *httpServer) handleChat(w http.ResponseWriter, r *http.Request) {
 
 	cfg, agentType := resolveAgent(workspace, agentTypeQuery)
 
+	// sessionCtx：可 cancel-with-cause 的会话上下文。
+	// 用途：sandbox 侧连续 [BLOCKED:...] 到阈值触发 HaltState.haltFn → cancelSession(err) →
+	// eino runner iterator 关闭 → ProcessEvents 自然收尾 → 下面 defer 通过 context.Cause
+	// 拿到熔断原因，作为 finalErr 走 BuildFinalAgentEvent(FinalErrorSourceAgent, err)
+	// 路径下发 assistant+stop 消息 content = "error[agent]: consecutive security blocks reached threshold N"。
+	sessionCtx, cancelSession := context.WithCancelCause(ctx)
+	defer cancelSession(nil)
+
+	cfg.Halt = shared.NewHaltState(sandboxHaltThreshold, func(err error) {
+		log.Printf("[Chat] halt triggered sessionID=%s: %v", sessionID, err)
+		cancelSession(err)
+	})
+
 	// 兜底保证：handler 退出前必发一条 assistant+stop 消息。
 	// runChat 在自然 / 错误收尾时回写 sentFinal=true。
 	sentFinal := false
@@ -110,16 +123,27 @@ func (s *httpServer) handleChat(w http.ResponseWriter, r *http.Request) {
 		}
 		if !sentFinal {
 			err := finalErr
-			if err == nil && ctx.Err() != nil {
-				err = ctx.Err()
+			if err == nil {
+				// 优先使用 sessionCtx 的 cancel cause（熔断原因等有信息量的 error）；
+				// 若 cause 只是普通 context.Canceled / DeadlineExceeded，退回到父 ctx.Err()。
+				if cause := context.Cause(sessionCtx); cause != nil && cause != context.Canceled && cause != context.DeadlineExceeded {
+					err = cause
+				} else if ctx.Err() != nil {
+					err = ctx.Err()
+				}
 			}
 			sseWriter.WriteAgentEvent(shared.BuildFinalAgentEvent(shared.FinalErrorSourceAgent, err))
 		}
 	}()
 
-	sentFinal, finalErr = runChat(ctx, cfg, agentType, req.Messages, sseWriter)
+	sentFinal, finalErr = runChat(sessionCtx, cfg, agentType, req.Messages, sseWriter)
 	log.Printf("[Chat] done sessionID=%s sentFinal=%v err=%v", sessionID, sentFinal, finalErr)
 }
+
+// sandboxHaltThreshold sandbox 会话内连续 [BLOCKED:...] 触发强制熔断的阈值。
+// 阈值取 3 的理由：合法业务下第一次 precheck 误伤后 LLM 通常一两次内切到正确路径；
+// 连续 3 次以上 BLOCKED 更明确指示"agent 在反复试图绕过安全规则"，误伤概率极低。
+const sandboxHaltThreshold = 3
 
 // beginSSEResponse 校验 ResponseWriter 是否支持 Flush，并写出 SSE 响应头。
 func beginSSEResponse(w http.ResponseWriter) (shared.SSEWriter, bool) {
