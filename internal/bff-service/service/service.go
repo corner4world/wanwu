@@ -5,6 +5,7 @@ import (
 
 	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
 	assistant_service "github.com/UnicomAI/wanwu/api/proto/assistant-service"
+	channel_service "github.com/UnicomAI/wanwu/api/proto/channel-service"
 	iam_service "github.com/UnicomAI/wanwu/api/proto/iam-service"
 	knowledgebase_doc_service "github.com/UnicomAI/wanwu/api/proto/knowledgebase-doc-service"
 	knowledgebase_keywords_service "github.com/UnicomAI/wanwu/api/proto/knowledgebase-keywords-service"
@@ -44,6 +45,7 @@ var (
 	assistant               assistant_service.AssistantServiceClient
 	safety                  safety_service.SafetyServiceClient
 	operate                 operate_service.OperateServiceClient
+	channel                 channel_service.ChannelServiceClient
 )
 
 // --- API ---
@@ -82,6 +84,10 @@ func Init() error {
 	if err != nil {
 		return fmt.Errorf("init operate-service connection err: %v", err)
 	}
+	channelConn, err := newConn(config.Cfg().Channel.Host)
+	if err != nil {
+		return fmt.Errorf("init channel-service connection err: %v", err)
+	}
 	// grpc clients
 	iam = iam_service.NewIAMServiceClient(iamConn)
 	perm = perm_service.NewPermServiceClient(iamConn)
@@ -100,6 +106,7 @@ func Init() error {
 	assistant = assistant_service.NewAssistantServiceClient(assistantConn)
 	safety = safety_service.NewSafetyServiceClient(appConn)
 	operate = operate_service.NewOperateServiceClient(operateConn)
+	channel = channel_service.NewChannelServiceClient(channelConn)
 	return nil
 }
 

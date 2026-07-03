@@ -1,0 +1,61 @@
+server:
+  grpc_endpoint: 0.0.0.0:9990
+  max_recv_msg_size: 4294967296  # 4G
+
+callback:
+  endpoint: "0.0.0.0:8090"  # HTTP 回调服务器地址，用于接收平台 Webhook 推送
+
+log:
+  std: true
+  level: debug
+  logs:
+    - enable: true
+      filename: log/channel-info.log
+      level: info
+      max_size: 10
+      max_backups: 10
+      max_age: 30
+    - enable: true
+      filename: log/channel-err.log
+      level: error
+      max_size: 10
+      max_backups: 10
+      max_age: 30
+
+db:
+  name: mysql
+  mysql:
+    address: localhost:3306
+    user: root
+    password: Wanwu123456
+    database: channel_service
+    max_open_conns: 16
+    max_idle_conns: 16
+    log_mode: true
+  postgres:
+    address: localhost:5432
+    user: postgres
+    password: Wanwu123456
+    database: channel_service
+    max_open_conns: 16
+    max_idle_conns: 16
+    log_mode: true
+
+redis:
+  host: localhost
+  port: 6379
+  username:
+  password: Wanwu123456
+  standalone: true
+  master_name: mymaster
+
+bff:
+  base_url: "http://bff-service:6668"
+
+dingtalk:
+  stream_mode: true
+  oauth_callback_url: ""
+
+wechat:
+  base_url: "https://ilinkai.weixin.qq.com"
+  callback_url: ""

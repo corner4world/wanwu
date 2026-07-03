@@ -59,6 +59,9 @@ func Register(apiV1 *gin.RouterGroup) {
 	// api_key
 	registerAPIKey(apiV1)
 
+	// channel
+	registerChannel(apiV1)
+
 	// permission
 	registerPermission(apiV1)
 
