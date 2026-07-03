@@ -467,9 +467,6 @@ func modelToChannelProto(ch *model.Channel) *channel_service.Channel {
 		_ = json.Unmarshal([]byte(ch.Config), &configMap)
 	}
 
-	// 脱敏处理：appSecret 等敏感字段替换为 ****
-	desensitizedConfig := desensitizeConfig(configMap, ch.ChannelType)
-
 	hasApiKey := ch.ApiKey != ""
 
 	return &channel_service.Channel{
@@ -488,35 +485,12 @@ func modelToChannelProto(ch *model.Channel) *channel_service.Channel {
 		ApiKeyName:  ch.ApiKeyName,
 		HasApiKey:   hasApiKey,
 		ModelUuid:   ch.ModelUuid,
-		Config:      desensitizedConfig,
+		Config:      configMap,
 		CreatedAt:   util.Time2Str(ch.CreatedAt),
 		UpdatedAt:   util.Time2Str(ch.UpdatedAt),
 		UserId:      ch.UserID,
 		OrgId:       ch.OrgID,
 	}
-}
-
-// desensitizeConfig 脱敏处理平台配置中的敏感字段
-func desensitizeConfig(config map[string]string, channelType string) map[string]string {
-	result := make(map[string]string)
-	for k, v := range config {
-		result[k] = v
-	}
-	switch channelType {
-	case "dingtalk":
-		if _, ok := result["appSecret"]; ok {
-			result["appSecret"] = "******"
-		}
-	case "wechat":
-		if _, ok := result["token"]; ok {
-			result["token"] = "******"
-		}
-	case "feishu":
-		if _, ok := result["appSecret"]; ok {
-			result["appSecret"] = "******"
-		}
-	}
-	return result
 }
 
 // normalizeConfig 兼容前端传入的 client_id / client_secret 字段名，
