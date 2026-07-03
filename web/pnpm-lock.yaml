@@ -119,6 +119,9 @@ importers:
       qiankun:
         specifier: ^2.10.16
         version: 2.10.16
+      qrcodejs2:
+        specifier: ^0.0.2
+        version: 0.0.2
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
@@ -4971,6 +4974,9 @@ packages:
 
   qiankun@2.10.16:
     resolution: {integrity: sha512-Q3tSVUrPnzx8ckEOKIoPnhb5LE28FPKyan/r6jEuGJGqTbIy+3rp6E2/KfU82ZI4yZpef9LFTrnxdj49jAEsmw==}
+
+  qrcodejs2@0.0.2:
+    resolution: {integrity: sha512-+Y4HA+cb6qUzdgvI3KML8GYpMFwB24dFwzMkS/yXq6hwtUGNUnZQdUnksrV1XGMc2mid5ROw5SAuY9XhI3ValA==}
 
   qs@6.14.2:
     resolution: {integrity: sha512-V/yCWTTF7VJ9hIh18Ugr2zhJMP01MY7c5kh4J870L7imm6/DIzBsNLTXzMwUA3yZ5b/KBqLx8Kp3uRvd7xSe3Q==}
@@ -11681,6 +11687,8 @@ snapshots:
       import-html-entry: 1.17.0
       lodash: 4.18.1
       single-spa: 5.9.5
+
+  qrcodejs2@0.0.2: {}
 
   qs@6.14.2:
     dependencies:
