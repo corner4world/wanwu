@@ -375,41 +375,18 @@ func ValidateOcrModel(ctx *gin.Context, modelInfo *model_service.ModelInfo) erro
 	if !ok {
 		return fmt.Errorf("invalid provider")
 	}
-	// mock  request
-
-	file, err := os.Open(config.Cfg().Model.PngTestFilePath)
+	// mock request：读取测试文件转 base64
+	fileData, err := os.ReadFile(config.Cfg().Model.PngTestFilePath)
 	if err != nil {
-		return fmt.Errorf("open file failed: %v", err)
+		return fmt.Errorf("read test file failed: %v", err)
 	}
-	defer func() { _ = file.Close() }()
-
-	// 创建内存缓冲区
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	// 创建表单文件字段
-	part, err := writer.CreateFormFile("file", file.Name())
+	_, base64StrWithPrefix, err := util.FileData2Base64(fileData, "")
 	if err != nil {
-		return fmt.Errorf("create form file failed: %v", err)
-	}
-
-	// 复制文件内容
-	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("copy file content failed: %v", err)
-	}
-	_ = writer.Close()
-
-	// 模拟HTTP请求
-	mockReq, _ := http.NewRequest("POST", "", body)
-	mockReq.Header.Set("Content-Type", writer.FormDataContentType())
-	ctx.Request = mockReq
-	// 获取FileHeader对象
-	_, fileH, err := ctx.Request.FormFile("file")
-	if err != nil {
-		return fmt.Errorf("get file header failed: %v", err)
+		return fmt.Errorf("file to base64 failed: %v", err)
 	}
 	req := &mp_common.OcrReq{
-		Files: fileH,
+		FileData: &base64StrWithPrefix,
+		FileName: "test.png",
 	}
 	ocrReq, err := iOcr.NewReq(req)
 	if err != nil {
