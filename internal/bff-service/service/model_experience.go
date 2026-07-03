@@ -195,6 +195,7 @@ func ModelExperienceLLM(ctx *gin.Context, userId, orgId, clientId string, req *r
 		go func() {
 			defer util.PrintPanicStack()
 			recordModelStatistic(bgCtx, modelInfo, false, 0, 0, 0, 0, 0, false)
+			_ = sseSessionManager.Cancel()
 		}()
 		gin_util.Response(ctx, nil, grpc_util.ErrorStatus(err_code.Code_BFFGeneral, err.Error()))
 		return
