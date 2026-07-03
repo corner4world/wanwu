@@ -91,6 +91,7 @@
                     <el-tooltip
                       v-if="toolDescription(item)"
                       effect="dark"
+                      :open-delay="300"
                       :content="toolDescription(item)"
                       placement="top-start"
                     >
@@ -151,6 +152,7 @@
                         <el-tooltip
                           v-if="toolDescription(item)"
                           effect="dark"
+                          :open-delay="300"
                           :content="toolDescription(item)"
                           placement="top-start"
                         >
