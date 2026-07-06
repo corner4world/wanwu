@@ -1370,10 +1370,10 @@ export default {
         this.loadConfig();
 
         // detail 加载完成后，检查是否有运行中的对话需要重连 connect
-        if (!this.isSkillType) {
-          await this.checkAndResumePending(this.currentThreadId);
-        } else {
+        if (this.isSkillType) {
           await this.checkAndResumeSkillPending(this.currentThreadId);
+        } else {
+          await this.checkAndResumePending(this.currentThreadId);
         }
       } finally {
         this.isLoadingHistory = false;
@@ -1982,7 +1982,13 @@ export default {
           this.syncConversationRoute();
           this.hidePanel();
         }
-        this.fetchConversationList();
+        // 保留已加载的多页数据与滚动位置
+        const index = this.conversationList.findIndex(
+          c => c.threadId === item.threadId,
+        );
+        if (index !== -1) {
+          this.conversationList.splice(index, 1);
+        }
       }
     },
 
