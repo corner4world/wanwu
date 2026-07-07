@@ -74,6 +74,7 @@
               v-model="form.appType"
               :placeholder="$t('common.select.placeholder')"
               style="width: 100%"
+              @change="handleAppTypeChange"
             >
               <el-option
                 v-for="item in appTypeOptions"
@@ -85,7 +86,11 @@
           </el-form-item>
 
           <!-- 关联应用 -->
-          <el-form-item :label="$t('channel.bindApp')" prop="appId">
+          <el-form-item
+            v-if="isBindAppType"
+            :label="$t('channel.bindApp')"
+            prop="appId"
+          >
             <el-select
               v-model="form.appId"
               :placeholder="$t('channel.bindAppPlaceholder')"
@@ -97,6 +102,69 @@
                 :key="item.appId"
                 :label="item.name"
                 :value="item.appId"
+              />
+            </el-select>
+          </el-form-item>
+
+          <!-- 关联模型 -->
+          <el-form-item
+            v-if="isModelType"
+            :label="$t('channel.bindModel')"
+            prop="modelUuid"
+          >
+            <el-select
+              v-model="form.modelUuid"
+              :placeholder="$t('common.select.placeholder')"
+              style="width: 100%"
+              filterable
+            >
+              <el-option
+                v-for="item in modelList"
+                :key="item.uuid"
+                :label="item.displayName"
+                :value="item.uuid"
+              />
+            </el-select>
+          </el-form-item>
+
+          <!-- 关联场景 -->
+          <el-form-item
+            v-if="form.appType === GENERAL_AGENT"
+            :label="$t('channel.bindScene')"
+            prop="agentId"
+          >
+            <el-select
+              v-model="form.agentId"
+              :placeholder="$t('common.select.placeholder')"
+              style="width: 100%"
+              filterable
+            >
+              <el-option
+                v-for="item in sceneList"
+                :key="item.agentId"
+                :label="item.agentName"
+                :value="item.agentId"
+              />
+            </el-select>
+          </el-form-item>
+
+          <!-- 关联数字员工 -->
+          <el-form-item
+            v-if="form.appType === DIGITAL_EMPLOYEE"
+            :label="$t('channel.bindDigitalEmployee')"
+            prop="employeeId"
+          >
+            <el-select
+              v-model="form.employeeId"
+              :placeholder="$t('common.select.placeholder')"
+              style="width: 100%"
+              filterable
+            >
+              <el-option
+                v-for="item in employeeList"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
               />
             </el-select>
           </el-form-item>
@@ -205,7 +273,7 @@
         >
           <template slot-scope="scope">
             <div>
-              {{ AppType[scope.row.appType] || '--' }}
+              {{ getChannelAppTypeLabel(scope.row.appType) }}
             </div>
           </template>
         </el-table-column>
@@ -311,9 +379,18 @@ import {
   createChannel,
   getApiSelect,
   getAppSelect,
+  getModelSelect,
+  getSceneSelect,
+  getEmployeeSelect,
 } from '@/api/channel';
 import { AGENT, AppType } from '@/utils/commonSet';
-import { WECHAT, DING_TALK } from './constants';
+import {
+  WECHAT,
+  DING_TALK,
+  GENERAL_AGENT,
+  DIGITAL_EMPLOYEE,
+  APP_TYPE_OPTIONS,
+} from './constants';
 
 export default {
   name: 'ChannelConfig',
@@ -321,6 +398,8 @@ export default {
   data() {
     return {
       WECHAT,
+      GENERAL_AGENT,
+      DIGITAL_EMPLOYEE,
       AppType,
       listApi: fetchChannelList,
       loading: false,
@@ -331,6 +410,9 @@ export default {
         name: '',
         appType: AGENT,
         appId: '',
+        modelUuid: '',
+        agentId: '',
+        employeeId: '',
         apiKeyId: '',
         config: {},
       },
@@ -374,6 +456,27 @@ export default {
             trigger: 'change',
           },
         ],
+        modelUuid: [
+          {
+            required: true,
+            message: this.$t('common.select.placeholder'),
+            trigger: 'change',
+          },
+        ],
+        agentId: [
+          {
+            required: true,
+            message: this.$t('common.select.placeholder'),
+            trigger: 'change',
+          },
+        ],
+        employeeId: [
+          {
+            required: true,
+            message: this.$t('common.select.placeholder'),
+            trigger: 'change',
+          },
+        ],
         apiKeyId: [
           {
             required: true,
@@ -398,18 +501,24 @@ export default {
           iconColor: '#fff',
         },
       ],
-      appTypeOptions: [{ value: AGENT, label: this.$t('channel.agent') }],
+      appTypeOptions: APP_TYPE_OPTIONS,
       appList: [],
+      modelList: [],
+      sceneList: [],
+      employeeList: [],
       apiKeyList: [],
       tableData: [],
     };
   },
-  watch: {
-    'form.appType': {
-      handler() {
-        this.fetchAppList();
-      },
-      immediate: false,
+  computed: {
+    isBindAppType() {
+      return this.form.appType === AGENT;
+    },
+    isModelType() {
+      return (
+        this.form.appType === GENERAL_AGENT ||
+        this.form.appType === DIGITAL_EMPLOYEE
+      );
     },
   },
   mounted() {
@@ -437,6 +546,31 @@ export default {
     searchData() {
       this.fetchTableData({ pageNo: 1 });
     },
+    handleAppTypeChange(newVal) {
+      this.form.appId = '';
+      this.form.modelUuid = '';
+      this.form.agentId = '';
+      this.form.employeeId = '';
+      if (newVal === AGENT) {
+        this.fetchAppList();
+      } else if (newVal === GENERAL_AGENT || newVal === DIGITAL_EMPLOYEE) {
+        this.fetchModelList();
+      }
+      if (newVal === GENERAL_AGENT) {
+        this.fetchSceneList();
+      }
+      if (newVal === DIGITAL_EMPLOYEE) {
+        this.fetchEmployeeList();
+      }
+      this.$nextTick(() => {
+        this.$refs.formRef.clearValidate([
+          'appId',
+          'modelUuid',
+          'agentId',
+          'employeeId',
+        ]);
+      });
+    },
     async fetchAppList() {
       const res = await getAppSelect(this.form.appType);
       this.appList = res.data?.list || [];
@@ -445,11 +579,41 @@ export default {
       const res = await getApiSelect();
       this.apiKeyList = res.data?.list || [];
     },
+    async fetchModelList() {
+      const res = await getModelSelect();
+      this.modelList = res.data?.list || [];
+    },
+    async fetchSceneList() {
+      const res = await getSceneSelect();
+      this.sceneList = res.data?.wgaAgentList || [];
+    },
+    async fetchEmployeeList() {
+      const res = await getEmployeeSelect();
+      this.employeeList = res.data?.list || res.data || [];
+    },
+    getChannelAppTypeLabel(appType) {
+      const option = this.appTypeOptions.find(item => item.value === appType);
+      return option?.label || AppType[appType] || '--';
+    },
     justifyConfig() {
       return Object.keys(this.form.config || {}).length > 0;
     },
+    formatValue() {
+      const value = { ...this.form };
+      if (value.appType === AGENT) {
+        delete value.modelUuid;
+        delete value.agentId;
+        delete value.employeeId;
+      } else if (value.appType === GENERAL_AGENT) {
+        delete value.employeeId;
+        delete value.appId;
+      } else if (value.appType === DIGITAL_EMPLOYEE) {
+        delete value.agentId;
+        delete value.appId;
+      }
+      return value;
+    },
     handleSave() {
-      console.log(this.form.config, 'this.form.config');
       if (!this.justifyConfig()) {
         this.$message.warning(this.$t('channel.configEmpty'));
         return;
@@ -457,7 +621,7 @@ export default {
       this.$refs.formRef.validate(valid => {
         if (!valid) return;
         this.saveLoading = true;
-        createChannel(this.form)
+        createChannel(this.formatValue())
           .then(() => {
             this.saveLoading = false;
             this.$message.success(this.$t('common.message.success'));
@@ -476,6 +640,9 @@ export default {
         name: '',
         appType: AGENT,
         appId: '',
+        modelUuid: '',
+        agentId: '',
+        employeeId: '',
         apiKeyId: '',
         config: {},
       };
