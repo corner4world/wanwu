@@ -665,6 +665,7 @@ export default {
       select: '选择文件',
       title: '供应商选择',
       providerName: '请输入供应商名称',
+      helpDoc: '模型导入教程',
     },
     hint: {
       urlError: 'URL格式不正确',
