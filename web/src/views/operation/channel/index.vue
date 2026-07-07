@@ -23,8 +23,8 @@
                 ]"
                 @click="form.channelType = item.value"
               >
-                <div class="channel-icon" :style="{ background: item.bgColor }">
-                  <i :class="item.icon" :style="{ color: item.iconColor }"></i>
+                <div class="channel-icon">
+                  <img :src="item.img" alt="" />
                 </div>
                 <span>{{ item.label }}</span>
               </div>
@@ -489,16 +489,12 @@ export default {
         {
           value: WECHAT,
           label: this.$t('channel.wechat'),
-          icon: 'el-icon-chat-dot-round',
-          bgColor: '#07C160',
-          iconColor: '#fff',
+          img: require('@/assets/imgs/wechat.png'),
         },
         {
           value: DING_TALK,
           label: this.$t('channel.dingtalk'),
-          icon: 'el-icon-message-solid',
-          bgColor: '#3385FF',
-          iconColor: '#fff',
+          img: require('@/assets/imgs/dingtalk.png'),
         },
       ],
       appTypeOptions: APP_TYPE_OPTIONS,
@@ -799,7 +795,6 @@ export default {
     }
 
     &.active .channel-icon {
-      ring: 2px solid var(--el-color-primary);
       box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
     }
 
@@ -817,8 +812,10 @@ export default {
     align-items: center;
     justify-content: center;
 
-    i {
-      font-size: 22px;
+    img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
     }
   }
 
