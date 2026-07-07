@@ -4,7 +4,7 @@ import { i18n } from '@/lang';
 export const WECHAT = 'wechat';
 export const DING_TALK = 'dingtalk';
 export const GENERAL_AGENT = 'wga';
-export const DIGITAL_EMPLOYEE = 'digital_employee';
+export const DIGITAL_EMPLOYEE = 'dip';
 
 export const APP_TYPE_OPTIONS = [
   { value: AGENT, label: i18n.t('channel.agent') },

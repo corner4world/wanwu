@@ -120,7 +120,7 @@ export const getSceneSelect = params => {
 // 获取数字员工下拉列表
 export const getEmployeeSelect = params => {
   return service({
-    url: `${USER_API}/channel/employee/select`,
+    url: `${USER_API}/general/agent/ontology/employee/select`,
     method: 'get',
     params,
   });
