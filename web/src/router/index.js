@@ -32,16 +32,6 @@ const constantRoutes = [
       require(['@/components/filePreview/DocPeview'], resolve),
   },
   {
-    path: '/pdf',
-    component: resolve =>
-      require(['@/components/filePreview/PdfPreview'], resolve),
-  },
-  {
-    path: '/pdfView',
-    component: resolve =>
-      require(['@/components/filePreview/pdfView'], resolve),
-  },
-  {
     path: '/txtView',
     component: resolve =>
       require(['@/components/filePreview/textView'], resolve),

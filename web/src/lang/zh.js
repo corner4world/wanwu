@@ -687,6 +687,7 @@ export default {
       select: '选择文件',
       title: '供应商选择',
       providerName: '请输入供应商名称',
+      helpDoc: '模型导入教程',
     },
     hint: {
       urlError: 'URL格式不正确',
@@ -2104,9 +2105,15 @@ export default {
     nameHint: '为该渠道起一个便于识别的名称',
     appType: '应用类型',
     agent: '智能体',
+    generalAgent: '通用智能体',
+    digitalEmployee: '数字员工',
     bindApp: '关联应用',
     bindAppPlaceholder: '请先选择应用类型',
+    bindModel: '关联模型',
+    bindScene: '关联场景',
+    bindDigitalEmployee: '关联数字员工',
     bindApiKey: '关联API Key',
+
     saveConfig: '保存配置',
     configuredList: '已配置渠道',
     searchPlaceholder: '搜索渠道名称',
@@ -2115,6 +2122,7 @@ export default {
     deleteConfirm: '确定要删除该渠道配置吗？删除后不可恢复，是否确认？',
     configEmpty: '请完成扫码后，再保存配置',
     table: {
+      channelType: '渠道类型',
       channel: '渠道',
       name: '渠道名称',
       switch: '开关',
@@ -2132,6 +2140,7 @@ export default {
     editDialog: {
       title: '编辑渠道配置',
     },
+    reScanBind: '重新扫码绑定',
     scanDialog: {
       wechatScanTitle: '微信扫码连接',
       dingtalkScanTitle: '钉钉扫码连接',
