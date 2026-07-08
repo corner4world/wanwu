@@ -62,12 +62,13 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Host        string `json:"host" mapstructure:"host"`
-	Port        int    `json:"port" mapstructure:"port"`
-	WebBaseUrl  string `json:"web_base_url" mapstructure:"web_base_url"`
-	ApiBaseUrl  string `json:"api_base_url" mapstructure:"api_base_url"`
-	AppOpenUrl  string `json:"app_open_base_url" mapstructure:"app_open_base_url"`
-	CallbackUrl string `json:"callback_url" mapstructure:"callback_url"`
+	Host         string `json:"host" mapstructure:"host"`
+	Port         int    `json:"port" mapstructure:"port"`
+	CallbackPort int    `json:"callback_port" mapstructure:"callback_port"`
+	WebBaseUrl   string `json:"web_base_url" mapstructure:"web_base_url"`
+	ApiBaseUrl   string `json:"api_base_url" mapstructure:"api_base_url"`
+	AppOpenUrl   string `json:"app_open_base_url" mapstructure:"app_open_base_url"`
+	CallbackUrl  string `json:"callback_url" mapstructure:"callback_url"`
 }
 
 type ServiceModelConfig struct {
