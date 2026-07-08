@@ -81,7 +81,7 @@ func (h *Handler) handleAgentMessage(ctx context.Context, ch *model.Channel, msg
 	apiKey := ch.ApiKey
 
 	// 获取或创建万悟会话 ID（同一用户同一通道复用同一会话，保持上下文记忆）
-	wanwuClient := wanwu.NewClient(h.cfg.BFF.BaseURL)
+	wanwuClient := wanwu.NewClient(h.cfg.BFF.ApiBaseUrl)
 	conversationID, ok := h.convManager.GetConversationID(msg.ChannelID, msg.UserID, "agent")
 	if !ok {
 		// 首次对话，创建会话
@@ -127,7 +127,7 @@ func (h *Handler) handleWGAMessage(ctx context.Context, ch *model.Channel, msg *
 	}
 
 	// 获取或创建 WGA 会话（threadId）
-	wanwuClient := wanwu.NewClient(h.cfg.BFF.BaseURL)
+	wanwuClient := wanwu.NewClient(h.cfg.BFF.ApiBaseUrl)
 	threadID, ok := h.convManager.GetConversationID(msg.ChannelID, msg.UserID, "wga")
 	if !ok {
 		// 首次对话，创建 WGA 会话
