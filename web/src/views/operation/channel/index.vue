@@ -152,10 +152,10 @@
           <el-form-item
             v-if="form.appType === DIGITAL_EMPLOYEE"
             :label="$t('channel.bindDigitalEmployee')"
-            prop="employeeId"
+            prop="agentId"
           >
             <el-select
-              v-model="form.employeeId"
+              v-model="form.agentId"
               :placeholder="$t('common.select.placeholder')"
               style="width: 100%"
               filterable
@@ -164,7 +164,7 @@
                 v-for="item in employeeList"
                 :key="item.id"
                 :label="item.name"
-                :value="item.id"
+                :value="item.name"
               />
             </el-select>
           </el-form-item>
@@ -239,21 +239,14 @@
         >
           <template slot-scope="scope">
             <div class="channel-cell">
-              <div
-                class="channel-icon-mini"
-                :style="{
-                  background: getChannelIcon(scope.row.channelType).bgColor,
-                }"
-              >
-                <i
-                  :class="getChannelIcon(scope.row.channelType).icon"
-                  :style="{
-                    color: getChannelIcon(scope.row.channelType).iconColor,
-                  }"
-                ></i>
+              <div class="channel-icon-mini">
+                <img
+                  :src="getCurrentChannel(scope.row.channelType).img"
+                  alt=""
+                />
               </div>
               <span>
-                {{ getChannelLabel(scope.row.channelType) }}
+                {{ getCurrentChannel(scope.row.channelType).label }}
               </span>
             </div>
           </template>
@@ -412,7 +405,6 @@ export default {
         appId: '',
         modelUuid: '',
         agentId: '',
-        employeeId: '',
         apiKeyId: '',
         config: {},
       },
@@ -464,13 +456,6 @@ export default {
           },
         ],
         agentId: [
-          {
-            required: true,
-            message: this.$t('common.select.placeholder'),
-            trigger: 'change',
-          },
-        ],
-        employeeId: [
           {
             required: true,
             message: this.$t('common.select.placeholder'),
@@ -546,7 +531,6 @@ export default {
       this.form.appId = '';
       this.form.modelUuid = '';
       this.form.agentId = '';
-      this.form.employeeId = '';
       if (newVal === AGENT) {
         this.fetchAppList();
       } else if (newVal === GENERAL_AGENT || newVal === DIGITAL_EMPLOYEE) {
@@ -559,12 +543,7 @@ export default {
         this.fetchEmployeeList();
       }
       this.$nextTick(() => {
-        this.$refs.formRef.clearValidate([
-          'appId',
-          'modelUuid',
-          'agentId',
-          'employeeId',
-        ]);
+        this.$refs.formRef.clearValidate(['appId', 'modelUuid', 'agentId']);
       });
     },
     async fetchAppList() {
@@ -599,12 +578,7 @@ export default {
       if (value.appType === AGENT) {
         delete value.modelUuid;
         delete value.agentId;
-        delete value.employeeId;
-      } else if (value.appType === GENERAL_AGENT) {
-        delete value.employeeId;
-        delete value.appId;
-      } else if (value.appType === DIGITAL_EMPLOYEE) {
-        delete value.agentId;
+      } else if ([GENERAL_AGENT, DIGITAL_EMPLOYEE].includes(value.appType)) {
         delete value.appId;
       }
       return value;
@@ -638,7 +612,6 @@ export default {
         appId: '',
         modelUuid: '',
         agentId: '',
-        employeeId: '',
         apiKeyId: '',
         config: {},
       };
@@ -692,27 +665,9 @@ export default {
         this.fetchTableData();
       });
     },
-    getChannelIcon(channelType) {
-      const map = {
-        [WECHAT]: {
-          icon: 'el-icon-chat-dot-round',
-          bgColor: '#07C160',
-          iconColor: '#fff',
-        },
-        [DING_TALK]: {
-          icon: 'el-icon-message-solid',
-          bgColor: '#3385FF',
-          iconColor: '#fff',
-        },
-      };
-      return map[channelType] || map[WECHAT];
-    },
-    getChannelLabel(channelType) {
-      const map = {
-        [WECHAT]: this.$t('channel.wechat'),
-        [DING_TALK]: this.$t('channel.dingtalk'),
-      };
-      return map[channelType] || '';
+    getCurrentChannel(channelType) {
+      const type = channelType || WECHAT;
+      return this.channelTypeOptions.find(item => item.value === type) || {};
     },
     parseStatusTags(row) {
       const statusMap = {
@@ -868,15 +823,17 @@ export default {
   }
 
   .channel-icon-mini {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
 
-    i {
-      font-size: 14px;
+    img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
     }
   }
 

@@ -114,10 +114,10 @@
       <el-form-item
         v-if="form.appType === DIGITAL_EMPLOYEE"
         :label="$t('channel.bindDigitalEmployee')"
-        prop="employeeId"
+        prop="agentId"
       >
         <el-select
-          v-model="form.employeeId"
+          v-model="form.agentId"
           :placeholder="$t('common.select.placeholder')"
           filterable
           style="width: 100%"
@@ -126,7 +126,7 @@
             v-for="item in employeeList"
             :key="item.id"
             :label="item.name"
-            :value="item.id"
+            :value="item.name"
           />
         </el-select>
       </el-form-item>
@@ -209,7 +209,6 @@ export default {
         appId: '',
         modelUuid: '',
         agentId: '',
-        employeeId: '',
         apiKeyId: '',
         config: {},
       },
@@ -261,13 +260,6 @@ export default {
           },
         ],
         agentId: [
-          {
-            required: true,
-            message: this.$t('common.select.placeholder'),
-            trigger: 'change',
-          },
-        ],
-        employeeId: [
           {
             required: true,
             message: this.$t('common.select.placeholder'),
@@ -353,12 +345,7 @@ export default {
       if (value.appType === AGENT) {
         delete value.modelUuid;
         delete value.agentId;
-        delete value.employeeId;
-      } else if (value.appType === GENERAL_AGENT) {
-        delete value.employeeId;
-        delete value.appId;
-      } else if (value.appType === DIGITAL_EMPLOYEE) {
-        delete value.agentId;
+      } else if ([GENERAL_AGENT, DIGITAL_EMPLOYEE].includes(value.appType)) {
         delete value.appId;
       }
       return value;
@@ -383,7 +370,6 @@ export default {
       this.form.appId = '';
       this.form.modelUuid = '';
       this.form.agentId = '';
-      this.form.employeeId = '';
       if (newVal === AGENT) {
         this.fetchAppList();
       } else if (newVal === GENERAL_AGENT || newVal === DIGITAL_EMPLOYEE) {
