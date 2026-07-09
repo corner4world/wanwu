@@ -38,10 +38,15 @@
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button @click="handleClose">
+        <el-button size="small" @click="handleClose">
           {{ $t('common.button.cancel') }}
         </el-button>
-        <el-button :loading="uploading" type="primary" @click="handleSubmit">
+        <el-button
+          size="small"
+          :loading="uploading"
+          type="primary"
+          @click="handleSubmit"
+        >
           {{ $t('common.button.confirm') }}
         </el-button>
       </span>
@@ -87,6 +92,12 @@ import Pagination from '@/components/pagination.vue';
 import { batchCreateUser } from '@/api/permission/user';
 export default {
   components: { Pagination },
+  props: {
+    orgId: {
+      type: String,
+      default: '',
+    },
+  },
   data() {
     return {
       dialogVisible: false,
@@ -138,6 +149,7 @@ export default {
           for (let key in this.uploadForm) {
             formData.append(key, this.uploadForm[key]);
           }
+          formData.append('orgId', this.orgId);
           this.uploading = true;
           batchCreateUser(formData, config)
             .then(res => {
