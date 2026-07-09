@@ -82,6 +82,7 @@ import { mapGetters } from 'vuex';
 import {
   getAgentPublishedInfo,
   getOpenurlInfo,
+  getOpenurlAgentLlm,
   OpenurlConverList,
   getConversationlist,
 } from '@/api/agent';
@@ -312,6 +313,9 @@ export default {
       return config;
     },
     async getModelData() {
+      if (this.chatType === 'webChat') {
+        return this.getOpenurlModelData();
+      }
       try {
         const res = await selectModelList();
         if (res.code === 0) {
@@ -320,6 +324,27 @@ export default {
         }
       } catch (error) {
         console.warn('[agent chat] get model list failed', error);
+      }
+    },
+    async getOpenurlModelData() {
+      try {
+        const config = this.headerConfig();
+        const res = await getOpenurlAgentLlm(this.assistantId, config);
+        if (res.code === 0) {
+          const modelConfig = res.data?.modelConfig || res.data || {};
+          this.modelOptions = Object.keys(modelConfig).length
+            ? [modelConfig]
+            : [];
+          this.$set(this.editForm, 'modelConfig', {
+            ...(this.editForm.modelConfig || {}),
+            ...modelConfig,
+            fullConfig: modelConfig.config || {},
+          });
+        }
+        return res;
+      } catch (error) {
+        console.warn('[agent webChat] get openurl llm config failed', error);
+        return null;
       }
     },
     applyModelFullConfig() {
