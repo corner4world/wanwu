@@ -6558,7 +6558,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "setting"
+                    "admin_center.setting"
                 ],
                 "summary": "通用智能体自定义配置",
                 "parameters": [
@@ -6597,7 +6597,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "setting"
+                    "admin_center.setting"
                 ],
                 "summary": "平台自定义配置",
                 "parameters": [
@@ -6636,7 +6636,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "setting"
+                    "admin_center.setting"
                 ],
                 "summary": "登录页自定义配置",
                 "parameters": [
@@ -6675,7 +6675,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "setting"
+                    "admin_center.setting"
                 ],
                 "summary": "标签页自定义配置",
                 "parameters": [
@@ -14875,7 +14875,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "oauth"
+                    "admin_center.oauth"
                 ],
                 "summary": "更新OAuth应用",
                 "parameters": [
@@ -14912,7 +14912,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "oauth"
+                    "admin_center.oauth"
                 ],
                 "summary": "创建OAuth应用",
                 "parameters": [
@@ -14949,7 +14949,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "oauth"
+                    "admin_center.oauth"
                 ],
                 "summary": "删除OAuth应用",
                 "parameters": [
@@ -14988,7 +14988,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "oauth"
+                    "admin_center.oauth"
                 ],
                 "summary": "获取OAuth应用列表",
                 "parameters": [
@@ -15065,7 +15065,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "oauth"
+                    "admin_center.oauth"
                 ],
                 "summary": "更新OAuth应用状态",
                 "parameters": [
@@ -15172,7 +15172,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.org"
+                    "admin_center"
                 ],
                 "summary": "编辑下级组织",
                 "parameters": [
@@ -15201,7 +15201,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "创建X-Org-Id组织的下级组织",
+                "description": "创建指定组织的下级组织",
                 "consumes": [
                     "application/json"
                 ],
@@ -15209,7 +15209,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.org"
+                    "admin_center"
                 ],
                 "summary": "创建下级组织",
                 "parameters": [
@@ -15257,7 +15257,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.org"
+                    "admin_center"
                 ],
                 "summary": "删除下级组织",
                 "parameters": [
@@ -15295,7 +15295,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.org"
+                    "admin_center"
                 ],
                 "summary": "获取组织信息",
                 "parameters": [
@@ -15344,7 +15344,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.org"
+                    "admin_center"
                 ],
                 "summary": "获取下级组织列表",
                 "parameters": [
@@ -15353,6 +15353,13 @@ const docTemplate = `{
                         "description": "组织名(模糊查询)",
                         "name": "name",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "integer",
@@ -15421,7 +15428,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "获取不在组织中用户列表（用于下拉选择）",
                 "parameters": [
@@ -15430,6 +15437,13 @@ const docTemplate = `{
                         "description": "用户名(模糊查询)",
                         "name": "name",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -15507,7 +15521,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.org"
+                    "admin_center"
                 ],
                 "summary": "修改下级组织状态",
                 "parameters": [
@@ -15531,14 +15545,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/org/user": {
-            "post": {
+        "/org/tree": {
+            "get": {
                 "security": [
                     {
                         "JWT": []
                     }
                 ],
-                "description": "增加X-Org-Id组织的用户",
+                "description": "返回当前用户具有组织管理员角色的组织及其下级所有组织的树形结构",
                 "consumes": [
                     "application/json"
                 ],
@@ -15546,7 +15560,47 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
+                ],
+                "summary": "获取管理员组织及下级组织列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.AdminOrgTreeNode"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/org/user": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "增加指定组织的用户",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin_center"
                 ],
                 "summary": "邀请用户加入组织",
                 "parameters": [
@@ -16225,7 +16279,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "编辑X-Org-Id组织的角色",
+                "description": "编辑角色（区分全局和组织角色）",
                 "consumes": [
                     "application/json"
                 ],
@@ -16233,7 +16287,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.role"
+                    "admin_center"
                 ],
                 "summary": "编辑角色",
                 "parameters": [
@@ -16262,7 +16316,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "创建X-Org-Id组织的角色",
+                "description": "创建角色（全局角色或组织角色）",
                 "consumes": [
                     "application/json"
                 ],
@@ -16270,7 +16324,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.role"
+                    "admin_center"
                 ],
                 "summary": "创建角色",
                 "parameters": [
@@ -16311,7 +16365,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "删除X-Org-Id组织的角色",
+                "description": "删除角色（roleId全局唯一，无需传orgId）",
                 "consumes": [
                     "application/json"
                 ],
@@ -16319,7 +16373,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.role"
+                    "admin_center"
                 ],
                 "summary": "删除角色",
                 "parameters": [
@@ -16329,7 +16383,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.RoleID"
+                            "$ref": "#/definitions/request.RoleDelete"
                         }
                     }
                 ],
@@ -16350,7 +16404,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "获取X-Org-Id组织的角色信息",
+                "description": "获取指定角色信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -16358,7 +16412,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.role"
+                    "admin_center"
                 ],
                 "summary": "获取角色信息",
                 "parameters": [
@@ -16366,6 +16420,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "角色ID",
                         "name": "roleId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
                         "in": "query",
                         "required": true
                     }
@@ -16399,7 +16460,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "获取X-Org-Id组织的角色列表",
+                "description": "获取指定组织的角色列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -16407,7 +16468,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.role"
+                    "admin_center"
                 ],
                 "summary": "获取角色列表",
                 "parameters": [
@@ -16418,16 +16479,9 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "页面编号，从1开始",
-                        "name": "pageNo",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "单页数量，从1开始",
-                        "name": "pageSize",
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
                         "in": "query",
                         "required": true
                     }
@@ -16446,7 +16500,7 @@ const docTemplate = `{
                                         "data": {
                                             "allOf": [
                                                 {
-                                                    "$ref": "#/definitions/response.PageResult"
+                                                    "$ref": "#/definitions/response.ListResult"
                                                 },
                                                 {
                                                     "type": "object",
@@ -16476,7 +16530,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "获取X-Org-Id组织的角色列表",
+                "description": "获取指定组织的角色列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -16484,9 +16538,18 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "获取组织角色列表（用于下拉选择）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -16516,7 +16579,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "修改X-Org-Id组织的角色状态",
+                "description": "修改指定组织的指定角色的角色状态",
                 "consumes": [
                     "application/json"
                 ],
@@ -16524,7 +16587,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.role"
+                    "admin_center"
                 ],
                 "summary": "修改角色状态",
                 "parameters": [
@@ -16563,9 +16626,18 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.role"
+                    "admin_center"
                 ],
                 "summary": "获取角色模板（用于创建角色）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -16579,6 +16651,136 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.RoleTemplate"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/role/user": {
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "移除指定用户的指定角色关联",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin_center"
+                ],
+                "summary": "移除角色关联用户",
+                "parameters": [
+                    {
+                        "description": "角色用户信息",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.RoleUserRemove"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/role/users": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取指定角色关联的用户信息（用户名、电话、所在组织）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin_center"
+                ],
+                "summary": "获取角色关联用户列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "角色ID",
+                        "name": "roleId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户名模糊搜索",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页面编号，从1开始",
+                        "name": "pageNo",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "单页数量，从1开始",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.RoleUser"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -19198,7 +19400,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "编辑用户",
                 "parameters": [
@@ -19235,7 +19437,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "创建用户",
                 "parameters": [
@@ -19284,7 +19486,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "删除用户",
                 "parameters": [
@@ -19294,7 +19496,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.UserID"
+                            "$ref": "#/definitions/request.UserDelete"
                         }
                     }
                 ],
@@ -19322,7 +19524,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "重置用户密码（by 管理员）",
                 "parameters": [
@@ -19400,10 +19602,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "批量导入用户",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
+                        "in": "query",
+                        "required": true
+                    },
                     {
                         "type": "file",
                         "description": "用户Excel文件",
@@ -19451,6 +19660,15 @@ const docTemplate = `{
                     "common"
                 ],
                 "summary": "获取用户信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -19480,7 +19698,7 @@ const docTemplate = `{
                         "JWT": []
                     }
                 ],
-                "description": "获取X-Org-Id组织的用户列表；在系统视角下获取系统内全部用户列表",
+                "description": "获取X-Org-Id组织的用户列表；在系统视角下获取系统内全部用户列表；name同时模糊匹配用户名和邮箱",
                 "consumes": [
                     "application/json"
                 ],
@@ -19488,14 +19706,27 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "获取用户列表",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "用户名(模糊查询)",
+                        "description": "用户名或邮箱(模糊查询)",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "组织ID",
+                        "name": "orgId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "角色ID(逗号分隔)",
+                        "name": "roleIds",
                         "in": "query"
                     },
                     {
@@ -19709,7 +19940,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "修改用户密码（by 个人）",
                 "parameters": [
@@ -19786,7 +20017,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "permission.user"
+                    "admin_center"
                 ],
                 "summary": "修改用户状态",
                 "parameters": [
@@ -26220,11 +26451,24 @@ const docTemplate = `{
         "request.OrgCreate": {
             "type": "object",
             "required": [
-                "name"
+                "name",
+                "orgId"
             ],
             "properties": {
+                "avatar": {
+                    "description": "组织头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
                 "name": {
                     "description": "组织名",
+                    "type": "string"
+                },
+                "orgId": {
+                    "description": "组织ID",
                     "type": "string"
                 },
                 "remark": {
@@ -26267,6 +26511,14 @@ const docTemplate = `{
                 "orgId"
             ],
             "properties": {
+                "avatar": {
+                    "description": "组织头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
                 "name": {
                     "description": "组织名",
                     "type": "string"
@@ -26284,9 +26536,14 @@ const docTemplate = `{
         "request.OrgUserAdd": {
             "type": "object",
             "required": [
+                "orgId",
                 "userId"
             ],
             "properties": {
+                "orgId": {
+                    "description": "组织ID",
+                    "type": "string"
+                },
                 "roleId": {
                     "type": "string"
                 },
@@ -26700,8 +26957,24 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "avatar": {
+                    "description": "角色头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "isGlobal": {
+                    "description": "是否全局角色",
+                    "type": "boolean"
+                },
                 "name": {
                     "description": "角色名",
+                    "type": "string"
+                },
+                "orgId": {
+                    "description": "组织ID",
                     "type": "string"
                 },
                 "permissions": {
@@ -26717,12 +26990,17 @@ const docTemplate = `{
                 }
             }
         },
-        "request.RoleID": {
+        "request.RoleDelete": {
             "type": "object",
             "required": [
+                "orgId",
                 "roleId"
             ],
             "properties": {
+                "orgId": {
+                    "description": "组织ID",
+                    "type": "string"
+                },
                 "roleId": {
                     "description": "角色ID",
                     "type": "string"
@@ -26732,9 +27010,14 @@ const docTemplate = `{
         "request.RoleStatus": {
             "type": "object",
             "required": [
+                "orgId",
                 "roleId"
             ],
             "properties": {
+                "orgId": {
+                    "description": "组织ID",
+                    "type": "string"
+                },
                 "roleId": {
                     "description": "角色ID",
                     "type": "string"
@@ -26751,8 +27034,24 @@ const docTemplate = `{
                 "roleId"
             ],
             "properties": {
+                "avatar": {
+                    "description": "角色头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "isGlobal": {
+                    "description": "是否全局角色",
+                    "type": "boolean"
+                },
                 "name": {
                     "description": "角色名",
+                    "type": "string"
+                },
+                "orgId": {
+                    "description": "组织ID",
                     "type": "string"
                 },
                 "permissions": {
@@ -26767,6 +27066,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "roleId": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.RoleUserRemove": {
+            "type": "object",
+            "required": [
+                "orgId",
+                "roleId",
+                "userId"
+            ],
+            "properties": {
+                "orgId": {
+                    "description": "组织ID",
+                    "type": "string"
+                },
+                "roleId": {
+                    "description": "角色ID",
+                    "type": "string"
+                },
+                "userId": {
+                    "description": "用户ID",
                     "type": "string"
                 }
             }
@@ -27580,27 +27901,23 @@ const docTemplate = `{
             "required": [
                 "cipher",
                 "keyId",
-                "username"
+                "orgId",
+                "userName"
             ],
             "properties": {
                 "cipher": {
                     "description": "RSA加密后的Base64字符串，包含{password, challenge}",
                     "type": "string"
                 },
-                "company": {
-                    "description": "公司",
-                    "type": "string"
-                },
-                "gender": {
-                    "description": "性别（0-女，1-男，空-未知）",
+                "email": {
+                    "description": "邮箱",
                     "type": "string"
                 },
                 "keyId": {
                     "description": "RSA公钥ID",
                     "type": "string"
                 },
-                "nickname": {
-                    "description": "昵称",
+                "orgId": {
                     "type": "string"
                 },
                 "phone": {
@@ -27619,18 +27936,23 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "username": {
+                "userName": {
                     "description": "用户名",
                     "type": "string"
                 }
             }
         },
-        "request.UserID": {
+        "request.UserDelete": {
             "type": "object",
             "required": [
+                "orgId",
                 "userId"
             ],
             "properties": {
+                "orgId": {
+                    "description": "组织ID",
+                    "type": "string"
+                },
                 "userId": {
                     "description": "用户ID",
                     "type": "string"
@@ -27669,6 +27991,7 @@ const docTemplate = `{
             "required": [
                 "cipher",
                 "keyId",
+                "orgId",
                 "userId"
             ],
             "properties": {
@@ -27680,6 +28003,10 @@ const docTemplate = `{
                     "description": "RSA公钥ID",
                     "type": "string"
                 },
+                "orgId": {
+                    "description": "组织ID",
+                    "type": "string"
+                },
                 "userId": {
                     "description": "用户ID",
                     "type": "string"
@@ -27689,9 +28016,14 @@ const docTemplate = `{
         "request.UserStatus": {
             "type": "object",
             "required": [
+                "orgId",
                 "userId"
             ],
             "properties": {
+                "orgId": {
+                    "description": "组织ID",
+                    "type": "string"
+                },
                 "status": {
                     "type": "boolean"
                 },
@@ -27706,27 +28038,25 @@ const docTemplate = `{
             "required": [
                 "cipher",
                 "keyId",
-                "userId"
+                "orgId",
+                "userId",
+                "userName"
             ],
             "properties": {
                 "cipher": {
                     "description": "RSA加密后的Base64字符串，包含{password, challenge}",
                     "type": "string"
                 },
-                "company": {
-                    "description": "公司",
-                    "type": "string"
-                },
-                "gender": {
-                    "description": "性别（0-女，1-男，空-未知）",
+                "email": {
+                    "description": "邮箱",
                     "type": "string"
                 },
                 "keyId": {
                     "description": "RSA公钥ID",
                     "type": "string"
                 },
-                "nickname": {
-                    "description": "昵称",
+                "orgId": {
+                    "description": "组织ID",
                     "type": "string"
                 },
                 "phone": {
@@ -27747,6 +28077,10 @@ const docTemplate = `{
                 },
                 "userId": {
                     "description": "用户ID",
+                    "type": "string"
+                },
+                "userName": {
+                    "description": "用户名",
                     "type": "string"
                 }
             }
@@ -28027,6 +28361,30 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "skillId": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.AdminOrgTreeNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AdminOrgTreeNode"
+                    }
+                },
+                "hasPerm": {
+                    "type": "boolean"
+                },
+                "isSystem": {
+                    "description": "是否系统（顶级）组织",
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "orgId": {
                     "type": "string"
                 }
             }
@@ -32789,6 +33147,15 @@ const docTemplate = `{
         "response.OrgInfo": {
             "type": "object",
             "properties": {
+                "admins": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -32806,6 +33173,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "boolean"
+                },
+                "userCount": {
+                    "type": "integer"
                 }
             }
         },
@@ -32824,7 +33194,7 @@ const docTemplate = `{
                     "description": "角色列表",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.RoleIDName"
                     }
                 }
             }
@@ -33358,9 +33728,32 @@ const docTemplate = `{
                 }
             }
         },
+        "response.RoleIDName": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "isGlobal": {
+                    "description": "是否全局角色",
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "response.RoleInfo": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "description": "角色头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -33371,7 +33764,15 @@ const docTemplate = `{
                     "description": "是否组织内置管理员角色",
                     "type": "boolean"
                 },
+                "isGlobal": {
+                    "description": "是否全局角色",
+                    "type": "boolean"
+                },
                 "name": {
+                    "type": "string"
+                },
+                "orgName": {
+                    "description": "角色所属组织名（全局角色为空，组织角色为所属组织全名）",
                     "type": "string"
                 },
                 "permissions": {
@@ -33396,6 +33797,10 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "boolean"
+                },
+                "userCount": {
+                    "description": "被赋予该角色的用户数量",
+                    "type": "integer"
                 }
             }
         },
@@ -33408,6 +33813,37 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/response.Route"
                     }
+                }
+            }
+        },
+        "response.RoleUser": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "description": "用户头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "email": {
+                    "type": "string"
+                },
+                "orgs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.IDName"
+                    }
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "userName": {
+                    "type": "string"
                 }
             }
         },
@@ -34444,9 +34880,6 @@ const docTemplate = `{
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
                 },
-                "company": {
-                    "type": "string"
-                },
                 "createdAt": {
                     "type": "string"
                 },
@@ -34461,14 +34894,8 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "gender": {
-                    "type": "string"
-                },
                 "language": {
                     "$ref": "#/definitions/response.Language"
-                },
-                "nickname": {
-                    "type": "string"
                 },
                 "orgs": {
                     "description": "用户的组织角色列表",
@@ -34478,9 +34905,6 @@ const docTemplate = `{
                     }
                 },
                 "phone": {
-                    "type": "string"
-                },
-                "remark": {
                     "type": "string"
                 },
                 "status": {
@@ -34524,7 +34948,7 @@ const docTemplate = `{
                     "description": "角色列表",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.RoleIDName"
                     }
                 }
             }
@@ -34534,9 +34958,6 @@ const docTemplate = `{
             "properties": {
                 "avatar": {
                     "$ref": "#/definitions/request.Avatar"
-                },
-                "company": {
-                    "type": "string"
                 },
                 "createdAt": {
                     "type": "string"
@@ -34552,18 +34973,12 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "gender": {
-                    "type": "string"
-                },
                 "isUpdatePassword": {
                     "description": "是否已更新密码",
                     "type": "boolean"
                 },
                 "language": {
                     "$ref": "#/definitions/response.Language"
-                },
-                "nickname": {
-                    "type": "string"
                 },
                 "orgPermission": {
                     "description": "用户所在组织权限",
@@ -34581,9 +34996,6 @@ const docTemplate = `{
                     }
                 },
                 "phone": {
-                    "type": "string"
-                },
-                "remark": {
                     "type": "string"
                 },
                 "status": {
