@@ -9,7 +9,7 @@ import (
 func Init(r *gin.Engine) {
 
 	mid.InitWrapper([]gin.HandlerFunc{Record}, []gin.HandlerFunc{TraceUser})
-	r.Use(CacheAvatar())
+	r.Use(CacheAvatar)
 
 	// --- openapi ---
 	mid.NewSub("openapi", "对外提供原子能力", route.PermNone, false, false)
