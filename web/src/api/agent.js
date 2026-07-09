@@ -544,3 +544,13 @@ export const cancelOpenurlAgentStream = (suffix, data, config) => {
     isOpenUrl: true,
   });
 };
+
+// 获取智能体openurl模型配置
+export const getOpenurlAgentLlm = (suffix, config = {}) => {
+  return service({
+    url: `${OPENURL_API}/agent/${suffix}/llm`,
+    method: 'get',
+    ...config,
+    isOpenUrl: true,
+  });
+};
