@@ -1426,6 +1426,8 @@ definitions:
         type: string
       title:
         type: string
+      updatedAt:
+        type: string
     type: object
   response.ConversationResponse:
     properties:
@@ -1709,6 +1711,16 @@ paths:
         name: suffix
         required: true
         type: string
+      - description: 页码
+        in: query
+        name: pageNo
+        required: true
+        type: integer
+      - description: 每页数量
+        in: query
+        name: pageSize
+        required: true
+        type: integer
       produces:
       - application/json
       responses:
