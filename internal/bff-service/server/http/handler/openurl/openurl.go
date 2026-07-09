@@ -29,6 +29,23 @@ func GetUrlAgentDetail(ctx *gin.Context) {
 	gin_util.Response(ctx, resp, err)
 }
 
+// GetUrlAgentLLM
+//
+//	@Tags			openurl
+//	@Summary		智能体模型配置
+//	@Description	智能体模型配置
+//	@Security		JWT
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-Client-ID				header		string	true	"临时唯一标识"
+//	@Param			suffix					path		string	true	"Url后缀"
+//	@Success		200						{object}	response.Response{data=response.ModelInfo}
+//	@Router			/agent/{suffix}/llm 	[get]
+func GetUrlAgentLLM(ctx *gin.Context) {
+	resp, err := service.GetAppUrlModel(ctx, ctx.Param("suffix"))
+	gin_util.Response(ctx, resp, err)
+}
+
 // UrlConversationCreate
 //
 //	@Tags			openurl
