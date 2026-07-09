@@ -117,14 +117,14 @@ func GetAppUrlModel(ctx *gin.Context, suffix string) (*response.ModelInfo, error
 	})
 }
 
-func GetUrlConversationList(ctx *gin.Context, xCId, suffix string) (*response.ListResult, error) {
+func GetUrlConversationList(ctx *gin.Context, xCId, suffix string, req request.GetUrlConversationListReq) (*response.ListResult, error) {
 	appUrlInfo, err := getAppUrlInfoAndCheck(ctx, suffix)
 	if err != nil {
 		return nil, err
 	}
 	resp, err := assistant.GetConversationList(ctx.Request.Context(), &assistant_service.GetConversationListReq{
-		PageSize:         1000,
-		PageNo:           1,
+		PageSize:         int32(req.PageSize),
+		PageNo:           int32(req.PageNo),
 		ConversationType: constant.ConversationTypeWebURL,
 		Identity: &assistant_service.Identity{
 			UserId: xCId,
