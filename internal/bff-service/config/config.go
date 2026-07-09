@@ -388,6 +388,10 @@ type DefaultIconConfig struct {
 	QAIcon           string `json:"qa" mapstructure:"qa"`
 	ModelIcon        string `json:"model" mapstructure:"model"`
 	GeneralAgentIcon string `json:"generalAgent" mapstructure:"generalAgent"`
+	OrgIcon          string `json:"org" mapstructure:"org"`
+	RoleIcon         string `json:"role" mapstructure:"role"`
+	SystemIcon       string `json:"system" mapstructure:"system"`
+	AdminIcon        string `json:"admin" mapstructure:"admin"`
 }
 
 func LoadConfig(in string) error {

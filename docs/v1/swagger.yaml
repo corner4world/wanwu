@@ -4004,14 +4004,22 @@ definitions:
     type: object
   request.OrgCreate:
     properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 组织头像
       name:
         description: 组织名
+        type: string
+      orgId:
+        description: 组织ID
         type: string
       remark:
         description: 备注
         type: string
     required:
     - name
+    - orgId
     type: object
   request.OrgID:
     properties:
@@ -4033,6 +4041,10 @@ definitions:
     type: object
   request.OrgUpdate:
     properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 组织头像
       name:
         description: 组织名
         type: string
@@ -4048,12 +4060,16 @@ definitions:
     type: object
   request.OrgUserAdd:
     properties:
+      orgId:
+        description: 组织ID
+        type: string
       roleId:
         type: string
       userId:
         description: 用户ID
         type: string
     required:
+    - orgId
     - userId
     type: object
   request.PendingConversionRequest:
@@ -4321,8 +4337,18 @@ definitions:
     type: object
   request.RoleCreate:
     properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 角色头像
+      isGlobal:
+        description: 是否全局角色
+        type: boolean
       name:
         description: 角色名
+        type: string
+      orgId:
+        description: 组织ID
         type: string
       permissions:
         description: 权限列表
@@ -4335,28 +4361,46 @@ definitions:
     required:
     - name
     type: object
-  request.RoleID:
+  request.RoleDelete:
     properties:
+      orgId:
+        description: 组织ID
+        type: string
       roleId:
         description: 角色ID
         type: string
     required:
+    - orgId
     - roleId
     type: object
   request.RoleStatus:
     properties:
+      orgId:
+        description: 组织ID
+        type: string
       roleId:
         description: 角色ID
         type: string
       status:
         type: boolean
     required:
+    - orgId
     - roleId
     type: object
   request.RoleUpdate:
     properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 角色头像
+      isGlobal:
+        description: 是否全局角色
+        type: boolean
       name:
         description: 角色名
+        type: string
+      orgId:
+        description: 组织ID
         type: string
       permissions:
         description: 权限列表
@@ -4371,6 +4415,22 @@ definitions:
     required:
     - name
     - roleId
+    type: object
+  request.RoleUserRemove:
+    properties:
+      orgId:
+        description: 组织ID
+        type: string
+      roleId:
+        description: 角色ID
+        type: string
+      userId:
+        description: 用户ID
+        type: string
+    required:
+    - orgId
+    - roleId
+    - userId
     type: object
   request.RollbackAppVersionRequest:
     properties:
@@ -4930,17 +4990,13 @@ definitions:
       cipher:
         description: RSA加密后的Base64字符串，包含{password, challenge}
         type: string
-      company:
-        description: 公司
-        type: string
-      gender:
-        description: 性别（0-女，1-男，空-未知）
+      email:
+        description: 邮箱
         type: string
       keyId:
         description: RSA公钥ID
         type: string
-      nickname:
-        description: 昵称
+      orgId:
         type: string
       phone:
         description: 电话
@@ -4954,20 +5010,25 @@ definitions:
           type: string
         maxItems: 1
         type: array
-      username:
+      userName:
         description: 用户名
         type: string
     required:
     - cipher
     - keyId
-    - username
+    - orgId
+    - userName
     type: object
-  request.UserID:
+  request.UserDelete:
     properties:
+      orgId:
+        description: 组织ID
+        type: string
       userId:
         description: 用户ID
         type: string
     required:
+    - orgId
     - userId
     type: object
   request.UserPassword:
@@ -4998,22 +5059,30 @@ definitions:
       keyId:
         description: RSA公钥ID
         type: string
+      orgId:
+        description: 组织ID
+        type: string
       userId:
         description: 用户ID
         type: string
     required:
     - cipher
     - keyId
+    - orgId
     - userId
     type: object
   request.UserStatus:
     properties:
+      orgId:
+        description: 组织ID
+        type: string
       status:
         type: boolean
       userId:
         description: 用户ID
         type: string
     required:
+    - orgId
     - userId
     type: object
   request.UserUpdate:
@@ -5021,17 +5090,14 @@ definitions:
       cipher:
         description: RSA加密后的Base64字符串，包含{password, challenge}
         type: string
-      company:
-        description: 公司
-        type: string
-      gender:
-        description: 性别（0-女，1-男，空-未知）
+      email:
+        description: 邮箱
         type: string
       keyId:
         description: RSA公钥ID
         type: string
-      nickname:
-        description: 昵称
+      orgId:
+        description: 组织ID
         type: string
       phone:
         description: 电话
@@ -5048,10 +5114,15 @@ definitions:
       userId:
         description: 用户ID
         type: string
+      userName:
+        description: 用户名
+        type: string
     required:
     - cipher
     - keyId
+    - orgId
     - userId
+    - userName
     type: object
   request.VisionConfig:
     properties:
@@ -5237,6 +5308,22 @@ definitions:
       name:
         type: string
       skillId:
+        type: string
+    type: object
+  response.AdminOrgTreeNode:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/response.AdminOrgTreeNode'
+        type: array
+      hasPerm:
+        type: boolean
+      isSystem:
+        description: 是否系统（顶级）组织
+        type: boolean
+      name:
+        type: string
+      orgId:
         type: string
     type: object
   response.AgentFileMeta:
@@ -8411,6 +8498,12 @@ definitions:
     type: object
   response.OrgInfo:
     properties:
+      admins:
+        items:
+          type: string
+        type: array
+      avatar:
+        $ref: '#/definitions/request.Avatar'
       createdAt:
         type: string
       creator:
@@ -8423,6 +8516,8 @@ definitions:
         type: string
       status:
         type: boolean
+      userCount:
+        type: integer
     type: object
   response.OrgRole:
     properties:
@@ -8433,7 +8528,7 @@ definitions:
       roles:
         description: 角色列表
         items:
-          $ref: '#/definitions/response.IDName'
+          $ref: '#/definitions/response.RoleIDName'
         type: array
     type: object
   response.PageResult:
@@ -8775,8 +8870,22 @@ definitions:
       roleId:
         type: string
     type: object
+  response.RoleIDName:
+    properties:
+      id:
+        type: string
+      isGlobal:
+        description: 是否全局角色
+        type: boolean
+      name:
+        type: string
+    type: object
   response.RoleInfo:
     properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 角色头像
       createdAt:
         type: string
       creator:
@@ -8784,7 +8893,13 @@ definitions:
       isAdmin:
         description: 是否组织内置管理员角色
         type: boolean
+      isGlobal:
+        description: 是否全局角色
+        type: boolean
       name:
+        type: string
+      orgName:
+        description: 角色所属组织名（全局角色为空，组织角色为所属组织全名）
         type: string
       permissions:
         description: 权限列表
@@ -8802,6 +8917,9 @@ definitions:
         type: array
       status:
         type: boolean
+      userCount:
+        description: 被赋予该角色的用户数量
+        type: integer
     type: object
   response.RoleTemplate:
     properties:
@@ -8810,6 +8928,25 @@ definitions:
         items:
           $ref: '#/definitions/response.Route'
         type: array
+    type: object
+  response.RoleUser:
+    properties:
+      avatar:
+        allOf:
+        - $ref: '#/definitions/request.Avatar'
+        description: 用户头像
+      email:
+        type: string
+      orgs:
+        items:
+          $ref: '#/definitions/response.IDName'
+        type: array
+      phone:
+        type: string
+      userId:
+        type: string
+      userName:
+        type: string
     type: object
   response.Route:
     properties:
@@ -9507,8 +9644,6 @@ definitions:
     properties:
       avatar:
         $ref: '#/definitions/request.Avatar'
-      company:
-        type: string
       createdAt:
         type: string
       creator:
@@ -9517,20 +9652,14 @@ definitions:
         description: 创建人
       email:
         type: string
-      gender:
-        type: string
       language:
         $ref: '#/definitions/response.Language'
-      nickname:
-        type: string
       orgs:
         description: 用户的组织角色列表
         items:
           $ref: '#/definitions/response.OrgRole'
         type: array
       phone:
-        type: string
-      remark:
         type: string
       status:
         type: boolean
@@ -9559,15 +9688,13 @@ definitions:
       roles:
         description: 角色列表
         items:
-          $ref: '#/definitions/response.IDName'
+          $ref: '#/definitions/response.RoleIDName'
         type: array
     type: object
   response.UserPermission:
     properties:
       avatar:
         $ref: '#/definitions/request.Avatar'
-      company:
-        type: string
       createdAt:
         type: string
       creator:
@@ -9576,15 +9703,11 @@ definitions:
         description: 创建人
       email:
         type: string
-      gender:
-        type: string
       isUpdatePassword:
         description: 是否已更新密码
         type: boolean
       language:
         $ref: '#/definitions/response.Language'
-      nickname:
-        type: string
       orgPermission:
         allOf:
         - $ref: '#/definitions/response.UserOrgPermission'
@@ -9595,8 +9718,6 @@ definitions:
           $ref: '#/definitions/response.OrgRole'
         type: array
       phone:
-        type: string
-      remark:
         type: string
       status:
         type: boolean
@@ -13648,7 +13769,7 @@ paths:
       - JWT: []
       summary: 通用智能体自定义配置
       tags:
-      - setting
+      - admin_center.setting
   /custom/home:
     post:
       consumes:
@@ -13672,7 +13793,7 @@ paths:
       - JWT: []
       summary: 平台自定义配置
       tags:
-      - setting
+      - admin_center.setting
   /custom/login:
     post:
       consumes:
@@ -13696,7 +13817,7 @@ paths:
       - JWT: []
       summary: 登录页自定义配置
       tags:
-      - setting
+      - admin_center.setting
   /custom/tab:
     post:
       consumes:
@@ -13720,7 +13841,7 @@ paths:
       - JWT: []
       summary: 标签页自定义配置
       tags:
-      - setting
+      - admin_center.setting
   /doc_center/markdown:
     get:
       consumes:
@@ -18517,7 +18638,7 @@ paths:
       - JWT: []
       summary: 删除OAuth应用
       tags:
-      - oauth
+      - admin_center.oauth
     post:
       consumes:
       - application/json
@@ -18540,7 +18661,7 @@ paths:
       - JWT: []
       summary: 创建OAuth应用
       tags:
-      - oauth
+      - admin_center.oauth
     put:
       consumes:
       - application/json
@@ -18563,7 +18684,7 @@ paths:
       - JWT: []
       summary: 更新OAuth应用
       tags:
-      - oauth
+      - admin_center.oauth
   /oauth/app/list:
     get:
       consumes:
@@ -18607,7 +18728,7 @@ paths:
       - JWT: []
       summary: 获取OAuth应用列表
       tags:
-      - oauth
+      - admin_center.oauth
   /oauth/app/status:
     put:
       consumes:
@@ -18631,7 +18752,7 @@ paths:
       - JWT: []
       summary: 更新OAuth应用状态
       tags:
-      - oauth
+      - admin_center.oauth
   /ontology/skill/select:
     get:
       consumes:
@@ -18692,11 +18813,11 @@ paths:
       - JWT: []
       summary: 删除下级组织
       tags:
-      - permission.org
+      - admin_center
     post:
       consumes:
       - application/json
-      description: 创建X-Org-Id组织的下级组织
+      description: 创建指定组织的下级组织
       parameters:
       - description: 组织信息
         in: body
@@ -18720,7 +18841,7 @@ paths:
       - JWT: []
       summary: 创建下级组织
       tags:
-      - permission.org
+      - admin_center
     put:
       consumes:
       - application/json
@@ -18742,7 +18863,7 @@ paths:
       - JWT: []
       summary: 编辑下级组织
       tags:
-      - permission.org
+      - admin_center
   /org/info:
     get:
       consumes:
@@ -18769,7 +18890,7 @@ paths:
       - JWT: []
       summary: 获取组织信息
       tags:
-      - permission.org
+      - admin_center
   /org/list:
     get:
       consumes:
@@ -18779,6 +18900,11 @@ paths:
       - description: 组织名(模糊查询)
         in: query
         name: name
+        type: string
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
         type: string
       - description: 页面编号，从1开始
         in: query
@@ -18813,7 +18939,7 @@ paths:
       - JWT: []
       summary: 获取下级组织列表
       tags:
-      - permission.org
+      - admin_center
   /org/other/select:
     get:
       consumes:
@@ -18823,6 +18949,11 @@ paths:
       - description: 用户名(模糊查询)
         in: query
         name: name
+        type: string
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
         type: string
       produces:
       - application/json
@@ -18840,7 +18971,7 @@ paths:
       - JWT: []
       summary: 获取不在组织中用户列表（用于下拉选择）
       tags:
-      - permission.user
+      - admin_center
   /org/select:
     get:
       consumes:
@@ -18884,12 +19015,34 @@ paths:
       - JWT: []
       summary: 修改下级组织状态
       tags:
-      - permission.org
+      - admin_center
+  /org/tree:
+    get:
+      consumes:
+      - application/json
+      description: 返回当前用户具有组织管理员角色的组织及其下级所有组织的树形结构
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.AdminOrgTreeNode'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取管理员组织及下级组织列表
+      tags:
+      - admin_center
   /org/user:
     post:
       consumes:
       - application/json
-      description: 增加X-Org-Id组织的用户
+      description: 增加指定组织的用户
       parameters:
       - description: 用户-角色
         in: body
@@ -18908,7 +19061,7 @@ paths:
       - JWT: []
       summary: 邀请用户加入组织
       tags:
-      - permission.user
+      - admin_center
   /prompt/custom:
     delete:
       consumes:
@@ -19299,14 +19452,14 @@ paths:
     delete:
       consumes:
       - application/json
-      description: 删除X-Org-Id组织的角色
+      description: 删除角色（roleId全局唯一，无需传orgId）
       parameters:
       - description: 角色ID
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.RoleID'
+          $ref: '#/definitions/request.RoleDelete'
       produces:
       - application/json
       responses:
@@ -19318,11 +19471,11 @@ paths:
       - JWT: []
       summary: 删除角色
       tags:
-      - permission.role
+      - admin_center
     post:
       consumes:
       - application/json
-      description: 创建X-Org-Id组织的角色
+      description: 创建角色（全局角色或组织角色）
       parameters:
       - description: 角色信息
         in: body
@@ -19346,11 +19499,11 @@ paths:
       - JWT: []
       summary: 创建角色
       tags:
-      - permission.role
+      - admin_center
     put:
       consumes:
       - application/json
-      description: 编辑X-Org-Id组织的角色
+      description: 编辑角色（区分全局和组织角色）
       parameters:
       - description: 角色信息
         in: body
@@ -19369,16 +19522,21 @@ paths:
       - JWT: []
       summary: 编辑角色
       tags:
-      - permission.role
+      - admin_center
   /role/info:
     get:
       consumes:
       - application/json
-      description: 获取X-Org-Id组织的角色信息
+      description: 获取指定角色信息
       parameters:
       - description: 角色ID
         in: query
         name: roleId
+        required: true
+        type: string
+      - description: 组织ID
+        in: query
+        name: orgId
         required: true
         type: string
       produces:
@@ -19397,16 +19555,169 @@ paths:
       - JWT: []
       summary: 获取角色信息
       tags:
-      - permission.role
+      - admin_center
   /role/list:
     get:
       consumes:
       - application/json
-      description: 获取X-Org-Id组织的角色列表
+      description: 获取指定组织的角色列表
       parameters:
       - description: 角色名(模糊查询)
         in: query
         name: name
+        type: string
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/response.ListResult'
+                  - properties:
+                      list:
+                        items:
+                          $ref: '#/definitions/response.RoleInfo'
+                        type: array
+                    type: object
+              type: object
+      security:
+      - JWT: []
+      summary: 获取角色列表
+      tags:
+      - admin_center
+  /role/select:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定组织的角色列表
+      parameters:
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.Select'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取组织角色列表（用于下拉选择）
+      tags:
+      - admin_center
+  /role/status:
+    put:
+      consumes:
+      - application/json
+      description: 修改指定组织的指定角色的角色状态
+      parameters:
+      - description: 角色信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.RoleStatus'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 修改角色状态
+      tags:
+      - admin_center
+  /role/template:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户在X-Org-Id组织的角色模板
+      parameters:
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.RoleTemplate'
+              type: object
+      security:
+      - JWT: []
+      summary: 获取角色模板（用于创建角色）
+      tags:
+      - admin_center
+  /role/user:
+    delete:
+      consumes:
+      - application/json
+      description: 移除指定用户的指定角色关联
+      parameters:
+      - description: 角色用户信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.RoleUserRemove'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - JWT: []
+      summary: 移除角色关联用户
+      tags:
+      - admin_center
+  /role/users:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定角色关联的用户信息（用户名、电话、所在组织）
+      parameters:
+      - description: 角色ID
+        in: query
+        name: roleId
+        required: true
+        type: string
+      - description: 用户名模糊搜索
+        in: query
+        name: name
+        type: string
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
         type: string
       - description: 页面编号，从1开始
         in: query
@@ -19433,83 +19744,15 @@ paths:
                   - properties:
                       list:
                         items:
-                          $ref: '#/definitions/response.RoleInfo'
+                          $ref: '#/definitions/response.RoleUser'
                         type: array
                     type: object
               type: object
       security:
       - JWT: []
-      summary: 获取角色列表
+      summary: 获取角色关联用户列表
       tags:
-      - permission.role
-  /role/select:
-    get:
-      consumes:
-      - application/json
-      description: 获取X-Org-Id组织的角色列表
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.Select'
-              type: object
-      security:
-      - JWT: []
-      summary: 获取组织角色列表（用于下拉选择）
-      tags:
-      - permission.user
-  /role/status:
-    put:
-      consumes:
-      - application/json
-      description: 修改X-Org-Id组织的角色状态
-      parameters:
-      - description: 角色信息
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.RoleStatus'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - JWT: []
-      summary: 修改角色状态
-      tags:
-      - permission.role
-  /role/template:
-    get:
-      consumes:
-      - application/json
-      description: 获取当前用户在X-Org-Id组织的角色模板
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/response.RoleTemplate'
-              type: object
-      security:
-      - JWT: []
-      summary: 获取角色模板（用于创建角色）
-      tags:
-      - permission.role
+      - admin_center
   /safe/sensitive/table:
     delete:
       consumes:
@@ -21007,7 +21250,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/request.UserID'
+          $ref: '#/definitions/request.UserDelete'
       produces:
       - application/json
       responses:
@@ -21019,7 +21262,7 @@ paths:
       - JWT: []
       summary: 删除用户
       tags:
-      - permission.user
+      - admin_center
     post:
       consumes:
       - application/json
@@ -21047,7 +21290,7 @@ paths:
       - JWT: []
       summary: 创建用户
       tags:
-      - permission.user
+      - admin_center
     put:
       consumes:
       - application/json
@@ -21070,7 +21313,7 @@ paths:
       - JWT: []
       summary: 编辑用户
       tags:
-      - permission.user
+      - admin_center
   /user/admin/password:
     put:
       consumes:
@@ -21093,7 +21336,7 @@ paths:
       - JWT: []
       summary: 重置用户密码（by 管理员）
       tags:
-      - permission.user
+      - admin_center
   /user/avatar:
     put:
       consumes:
@@ -21124,6 +21367,11 @@ paths:
       - multipart/form-data
       description: 通过Excel文件批量导入用户
       parameters:
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
+        type: string
       - description: 用户Excel文件
         in: formData
         name: file
@@ -21145,11 +21393,17 @@ paths:
       - JWT: []
       summary: 批量导入用户
       tags:
-      - permission.user
+      - admin_center
   /user/info:
     get:
       consumes:
       - application/json
+      parameters:
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -21171,11 +21425,20 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取X-Org-Id组织的用户列表；在系统视角下获取系统内全部用户列表
+      description: 获取X-Org-Id组织的用户列表；在系统视角下获取系统内全部用户列表；name同时模糊匹配用户名和邮箱
       parameters:
-      - description: 用户名(模糊查询)
+      - description: 用户名或邮箱(模糊查询)
         in: query
         name: name
+        type: string
+      - description: 组织ID
+        in: query
+        name: orgId
+        required: true
+        type: string
+      - description: 角色ID(逗号分隔)
+        in: query
+        name: roleIds
         type: string
       - description: 页面编号，从1开始
         in: query
@@ -21210,7 +21473,7 @@ paths:
       - JWT: []
       summary: 获取用户列表
       tags:
-      - permission.user
+      - admin_center
   /user/login:
     post:
       consumes:
@@ -21319,7 +21582,7 @@ paths:
       - JWT: []
       summary: 修改用户密码（by 个人）
       tags:
-      - permission.user
+      - admin_center
   /user/permission:
     get:
       consumes:
@@ -21363,7 +21626,7 @@ paths:
       - JWT: []
       summary: 修改用户状态
       tags:
-      - permission.user
+      - admin_center
   /workflow/run:
     post:
       consumes:
