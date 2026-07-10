@@ -63,6 +63,12 @@
                       changeStatus(item, val);
                     }
                   "
+                  :disabled="
+                    !(
+                      !item.isAdmin &&
+                      (!item.isGlobal || (item.isGlobal && isSystem))
+                    )
+                  "
                   v-model="item.status"
                 />
               </div>

@@ -10,7 +10,7 @@
         ]"
       >
         <div class="left-header-container">
-          <div style="padding-top: 15px; text-align: center; height: 46px">
+          <div style="padding-top: 12px; text-align: center; height: 46px">
             <div v-if="homeLogoPath">
               <img
                 v-if="!isCollapse"
