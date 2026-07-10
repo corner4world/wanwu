@@ -713,7 +713,7 @@ export default {
         description: this.description,
         embeddingModelInfo: this.embeddingModel,
         llmModelId: this.llmModelId,
-        graphSwitch: this.graphSwitch,
+        graphSwitch: this.graphSwitch ? 1 : 0,
       });
     },
     handleCommand(command) {
