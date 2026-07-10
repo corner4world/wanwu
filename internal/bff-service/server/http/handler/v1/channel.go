@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
+	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
 	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,54 @@ func ListWanwuAgents(ctx *gin.Context) {
 // ListWanwuApiKeys 获取万悟 API Key 列表（用于通道选择下拉）
 func ListWanwuApiKeys(ctx *gin.Context) {
 	resp, err := service.ListWanwuApiKeys(ctx, getUserID(ctx), getOrgID(ctx))
+	gin_util.Response(ctx, resp, err)
+}
+
+// ListWanwuModels 获取万悟模型列表（用于 WGA 通道选择 modelUuid）
+func ListWanwuModels(ctx *gin.Context) {
+	var req request.ListModelsRequest
+	if !gin_util.BindQuery(ctx, &req) {
+		return
+	}
+	resp, err := service.ListWanwuModels(ctx, getUserID(ctx), getOrgID(ctx), &req)
+	gin_util.Response(ctx, resp, err)
+}
+
+// ListWanwuWGASubAgents 获取 WGA 子智能体列表（用于 WGA 通道选择 agentId）
+// 复用 service.GetGeneralAgentSubList，数据源为 WGA 配置 sub_agents。
+// 过滤掉不应对外开放的子智能体：
+//   - 数字员工（DIP Agent）：已单独配置通道（走 /channel/dip/employees），不返回给通道侧。
+//   - Skill Chat Agent（创建Skill）：内部智能体，走独立的 skill 创建入口，不在通道选择列表展示。
+func ListWanwuWGASubAgents(ctx *gin.Context) {
+	resp, err := service.GetGeneralAgentSubList(ctx)
+	if err != nil {
+		gin_util.Response(ctx, resp, err)
+		return
+	}
+	filtered := make([]response.GeneralAgentInfo, 0, len(resp.WgaAgentList)+1)
+	// 首部置入“无”选项：agentId 用固定哨兵 "null"，创建通道时选它即忽略子智能体、使用通用智能体
+	// （agent_id 存 "null"，channel-service 调 WGA 时归一化为空串走 Supervisor 默认路由）。
+	filtered = append(filtered, response.GeneralAgentInfo{
+		AgentID:     "null",
+		AgentName:   "无",
+		Avatar:      request.Avatar{Key: "", Path: ""},
+		Placeholder: "选择一款模型，和我对话吧",
+	})
+	for _, a := range resp.WgaAgentList {
+		if a.AgentID == "DIP Agent" || a.AgentID == "Skill Chat Agent" || a.AgentID == "Data Analysis Agent" {
+			continue
+		}
+		filtered = append(filtered, a)
+	}
+	resp.WgaAgentList = filtered
+	gin_util.Response(ctx, resp, nil)
+}
+
+// ListWanwuDIPAgents 获取数字员工列表（用于 DIP 通道选择绑定的数字员工）
+// 复用 service.ListWanwuDIPAgents → GetGeneralAgentOntologyEmployeeSelect。
+func ListWanwuDIPAgents(ctx *gin.Context) {
+	name := ctx.Query("name")
+	resp, err := service.ListWanwuDIPAgents(ctx, getUserID(ctx), getOrgID(ctx), name)
 	gin_util.Response(ctx, resp, err)
 }
 

@@ -17,6 +17,7 @@ type ChannelResponse struct {
 	ApiKeyName  string            `json:"apiKeyName"`
 	HasApiKey   bool              `json:"hasApiKey"`
 	ModelUuid   string            `json:"modelUuid"`
+	AgentId     string            `json:"agentId"` // WGA 通道绑定的子智能体 ID（直连该子智能体，跳过 Supervisor）
 	Config      map[string]string `json:"config"`
 	CreatedAt   string            `json:"createdAt"`
 	UpdatedAt   string            `json:"updatedAt"`
