@@ -169,7 +169,7 @@
           </el-form-item>
           <el-form-item
             :label="$t('knowledgeManage.create.uploadSchema') + ':'"
-            v-if="ruleForm.knowledgeGraph.switch"
+            v-if="ruleForm.knowledgeGraph.switch && !isEdit"
           >
             <el-upload
               action=""
@@ -854,6 +854,7 @@ export default {
       });
     },
     showDialog(row) {
+      console.log(row);
       this.dialogVisible = true;
       this.isEdit = Boolean(row);
       this.tabActive = INTERNAL;
