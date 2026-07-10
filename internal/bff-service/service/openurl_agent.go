@@ -23,7 +23,7 @@ func UrlConversationCreate(ctx *gin.Context, req request.UrlConversationCreateRe
 	if err != nil {
 		return nil, err
 	}
-	resp, err := assistant.ConversationCreate(ctx, &assistant_service.ConversationCreateReq{
+	resp, err := assistant.ConversationCreate(ctx.Request.Context(), &assistant_service.ConversationCreateReq{
 		AssistantId:      appUrlInfo.AppId,
 		Prompt:           req.Prompt,
 		ConversationType: constant.ConversationTypeWebURL,
@@ -45,7 +45,7 @@ func UrlConversationDelete(ctx *gin.Context, userId, suffix string, req request.
 	if err != nil {
 		return err
 	}
-	_, err = assistant.ConversationDelete(ctx, &assistant_service.ConversationDeleteReq{
+	_, err = assistant.ConversationDelete(ctx.Request.Context(), &assistant_service.ConversationDeleteReq{
 		ConversationId: req.ConversationId,
 		Identity: &assistant_service.Identity{
 			UserId: userId,
@@ -222,7 +222,7 @@ func AppUrlConversionStreamCancel(ctx *gin.Context, req request.UrlConversionStr
 }
 
 func getAppUrlInfoAndCheck(ctx *gin.Context, suffix string) (*app_service.AppUrlInfo, error) {
-	appUrlInfo, err := app.GetAppUrlInfoBySuffix(ctx, &app_service.GetAppUrlInfoBySuffixReq{
+	appUrlInfo, err := app.GetAppUrlInfoBySuffix(ctx.Request.Context(), &app_service.GetAppUrlInfoBySuffixReq{
 		Suffix: suffix,
 	})
 	if err != nil {

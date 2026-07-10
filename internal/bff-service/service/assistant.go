@@ -835,7 +835,7 @@ func assistantSafetyConvert(ctx *gin.Context, resp *assistant_service.AssistantS
 		for _, table := range resp.GetSensitiveTable() {
 			tableIds = append(tableIds, table.TableId)
 		}
-		sensitiveWordTable, err := safety.GetSensitiveWordTableListByIDs(ctx, &safety_service.GetSensitiveWordTableListByIDsReq{TableIds: tableIds})
+		sensitiveWordTable, err := safety.GetSensitiveWordTableListByIDs(ctx.Request.Context(), &safety_service.GetSensitiveWordTableListByIDsReq{TableIds: tableIds})
 
 		if err == nil && sensitiveWordTable != nil {
 			exists = true
@@ -1227,7 +1227,7 @@ func transAssistantResp2Model(ctx *gin.Context, resp *assistant_service.Assistan
 	}
 
 	// 获取app发布信息，可能没有发布过，不返回错误
-	appInfo, _ := app.GetAppInfo(ctx, &app_service.GetAppInfoReq{AppId: resp.AssistantId, AppType: constant.AppTypeAgent})
+	appInfo, _ := app.GetAppInfo(ctx.Request.Context(), &app_service.GetAppInfoReq{AppId: resp.AssistantId, AppType: constant.AppTypeAgent})
 
 	// 转换Model配置
 	modelConfig, err := assistantModelConvert(ctx, resp.ModelConfig)
@@ -1387,7 +1387,7 @@ func transKnowledgeBases2Model(ctx *gin.Context, kbConfig *assistant_service.Ass
 	}
 
 	// 获取知识库详情列表
-	kbInfoList, err := knowledgeBase.SelectKnowledgeDetailByIdList(ctx, &knowledgeBase_service.KnowledgeDetailSelectListReq{
+	kbInfoList, err := knowledgeBase.SelectKnowledgeDetailByIdList(ctx.Request.Context(), &knowledgeBase_service.KnowledgeDetailSelectListReq{
 		KnowledgeIds: kbConfig.KnowledgeBaseIds,
 	})
 
@@ -1435,7 +1435,7 @@ func buildKnowledgeBases(ctx *gin.Context, kbInfoList *knowledgeBase_service.Kno
 			share := info.ShareCount > 1
 			var orgName string
 			if share {
-				orgInfo, err := iam.GetOrgInfo(ctx, &iam_service.GetOrgInfoReq{OrgId: info.CreateOrgId})
+				orgInfo, err := iam.GetOrgInfo(ctx.Request.Context(), &iam_service.GetOrgInfoReq{OrgId: info.CreateOrgId})
 				if err != nil {
 					log.Errorf("get org info error: %v", err)
 				} else {

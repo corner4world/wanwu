@@ -324,7 +324,7 @@ func WorkflowConvert(ctx *gin.Context, orgId, workflowId, flowMode string) error
 		oldAppType = constant.AppTypeChatflow
 		newAppType = constant.AppTypeWorkflow
 	}
-	_, err = app.ConvertAppType(ctx, &app_service.ConvertAppTypeReq{AppId: workflowId, OldAppType: oldAppType, NewAppType: newAppType})
+	_, err = app.ConvertAppType(ctx.Request.Context(), &app_service.ConvertAppTypeReq{AppId: workflowId, OldAppType: oldAppType, NewAppType: newAppType})
 	return err
 }
 
