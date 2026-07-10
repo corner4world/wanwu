@@ -55,6 +55,7 @@ type CreateChannelRequest struct {
 	ApiKeyId    string            `json:"apiKeyId"`
 	ApiKey      string            `json:"apiKey"`    // API Key 完整值，创建时传入
 	ModelUuid   string            `json:"modelUuid"` // WGA 通道使用的模型 UUID
+	AgentId     string            `json:"agentId"`   // WGA 通道绑定的子智能体 ID（直连该子智能体，跳过 Supervisor）
 	Config      map[string]string `json:"config" binding:"required"`
 }
 
@@ -62,12 +63,16 @@ func (r *CreateChannelRequest) Check() error { return nil }
 
 // UpdateChannelRequest 更新通道请求
 type UpdateChannelRequest struct {
-	Name      string            `json:"name"`
-	AppID     string            `json:"appId"`
-	ApiKeyId  string            `json:"apiKeyId"`
-	ApiKey    string            `json:"apiKey"`
-	ModelUuid string            `json:"modelUuid"` // WGA 通道使用的模型 UUID
-	Config    map[string]string `json:"config"`
+	Name      string `json:"name"`
+	AppID     string `json:"appId"`
+	ApiKeyId  string `json:"apiKeyId"`
+	ApiKey    string `json:"apiKey"`
+	ModelUuid string `json:"modelUuid"` // WGA 通道使用的模型 UUID
+	// AgentId 用指针以区分三态（JSON 字段缺失→nil，传空串→&""，传值→&id）：
+	//   wga: nil=不改 / &""=清空（切回默认 Supervisor）/ &子智能体id=换子智能体
+	//   dip: nil=不改 / &员工id=换员工（dip 不支持清空，&"" 视为不改）
+	AgentId *string           `json:"agentId"`
+	Config  map[string]string `json:"config"`
 }
 
 func (r *UpdateChannelRequest) Check() error { return nil }

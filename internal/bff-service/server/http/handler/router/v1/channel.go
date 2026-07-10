@@ -12,6 +12,7 @@ func registerChannel(apiV1 *gin.RouterGroup) {
 	// 万悟平台代理
 	mid.Sub("operation").Reg(apiV1, "/channel/agent", http.MethodGet, v1.ListWanwuAgents, "获取万悟智能体列表")
 	mid.Sub("operation").Reg(apiV1, "/channel/apikeys", http.MethodGet, v1.ListWanwuApiKeys, "获取万悟API Key列表")
+	mid.Sub("operation").Reg(apiV1, "/channel/models", http.MethodGet, v1.ListWanwuModels, "获取万悟模型列表")
 
 	// 扫码登录
 	mid.Sub("operation").Reg(apiV1, "/channel/qrcode/:channelType", http.MethodPost, v1.CreateQRLogin, "发起扫码登录")
@@ -27,4 +28,10 @@ func registerChannel(apiV1 *gin.RouterGroup) {
 	mid.Sub("operation").Reg(apiV1, "/channel/channels/:id/status", http.MethodPost, v1.UpdateChannelStatus, "启用/停用通道")
 	mid.Sub("operation").Reg(apiV1, "/channel/channels/:id", http.MethodDelete, v1.DeleteChannel, "删除通道")
 	mid.Sub("operation").Reg(apiV1, "/channel/channels/:id/disconnect", http.MethodPost, v1.DisconnectChannel, "断开通道")
+
+	// WGA（通用智能体）子智能体列表
+	mid.Sub("operation").Reg(apiV1, "/channel/wga/sub-agents", http.MethodGet, v1.ListWanwuWGASubAgents, "WGA子智能体列表")
+
+	// DIP（数字员工）下拉
+	mid.Sub("operation").Reg(apiV1, "/channel/dip/employees", http.MethodGet, v1.ListWanwuDIPAgents, "数字员工列表")
 }

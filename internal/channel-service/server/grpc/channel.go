@@ -12,6 +12,7 @@ import (
 	"github.com/UnicomAI/wanwu/internal/channel-service/client/model"
 	"github.com/UnicomAI/wanwu/internal/channel-service/config"
 	"github.com/UnicomAI/wanwu/internal/channel-service/qrcode"
+	"github.com/UnicomAI/wanwu/internal/channel-service/wanwu"
 	"github.com/UnicomAI/wanwu/pkg/log"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"google.golang.org/grpc/codes"
@@ -21,18 +22,20 @@ import (
 
 type ChannelService struct {
 	channel_service.UnimplementedChannelServiceServer
-	cfg     config.Config
-	cli     client.IClient
-	manager *adapter.Manager
-	qrMgr   *qrcode.QRLoginManager
+	cfg      config.Config
+	cli      client.IClient
+	manager  *adapter.Manager
+	qrMgr    *qrcode.QRLoginManager
+	wanwuCli *wanwu.Client
 }
 
 func NewChannelService(cfg *config.Config, cli client.IClient, mgr *adapter.Manager) *ChannelService {
 	return &ChannelService{
-		cfg:     *cfg,
-		cli:     cli,
-		manager: mgr,
-		qrMgr:   qrcode.NewQRLoginManager(*cfg, cli),
+		cfg:      *cfg,
+		cli:      cli,
+		manager:  mgr,
+		qrMgr:    qrcode.NewQRLoginManager(*cfg, cli),
+		wanwuCli: wanwu.NewClient(cfg.BFF.ApiBaseUrl),
 	}
 }
 
@@ -259,6 +262,7 @@ func (s *ChannelService) CreateChannel(ctx context.Context, req *channel_service
 		ApiKeyName:  "", // 后续通过代理接口同步
 		ApiKey:      req.ApiKey,
 		ModelUuid:   req.ModelUuid,
+		AgentId:     req.AgentId,
 		Config:      string(configJSON),
 		AccountId:   accountId,
 		UserID:      req.UserId,
@@ -343,11 +347,13 @@ func (s *ChannelService) UpdateChannel(ctx context.Context, req *channel_service
 	if req.Name != "" {
 		updates["name"] = req.Name
 	}
-	if req.AppId != "" {
-		updates["app_id"] = req.AppId
+	if req.AppId != nil {
+		// optional app_id：传了即写入（含空串，用于 WGA 选「无」子智能体时清空 app_id）；未传则保留旧值
+		updates["app_id"] = req.GetAppId()
 	}
-	if req.AppName != "" {
-		updates["app_name"] = req.AppName
+	if req.AppName != nil {
+		// optional app_name：传了即写入（含空串，用于清空）；未传则保留旧值
+		updates["app_name"] = req.GetAppName()
 	}
 	if req.ApiKeyId != "" {
 		updates["api_key_id"] = req.ApiKeyId
@@ -357,6 +363,10 @@ func (s *ChannelService) UpdateChannel(ctx context.Context, req *channel_service
 	}
 	if req.ModelUuid != "" {
 		updates["model_uuid"] = req.ModelUuid
+	}
+	if req.AgentId != nil {
+		// optional agent_id：传了即写入（含空串，用于 WGA 清空 agentId 切回默认 Supervisor）；未传则保留旧值
+		updates["agent_id"] = req.GetAgentId()
 	}
 	if len(req.Config) > 0 {
 		configJSON, err := json.Marshal(req.Config)
@@ -429,6 +439,11 @@ func (s *ChannelService) DeleteChannel(ctx context.Context, req *channel_service
 	if err := s.cli.DeleteChannel(ctx, req.ChannelId); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete channel: %v", err)
 	}
+
+	// 级联清理该通道下的会话映射（threadId/conversationId），仅删通道时清理
+	if err := s.cli.DeleteConversationsByChannel(ctx, req.ChannelId); err != nil {
+		log.Errorf("failed to cleanup conversations for channel %s: %v", req.ChannelId, err)
+	}
 	return &emptypb.Empty{}, nil
 }
 
@@ -485,6 +500,7 @@ func modelToChannelProto(ch *model.Channel) *channel_service.Channel {
 		ApiKeyName:  ch.ApiKeyName,
 		HasApiKey:   hasApiKey,
 		ModelUuid:   ch.ModelUuid,
+		AgentId:     ch.AgentId,
 		Config:      configMap,
 		CreatedAt:   util.Time2Str(ch.CreatedAt),
 		UpdatedAt:   util.Time2Str(ch.UpdatedAt),
