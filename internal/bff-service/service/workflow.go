@@ -724,6 +724,9 @@ func toModelInfo4Workflow(modelInfo *response.ModelInfo) (*response.CozeWorkflow
 
 	ret := &response.CozeWorkflowModelInfo{
 		ModelInfo: *modelInfo,
+		ModelAbility: response.CozeWorkflowModelInfoAbility{
+			CotDisplay: true, // 固定给llm节点增加 reasoning_content 字段
+		},
 	}
 	if modelInfo.Config != nil {
 		cfg := make(map[string]interface{})
