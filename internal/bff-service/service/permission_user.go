@@ -154,6 +154,27 @@ func GetUserListByUserIds(ctx *gin.Context, userIDs []string) (*response.ListRes
 	return &response.ListResult{List: users, Total: int64(len(users))}, nil
 }
 
+func GetUsersByOrgIDs(ctx context.Context, userID string, req *request.OrgIDsReq) (*response.Users, error) {
+	resp, err := iam.GetUsersByOrgIDs(ctx, &iam_service.GetUsersByOrgIDsReq{
+		OrgIds:   req.OrgIDList,
+		IsAllOrg: req.IsAllOrg,
+		UserId:   userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var users []response.IDName
+	for _, u := range resp.Users {
+		users = append(users, response.IDName{
+			ID:   u.Id,
+			Name: u.Name,
+		})
+	}
+	return &response.Users{
+		Users: users,
+	}, nil
+}
+
 func ChangeUserStatus(ctx *gin.Context, userID, orgID string, status bool) error {
 	_, err := iam.ChangeUserStatus(ctx.Request.Context(), &iam_service.ChangeUserStatusReq{
 		UserId: userID,
