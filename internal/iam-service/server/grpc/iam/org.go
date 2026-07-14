@@ -54,7 +54,7 @@ func (s *Service) GetOrgByOrgIDs(ctx context.Context, req *iam_service.GetOrgByO
 		return nil, errStatus(errs.Code_IAMOrg, err)
 	}
 	return &iam_service.GetOrgByOrgIDsResp{
-		Orgs: toIDNames(orgs),
+		Orgs: toIDFullNames(orgs),
 	}, nil
 }
 
@@ -86,6 +86,18 @@ func (s *Service) GetAdminOrgSubTree(ctx context.Context, req *iam_service.GetAd
 	return &iam_service.AdminOrgSubTreeResp{
 		Orgs: toAdminOrgTreeNodes(nodes),
 	}, nil
+}
+
+func (s *Service) GetAdminOrgIDs(ctx context.Context, req *iam_service.GetAdminOrgIDsReq) (*iam_service.GetAdminOrgIDsResp, error) {
+	orgIDs, status := s.cli.GetAdminOrgIDs(ctx, util.MustU32(req.UserId))
+	if status != nil {
+		return nil, errStatus(errs.Code_IAMOrg, status)
+	}
+	resp := &iam_service.GetAdminOrgIDsResp{}
+	for _, id := range orgIDs {
+		resp.OrgIds = append(resp.OrgIds, strconv.Itoa(int(id)))
+	}
+	return resp, nil
 }
 
 func (s *Service) CreateOrg(ctx context.Context, req *iam_service.CreateOrgReq) (*iam_service.IDName, error) {

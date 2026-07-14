@@ -4044,6 +4044,17 @@ definitions:
     required:
     - orgId
     type: object
+  request.OrgIDsReq:
+    properties:
+      isAllOrg:
+        description: 是否查询全部组织（用户有权限的组织）
+        type: boolean
+      orgIdList:
+        description: 组织ID列表，isAllOrg=false 时必填
+        items:
+          type: string
+        type: array
+    type: object
   request.OrgStatus:
     properties:
       orgId:
@@ -9747,6 +9758,14 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  response.Users:
+    properties:
+      users:
+        description: 去重后的用户列表
+        items:
+          $ref: '#/definitions/response.IDName'
+        type: array
     type: object
   response.VisionConfig:
     properties:
@@ -19082,6 +19101,35 @@ paths:
       security:
       - JWT: []
       summary: 邀请用户加入组织
+      tags:
+      - admin_center
+  /org/users:
+    post:
+      consumes:
+      - application/json
+      description: 传入多个orgId，返回所选组织全部用户userid（去重、不过滤禁用状态）
+      parameters:
+      - description: 组织ID列表
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.OrgIDsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/response.Users'
+              type: object
+      security:
+      - JWT: []
+      summary: 根据组织ID列表获取用户ID
       tags:
       - admin_center
   /prompt/custom:

@@ -15624,6 +15624,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/org/users": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "传入多个orgId，返回所选组织全部用户userid（去重、不过滤禁用状态）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin_center"
+                ],
+                "summary": "根据组织ID列表获取用户ID",
+                "parameters": [
+                    {
+                        "description": "组织ID列表",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.OrgIDsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.Users"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/prompt/custom": {
             "get": {
                 "description": "获取自定义Prompt详情",
@@ -26511,6 +26562,22 @@ const docTemplate = `{
                 }
             }
         },
+        "request.OrgIDsReq": {
+            "type": "object",
+            "properties": {
+                "isAllOrg": {
+                    "description": "是否查询全部组织（用户有权限的组织）",
+                    "type": "boolean"
+                },
+                "orgIdList": {
+                    "description": "组织ID列表，isAllOrg=false 时必填",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "request.OrgStatus": {
             "type": "object",
             "required": [
@@ -35037,6 +35104,18 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "response.Users": {
+            "type": "object",
+            "properties": {
+                "users": {
+                    "description": "去重后的用户列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.IDName"
+                    }
                 }
             }
         },

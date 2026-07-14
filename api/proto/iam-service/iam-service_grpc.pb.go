@@ -40,9 +40,11 @@ const (
 	IAMService_GetOrgList_FullMethodName                  = "/iam_service.IAMService/GetOrgList"
 	IAMService_GetOrgInfo_FullMethodName                  = "/iam_service.IAMService/GetOrgInfo"
 	IAMService_GetOrgByOrgIDs_FullMethodName              = "/iam_service.IAMService/GetOrgByOrgIDs"
+	IAMService_GetUsersByOrgIDs_FullMethodName            = "/iam_service.IAMService/GetUsersByOrgIDs"
 	IAMService_GetOrgAndSubOrgSelectByUser_FullMethodName = "/iam_service.IAMService/GetOrgAndSubOrgSelectByUser"
 	IAMService_GetFirstClassOrgAndSubs_FullMethodName     = "/iam_service.IAMService/GetFirstClassOrgAndSubs"
 	IAMService_GetAdminOrgSubTree_FullMethodName          = "/iam_service.IAMService/GetAdminOrgSubTree"
+	IAMService_GetAdminOrgIDs_FullMethodName              = "/iam_service.IAMService/GetAdminOrgIDs"
 	IAMService_CreateOrg_FullMethodName                   = "/iam_service.IAMService/CreateOrg"
 	IAMService_UpdateOrg_FullMethodName                   = "/iam_service.IAMService/UpdateOrg"
 	IAMService_DeleteOrg_FullMethodName                   = "/iam_service.IAMService/DeleteOrg"
@@ -122,12 +124,16 @@ type IAMServiceClient interface {
 	GetOrgInfo(ctx context.Context, in *GetOrgInfoReq, opts ...grpc.CallOption) (*OrgInfo, error)
 	// 通过orgIds获取组织信息
 	GetOrgByOrgIDs(ctx context.Context, in *GetOrgByOrgIDsReq, opts ...grpc.CallOption) (*GetOrgByOrgIDsResp, error)
+	// 通过多个orgId获取用户列表（去重、不过滤禁用状态）
+	GetUsersByOrgIDs(ctx context.Context, in *GetUsersByOrgIDsReq, opts ...grpc.CallOption) (*GetUsersByOrgIDsResp, error)
 	// 获取子组织信息
 	GetOrgAndSubOrgSelectByUser(ctx context.Context, in *GetOrgAndSubOrgSelectByUserReq, opts ...grpc.CallOption) (*GetOrgAndSubOrgSelectByUserResp, error)
 	// 获取组织树
 	GetFirstClassOrgAndSubs(ctx context.Context, in *GetFirstClassOrgAndSubsReq, opts ...grpc.CallOption) (*GetFirstClassOrgAndSubsResp, error)
 	// 获取管理员组织及下级组织树
 	GetAdminOrgSubTree(ctx context.Context, in *GetAdminOrgSubTreeReq, opts ...grpc.CallOption) (*AdminOrgSubTreeResp, error)
+	// 获取用户有权限的组织ID列表（登录用户的管理员组织及其所有下级组织）
+	GetAdminOrgIDs(ctx context.Context, in *GetAdminOrgIDsReq, opts ...grpc.CallOption) (*GetAdminOrgIDsResp, error)
 	// 创建组织
 	CreateOrg(ctx context.Context, in *CreateOrgReq, opts ...grpc.CallOption) (*IDName, error)
 	// 编辑组织
@@ -407,6 +413,16 @@ func (c *iAMServiceClient) GetOrgByOrgIDs(ctx context.Context, in *GetOrgByOrgID
 	return out, nil
 }
 
+func (c *iAMServiceClient) GetUsersByOrgIDs(ctx context.Context, in *GetUsersByOrgIDsReq, opts ...grpc.CallOption) (*GetUsersByOrgIDsResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUsersByOrgIDsResp)
+	err := c.cc.Invoke(ctx, IAMService_GetUsersByOrgIDs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *iAMServiceClient) GetOrgAndSubOrgSelectByUser(ctx context.Context, in *GetOrgAndSubOrgSelectByUserReq, opts ...grpc.CallOption) (*GetOrgAndSubOrgSelectByUserResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetOrgAndSubOrgSelectByUserResp)
@@ -431,6 +447,16 @@ func (c *iAMServiceClient) GetAdminOrgSubTree(ctx context.Context, in *GetAdminO
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminOrgSubTreeResp)
 	err := c.cc.Invoke(ctx, IAMService_GetAdminOrgSubTree_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *iAMServiceClient) GetAdminOrgIDs(ctx context.Context, in *GetAdminOrgIDsReq, opts ...grpc.CallOption) (*GetAdminOrgIDsResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAdminOrgIDsResp)
+	err := c.cc.Invoke(ctx, IAMService_GetAdminOrgIDs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -811,12 +837,16 @@ type IAMServiceServer interface {
 	GetOrgInfo(context.Context, *GetOrgInfoReq) (*OrgInfo, error)
 	// 通过orgIds获取组织信息
 	GetOrgByOrgIDs(context.Context, *GetOrgByOrgIDsReq) (*GetOrgByOrgIDsResp, error)
+	// 通过多个orgId获取用户列表（去重、不过滤禁用状态）
+	GetUsersByOrgIDs(context.Context, *GetUsersByOrgIDsReq) (*GetUsersByOrgIDsResp, error)
 	// 获取子组织信息
 	GetOrgAndSubOrgSelectByUser(context.Context, *GetOrgAndSubOrgSelectByUserReq) (*GetOrgAndSubOrgSelectByUserResp, error)
 	// 获取组织树
 	GetFirstClassOrgAndSubs(context.Context, *GetFirstClassOrgAndSubsReq) (*GetFirstClassOrgAndSubsResp, error)
 	// 获取管理员组织及下级组织树
 	GetAdminOrgSubTree(context.Context, *GetAdminOrgSubTreeReq) (*AdminOrgSubTreeResp, error)
+	// 获取用户有权限的组织ID列表（登录用户的管理员组织及其所有下级组织）
+	GetAdminOrgIDs(context.Context, *GetAdminOrgIDsReq) (*GetAdminOrgIDsResp, error)
 	// 创建组织
 	CreateOrg(context.Context, *CreateOrgReq) (*IDName, error)
 	// 编辑组织
@@ -956,6 +986,9 @@ func (UnimplementedIAMServiceServer) GetOrgInfo(context.Context, *GetOrgInfoReq)
 func (UnimplementedIAMServiceServer) GetOrgByOrgIDs(context.Context, *GetOrgByOrgIDsReq) (*GetOrgByOrgIDsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrgByOrgIDs not implemented")
 }
+func (UnimplementedIAMServiceServer) GetUsersByOrgIDs(context.Context, *GetUsersByOrgIDsReq) (*GetUsersByOrgIDsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUsersByOrgIDs not implemented")
+}
 func (UnimplementedIAMServiceServer) GetOrgAndSubOrgSelectByUser(context.Context, *GetOrgAndSubOrgSelectByUserReq) (*GetOrgAndSubOrgSelectByUserResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrgAndSubOrgSelectByUser not implemented")
 }
@@ -964,6 +997,9 @@ func (UnimplementedIAMServiceServer) GetFirstClassOrgAndSubs(context.Context, *G
 }
 func (UnimplementedIAMServiceServer) GetAdminOrgSubTree(context.Context, *GetAdminOrgSubTreeReq) (*AdminOrgSubTreeResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAdminOrgSubTree not implemented")
+}
+func (UnimplementedIAMServiceServer) GetAdminOrgIDs(context.Context, *GetAdminOrgIDsReq) (*GetAdminOrgIDsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAdminOrgIDs not implemented")
 }
 func (UnimplementedIAMServiceServer) CreateOrg(context.Context, *CreateOrgReq) (*IDName, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrg not implemented")
@@ -1445,6 +1481,24 @@ func _IAMService_GetOrgByOrgIDs_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _IAMService_GetUsersByOrgIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUsersByOrgIDsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IAMServiceServer).GetUsersByOrgIDs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IAMService_GetUsersByOrgIDs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IAMServiceServer).GetUsersByOrgIDs(ctx, req.(*GetUsersByOrgIDsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _IAMService_GetOrgAndSubOrgSelectByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetOrgAndSubOrgSelectByUserReq)
 	if err := dec(in); err != nil {
@@ -1495,6 +1549,24 @@ func _IAMService_GetAdminOrgSubTree_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IAMServiceServer).GetAdminOrgSubTree(ctx, req.(*GetAdminOrgSubTreeReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IAMService_GetAdminOrgIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAdminOrgIDsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IAMServiceServer).GetAdminOrgIDs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IAMService_GetAdminOrgIDs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IAMServiceServer).GetAdminOrgIDs(ctx, req.(*GetAdminOrgIDsReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2181,6 +2253,10 @@ var IAMService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _IAMService_GetOrgByOrgIDs_Handler,
 		},
 		{
+			MethodName: "GetUsersByOrgIDs",
+			Handler:    _IAMService_GetUsersByOrgIDs_Handler,
+		},
+		{
 			MethodName: "GetOrgAndSubOrgSelectByUser",
 			Handler:    _IAMService_GetOrgAndSubOrgSelectByUser_Handler,
 		},
@@ -2191,6 +2267,10 @@ var IAMService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAdminOrgSubTree",
 			Handler:    _IAMService_GetAdminOrgSubTree_Handler,
+		},
+		{
+			MethodName: "GetAdminOrgIDs",
+			Handler:    _IAMService_GetAdminOrgIDs_Handler,
 		},
 		{
 			MethodName: "CreateOrg",

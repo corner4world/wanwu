@@ -78,16 +78,29 @@ func (c *Client) SelectOrgs(ctx context.Context, userID uint32) ([]IDName, *errs
 
 }
 
-func (c *Client) GetOrgByOrgIDs(ctx context.Context, orgIDs []uint32) ([]IDName, *errs.Status) {
-	var orgs []*model.Org
-	if err := sqlopt.WithIDs(orgIDs).Apply(c.db.WithContext(ctx)).Find(&orgs).Error; err != nil {
-		return nil, toErrStatus("iam_orgs_get_by_ids", err.Error())
-	}
-	var ret []IDName
-	for _, org := range orgs {
-		ret = append(ret, IDName{ID: org.ID, Name: org.Name})
-	}
-	return ret, nil
+func (c *Client) GetOrgByOrgIDs(ctx context.Context, orgIDs []uint32) ([]IDFullName, *errs.Status) {
+	var ret []IDFullName
+	return ret, c.transaction(ctx, func(tx *gorm.DB) *errs.Status {
+		var orgs []*model.Org
+		if err := sqlopt.WithIDs(orgIDs).Apply(tx).Find(&orgs).Error; err != nil {
+			return toErrStatus("iam_orgs_get_by_ids", err.Error())
+		}
+		// 组织树，用于获取全名（祖先 - ... - 本级）
+		orgTree, err := getOrgTree(tx)
+		if err != nil {
+			return toErrStatus("iam_orgs_get_by_ids", err.Error())
+		}
+		for _, org := range orgs {
+			ret = append(ret, IDFullName{
+				IDName: IDName{
+					ID:   org.ID,
+					Name: org.Name,
+				},
+				FullName: orgTree.GetFullName(org.ID),
+			})
+		}
+		return nil
+	})
 }
 
 func (c *Client) GetOrgAndSubOrgSelectByUser(ctx context.Context, userID, orgID uint32) ([]IDName, *errs.Status) {
@@ -105,6 +118,30 @@ func (c *Client) GetOrgAndSubOrgSelectByUser(ctx context.Context, userID, orgID 
 		}
 		return nil
 	})
+}
+
+// GetAdminOrgIDs 查询用户有管理员权限的组织及其所有子孙组织的ID集合。
+// 系统管理员返回所有组织。
+func (c *Client) GetAdminOrgIDs(ctx context.Context, userID uint32) ([]uint32, *errs.Status) {
+	nodes, err := c.GetAdminOrgSubTree(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	var orgIDs []uint32
+	collectOrgIDs(nodes, &orgIDs)
+	return orgIDs, nil
+}
+
+// collectOrgIDs 从管理员组织树中收集所有 hasPerm=true 的组织ID
+func collectOrgIDs(nodes []*AdminOrgTreeNode, ids *[]uint32) {
+	for _, n := range nodes {
+		if n.HasPerm {
+			*ids = append(*ids, n.ID)
+		}
+		if len(n.Children) > 0 {
+			collectOrgIDs(n.Children, ids)
+		}
+	}
 }
 
 func (c *Client) GetAdminOrgSubTree(ctx context.Context, userID uint32) ([]*AdminOrgTreeNode, *errs.Status) {
