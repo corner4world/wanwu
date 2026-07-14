@@ -2391,6 +2391,7 @@ export default {
       newChat: '新建对话',
       loading: '加载中...',
       noMore: '没有更多了',
+      search: '搜索',
     },
     header: {
       welcomeTitle: '你好，我是万悟',
