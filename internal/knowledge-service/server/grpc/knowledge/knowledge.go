@@ -58,8 +58,17 @@ func (s *Service) SelectKnowledgeList(ctx context.Context, req *knowledgebase_se
 	return buildKnowledgeListResp(list, tagMap, permissionMap), nil
 }
 
+func (s *Service) SelectKnowledgeListByUserList(ctx context.Context, req *knowledgebase_service.KnowledgeSelectUserListReq) (*knowledgebase_service.KnowledgeSelectListResp, error) {
+	list, permissionMap, err := orm.SelectKnowledgeListByOrgList(ctx, req.UserId, req.OrgId, req.Name, buildCategoryList(req.Category), int(req.External))
+	if err != nil {
+		log.Errorf(fmt.Sprintf("获取知识库列表失败(%v)  参数(%v)", err, req))
+		return nil, util.ErrCode(errs.Code_KnowledgeBaseSelectFailed)
+	}
+	return buildKnowledgeListResp(list, nil, permissionMap), nil
+}
+
 func (s *Service) SelectKnowledgeListByIdList(ctx context.Context, req *knowledgebase_service.BatchKnowledgeSelectReq) (*knowledgebase_service.KnowledgeSelectListResp, error) {
-	list, permissionMap, err := orm.SelectKnowledgeByIdList(ctx, req.KnowledgeIdList, req.UserId, req.OrgId)
+	list, permissionMap, err := orm.SelectKnowledgeByIdListPermission(ctx, req.KnowledgeIdList, req.UserId, req.OrgId, req.NoPermission)
 	if err != nil {
 		log.Errorf(fmt.Sprintf("获取知识库列表失败(%v)  参数(%v)", err, req))
 		return nil, util.ErrCode(errs.Code_KnowledgeBaseSelectFailed)
@@ -430,9 +439,12 @@ func (s *Service) DeleteExportRecord(ctx context.Context, req *knowledgebase_ser
 
 // buildCategoryList 构造分类列表
 func buildCategoryList(category int32) []int {
-	if int(category) == model.CategoryQA {
+	switch category {
+	case model.CategoryALL:
+		return make([]int, 0)
+	case model.CategoryQA:
 		return []int{model.CategoryQA}
-	} else {
+	default:
 		return []int{model.CategoryKnowledge, model.CategoryMultimodal}
 	}
 }
@@ -1001,6 +1013,9 @@ func buildKnowledgeTagList(knowledgeId string, knowledgeTagMap map[string][]*orm
 }
 
 func buildKnowledgePermission(knowledgeId string, permissionMap map[string]int) int32 {
+	if len(permissionMap) == 0 {
+		return 0
+	}
 	return int32(permissionMap[knowledgeId])
 }
 

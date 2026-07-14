@@ -36,6 +36,17 @@ func SelectKnowledgeIdByPermission(ctx context.Context, userId, orgId string, pe
 	return knowledgePermissionList, nil
 }
 
+// SelectKnowledgeIdByPermissionOrgList 查询用户有权限的知识库id
+func SelectKnowledgeIdByPermissionOrgList(ctx context.Context, userId, orgId []string, permission int) ([]*model.KnowledgePermission, error) {
+	var knowledgePermissionList []*model.KnowledgePermission
+	err := sqlopt.SQLOptions(sqlopt.WithPermitList(orgId, userId), sqlopt.WithOverKnowledgePermission(permission)).
+		Apply(db.GetHandle(ctx), &model.KnowledgePermission{}).Find(&knowledgePermissionList).Error
+	if err != nil {
+		return nil, err
+	}
+	return knowledgePermissionList, nil
+}
+
 // SelectUserKnowledgePermissionList 查询用户知识库权限
 func SelectUserKnowledgePermissionList(ctx context.Context, knowledgeId string) ([]*model.KnowledgePermission, error) {
 	var permissionList []*model.KnowledgePermission
