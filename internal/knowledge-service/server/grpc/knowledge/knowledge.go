@@ -199,9 +199,15 @@ func (s *Service) KnowledgeHit(ctx context.Context, req *knowledgebase_service.K
 	for _, k := range req.KnowledgeList {
 		knowledgeIdList = append(knowledgeIdList, k.KnowledgeId)
 	}
-	list, _, err := orm.SelectKnowledgeByIdList(ctx, knowledgeIdList, "", "")
+	//命中测试这里需要校验权限
+	list, _, err := orm.SelectKnowledgeByIdList(ctx, knowledgeIdList, req.UserId, req.OrgId)
 	if err != nil {
 		return nil, err
+	}
+	if len(list) == 0 {
+		marshal, _ := json.Marshal(knowledgeIdList)
+		log.Errorf("knowledge hit error no permission userId %s orgId %s knowledgeID %s", req.UserId, req.OrgId, string(marshal))
+		return nil, util.ErrCode(errs.Code_KnowledgeBaseHitFailed)
 	}
 	knowledgeIDToName := make(map[string]string)
 	for _, k := range list {
