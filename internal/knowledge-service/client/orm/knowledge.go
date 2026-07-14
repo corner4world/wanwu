@@ -3,7 +3,6 @@ package orm
 import (
 	"context"
 	"fmt"
-
 	errs "github.com/UnicomAI/wanwu/api/proto/err-code"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/client/model"
 	"github.com/UnicomAI/wanwu/internal/knowledge-service/client/orm/sqlopt"
@@ -31,7 +30,7 @@ func SelectKnowledgeList(ctx context.Context, userId, orgId, name string, catego
 		}
 	}
 	//查询有权限的知识库列表，获取有权限的知识库id，目前是getALL，没有通过连表实现
-	permissionKnowledgeList, err := SelectKnowledgeIdByPermission(ctx, userId, orgId, model.PermissionTypeView)
+	permissionKnowledgeList, err := SelectKnowledgeIdByPermission(ctx, userId, orgId, model.PermissionTypeView, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -106,14 +105,14 @@ func SelectKnowledgeByIdListPermission(ctx context.Context, knowledgeIdList []st
 	var err error
 	if !noPermission {
 		//查询有权限的知识库列表，获取有权限的知识库id，目前是getALL，没有通过连表实现
-		permissionKnowledgeList, err = SelectKnowledgeIdByPermission(ctx, userId, orgId, model.PermissionTypeView)
+		permissionKnowledgeList, err = SelectKnowledgeIdByPermission(ctx, userId, orgId, model.PermissionTypeView, knowledgeIdList)
 		if err != nil {
 			return nil, nil, err
 		}
 		if len(permissionKnowledgeList) == 0 {
 			return make([]*model.KnowledgeBase, 0), nil, nil
 		}
-		knowledgeIdList = intersectionKnowledgeIdList(knowledgeIdList, buildPermissionKnowledgeIdList(permissionKnowledgeList))
+		knowledgeIdList = buildPermissionKnowledgeIdList(permissionKnowledgeList)
 		if len(knowledgeIdList) == 0 {
 			return make([]*model.KnowledgeBase, 0), nil, nil
 		}
