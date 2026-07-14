@@ -139,6 +139,7 @@ export default {
       uploadText: '将文件拖到此处，或',
       uploadClick: '点击上传',
       templateClick: '模版下载',
+      downloadError: '模版下载失败，请稍后重试',
       typeFileTip: '格式的文件',
       typeFileTip1: '按照插件要求，支持',
       imgUploading: '图片上传中',

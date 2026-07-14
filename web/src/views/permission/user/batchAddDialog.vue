@@ -90,6 +90,7 @@
 <script>
 import Pagination from '@/components/pagination.vue';
 import { batchCreateUser } from '@/api/permission/user';
+import { authDownload } from '@/utils/util';
 export default {
   components: { Pagination },
   props: {
@@ -122,8 +123,15 @@ export default {
     openDialog() {
       this.dialogVisible = true;
     },
-    downloadTemp() {
-      window.open(this.$basePath + '/user/api/v1/static/docs/users.xlsx');
+    async downloadTemp() {
+      try {
+        await authDownload(
+          this.$basePath + '/user/api/v1/files/docs/users.xlsx',
+          'users.xlsx',
+        );
+      } catch (error) {
+        this.$message.error(this.$t('uploadDialog.uploadError'));
+      }
     },
     handleUpload(res) {
       if (res.file) {
