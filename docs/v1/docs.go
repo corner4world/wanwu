@@ -15458,7 +15458,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/response.Select"
+                                            "$ref": "#/definitions/response.UserSelect"
                                         }
                                     }
                                 }
@@ -31378,6 +31378,20 @@ const docTemplate = `{
                 }
             }
         },
+        "response.IDNameWithAvatar": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "response.ImportGeneralAgentSkillConversationResp": {
             "type": "object",
             "properties": {
@@ -32307,7 +32321,7 @@ const docTemplate = `{
                     "description": "用户所在组织列表",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.IDNameWithAvatar"
                     }
                 },
                 "token": {
@@ -34019,7 +34033,7 @@ const docTemplate = `{
                 "select": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.IDNameWithAvatar"
                     }
                 }
             }
@@ -35104,6 +35118,17 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "response.UserSelect": {
+            "type": "object",
+            "properties": {
+                "select": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.IDName"
+                    }
                 }
             }
         },

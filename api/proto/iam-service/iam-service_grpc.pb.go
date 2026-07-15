@@ -117,7 +117,7 @@ type IAMServiceClient interface {
 	// 查询用户对指定组织是否拥有管理员权限（含祖先组织继承）
 	IsAdminInOrgs(ctx context.Context, in *IsAdminInOrgsReq, opts ...grpc.CallOption) (*IsAdminInOrgsResp, error)
 	// 获取组织列表（用于下拉选择）
-	GetOrgSelect(ctx context.Context, in *GetOrgSelectReq, opts ...grpc.CallOption) (*Select, error)
+	GetOrgSelect(ctx context.Context, in *GetOrgSelectReq, opts ...grpc.CallOption) (*OrgSelectResp, error)
 	// 获取组织列表
 	GetOrgList(ctx context.Context, in *GetOrgListReq, opts ...grpc.CallOption) (*GetOrgListResp, error)
 	// 获取组织
@@ -373,9 +373,9 @@ func (c *iAMServiceClient) IsAdminInOrgs(ctx context.Context, in *IsAdminInOrgsR
 	return out, nil
 }
 
-func (c *iAMServiceClient) GetOrgSelect(ctx context.Context, in *GetOrgSelectReq, opts ...grpc.CallOption) (*Select, error) {
+func (c *iAMServiceClient) GetOrgSelect(ctx context.Context, in *GetOrgSelectReq, opts ...grpc.CallOption) (*OrgSelectResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Select)
+	out := new(OrgSelectResp)
 	err := c.cc.Invoke(ctx, IAMService_GetOrgSelect_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -830,7 +830,7 @@ type IAMServiceServer interface {
 	// 查询用户对指定组织是否拥有管理员权限（含祖先组织继承）
 	IsAdminInOrgs(context.Context, *IsAdminInOrgsReq) (*IsAdminInOrgsResp, error)
 	// 获取组织列表（用于下拉选择）
-	GetOrgSelect(context.Context, *GetOrgSelectReq) (*Select, error)
+	GetOrgSelect(context.Context, *GetOrgSelectReq) (*OrgSelectResp, error)
 	// 获取组织列表
 	GetOrgList(context.Context, *GetOrgListReq) (*GetOrgListResp, error)
 	// 获取组织
@@ -974,7 +974,7 @@ func (UnimplementedIAMServiceServer) IsUserOrgAdmin(context.Context, *IsUserOrgA
 func (UnimplementedIAMServiceServer) IsAdminInOrgs(context.Context, *IsAdminInOrgsReq) (*IsAdminInOrgsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsAdminInOrgs not implemented")
 }
-func (UnimplementedIAMServiceServer) GetOrgSelect(context.Context, *GetOrgSelectReq) (*Select, error) {
+func (UnimplementedIAMServiceServer) GetOrgSelect(context.Context, *GetOrgSelectReq) (*OrgSelectResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrgSelect not implemented")
 }
 func (UnimplementedIAMServiceServer) GetOrgList(context.Context, *GetOrgListReq) (*GetOrgListResp, error) {

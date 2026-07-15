@@ -216,7 +216,7 @@ func AdminChangeUserPassword(ctx *gin.Context, userID string, req *request.UserP
 	return err
 }
 
-func GetOrgUserNotSelect(ctx *gin.Context, orgID, name string) (*response.Select, error) {
+func GetOrgUserNotSelect(ctx *gin.Context, orgID, name string) (*response.UserSelect, error) {
 	users, err := iam.GetUserSelectNotInOrg(ctx.Request.Context(), &iam_service.GetUserSelectNotInOrgReq{
 		OrgId:    orgID,
 		UserName: name,
@@ -224,7 +224,7 @@ func GetOrgUserNotSelect(ctx *gin.Context, orgID, name string) (*response.Select
 	if err != nil {
 		return nil, err
 	}
-	return &response.Select{Select: toIDNames(users.Selects)}, nil
+	return &response.UserSelect{Select: toIDNames(users.Selects)}, nil
 }
 
 func GetRoleSelect(ctx *gin.Context, orgID string) (*response.RoleSelect, error) {
