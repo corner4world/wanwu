@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	app_service "github.com/UnicomAI/wanwu/api/proto/app-service"
@@ -131,6 +132,7 @@ func GetUrlConversationList(ctx *gin.Context, xCId, suffix string, req request.G
 			OrgId:  appUrlInfo.OrgId,
 		},
 		AssistantId: appUrlInfo.AppId,
+		SearchText:  strings.TrimSpace(req.SearchText),
 	})
 	if err != nil {
 		return nil, err

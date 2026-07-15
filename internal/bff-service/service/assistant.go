@@ -965,6 +965,7 @@ func GetConversationList(ctx *gin.Context, userId, orgId string, req request.Con
 		ConversationType: constant.ConversationTypePublished,
 		PageSize:         int32(req.PageSize),
 		PageNo:           int32(req.PageNo),
+		SearchText:       strings.TrimSpace(req.SearchText),
 		Identity: &assistant_service.Identity{
 			UserId: userId,
 			OrgId:  orgId,

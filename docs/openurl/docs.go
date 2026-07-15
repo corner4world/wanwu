@@ -494,6 +494,12 @@ const docTemplate = `{
                         "name": "pageSize",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "检索词",
+                        "name": "searchText",
+                        "in": "query"
                     }
                 ],
                 "responses": {
