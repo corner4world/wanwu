@@ -1918,6 +1918,10 @@ paths:
         name: pageSize
         required: true
         type: integer
+      - description: 检索词
+        in: query
+        name: searchText
+        type: string
       produces:
       - application/json
       responses:
