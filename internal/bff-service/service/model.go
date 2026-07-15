@@ -317,6 +317,19 @@ func toModelInfo(ctx *gin.Context, modelInfo *model_service.ModelInfo, opts ...*
 		}
 	}
 
+	// OCR 模型：注入 yaml 推荐配置里的 supportFileTypes（不落库，按 model 名匹配的能力描述）
+	if modelInfo.ModelType == mp.ModelTypeOcr && modelConfig != nil {
+		if fileTypes := ocrSupportFileTypes(modelInfo.Provider, modelInfo.Model); len(fileTypes) > 0 {
+			cfg := make(map[string]any)
+			if b, err := json.Marshal(modelConfig); err == nil {
+				if err = json.Unmarshal(b, &cfg); err == nil {
+					cfg["supportFileTypes"] = fileTypes
+					modelConfig = cfg
+				}
+			}
+		}
+	}
+
 	res := &response.ModelInfo{
 		ModelId:      modelInfo.ModelId,
 		Uuid:         modelInfo.Uuid,
@@ -339,6 +352,22 @@ func toModelInfo(ctx *gin.Context, modelInfo *model_service.ModelInfo, opts ...*
 		ImportSource: modelInfo.ImportSource,
 	}
 	return res, nil
+}
+
+// ocrSupportFileTypes 从 yaml 推荐配置（recommend_model_config.yaml）中查找指定 provider 下与 model 名匹配的 OCR 模型，返回其支持的文件类型。
+// 匹配不到（如用户自定义导入的 OCR 模型名与推荐配置不一致）返回 nil。
+func ocrSupportFileTypes(provider, model string) []string {
+	for _, p := range config.Cfg().RecommendModels {
+		if p.Provider != provider {
+			continue
+		}
+		for _, item := range p.Ocr {
+			if item.Model == model {
+				return item.SupportFileTypes
+			}
+		}
+	}
+	return nil
 }
 
 // checkAllowEdit 检查用户是否有编辑权限
@@ -439,12 +468,15 @@ func GetRecommendModels(_ *gin.Context, req *request.RecommendModelsRequest) (*r
 }
 
 func getModelsByType(p config.RecommendModelsByProvider, modelType string) []response.RecommendModel {
+	// OCR 使用独立的 RecommendModelItemOCR 结构（带 SupportFileTypes），单独转换
+	if modelType == mp.ModelTypeOcr {
+		return convertRecommendModelsOCR(p.Ocr)
+	}
 	modelMap := map[string][]config.RecommendModelItem{
 		mp.ModelTypeTextEmbedding:  p.Embedding,
 		mp.ModelTypeMultiEmbedding: p.MultiEmbedding,
 		mp.ModelTypeTextRerank:     p.Rerank,
 		mp.ModelTypeMultiRerank:    p.MultiRerank,
-		mp.ModelTypeOcr:            p.Ocr,
 		mp.ModelTypeGui:            p.Gui,
 		mp.ModelTypePdfParser:      p.PdfParser,
 		mp.ModelTypeSyncAsr:        p.SyncAsr,
@@ -456,6 +488,17 @@ func getModelsByType(p config.RecommendModelsByProvider, modelType string) []res
 }
 
 func convertRecommendModels(items []config.RecommendModelItem) []response.RecommendModel {
+	result := make([]response.RecommendModel, 0, len(items))
+	for _, item := range items {
+		result = append(result, response.RecommendModel{
+			Model:       item.Model,
+			DisplayName: item.DisplayName,
+		})
+	}
+	return result
+}
+
+func convertRecommendModelsOCR(items []config.RecommendModelItemOCR) []response.RecommendModel {
 	result := make([]response.RecommendModel, 0, len(items))
 	for _, item := range items {
 		result = append(result, response.RecommendModel{

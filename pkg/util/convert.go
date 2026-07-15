@@ -89,3 +89,30 @@ func CheckAndRemoveBase64Prefix(s string) (string, bool) {
 	// 非带前缀Base64（如URL/其他字符串），返回原串+false
 	return s, false
 }
+
+// GetStringFromMap 从 map 中安全取字符串字段，不存在或类型不匹配时返回空串
+func GetStringFromMap(m map[string]interface{}, key string) string {
+	if v, ok := m[key]; ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+// GetIntFromMap 从 map 中安全取整数字段，不存在或类型不匹配时返回 nil
+func GetIntFromMap(m map[string]interface{}, key string) *int {
+	if v, ok := m[key]; ok {
+		switch n := v.(type) {
+		case int:
+			return &n
+		case int64:
+			i := int(n)
+			return &i
+		case float64:
+			i := int(n)
+			return &i
+		}
+	}
+	return nil
+}
