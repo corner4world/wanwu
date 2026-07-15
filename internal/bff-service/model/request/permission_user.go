@@ -1,8 +1,8 @@
 package request
 
 type OrgIDsReq struct {
-	IsAllOrg  bool     `json:"isAllOrg"`                      // 是否查询全部组织（用户有权限的组织）
-	OrgIDList []string `json:"orgIdList,omitempty"`            // 组织ID列表，isAllOrg=false 时必填
+	IsAllOrg  bool     `json:"isAllOrg"`            // 是否查询全部组织（用户有权限的组织）
+	OrgIDList []string `json:"orgIdList,omitempty"` // 组织ID列表，isAllOrg=false 时必填
 }
 
 func (o *OrgIDsReq) Check() error {

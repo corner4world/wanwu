@@ -12,12 +12,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (s *Service) GetOrgSelect(ctx context.Context, req *iam_service.GetOrgSelectReq) (*iam_service.Select, error) {
+func (s *Service) GetOrgSelect(ctx context.Context, req *iam_service.GetOrgSelectReq) (*iam_service.OrgSelectResp, error) {
 	orgs, err := s.cli.SelectOrgs(ctx, util.MustU32(req.UserId))
 	if err != nil {
 		return nil, errStatus(errs.Code_IAMOrg, err)
 	}
-	return &iam_service.Select{Selects: toIDNames(orgs)}, nil
+	return &iam_service.OrgSelectResp{Selects: toProtoIDNameWithAvatars(orgs)}, nil
 }
 
 func (s *Service) GetOrgList(ctx context.Context, req *iam_service.GetOrgListReq) (*iam_service.GetOrgListResp, error) {

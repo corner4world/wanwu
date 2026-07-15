@@ -59,8 +59,8 @@ func (c *Client) GetOrgs(ctx context.Context, parentID uint32, name string, offs
 	})
 }
 
-func (c *Client) SelectOrgs(ctx context.Context, userID uint32) ([]IDName, *errs.Status) {
-	var ret []IDName
+func (c *Client) SelectOrgs(ctx context.Context, userID uint32) ([]IDNameWithAvatar, *errs.Status) {
+	var ret []IDNameWithAvatar
 	var orgTree *model.OrgNode
 	var err error
 	return ret, c.transaction(ctx, func(tx *gorm.DB) *errs.Status {
@@ -112,9 +112,12 @@ func (c *Client) GetOrgAndSubOrgSelectByUser(ctx context.Context, userID, orgID 
 			return toErrStatus("iam_orgs_select", err.Error())
 		}
 		crurentOrgTree := orgTree.GetOrg(orgID)
-		result, err = selectOrgs(tx, userID, crurentOrgTree)
+		orgs, err := selectOrgs(tx, userID, crurentOrgTree)
 		if err != nil {
 			return toErrStatus("iam_orgs_select", err.Error())
+		}
+		for _, org := range orgs {
+			result = append(result, IDName{ID: org.ID, Name: org.Name})
 		}
 		return nil
 	})
@@ -582,7 +585,7 @@ func getOrgTree(tx *gorm.DB) (*model.OrgNode, error) {
 	return model.NewOrgTree(orgs, orgAdmins)
 }
 
-func selectOrgs(tx *gorm.DB, userID uint32, orgTree *model.OrgNode) ([]IDName, error) {
+func selectOrgs(tx *gorm.DB, userID uint32, orgTree *model.OrgNode) ([]IDNameWithAvatar, error) {
 	// user role
 	var userRoles []*model.UserRole
 	orgRolesQuery := sqlopt.WithStatus(true).Apply(tx).Select("role_id").Table("org_roles")
@@ -597,9 +600,9 @@ func selectOrgs(tx *gorm.DB, userID uint32, orgTree *model.OrgNode) ([]IDName, e
 		return nil, fmt.Errorf("get org user err: %v", err)
 	}
 	// select org
-	var ret []IDName
+	var ret []IDNameWithAvatar
 	for _, org := range orgTree.Select(userOrgs, userRoles) {
-		ret = append(ret, IDName{ID: org.ID, Name: org.Name})
+		ret = append(ret, IDNameWithAvatar{ID: org.ID, Name: org.Name, AvatarPath: org.AvatarPath})
 	}
 	return ret, nil
 }

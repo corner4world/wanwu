@@ -186,7 +186,7 @@ func AdminChangeUserPassword(ctx *gin.Context) {
 //	@Produce		json
 //	@Param			name	query		string	false	"用户名(模糊查询)"
 //	@Param			orgId	query		string	true	"组织ID"
-//	@Success		200		{object}	response.Response{data=response.Select}
+//	@Success		200		{object}	response.Response{data=response.UserSelect}
 //	@Router			/org/other/select [get]
 func GetOrgUserNotSelect(ctx *gin.Context) {
 	resp, err := service.GetOrgUserNotSelect(ctx, ctx.Query("orgId"), ctx.Query("name"))

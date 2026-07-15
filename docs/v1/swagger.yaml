@@ -7274,6 +7274,15 @@ definitions:
       name:
         type: string
     type: object
+  response.IDNameWithAvatar:
+    properties:
+      avatar:
+        $ref: '#/definitions/request.Avatar'
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   response.ImportGeneralAgentSkillConversationResp:
     properties:
       customSkillId:
@@ -7906,7 +7915,7 @@ definitions:
       orgs:
         description: 用户所在组织列表
         items:
-          $ref: '#/definitions/response.IDName'
+          $ref: '#/definitions/response.IDNameWithAvatar'
         type: array
       token:
         type: string
@@ -9032,7 +9041,7 @@ definitions:
     properties:
       select:
         items:
-          $ref: '#/definitions/response.IDName'
+          $ref: '#/definitions/response.IDNameWithAvatar'
         type: array
     type: object
   response.SensitiveWordTableDetail:
@@ -9758,6 +9767,13 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  response.UserSelect:
+    properties:
+      select:
+        items:
+          $ref: '#/definitions/response.IDName'
+        type: array
     type: object
   response.Users:
     properties:
@@ -19006,7 +19022,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/response.Select'
+                  $ref: '#/definitions/response.UserSelect'
               type: object
       security:
       - JWT: []

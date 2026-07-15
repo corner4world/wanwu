@@ -96,6 +96,19 @@ func toIDNames(idNames []orm.IDName) []*iam_service.IDName {
 	return ret
 }
 
+func toProtoIDNameWithAvatars(idNames []orm.IDNameWithAvatar) []*iam_service.IDNameWithAvatar {
+	var ret []*iam_service.IDNameWithAvatar
+	for _, idName := range idNames {
+		ret = append(ret, &iam_service.IDNameWithAvatar{
+			Id:         strconv.Itoa(int(idName.ID)),
+			Name:       idName.Name,
+			NameStatus: idName.NameStatus,
+			AvatarPath: idName.AvatarPath,
+		})
+	}
+	return ret
+}
+
 func toIDFullName(idFullName orm.IDFullName) *iam_service.IDFullName {
 	return &iam_service.IDFullName{Id: strconv.Itoa(int(idFullName.ID)), Name: idFullName.Name, FullName: idFullName.FullName}
 }
