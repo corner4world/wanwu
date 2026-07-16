@@ -1,6 +1,8 @@
 package callback
 
 import (
+	"errors"
+
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
 	"github.com/UnicomAI/wanwu/internal/bff-service/service"
@@ -202,6 +204,11 @@ func SearchKnowledgeBase(ctx *gin.Context) {
 //	@Router			/rag/knowledge/stream/search [post]
 func KnowledgeStreamSearch(ctx *gin.Context) {
 	userId := ctx.GetHeader("X-uid")
+	if userId == "" {
+		resp, httpStatus := response.CommonRagKnowledgeError(errors.New("callback: empty X-uid"))
+		gin_util.ResponseRawByte(ctx, httpStatus, resp)
+		return
+	}
 	var req request.RagKnowledgeChatReq
 	if !gin_util.Bind(ctx, &req) {
 		return
