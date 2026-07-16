@@ -636,6 +636,7 @@ func (s *Service) GetDocSegmentList(ctx context.Context, req *knowledgebase_doc_
 			FileName:          service.RebuildFileName(docInfo.DocId, docInfo.FileType, docInfo.Name),
 			PageSize:          req.PageSize,
 			SearchAfter:       req.PageSize * (req.PageNo - 1),
+			QueryText:         strings.TrimSpace(req.Keyword),
 		})
 		if err != nil {
 			return nil, util.ErrCode(errs.Code_KnowledgeDocSplitFailed)
@@ -1125,7 +1126,7 @@ func buildSegmentListResp(importTask *model.KnowledgeImportTask, doc *model.Know
 		Splitter:            buildSplitter(config.Splitter),
 		PageTotal:           buildPageTotal(int32(segmentListResp.ChunkTotalNum), req.PageSize),
 		SegmentTotalNum:     int32(segmentListResp.ChunkTotalNum),
-		ContentList:         buildContentList(segmentListResp.List, req.Keyword),
+		ContentList:         buildContentList(segmentListResp.List),
 		MetaDataList:        buildMetaList(metaDataList),
 		SegmentImportStatus: buildSegmentImportStatus(segmentImportTask),
 		SegmentMethod:       buildSegmentMethod(doc, segmentConfigMap),
@@ -1367,16 +1368,10 @@ func buildPageTotal(totalNum int32, pageSize int32) int32 {
 	return totalNum/pageSize + leftPage
 }
 
-func buildContentList(contentList []service.FileSplitContent, keyword string) []*knowledgebase_doc_service.SegmentContent {
+func buildContentList(contentList []service.FileSplitContent) []*knowledgebase_doc_service.SegmentContent {
 	var retList = make([]*knowledgebase_doc_service.SegmentContent, 0)
 	for i := 0; i < len(contentList); i++ {
 		content := contentList[i]
-		// 筛选分段搜索框
-		if strings.TrimSpace(keyword) != "" {
-			if !strings.Contains(content.Content, keyword) {
-				continue
-			}
-		}
 		retList = append(retList, &knowledgebase_doc_service.SegmentContent{
 			Content:    content.Content,
 			Available:  content.Status,
