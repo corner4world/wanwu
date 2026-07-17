@@ -118,8 +118,8 @@ func (c *Client) GetUsers(ctx context.Context, orgID uint32, name, email string,
 
 }
 
-func (c *Client) SelectUsersNotInOrg(ctx context.Context, orgID uint32, name string) ([]IDName, *errs.Status) {
-	var ret []IDName
+func (c *Client) SelectUsersNotInOrg(ctx context.Context, orgID uint32, name string) ([]IDNameWithAvatar, *errs.Status) {
+	var ret []IDNameWithAvatar
 	return ret, c.transaction(ctx, func(tx *gorm.DB) *errs.Status {
 		var users []*model.User
 		orgUsersQuery := sqlopt.WithOrgID(orgID).Apply(tx).Select("user_id").Table("org_users")
@@ -128,28 +128,28 @@ func (c *Client) SelectUsersNotInOrg(ctx context.Context, orgID uint32, name str
 			return toErrStatus("iam_users_select_not_in_org", util.Int2Str(orgID), err.Error())
 		}
 		for _, user := range users {
-			ret = append(ret, IDName{ID: user.ID, Name: user.Name})
+			ret = append(ret, IDNameWithAvatar{ID: user.ID, Name: user.Name, AvatarPath: user.AvatarPath})
 		}
 		return nil
 	})
 
 }
 
-func (c *Client) SelectUsersByUserIDs(ctx context.Context, userIDs []uint32) ([]IDName, *errs.Status) {
+func (c *Client) SelectUsersByUserIDs(ctx context.Context, userIDs []uint32) ([]IDNameWithAvatar, *errs.Status) {
 	var users []*model.User
 	if err := sqlopt.WithIDs(userIDs).Apply(c.db.WithContext(ctx)).Find(&users).Error; err != nil {
 		return nil, toErrStatus("iam_user_select_by_ids", err.Error())
 	}
-	var ret []IDName
+	var ret []IDNameWithAvatar
 	for _, user := range users {
-		ret = append(ret, IDName{ID: user.ID, Name: user.Name})
+		ret = append(ret, IDNameWithAvatar{ID: user.ID, Name: user.Name, AvatarPath: user.AvatarPath})
 	}
 	return ret, nil
 }
 
 // GetUsersByOrgIDs 根据多个组织ID查询对应的用户列表（去重）。
 // 不过滤禁用状态，包含所有 org_users 记录。
-func (c *Client) GetUsersByOrgIDs(ctx context.Context, orgIDs []uint32) ([]IDName, *errs.Status) {
+func (c *Client) GetUsersByOrgIDs(ctx context.Context, orgIDs []uint32) ([]IDNameWithAvatar, *errs.Status) {
 	if len(orgIDs) == 0 {
 		return nil, nil
 	}
@@ -982,10 +982,11 @@ func toUserInfoTx(tx *gorm.DB, user *model.User, orgTree *model.OrgNode, allOrg 
 			if orgRole.OrgID == userRole.OrgID && orgRole.RoleID == userRole.RoleID {
 				roleExist = true
 				currentOrg.Roles = append(currentOrg.Roles, RoleIDName{
-					ID:       orgRole.RoleID,
-					Name:     orgRole.Name,
-					IsAdmin:  orgRole.IsAdmin,
-					IsSystem: orgRole.OrgID == config.TopOrgID(),
+					ID:         orgRole.RoleID,
+					Name:       orgRole.Name,
+					AvatarPath: orgRole.AvatarPath,
+					IsAdmin:    orgRole.IsAdmin,
+					IsSystem:   orgRole.OrgID == config.TopOrgID(),
 				})
 			}
 		}
@@ -994,9 +995,10 @@ func toUserInfoTx(tx *gorm.DB, user *model.User, orgTree *model.OrgNode, allOrg 
 			if globalRole, ok := globalRoleMap[userRole.RoleID]; ok {
 				roleExist = true
 				currentOrg.Roles = append(currentOrg.Roles, RoleIDName{
-					ID:       globalRole.RoleID,
-					Name:     globalRole.Name,
-					IsGlobal: true,
+					ID:         globalRole.RoleID,
+					Name:       globalRole.Name,
+					AvatarPath: globalRole.AvatarPath,
+					IsGlobal:   true,
 				})
 			}
 		}
@@ -1018,14 +1020,14 @@ func getUserOrgsTx(tx *gorm.DB, userID uint32, orgTree *model.OrgNode) ([]OrgUse
 		if orgUser.Status != sqlopt.OrgUserStatusDisabled {
 			status = true
 		}
-		ret = append(ret, OrgUserIDName{IDName: IDName{ID: orgUser.OrgID, Name: orgTree.GetFullName(orgUser.OrgID)}, Status: status})
+		ret = append(ret, OrgUserIDName{IDNameWithAvatar: IDNameWithAvatar{ID: orgUser.OrgID, Name: orgTree.GetFullName(orgUser.OrgID), AvatarPath: orgTree.GetOrg(orgUser.OrgID).GetAvatarPath()}, Status: status})
 	}
 	return ret, nil
 }
 
 // ID: orgUser.OrgID, Name: orgTree.GetFullName(orgUser.OrgID),Status: orgUser.Status
-func getCreatorTx(tx *gorm.DB, creatorID uint32) (IDName, error) {
-	ret := IDName{ID: creatorID}
+func getCreatorTx(tx *gorm.DB, creatorID uint32) (IDNameWithAvatar, error) {
+	ret := IDNameWithAvatar{ID: creatorID}
 	creator := &model.User{}
 	if err := sqlopt.WithID(creatorID).Apply(tx).First(creator).Error; err != nil {
 		if err != gorm.ErrRecordNotFound {
@@ -1179,7 +1181,7 @@ func getUserPermission(tx *gorm.DB, userID, orgID uint32) (*Permission, error) {
 	ret := &Permission{
 		IsAdmin:  isAdmin,
 		IsSystem: orgID == config.TopOrgID(),
-		Org:      IDName{ID: org.ID, Name: org.Name},
+		Org:      IDNameWithAvatar{ID: org.ID, Name: org.Name, AvatarPath: org.AvatarPath},
 	}
 	// user
 	user := &model.User{}
@@ -1194,20 +1196,22 @@ func getUserPermission(tx *gorm.DB, userID, orgID uint32) (*Permission, error) {
 			if orgRole.RoleID == userRole.RoleID {
 				matched = true
 				ret.Roles = append(ret.Roles, RoleIDName{
-					ID:       orgRole.RoleID,
-					Name:     orgRole.Name,
-					IsAdmin:  orgRole.IsAdmin,
-					IsSystem: orgRole.OrgID == config.TopOrgID(),
+					ID:         orgRole.RoleID,
+					Name:       orgRole.Name,
+					AvatarPath: orgRole.AvatarPath,
+					IsAdmin:    orgRole.IsAdmin,
+					IsSystem:   orgRole.OrgID == config.TopOrgID(),
 				})
 			}
 		}
 		if !matched {
 			if globalRole, ok := globalRoleMap[userRole.RoleID]; ok {
 				ret.Roles = append(ret.Roles, RoleIDName{
-					ID:       globalRole.RoleID,
-					Name:     globalRole.Name,
-					IsGlobal: true,
-					IsSystem: true,
+					ID:         globalRole.RoleID,
+					Name:       globalRole.Name,
+					AvatarPath: globalRole.AvatarPath,
+					IsGlobal:   true,
+					IsSystem:   true,
 				})
 			}
 		}

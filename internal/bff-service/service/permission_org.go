@@ -5,7 +5,6 @@ import (
 	"github.com/UnicomAI/wanwu/internal/bff-service/config"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/request"
 	"github.com/UnicomAI/wanwu/internal/bff-service/model/response"
-	gin_util "github.com/UnicomAI/wanwu/pkg/gin-util"
 	"github.com/UnicomAI/wanwu/pkg/util"
 	"github.com/gin-gonic/gin"
 )
@@ -48,7 +47,7 @@ func GetOrgInfo(ctx *gin.Context, orgID string) (*response.OrgInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return toOrgInfo(org), nil
+	return toOrgInfo(ctx, org), nil
 }
 
 func GetOrgList(ctx *gin.Context, parentID, name string, pageNo, pageSize int32) (*response.PageResult, error) {
@@ -63,7 +62,7 @@ func GetOrgList(ctx *gin.Context, parentID, name string, pageNo, pageSize int32)
 	}
 	var orgs []*response.OrgInfo
 	for _, org := range resp.Orgs {
-		orgs = append(orgs, toOrgInfo(org))
+		orgs = append(orgs, toOrgInfo(ctx, org))
 	}
 	return &response.PageResult{
 		List:     orgs,
@@ -93,27 +92,6 @@ func GetAdminOrgSubTree(ctx *gin.Context, userID string) ([]*response.AdminOrgTr
 
 // --- internal ---
 
-func toOrgIDName(ctx *gin.Context, org *iam_service.IDName) response.IDName {
-	if org.Id == config.TopOrgID {
-		org.Name = gin_util.I18nKey(ctx, "bff_top_org_name")
-	}
-	return response.IDName{
-		ID:   org.Id,
-		Name: org.Name,
-	}
-}
-
-func toOrgIDNameWithAvatar(ctx *gin.Context, org *iam_service.IDNameWithAvatar) response.IDNameWithAvatar {
-	if org.Id == config.TopOrgID {
-		org.Name = gin_util.I18nKey(ctx, "bff_top_org_name")
-	}
-	return response.IDNameWithAvatar{
-		ID:     org.Id,
-		Name:   org.Name,
-		Avatar: cacheOrgAvatar(org.AvatarPath),
-	}
-}
-
 func toOrgIDNamesWithAvatar(ctx *gin.Context, orgs []*iam_service.IDNameWithAvatar, isSystemAdmin bool) []response.IDNameWithAvatar {
 	var ret []response.IDNameWithAvatar
 	for _, org := range orgs {
@@ -142,12 +120,12 @@ func toAdminOrgTreeNodes(nodes []*iam_service.AdminOrgTreeNode) []*response.Admi
 	return ret
 }
 
-func toOrgInfo(org *iam_service.OrgInfo) *response.OrgInfo {
+func toOrgInfo(ctx *gin.Context, org *iam_service.OrgInfo) *response.OrgInfo {
 	return &response.OrgInfo{
 		OrgID:     org.OrgId,
 		Name:      org.Name,
 		Remark:    org.Remark,
-		Creator:   toIDName(org.Creator),
+		Creator:   toUserIDNameWithAvatar(org.Creator),
 		CreatedAt: util.Time2Str(org.CreatedAt),
 		Status:    org.Status,
 		UserCount: org.UserCount,
