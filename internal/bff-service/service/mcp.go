@@ -50,6 +50,12 @@ func GetMCPSquareList(ctx *gin.Context, userID, orgID, category, name string) (*
 }
 
 func CreateMCP(ctx *gin.Context, userID, orgID string, req request.MCPCreate) error {
+	if req.MCPSquareID != "" {
+		req.Transport = constant.MCPTransportSSE
+		req.ApiAuth = &pkg_util.ApiAuthWebRequest{
+			AuthType: pkg_util.AuthTypeNone,
+		}
+	}
 	_, err := mcp.CreateCustomMCP(ctx.Request.Context(), &mcp_service.CreateCustomMCPReq{
 		OrgId:         orgID,
 		UserId:        userID,
@@ -72,7 +78,7 @@ func UpdateMCP(ctx *gin.Context, userID, orgID string, req request.MCPUpdate) er
 	if err != nil {
 		return err
 	}
-	if err := pkg_util.ValidateBriefUpdate(&req.Name, existingMCP.Info.Name, &req.Desc, existingMCP.Info.Desc, pkg_util.SubjectMCP); err != nil {
+	if err := pkg_util.ValidateBriefUpdateAllowSpace(&req.Name, existingMCP.Info.Name, &req.Desc, existingMCP.Info.Desc, pkg_util.SubjectMCP); err != nil {
 		return grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, err.Error())
 	}
 	_, err = mcp.UpdateCustomMCP(ctx.Request.Context(), &mcp_service.UpdateCustomMCPReq{
@@ -401,7 +407,7 @@ func toToolAction(tool *common.ToolAction) *protocol.Tool {
 	return ret
 }
 
-func toApiAuthProto(auth pkg_util.ApiAuthWebRequest) *common.ApiAuthWebRequest {
+func toApiAuthProto(auth *pkg_util.ApiAuthWebRequest) *common.ApiAuthWebRequest {
 	return &common.ApiAuthWebRequest{
 		AuthType:           auth.AuthType,
 		ApiKeyHeaderPrefix: auth.ApiKeyHeaderPrefix,
