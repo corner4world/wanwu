@@ -713,7 +713,6 @@ func truncateBody(b []byte) string {
 	return string(b[:max])
 }
 
-
 // deriveMarkdownTitle 从 markdown 内容生成卡片标题：取第一行非空文本，
 // 去掉行首 # 标记符号与前后空白，截断到 20 字（钉钉 sampleMarkdown 的 title 字段必填，
 // 用于通知栏/会话列表预览）。

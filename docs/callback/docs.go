@@ -1334,7 +1334,7 @@ const docTemplate = `{
                                                         "List": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/response.IDName"
+                                                                "$ref": "#/definitions/response.IDNameWithAvatar"
                                                             }
                                                         }
                                                     }
@@ -5226,9 +5226,12 @@ const docTemplate = `{
                 }
             }
         },
-        "response.IDName": {
+        "response.IDNameWithAvatar": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
                 "id": {
                     "type": "string"
                 },

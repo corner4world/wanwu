@@ -77,7 +77,7 @@ func UnarchiveFile(ctx *gin.Context) {
 //	@Accept		json
 //	@Produce	json
 //	@Param		data	body		request.GetUserListByUserIdsReq	true	"根据userIds获取用户信息参数"
-//	@Success	200		{object}	response.Response{data=response.ListResult{List=[]response.IDName}}
+//	@Success	200		{object}	response.Response{data=response.ListResult{List=[]response.IDNameWithAvatar}}
 //	@Router		/user/list [post]
 func GetUserListByUserIds(ctx *gin.Context) {
 	var req request.GetUserListByUserIdsReq

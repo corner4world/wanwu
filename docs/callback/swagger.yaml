@@ -2465,8 +2465,10 @@ definitions:
         description: schema
         type: string
     type: object
-  response.IDName:
+  response.IDNameWithAvatar:
     properties:
+      avatar:
+        $ref: '#/definitions/request.Avatar'
       id:
         type: string
       name:
@@ -3668,7 +3670,7 @@ paths:
                   - properties:
                       List:
                         items:
-                          $ref: '#/definitions/response.IDName'
+                          $ref: '#/definitions/response.IDNameWithAvatar'
                         type: array
                     type: object
               type: object

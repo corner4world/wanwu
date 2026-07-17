@@ -19703,7 +19703,7 @@
                                                         "list": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/response.IDName"
+                                                                "$ref": "#/definitions/response.IDNameWithAvatar"
                                                             }
                                                         }
                                                     }
@@ -26772,14 +26772,13 @@
         "request.MCPCreate": {
             "type": "object",
             "required": [
-                "apiAuth",
                 "desc",
                 "from",
                 "name"
             ],
             "properties": {
                 "apiAuth": {
-                    "description": "api身份认证",
+                    "description": "api身份认证(可选，为空表示无鉴权)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/util.ApiAuthWebRequest"
@@ -27051,7 +27050,6 @@
         "request.MCPUpdate": {
             "type": "object",
             "required": [
-                "apiAuth",
                 "desc",
                 "from",
                 "mcpId",
@@ -27059,7 +27057,7 @@
             ],
             "properties": {
                 "apiAuth": {
-                    "description": "api身份认证",
+                    "description": "api身份认证(可选，为空表示无鉴权)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/util.ApiAuthWebRequest"
@@ -32493,17 +32491,6 @@
                 }
             }
         },
-        "response.IDName": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "response.IDNameWithAvatar": {
             "type": "object",
             "properties": {
@@ -34421,7 +34408,7 @@
                     "type": "string"
                 },
                 "creator": {
-                    "$ref": "#/definitions/response.IDName"
+                    "$ref": "#/definitions/response.IDNameWithAvatar"
                 },
                 "name": {
                     "type": "string"
@@ -34447,7 +34434,7 @@
                     "description": "组织",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/response.IDName"
+                            "$ref": "#/definitions/response.IDNameWithAvatar"
                         }
                     ]
                 },
@@ -35030,6 +35017,9 @@
         "response.RoleIDName": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -35057,7 +35047,7 @@
                     "type": "string"
                 },
                 "creator": {
-                    "$ref": "#/definitions/response.IDName"
+                    "$ref": "#/definitions/response.IDNameWithAvatar"
                 },
                 "isAdmin": {
                     "description": "是否组织内置管理员角色",
@@ -35132,7 +35122,7 @@
                 "orgs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.IDNameWithAvatar"
                     }
                 },
                 "phone": {
@@ -36186,7 +36176,7 @@
                     "description": "创建人",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/response.IDName"
+                            "$ref": "#/definitions/response.IDNameWithAvatar"
                         }
                     ]
                 },
@@ -36232,7 +36222,7 @@
                     "description": "组织",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/response.IDName"
+                            "$ref": "#/definitions/response.IDNameWithAvatar"
                         }
                     ]
                 },
@@ -36265,7 +36255,7 @@
                     "description": "创建人",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/response.IDName"
+                            "$ref": "#/definitions/response.IDNameWithAvatar"
                         }
                     ]
                 },
@@ -36314,7 +36304,7 @@
                 "select": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.IDNameWithAvatar"
                     }
                 }
             }
@@ -36326,7 +36316,7 @@
                     "description": "去重后的用户列表",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.IDNameWithAvatar"
                     }
                 }
             }

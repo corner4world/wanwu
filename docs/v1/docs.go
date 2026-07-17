@@ -19711,7 +19711,7 @@ const docTemplate = `{
                                                         "list": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/response.IDName"
+                                                                "$ref": "#/definitions/response.IDNameWithAvatar"
                                                             }
                                                         }
                                                     }
@@ -26780,14 +26780,13 @@ const docTemplate = `{
         "request.MCPCreate": {
             "type": "object",
             "required": [
-                "apiAuth",
                 "desc",
                 "from",
                 "name"
             ],
             "properties": {
                 "apiAuth": {
-                    "description": "api身份认证",
+                    "description": "api身份认证(可选，为空表示无鉴权)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/util.ApiAuthWebRequest"
@@ -27059,7 +27058,6 @@ const docTemplate = `{
         "request.MCPUpdate": {
             "type": "object",
             "required": [
-                "apiAuth",
                 "desc",
                 "from",
                 "mcpId",
@@ -27067,7 +27065,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "apiAuth": {
-                    "description": "api身份认证",
+                    "description": "api身份认证(可选，为空表示无鉴权)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/util.ApiAuthWebRequest"
@@ -32501,17 +32499,6 @@ const docTemplate = `{
                 }
             }
         },
-        "response.IDName": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
         "response.IDNameWithAvatar": {
             "type": "object",
             "properties": {
@@ -34429,7 +34416,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "creator": {
-                    "$ref": "#/definitions/response.IDName"
+                    "$ref": "#/definitions/response.IDNameWithAvatar"
                 },
                 "name": {
                     "type": "string"
@@ -34455,7 +34442,7 @@ const docTemplate = `{
                     "description": "组织",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/response.IDName"
+                            "$ref": "#/definitions/response.IDNameWithAvatar"
                         }
                     ]
                 },
@@ -35038,6 +35025,9 @@ const docTemplate = `{
         "response.RoleIDName": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "$ref": "#/definitions/request.Avatar"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -35065,7 +35055,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "creator": {
-                    "$ref": "#/definitions/response.IDName"
+                    "$ref": "#/definitions/response.IDNameWithAvatar"
                 },
                 "isAdmin": {
                     "description": "是否组织内置管理员角色",
@@ -35140,7 +35130,7 @@ const docTemplate = `{
                 "orgs": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.IDNameWithAvatar"
                     }
                 },
                 "phone": {
@@ -36194,7 +36184,7 @@ const docTemplate = `{
                     "description": "创建人",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/response.IDName"
+                            "$ref": "#/definitions/response.IDNameWithAvatar"
                         }
                     ]
                 },
@@ -36240,7 +36230,7 @@ const docTemplate = `{
                     "description": "组织",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/response.IDName"
+                            "$ref": "#/definitions/response.IDNameWithAvatar"
                         }
                     ]
                 },
@@ -36273,7 +36263,7 @@ const docTemplate = `{
                     "description": "创建人",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/response.IDName"
+                            "$ref": "#/definitions/response.IDNameWithAvatar"
                         }
                     ]
                 },
@@ -36322,7 +36312,7 @@ const docTemplate = `{
                 "select": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.IDNameWithAvatar"
                     }
                 }
             }
@@ -36334,7 +36324,7 @@ const docTemplate = `{
                     "description": "去重后的用户列表",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.IDName"
+                        "$ref": "#/definitions/response.IDNameWithAvatar"
                     }
                 }
             }
