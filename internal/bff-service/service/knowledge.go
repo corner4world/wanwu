@@ -196,13 +196,14 @@ func CreateKnowledgeOpenapi(ctx *gin.Context, userId, orgId string, r *request.C
 
 // checkEmbeddingModelType 校验知识库 embedding 模型类型与知识库类型匹配
 func checkEmbeddingModelType(category int32, modelType string) error {
+	// 多模态知识库需多模态 embedding；文本知识库、问答库可用文本 embedding 或多模态 embedding
 	if category == request.CategoryMultimodalKnowledge {
 		if modelType != mp.ModelTypeMultiEmbedding {
 			return grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "multimodal knowledge requires a multimodal-embedding model")
 		}
 		return nil
 	}
-	if modelType != mp.ModelTypeTextEmbedding {
+	if modelType != mp.ModelTypeTextEmbedding && modelType != mp.ModelTypeMultiEmbedding {
 		return grpc_util.ErrorStatus(err_code.Code_BFFInvalidArg, "knowledge requires an embedding model")
 	}
 	return nil

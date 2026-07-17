@@ -164,6 +164,11 @@ type DocChildListReq struct {
 	CommonCheck
 }
 
+type UploadDocSegmentImageReq struct {
+	KnowledgeId string `json:"knowledgeId" form:"knowledgeId" validate:"required"` // 知识库id（仅多模态知识库可上传图片）
+	CommonCheck
+}
+
 type CreateDocChildSegmentReq struct {
 	DocId    string   `json:"docId"  validate:"required"`    // 文档id
 	ParentId string   `json:"parentId"  validate:"required"` // 父分段id

@@ -1397,6 +1397,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/knowledge/doc/segment/batch/create": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "通过csv文件批量新增文档切片",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "批量新增文档切片",
+                "parameters": [
+                    {
+                        "description": "批量新增文档切片请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.BatchCreateDocSegmentReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/knowledge/doc/segment/child/list": {
             "get": {
                 "security": [
@@ -1442,6 +1481,140 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/response.DocChildSegmentResp"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/knowledge/doc/segment/create": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "新增单条文档切片；多模态知识库的切片内容可包含图片markdown，普通知识库不允许",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "新增文档切片",
+                "parameters": [
+                    {
+                        "description": "新增文档切片请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateDocSegmentReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/knowledge/doc/segment/delete": {
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "删除文档切片",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "删除文档切片",
+                "parameters": [
+                    {
+                        "description": "删除文档切片请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.DeleteDocSegmentReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/knowledge/doc/segment/image/upload": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "上传分段图片并返回markdown格式url，仅多模态知识库可用；返回的url可拼接进切片content中",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "分段图片上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "知识库id",
+                        "name": "knowledgeId",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "图片文件(png/jpg/jpeg)",
+                        "name": "files",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.RagUploadResponse"
                                         }
                                     }
                                 }
@@ -1541,6 +1714,45 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/request.UpdateDocSegmentStatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/knowledge/doc/segment/update": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "更新文档切片；多模态知识库的切片内容可包含图片markdown，普通知识库不允许",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openapi"
+                ],
+                "summary": "更新文档切片",
+                "parameters": [
+                    {
+                        "description": "更新文档切片请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateDocSegmentReq"
                         }
                     }
                 ],
@@ -4058,6 +4270,23 @@ const docTemplate = `{
                 }
             }
         },
+        "request.BatchCreateDocSegmentReq": {
+            "type": "object",
+            "required": [
+                "docId",
+                "fileUploadId"
+            ],
+            "properties": {
+                "docId": {
+                    "description": "文档id",
+                    "type": "string"
+                },
+                "fileUploadId": {
+                    "description": "fileUploadId",
+                    "type": "string"
+                }
+            }
+        },
         "request.ConversionStreamFile": {
             "type": "object",
             "properties": {
@@ -4069,6 +4298,31 @@ const docTemplate = `{
                 },
                 "fileUrl": {
                     "type": "string"
+                }
+            }
+        },
+        "request.CreateDocSegmentReq": {
+            "type": "object",
+            "required": [
+                "content",
+                "docId",
+                "labels"
+            ],
+            "properties": {
+                "content": {
+                    "description": "分段内容",
+                    "type": "string"
+                },
+                "docId": {
+                    "description": "文档id",
+                    "type": "string"
+                },
+                "labels": {
+                    "description": "关键词列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -4119,6 +4373,22 @@ const docTemplate = `{
                     }
                 },
                 "knowledgeId": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.DeleteDocSegmentReq": {
+            "type": "object",
+            "required": [
+                "contentId",
+                "docId"
+            ],
+            "properties": {
+                "contentId": {
+                    "type": "string"
+                },
+                "docId": {
+                    "description": "文档id",
                     "type": "string"
                 }
             }
@@ -5094,6 +5364,25 @@ const docTemplate = `{
                 },
                 "tableName": {
                     "description": "敏感词表名称(请求非必填)",
+                    "type": "string"
+                }
+            }
+        },
+        "request.UpdateDocSegmentReq": {
+            "type": "object",
+            "required": [
+                "content",
+                "contentId",
+                "docId"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "contentId": {
+                    "type": "string"
+                },
+                "docId": {
                     "type": "string"
                 }
             }
@@ -7038,6 +7327,28 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "response.RagUploadFile": {
+            "type": "object",
+            "properties": {
+                "fileIndex": {
+                    "type": "integer"
+                },
+                "fileUrl": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.RagUploadResponse": {
+            "type": "object",
+            "properties": {
+                "fileList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.RagUploadFile"
+                    }
                 }
             }
         },
