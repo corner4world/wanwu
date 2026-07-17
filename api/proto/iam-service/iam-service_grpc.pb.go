@@ -93,7 +93,7 @@ type IAMServiceClient interface {
 	// 获取用户
 	GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*UserInfo, error)
 	// 创建用户
-	CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*IDName, error)
+	CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*IDNameWithAvatar, error)
 	// 批量导入用户
 	CreateUsers(ctx context.Context, in *CreateUsersReq, opts ...grpc.CallOption) (*CreateUsersResp, error)
 	// 编辑用户
@@ -135,7 +135,7 @@ type IAMServiceClient interface {
 	// 获取用户有权限的组织ID列表（登录用户的管理员组织及其所有下级组织）
 	GetAdminOrgIDs(ctx context.Context, in *GetAdminOrgIDsReq, opts ...grpc.CallOption) (*GetAdminOrgIDsResp, error)
 	// 创建组织
-	CreateOrg(ctx context.Context, in *CreateOrgReq, opts ...grpc.CallOption) (*IDName, error)
+	CreateOrg(ctx context.Context, in *CreateOrgReq, opts ...grpc.CallOption) (*IDNameWithAvatar, error)
 	// 编辑组织
 	UpdateOrg(ctx context.Context, in *UpdateOrgReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 删除组织
@@ -253,9 +253,9 @@ func (c *iAMServiceClient) GetUserInfo(ctx context.Context, in *GetUserInfoReq, 
 	return out, nil
 }
 
-func (c *iAMServiceClient) CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*IDName, error) {
+func (c *iAMServiceClient) CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*IDNameWithAvatar, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IDName)
+	out := new(IDNameWithAvatar)
 	err := c.cc.Invoke(ctx, IAMService_CreateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -463,9 +463,9 @@ func (c *iAMServiceClient) GetAdminOrgIDs(ctx context.Context, in *GetAdminOrgID
 	return out, nil
 }
 
-func (c *iAMServiceClient) CreateOrg(ctx context.Context, in *CreateOrgReq, opts ...grpc.CallOption) (*IDName, error) {
+func (c *iAMServiceClient) CreateOrg(ctx context.Context, in *CreateOrgReq, opts ...grpc.CallOption) (*IDNameWithAvatar, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(IDName)
+	out := new(IDNameWithAvatar)
 	err := c.cc.Invoke(ctx, IAMService_CreateOrg_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -806,7 +806,7 @@ type IAMServiceServer interface {
 	// 获取用户
 	GetUserInfo(context.Context, *GetUserInfoReq) (*UserInfo, error)
 	// 创建用户
-	CreateUser(context.Context, *CreateUserReq) (*IDName, error)
+	CreateUser(context.Context, *CreateUserReq) (*IDNameWithAvatar, error)
 	// 批量导入用户
 	CreateUsers(context.Context, *CreateUsersReq) (*CreateUsersResp, error)
 	// 编辑用户
@@ -848,7 +848,7 @@ type IAMServiceServer interface {
 	// 获取用户有权限的组织ID列表（登录用户的管理员组织及其所有下级组织）
 	GetAdminOrgIDs(context.Context, *GetAdminOrgIDsReq) (*GetAdminOrgIDsResp, error)
 	// 创建组织
-	CreateOrg(context.Context, *CreateOrgReq) (*IDName, error)
+	CreateOrg(context.Context, *CreateOrgReq) (*IDNameWithAvatar, error)
 	// 编辑组织
 	UpdateOrg(context.Context, *UpdateOrgReq) (*emptypb.Empty, error)
 	// 删除组织
@@ -938,7 +938,7 @@ func (UnimplementedIAMServiceServer) GetUserList(context.Context, *GetUserListRe
 func (UnimplementedIAMServiceServer) GetUserInfo(context.Context, *GetUserInfoReq) (*UserInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserInfo not implemented")
 }
-func (UnimplementedIAMServiceServer) CreateUser(context.Context, *CreateUserReq) (*IDName, error) {
+func (UnimplementedIAMServiceServer) CreateUser(context.Context, *CreateUserReq) (*IDNameWithAvatar, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
 func (UnimplementedIAMServiceServer) CreateUsers(context.Context, *CreateUsersReq) (*CreateUsersResp, error) {
@@ -1001,7 +1001,7 @@ func (UnimplementedIAMServiceServer) GetAdminOrgSubTree(context.Context, *GetAdm
 func (UnimplementedIAMServiceServer) GetAdminOrgIDs(context.Context, *GetAdminOrgIDsReq) (*GetAdminOrgIDsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAdminOrgIDs not implemented")
 }
-func (UnimplementedIAMServiceServer) CreateOrg(context.Context, *CreateOrgReq) (*IDName, error) {
+func (UnimplementedIAMServiceServer) CreateOrg(context.Context, *CreateOrgReq) (*IDNameWithAvatar, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrg not implemented")
 }
 func (UnimplementedIAMServiceServer) UpdateOrg(context.Context, *UpdateOrgReq) (*emptypb.Empty, error) {

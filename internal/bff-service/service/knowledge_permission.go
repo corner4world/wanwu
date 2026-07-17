@@ -232,7 +232,7 @@ func buildUserTransfer(userInfo *knowledgebase_permission_service.KnowledgeUserI
 }
 
 // 并发查询用户详情和组织详情
-func searchUserAndOrgInfo(ctx *gin.Context, userIdMap, orgIdMap map[string]bool) (map[string]*iam_service.IDName, map[string]*iam_service.IDFullName) {
+func searchUserAndOrgInfo(ctx *gin.Context, userIdMap, orgIdMap map[string]bool) (map[string]*iam_service.IDNameWithAvatar, map[string]*iam_service.IDFullName) {
 	var userIdList, orgIdList []string
 	for userId := range userIdMap {
 		userIdList = append(userIdList, userId)
@@ -243,7 +243,7 @@ func searchUserAndOrgInfo(ctx *gin.Context, userIdMap, orgIdMap map[string]bool)
 	var wg = &sync.WaitGroup{}
 	wg.Add(2)
 	orgInfoMap := make(map[string]*iam_service.IDFullName)
-	userInfoMap := make(map[string]*iam_service.IDName)
+	userInfoMap := make(map[string]*iam_service.IDNameWithAvatar)
 	//查询user详情信息
 	go func() {
 		defer func() {

@@ -100,7 +100,7 @@ func (s *Service) GetAdminOrgIDs(ctx context.Context, req *iam_service.GetAdminO
 	return resp, nil
 }
 
-func (s *Service) CreateOrg(ctx context.Context, req *iam_service.CreateOrgReq) (*iam_service.IDName, error) {
+func (s *Service) CreateOrg(ctx context.Context, req *iam_service.CreateOrgReq) (*iam_service.IDNameWithAvatar, error) {
 	orgID, err := s.cli.CreateOrg(ctx, &model.Org{
 		Status:     true,
 		CreatorID:  util.MustU32(req.CreatorId),
@@ -112,7 +112,7 @@ func (s *Service) CreateOrg(ctx context.Context, req *iam_service.CreateOrgReq) 
 	if err != nil {
 		return nil, errStatus(errs.Code_IAMOrg, err)
 	}
-	return &iam_service.IDName{Id: strconv.Itoa(int(orgID)), Name: req.Name}, nil
+	return &iam_service.IDNameWithAvatar{Id: strconv.Itoa(int(orgID)), Name: req.Name, AvatarPath: req.AvatarPath}, nil
 }
 
 func (s *Service) UpdateOrg(ctx context.Context, req *iam_service.UpdateOrgReq) (*emptypb.Empty, error) {

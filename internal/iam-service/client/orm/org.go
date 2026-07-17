@@ -92,9 +92,10 @@ func (c *Client) GetOrgByOrgIDs(ctx context.Context, orgIDs []uint32) ([]IDFullN
 		}
 		for _, org := range orgs {
 			ret = append(ret, IDFullName{
-				IDName: IDName{
-					ID:   org.ID,
-					Name: org.Name,
+				IDNameWithAvatar: IDNameWithAvatar{
+					ID:         org.ID,
+					Name:       org.Name,
+					AvatarPath: org.AvatarPath,
 				},
 				FullName: orgTree.GetFullName(org.ID),
 			})
@@ -103,8 +104,8 @@ func (c *Client) GetOrgByOrgIDs(ctx context.Context, orgIDs []uint32) ([]IDFullN
 	})
 }
 
-func (c *Client) GetOrgAndSubOrgSelectByUser(ctx context.Context, userID, orgID uint32) ([]IDName, *errs.Status) {
-	var result []IDName
+func (c *Client) GetOrgAndSubOrgSelectByUser(ctx context.Context, userID, orgID uint32) ([]IDNameWithAvatar, *errs.Status) {
+	var result []IDNameWithAvatar
 	return result, c.transaction(ctx, func(tx *gorm.DB) *errs.Status {
 		// 获取组织树
 		orgTree, err := getOrgTree(tx)
@@ -117,7 +118,7 @@ func (c *Client) GetOrgAndSubOrgSelectByUser(ctx context.Context, userID, orgID 
 			return toErrStatus("iam_orgs_select", err.Error())
 		}
 		for _, org := range orgs {
-			result = append(result, IDName{ID: org.ID, Name: org.Name})
+			result = append(result, IDNameWithAvatar{ID: org.ID, Name: org.Name, AvatarPath: org.AvatarPath})
 		}
 		return nil
 	})
@@ -177,8 +178,8 @@ func (c *Client) GetAdminOrgSubTree(ctx context.Context, userID uint32) ([]*Admi
 	})
 }
 
-func (c *Client) GetFirstClassOrgAndSubs(ctx context.Context, userID, orgID uint32) ([]IDName, *errs.Status) {
-	var result []IDName
+func (c *Client) GetFirstClassOrgAndSubs(ctx context.Context, userID, orgID uint32) ([]IDNameWithAvatar, *errs.Status) {
+	var result []IDNameWithAvatar
 	return result, c.transaction(ctx, func(tx *gorm.DB) *errs.Status {
 		orgTree, err := getOrgTree(tx)
 		if err != nil {
@@ -190,9 +191,10 @@ func (c *Client) GetFirstClassOrgAndSubs(ctx context.Context, userID, orgID uint
 		}
 		var dfs func(*model.OrgNode)
 		dfs = func(node *model.OrgNode) {
-			result = append(result, IDName{
-				ID:   node.GetOrgID(),
-				Name: node.GetFullName(node.GetOrgID()),
+			result = append(result, IDNameWithAvatar{
+				ID:         node.GetOrgID(),
+				Name:       node.GetFullName(node.GetOrgID()),
+				AvatarPath: node.GetAvatarPath(),
 			})
 			for _, child := range node.GetSubs(node.GetOrgID()) {
 				dfs(child)
