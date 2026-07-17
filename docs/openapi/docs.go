@@ -3952,6 +3952,13 @@ const docTemplate = `{
                 "endpointUrl": {
                     "description": "推理url",
                     "type": "string"
+                },
+                "supportFileTypes": {
+                    "description": "支持的文件类型，由 bff-service 从 recommend_model_config.yaml 注入",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

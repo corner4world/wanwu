@@ -711,6 +711,11 @@ definitions:
       endpointUrl:
         description: 推理url
         type: string
+      supportFileTypes:
+        description: 支持的文件类型，由 bff-service 从 recommend_model_config.yaml 注入
+        items:
+          type: string
+        type: array
     type: object
   mp_yuanjing.PdfParser:
     properties:
