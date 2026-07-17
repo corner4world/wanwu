@@ -110,3 +110,17 @@ type DisconnectChannelRequest struct {
 }
 
 func (r *DisconnectChannelRequest) Check() error { return nil }
+
+// ChannelSendMessageRequest 内部服务发消息请求
+type ChannelSendMessageRequest struct {
+	ChannelID    string `json:"channelId" binding:"required"`
+	Content      string `json:"content"`
+	UserID       string `json:"userId"`  // 可选，缺省时由 channel-service 自动取该通道最近互动过的 IM 用户作为收件人
+	MsgType      string `json:"msgType"` // 可选：text（默认，纯文本，content 必填）/ markdown（钉钉渲染 md 卡片，微信降级纯文本，content 必填，title 可选）
+	Title        string `json:"title"`   // 发送文件附件，fileUrl+fileName 必填，content 可空作附带文案
+	FileUrl      string `json:"fileUrl"` // 为万悟 minio 文件下载地址（先调 /callback/v1/file/upload/base64 上传取得）channel-service 下载字节后投递，不占请求体。钉钉/微信支持文件，飞书不支持会返回错误
+	FileName     string `json:"fileName"`
+	FileMimeType string `json:"fileMimeType"`
+}
+
+func (r *ChannelSendMessageRequest) Check() error { return nil }

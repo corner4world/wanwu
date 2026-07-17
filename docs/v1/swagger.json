@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "## HTTP Header\r\n| Header        | 说明      |\r\n| ------------- | --------- |\r\n| Authorization | JWT token |\r\n| X-Language    | 语言Code  |\r\n| X-Org-Id      | 组织ID    |\r\n| X-Client-Id   | 客户端标识|\r\n\r\n## HTTP Status\r\n| HTTP Status             | 说明                   |\r\n| ----------------------- | ---------------------- |\r\n| 200, StatusOK           | 请求返回成功           |\r\n| 400, StatusBadRequest   | 请求返回失败，用于业务 |\r\n| 401, StatusUnauthorized | JWT认证失败            |\r\n| 403, StatusForbidden    | 没有权限               |\r\n\r\n## 权限-菜单对应表\r\n| 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\r\n|-------------|-------|------|------|------|------|\r\n| guest       |       |      | 【访客】 |      |      |\r\n| common      |       |      | 【通用】 |      |      |\r\n| permission  |       |      | 权限管理 |      |      |\r\n| permission  | user  |      | 权限管理 | 用户管理 |      |\r\n| permission  | org   |      | 权限管理 | 组织管理 |      |\r\n| permission  | role  |      | 权限管理 | 角色管理 |      |\r\n\r\n## `/v1/user/permission`返回用例\r\n```json\r\n{\r\n  \"code\": 0,\r\n  \"data\": {\r\n    \"orgPermission\": {\r\n      \"org\": {\"id\": \"test-org-id\", \"name\": \"test-org-name\"},\r\n      \"permissions\": [\r\n        {\"perm\": \"permission\"},\r\n        {\"perm\": \"permission.user\"},\r\n        {\"perm\": \"permission.org\"},\r\n        {\"perm\": \"permission.role\"}\r\n      ]\r\n    }\r\n  },\r\n  \"msg\": \"操作成功\"\r\n}\r\n```",
+        "description": "## HTTP Header\n| Header        | 说明      |\n| ------------- | --------- |\n| Authorization | JWT token |\n| X-Language    | 语言Code  |\n| X-Org-Id      | 组织ID    |\n| X-Client-Id   | 客户端标识|\n\n## HTTP Status\n| HTTP Status             | 说明                   |\n| ----------------------- | ---------------------- |\n| 200, StatusOK           | 请求返回成功           |\n| 400, StatusBadRequest   | 请求返回失败，用于业务 |\n| 401, StatusUnauthorized | JWT认证失败            |\n| 403, StatusForbidden    | 没有权限               |\n\n## 权限-菜单对应表\n| 一级权限        | 二级权限  | 三级权限 | 一级菜单 | 二级菜单 | 三级菜单 |\n|-------------|-------|------|------|------|------|\n| guest       |       |      | 【访客】 |      |      |\n| common      |       |      | 【通用】 |      |      |\n| permission  |       |      | 权限管理 |      |      |\n| permission  | user  |      | 权限管理 | 用户管理 |      |\n| permission  | org   |      | 权限管理 | 组织管理 |      |\n| permission  | role  |      | 权限管理 | 角色管理 |      |\n\n## `/v1/user/permission`返回用例\n```json\n{\n  \"code\": 0,\n  \"data\": {\n    \"orgPermission\": {\n      \"org\": {\"id\": \"test-org-id\", \"name\": \"test-org-name\"},\n      \"permissions\": [\n        {\"perm\": \"permission\"},\n        {\"perm\": \"permission.user\"},\n        {\"perm\": \"permission.org\"},\n        {\"perm\": \"permission.role\"}\n      ]\n    }\n  },\n  \"msg\": \"操作成功\"\n}\n```",
         "title": "AI Agent Productivity Platform API",
         "contact": {},
         "version": "v0.0.1"
@@ -6355,6 +6355,910 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/agent": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取万悟智能体列表（含 UUID，供通道绑定使用）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "获取万悟智能体列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "agent / rag",
+                        "name": "appType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "all / favorite / private / history",
+                        "name": "searchType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.WanwuAgentResponse"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/apikeys": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取万悟 API Key 列表（用于通道选择下拉）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "获取万悟 API Key 列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.WanwuApiKeyResponse"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/channels": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通道列表",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "获取通道列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道名称",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页面编号，从1开始",
+                        "name": "pageNo",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "单页数量，从1开始",
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.PageResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.ChannelResponse"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "创建通道",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "创建通道",
+                "parameters": [
+                    {
+                        "description": "创建通道请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CreateChannelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ChannelResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/channels/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取通道详情",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "获取通道详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ChannelResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "更新通道",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "更新通道",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新通道请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateChannelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ChannelResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "删除通道",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "删除通道",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/channels/{id}/disconnect": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "断开通道",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "断开通道",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.DisconnectChannelResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/channels/{id}/status": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "启用/停用通道",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "启用/停用通道",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "启用/停用通道请求参数",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.UpdateChannelStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ChannelResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/dip/employees": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取数字员工列表（用于 DIP 通道选择绑定的数字员工）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "获取数字员工列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "数字员工名称",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.GeneralAgentOntologyEmployee"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/models": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取万悟模型列表（用于 WGA 通道选择 modelUuid）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "获取万悟模型列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "模型显示名称",
+                        "name": "displayName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "模型作用域类型(public: 公有模型，private: 我的模型)",
+                        "name": "filterScope",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "启用状态（true: 启用）",
+                        "name": "isActive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "模型类型",
+                        "name": "modelType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "模型供应商",
+                        "name": "provider",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "模型公开范围(1-私有 2-公开 3-组织)",
+                        "name": "scopeType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/response.ListResult"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "list": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/response.OpenAPIModelListItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/qrcode/{channelType}": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "发起扫码登录，返回二维码地址与会话ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "发起扫码登录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道类型：wechat/dingtalk/feishu",
+                        "name": "channelType",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.QRLoginResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/qrcode/{channelType}/complete/{sessionId}": {
+            "post": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "完成扫码登录（扫码成功后创建通道）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "完成扫码登录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道类型：wechat/dingtalk/feishu",
+                        "name": "channelType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "扫码会话ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.ChannelResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/qrcode/{channelType}/status/{sessionId}": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "查询扫码状态",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "查询扫码状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道类型：wechat/dingtalk/feishu",
+                        "name": "channelType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "扫码会话ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.QRLoginStatusResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/qrcode/{channelType}/{sessionId}": {
+            "delete": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "取消扫码登录",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "取消扫码登录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通道类型：wechat/dingtalk/feishu",
+                        "name": "channelType",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "扫码会话ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/channel/wga/sub-agents": {
+            "get": {
+                "security": [
+                    {
+                        "JWT": []
+                    }
+                ],
+                "description": "获取 WGA 子智能体列表（用于 WGA 通道选择 agentId），首部置入“无”选项，过滤数字员工、Skill Chat Agent、Data Analysis Agent 等内部智能体",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "channel"
+                ],
+                "summary": "获取 WGA 子智能体列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/response.GetGeneralAgentSubListResp"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -13839,6 +14743,7 @@
                 "parameters": [
                     {
                         "type": "integer",
+                        "format": "int32",
                         "description": "模型体验对话ID",
                         "name": "modelExperienceId",
                         "in": "query",
@@ -21802,6 +22707,13 @@
                 "endpointUrl": {
                     "description": "推理url",
                     "type": "string"
+                },
+                "supportFileTypes": {
+                    "description": "支持的文件类型，由 bff-service 从 recommend_model_config.yaml 注入",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -23642,6 +24554,51 @@
                 },
                 "expiredAt": {
                     "description": "格式 yyyy-mm-dd",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.CreateChannelRequest": {
+            "type": "object",
+            "required": [
+                "channelType",
+                "config",
+                "name"
+            ],
+            "properties": {
+                "agentId": {
+                    "description": "WGA 通道绑定的子智能体 ID（直连该子智能体，跳过 Supervisor）",
+                    "type": "string"
+                },
+                "apiKey": {
+                    "description": "API Key 完整值，创建时传入",
+                    "type": "string"
+                },
+                "apiKeyId": {
+                    "type": "string"
+                },
+                "appId": {
+                    "type": "string"
+                },
+                "appType": {
+                    "description": "agent（默认）/ wga（通用智能体）",
+                    "type": "string"
+                },
+                "channelType": {
+                    "description": "wechat/dingtalk/feishu",
+                    "type": "string"
+                },
+                "config": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "modelUuid": {
+                    "description": "WGA 通道使用的模型 UUID",
                     "type": "string"
                 },
                 "name": {
@@ -27454,6 +28411,48 @@
                 }
             }
         },
+        "request.UpdateChannelRequest": {
+            "type": "object",
+            "properties": {
+                "agentId": {
+                    "description": "AgentId 用指针以区分三态（JSON 字段缺失→nil，传空串→\u0026\"\"，传值→\u0026id）：\n  wga: nil=不改 / \u0026\"\"=清空（切回默认 Supervisor）/ \u0026子智能体id=换子智能体\n  dip: nil=不改 / \u0026员工id=换员工（dip 不支持清空，\u0026\"\" 视为不改）",
+                    "type": "string"
+                },
+                "apiKey": {
+                    "type": "string"
+                },
+                "apiKeyId": {
+                    "type": "string"
+                },
+                "appId": {
+                    "type": "string"
+                },
+                "config": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "modelUuid": {
+                    "description": "WGA 通道使用的模型 UUID",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.UpdateChannelStatusRequest": {
+            "type": "object",
+            "required": [
+                "enabled"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
         "request.UpdateCustomPrompt": {
             "type": "object",
             "required": [
@@ -29272,6 +30271,80 @@
                 }
             }
         },
+        "response.ChannelResponse": {
+            "type": "object",
+            "properties": {
+                "accountId": {
+                    "type": "string"
+                },
+                "agentId": {
+                    "description": "WGA 通道绑定的子智能体 ID（直连该子智能体，跳过 Supervisor）",
+                    "type": "string"
+                },
+                "apiKeyId": {
+                    "type": "string"
+                },
+                "apiKeyName": {
+                    "type": "string"
+                },
+                "appId": {
+                    "type": "string"
+                },
+                "appName": {
+                    "type": "string"
+                },
+                "appType": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "channelType": {
+                    "type": "string"
+                },
+                "config": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "connectivity": {
+                    "description": "实时连通状态（从适配器内存读，非 DB 快照）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/response.Connectivity"
+                        }
+                    ]
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "hasApiKey": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "modelUuid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "response.CheckFileListResp": {
             "type": "object",
             "properties": {
@@ -29449,6 +30522,23 @@
                             "$ref": "#/definitions/response.StatisticChart"
                         }
                     ]
+                }
+            }
+        },
+        "response.Connectivity": {
+            "type": "object",
+            "properties": {
+                "checked": {
+                    "type": "integer"
+                },
+                "detail": {
+                    "type": "string"
+                },
+                "ok": {
+                    "type": "boolean"
+                },
+                "state": {
+                    "type": "string"
                 }
             }
         },
@@ -30360,6 +31450,14 @@
                 }
             }
         },
+        "response.DisconnectChannelResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "response.DocAnalyzerTextInfo": {
             "type": "object",
             "properties": {
@@ -30996,6 +32094,31 @@
                 },
                 "placeholder": {
                     "description": "占位提示文本",
+                    "type": "string"
+                }
+            }
+        },
+        "response.GeneralAgentOntologyEmployee": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "description": "数字员工头像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/request.Avatar"
+                        }
+                    ]
+                },
+                "desc": {
+                    "description": "数字员工描述",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "数字员工ID",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "数字员工姓名",
                     "type": "string"
                 }
             }
@@ -33251,6 +34374,29 @@
                 }
             }
         },
+        "response.OpenAPIModelListItem": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "modelType": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "scopeType": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "response.OrgID": {
             "type": "object",
             "properties": {
@@ -33579,6 +34725,44 @@
                 "permissionType": {
                     "description": "当前用户对该问答库的权限类型 -1:无权限 0:查看 10:编辑 20:授权 30:系统管理授权",
                     "type": "integer"
+                }
+            }
+        },
+        "response.QRLoginResponse": {
+            "type": "object",
+            "properties": {
+                "expireAt": {
+                    "type": "integer"
+                },
+                "expireTime": {
+                    "type": "integer"
+                },
+                "qrUrl": {
+                    "type": "string"
+                },
+                "sessionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.QRLoginStatusResponse": {
+            "type": "object",
+            "properties": {
+                "baseUrl": {
+                    "description": "微信扫码成功时返回的平台 baseUrl",
+                    "type": "string"
+                },
+                "credentials": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -35157,6 +36341,43 @@
                 "picNum": {
                     "description": "视觉配置图片数量",
                     "type": "integer"
+                }
+            }
+        },
+        "response.WanwuAgentResponse": {
+            "type": "object",
+            "properties": {
+                "appId": {
+                    "type": "string"
+                },
+                "appType": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "desc": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.WanwuApiKeyResponse": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "keyId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
